@@ -25,8 +25,9 @@ If no iteration is specified, then these include:
  * Truck Trip Distribution gravity LOS term part from tolled time
    + Specify the value in INPUT\\params.properties
    + It will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
- * Telecommute constant
-   + It will be propagated to CTRAMP\\model\\CoordinatedDailyActivityPattern.xls
+ * WFH factors (WFH_Calibration_constant, WFH_Calibration_eastbay_SF)
+   + Specify the values in INPUT\\params.properties
+   + They will be propagated to CTRAMP\\runtime\\mtcTourBased.properties
  * Means Based Tolling (Q1 and Q2) factors
    + They will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
                                 CTRAMP\\runtime\\mtcTourBased.properties
@@ -230,7 +231,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     WorkTransitHesitance     = float(get_property(params_filename, params_contents, "Work_Transit_Hesitance"))
     NonWorkTransitHesitance  = float(get_property(params_filename, params_contents, "NonWork_Transit_Hesitance"))
-    BARTTransitHesitance     = float(get_property(params_filename, params_contents, "BART_Transit_Hesitance"))
+    RailTransitHesitance     = float(get_property(params_filename, params_contents, "Rail_Transit_Hesitance"))
 
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
@@ -243,9 +244,9 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     MeansBasedCordonFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
     MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
 
-    # WFH factors
-    WFHFullTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_FullTimeWorker_Factor"))
-    WFHPartTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_PartTimeWorker_Factor"))
+    # WFH factor
+    WFH_Calibration_constant   = float(get_property(params_filename, params_contents, "WFH_Calibration_constant"))
+    WFH_Calibration_eastbay_SF = float(get_property(params_filename, params_contents, "WFH_Calibration_eastbay_SF"))
 
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCshared_TourMode"))
@@ -307,7 +308,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     replacements[filepath]["(\nWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WorkTransitHesitance
     replacements[filepath]["(\nNonWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % NonWorkTransitHesitance
-    replacements[filepath]["(\nBART_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % BARTTransitHesitance
+    replacements[filepath]["(\nRail_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % RailTransitHesitance
 
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
@@ -319,9 +320,9 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
 
-    # WFH factors
-    replacements[filepath]["(\nCDAP.WFH.FullTimeWorker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHFullTimeWorkerFactor
-    replacements[filepath]["(\nCDAP.WFH.PartTimeworker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHPartTimeWorkerFactor
+    # WFH factor
+    replacements[filepath]["(\nCDAP.WFH.CalibrationConstant[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFH_Calibration_constant
+    replacements[filepath]["(\nCDAP.WFH.Calibration.eastbay_SF[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFH_Calibration_eastbay_SF
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
@@ -398,6 +399,15 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     if for_logsums:
         filepath = os.path.join("CTRAMP","runtime","logsums.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
+
+
+    # find the minimum value toll
+    MinimumValueToll = float(get_property(params_filename, params_contents, "min_vtoll"))
+
+    # put them into the CTRAMP\scripts\block\hwyParam.block
+    filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
+    replacements[filepath]["(\nmin_vtoll[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MinimumValueToll
+
 
     # put it into the UECs
     config_uec("%.2f" % auto_opc)

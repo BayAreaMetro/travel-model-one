@@ -1,28 +1,32 @@
 
-# Telecommuting and Travel Model 1.6
+# Telecommuting and Travel Model 1.6.1
 
 In Travel Model 1.6, telecommuting (also known as working from home or WFH) has been made into a simple "submodel" of
 the Coordinated Daily Activity Pattern model. For each worker (with a work location), that worker's choice to work from home is made
-via a linear function based on the log of the person's household income; the model specification is additionally segmented
-by home county and employment industry. These models were estimated using [post-pandemic PUMS data](https://mtcdrive.box.com/s/0vux1bzeinjz7gtvazn0wzb57p7zqpt7).
-The linear functions are specified here:
-https://github.com/BayAreaMetro/travel-model-one/blob/3f490bcb919eb8186d27b7d06f324d3ea24b81fa/model-files/runtime/mtcTourBased.properties#L154-L278
+via a logit model estimated from BATS 2023 data in [estimate_WFH_from_BATS2023.ipynb](estimate_WFH_from_BATS2023.ipynb):
+https://github.com/BayAreaMetro/travel-model-one/blob/7dc0bd81ec3c9c4cfa55fe36b38d3c878b7ef79d/utilities/telecommute/estimate_WFH_from_BATS2023.ipynb#L2559-L2586
+The model is implemented via the [CoordinatedDailyActivityPattern.xls](https://github.com/BayAreaMetro/travel-model-one/blob/v1.6.1_develop/model-files/model/CoordinatedDailyActivityPattern.xls) UEC.
 
-Since the worker's employment industry is unknown, the worker's work-from-home probability is
-the weighted average of employment industry jobs at that worker's work location TAZ.
+Since the worker's employment industry is unknown, the worker's employment industry is first picked based upon the the industry mix 
+at that worker's work location TAZ.
 
 Additionally, in order to calibrate the overall WFH levels, there are two additional configuration options.
 These are specified in the `params.properties` configuration file:
-https://github.com/BayAreaMetro/travel-model-one/blob/3f490bcb919eb8186d27b7d06f324d3ea24b81fa/utilities/RTP/config_RTP2025/params_2023.properties#L17-L22
+https://github.com/BayAreaMetro/travel-model-one/blob/7dc0bd81ec3c9c4cfa55fe36b38d3c878b7ef79d/utilities/RTP/config_RTP2025/params_2023.properties#L15-L21
+The first constant, `WFH_Calibration_constant` is for calibrating overall WFH rates. The second constant, `WFH_Calibration_eastbay_SF` is a
+factor that gets multiplied to term used for people who live in the East Bay and work in San Francisco, or the reverse. This term was
+scaled up in order to address high volumes across the Bay Bridge and in the BART transbay tube.
 
-And passed through to [`mtcTourBased.properties`](https://github.com/BayAreaMetro/travel-model-one/blob/3f490bcb919eb8186d27b7d06f324d3ea24b81fa/model-files/runtime/mtcTourBased.properties#L280-L282) via [`RuntimeConfiguration.py`](https://github.com/BayAreaMetro/travel-model-one/blob/3f490bcb919eb8186d27b7d06f324d3ea24b81fa/model-files/scripts/preprocess/RuntimeConfiguration.py#L322-L324).
+These configuration constants are based passed through to [`mtcTourBased.properties`](https://github.com/BayAreaMetro/travel-model-one/blob/7dc0bd81ec3c9c4cfa55fe36b38d3c878b7ef79d/model-files/runtime/mtcTourBased.properties#L152-L156) via [`RuntimeConfiguration.py`](https://github.com/BayAreaMetro/travel-model-one/blob/7dc0bd81ec3c9c4cfa55fe36b38d3c878b7ef79d/model-files/scripts/preprocess/RuntimeConfiguration.py#L323-L325).
 
 The work from home choice (`wfh_choice`) is stored as a person attribute, and written to the 
 [disaggregate person output file](https://github.com/BayAreaMetro/modeling-website/wiki/Person).
 
 More information can be found here:
 * [Pull request #63: Implement a simple WFH model in CDAP](https://github.com/BayAreaMetro/travel-model-one/pull/63)
-* [Asana task: WFH model adjustment & validation](https://app.asana.com/0/0/1205369234942623/f) - this is internal only.
+* [Asana task: WFH model adjustment & validation](https://app.asana.com/0/0/1205369234942623/f) - internal only.
+* [Asana task: Estimate WFH binomial logit model using BATS2023](https://app.asana.com/0/15119358130897/1208621825395379/f) - internal only.
+* [Asana task: Implement WFH binomial logit model from BATS2023](https://app.asana.com/0/15119358130897/1208642687328266/f) - internal only.
 
 ## Strategy EN7: Expand Commute Trip Reduction Programs at Major Employers
 

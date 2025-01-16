@@ -401,6 +401,7 @@ public class HouseholdDataWriter {
         data.add("schoolDCLogsum");
         data.add("sampleRate");
         data.add("wfh_choice");
+        data.add("industry");
         return data;
     }
 
@@ -421,6 +422,7 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.REAL); 
         data.add(SqliteDataTypes.REAL); 
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.TEXT);
         return data;
     }
 
@@ -442,6 +444,7 @@ public class HouseholdDataWriter {
         float sampleRate = p.getSampleRate();
         data.add(string(sampleRate));
         data.add(string(p.getPersonWorksFromHome()));
+        data.add(p.getPersonIndustry());
         return data;
     }
 
