@@ -109,6 +109,9 @@ copy %ALL_BCM_INPUTS%\inputs_%YEAR%\hhFile%YEAR%.csv												INPUT\popsyn\hhF
 copy %ALL_BCM_INPUTS%\inputs_%YEAR%\personFile%YEAR%.csv											INPUT\popsyn\personFile.%YEAR%.csv
 c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   							INPUT\nonres
 
+mkdir INPUT\metrics
+copy /Y "%ALL_BCM_INPUTS%\metrics\*.*"                                                     		INPUT\metrics
+
 
 set PREV_RUN_DIR=%ALL_BCM_INPUTS%\inputs_%YEAR%\warmstart
 

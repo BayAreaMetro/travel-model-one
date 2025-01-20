@@ -22,7 +22,7 @@
        token_period = 'EV'
      endif
 
-  DistributeMultistep processid = 'ctramp', processNum = period, commpath = '%COMMPATH%'
+  DistributeMultistep processid = 'ctramp', processNum = period
 
   loop income = 1, 6
 
@@ -181,4 +181,4 @@
   endloop ; time period loop
 
   Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
-  		             printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+  		             printfiles = save, deldistribfiles = t, CheckReturnCode = t

@@ -47,6 +47,13 @@ set TARGET_DIR=%CD%
 if not exist metrics (mkdir metrics)
 copy INPUT\metrics\BC_config.csv metrics
 
+if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
+  rem Export network to csv version (with vehicle class volumn columns intact)
+  rem Input : hwy\iter%ITER%\avgload5period.net
+  rem Output: hwy\iter%ITER%\avgload5period_vehclasses.csv
+  runtpp "CTRAMP\scripts\metrics\net2csv_avgload5period.job"
+  IF ERRORLEVEL 2 goto error
+)
 
 if not exist metrics\autos_owned.csv (
   rem Tally auto ownership from household data

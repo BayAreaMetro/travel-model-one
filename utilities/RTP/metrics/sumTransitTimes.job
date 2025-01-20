@@ -28,6 +28,8 @@
 
 *del metrics\transit_times_by_acc_mode_egr.csv
 
+counter = 0
+
 ; Loop thru transit modes
   loop path = 1,5
     ; commuter rail or long-haul premium
@@ -52,7 +54,7 @@
         token_ivt  = 'ivtLOC'
       endif
 
- DistributeMultistep processid = 'ctramp', processNum = path, commpath = '%COMMPATH%'
+
 
 ; Loop thru access + egress modes
  loop accegg = 1,3
@@ -70,6 +72,9 @@
 
       endif
 
+ counter = counter + 1
+ DistributeMultistep processid = "CTRAMP", processnum = counter
+ 
     loop age = 1,3
       if (age = 1)
         token_suffix = '_no_zpv_allinc'
@@ -195,14 +200,28 @@
       endif
     ENDRUN
 endloop
-endloop
-
 EndDistributeMultistep
 endloop
 
-Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
-                 CTRAMP4.script.end, CTRAMP5.script.end,
-           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+endloop
+
+Wait4Files files=CTRAMP1.script.end, 
+   	              CTRAMP2.script.end, 
+   	              CTRAMP3.script.end, 
+   	              CTRAMP4.script.end, 
+   	              CTRAMP5.script.end, 
+   	              CTRAMP6.script.end, 
+   	              CTRAMP7.script.end, 
+   	              CTRAMP8.script.end, 
+   	              CTRAMP9.script.end, 
+   	              CTRAMP10.script.end, 
+   	              CTRAMP11.script.end, 
+   	              CTRAMP12.script.end, 
+   	              CTRAMP13.script.end, 
+   	              CTRAMP14.script.end, 
+   	              CTRAMP15.script.end,
+           printfiles = save, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one
 * copy metrics\transit_times_by_acc_mode_egr_com.csv+metrics\transit_times_by_acc_mode_egr_hvy.csv+metrics\transit_times_by_acc_mode_egr_exp.csv+metrics\transit_times_by_acc_mode_egr_lrf.csv+metrics\transit_times_by_acc_mode_egr_loc.csv metrics\transit_times_by_acc_mode_egr.csv
@@ -219,6 +238,7 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 ; 2. Average travel cost
 
 *del metrics\transit_times_by_mode_income.csv
+counter = 0
 
 ; Loop thru transit modes
   loop path = 1,5
@@ -228,7 +248,6 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
     if (path = 4) token_path = 'lrf'
     if (path = 5) token_path = 'loc'
 
- DistributeMultistep processid = 'ctramp', processNum = path, commpath = '%COMMPATH%'
 
  ; Read means-based fare discounts from the block file
  Read File = "CTRAMP\scripts\block\trnParam.block"
@@ -240,6 +259,9 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
    if (inc = 3)  token_inc   = '_no_zpv_inc3'
    if (inc = 4)  token_inc   = '_no_zpv_inc4'
 
+ counter = counter + 1
+ DistributeMultistep processid = "CTRAMP", processnum = counter
+ 
    MBF_Discount = 1.0
    if (inc = 1)  MBF_Discount = Means_Based_Fare_Q1Factor
    if (inc = 2)  MBF_Discount = Means_Based_Fare_Q2Factor
@@ -396,15 +418,34 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
      if(I = 1 & @inc@=1 & @path@ = 1) PRINT PRINTO=1 CSV=T LIST = "Income","Mode","Daily Trips","Avg Time", "Avg Cost"
      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income,Mode,Trips,Avg_time,Avg_Cost
     ENDRUN
+  EndDistributeMultistep	
   endloop ; income
 
-  EndDistributeMultistep
+
 
 endloop
 
-Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
-                 CTRAMP4.script.end, CTRAMP5.script.end,
-           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+Wait4Files files=CTRAMP1.script.end, 
+   	              CTRAMP2.script.end, 
+   	              CTRAMP3.script.end, 
+   	              CTRAMP4.script.end, 
+   	              CTRAMP5.script.end, 
+   	              CTRAMP6.script.end, 
+   	              CTRAMP7.script.end, 
+   	              CTRAMP8.script.end, 
+   	              CTRAMP9.script.end, 
+   	              CTRAMP10.script.end, 
+   	              CTRAMP11.script.end, 
+   	              CTRAMP12.script.end, 
+   	              CTRAMP13.script.end, 
+   	              CTRAMP14.script.end, 
+   	              CTRAMP15.script.end,
+   	              CTRAMP16.script.end, 
+   	              CTRAMP17.script.end, 
+   	              CTRAMP18.script.end, 
+   	              CTRAMP19.script.end, 	
+ 	              CTRAMP20.script.end,
+           printfiles = save, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one
 * copy metrics\transit_times_by_mode_income_com.csv+metrics\transit_times_by_mode_income_hvy.csv+metrics\transit_times_by_mode_income_exp.csv+metrics\transit_times_by_mode_income_lrf.csv+metrics\transit_times_by_mode_income_loc.csv metrics\transit_times_by_mode_income.csv

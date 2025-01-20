@@ -7,6 +7,7 @@
 library(scales)
 library(dplyr)
 library(reshape2)
+library(data.table)
 
 # For RStudio, these can be set in the .Rprofile
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
@@ -307,7 +308,7 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
 
   # read in the relevant skim
   skim_file <- file.path(TARGET_DIR,"database",paste0("CostSkimsDatabase",this_timeperiod,".csv"))
-  costSkims <- read.table(file = skim_file, header=TRUE, sep=",")
+  costSkims <- fread(file = skim_file) %>% data.frame()
 
   # standardize column names, reversing if needed
   if (reverse_od) {
@@ -404,7 +405,7 @@ add_distance <- function(this_timeperiod, input_trips_or_tours) {
 
   # Read the relevant skim table
   skim_file <- file.path(TARGET_DIR,"database",paste0("DistanceSkimsDatabase",this_timeperiod,".csv"))
-  distSkims <- read.table(file = skim_file, header=TRUE, sep=",")
+  distSkims <- fread(file = skim_file) %>% data.frame()
 
   # rename columns for join
   distSkims <- distSkims %>%
@@ -479,7 +480,7 @@ add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
 
   # read in the relevant skim
   skim_file <- file.path(TARGET_DIR,"database", paste0("TimeSkimsDatabase", this_timeperiod,".csv"))
-  timeSkims   <- read.table(file = skim_file, header = TRUE, sep = ",")
+  timeSkims   <- fread(file = skim_file) %>% data.frame()
 
   # standardize column names, reversing if needed
   if (reverse_od) {
@@ -574,7 +575,7 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 
   # read in the relevant skim
   skim_file <- file.path(TARGET_DIR,"database", paste0("ActiveTimeSkimsDatabase", this_timeperiod,".csv"))
-  activeSkims <- read.table(file = skim_file,header=TRUE, sep=",")
+  activeSkims <- fread(file = skim_file) %>% data.frame()
 
   # standarize column names
   activeSkims <- activeSkims %>%

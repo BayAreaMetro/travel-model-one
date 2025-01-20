@@ -93,6 +93,8 @@ echo %FUTURE%=
 set SAMPLESHARE=0.10
 set ITER=3
 
+call zoneSystem.bat
+
 runtpp CTRAMP\scripts\database\SkimsDatabase.job
 if ERRORLEVEL 2 goto done
 

@@ -21,9 +21,9 @@ Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set PARAMS
 
 Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set BP_OVERRIDE_DIR=D:\Projects\BCM\2015_BaseY_BCM2015\travel-model-overrides 
 
-Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>for /F "delims=[] tokens=2" %a in ('ping -4 -n 1 VUS22-603-0061 | findstr [') do set HOST_IP_ADDRESS=%a 
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>for /F "delims=[] tokens=2" %a in ('ping -4 -n 1 VUS22-603-0105 | findstr [') do set HOST_IP_ADDRESS=%a 
 
-Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set HOST_IP_ADDRESS=10.246.226.202 
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set HOST_IP_ADDRESS=10.246.226.206 
 
 Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>SET HOST_IP_ADDRESS=localhost 
 
@@ -58,7 +58,7 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    ROBOCOPY     ::     Robust File Copy for Windows                              
 -------------------------------------------------------------------------------
 
-  Started : Monday, October 28, 2024 1:53:57 PM
+  Started : Monday, January 20, 2025 11:29:25 AM
    Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\model\
      Dest : D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\model\
 
@@ -117,9 +117,9 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
 
 
-   Speed :            32288255 Bytes/sec.
-   Speed :            1847.548 MegaBytes/min.
-   Ended : Monday, October 28, 2024 1:53:57 PM
+   Speed :            74823682 Bytes/sec.
+   Speed :            4281.445 MegaBytes/min.
+   Ended : Monday, January 20, 2025 11:29:26 AM
 
 
 D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime"     CTRAMP\runtime 
@@ -128,7 +128,7 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    ROBOCOPY     ::     Robust File Copy for Windows                              
 -------------------------------------------------------------------------------
 
-  Started : Monday, October 28, 2024 1:53:57 PM
+  Started : Monday, January 20, 2025 11:29:26 AM
    Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\
      Dest : D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\runtime\
 
@@ -283,12 +283,12 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
     Dirs :        23        22         1         0         0         0
    Files :       115       115         0         0         0         0
    Bytes :   49.53 m   49.53 m         0         0         0         0
-   Times :   0:00:01   0:00:01                       0:00:00   0:00:00
+   Times :   0:00:01   0:00:00                       0:00:00   0:00:00
 
 
-   Speed :            45881619 Bytes/sec.
-   Speed :            2625.367 MegaBytes/min.
-   Ended : Monday, October 28, 2024 1:53:59 PM
+   Speed :            54045778 Bytes/sec.
+   Speed :            3092.524 MegaBytes/min.
+   Ended : Monday, January 20, 2025 11:29:27 AM
 
 
 D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts"     CTRAMP\scripts 
@@ -297,7 +297,7 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    ROBOCOPY     ::     Robust File Copy for Windows                              
 -------------------------------------------------------------------------------
 
-  Started : Monday, October 28, 2024 1:53:59 PM
+  Started : Monday, January 20, 2025 11:29:27 AM
    Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\
      Dest : D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\scripts\
 
@@ -310,9 +310,9 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 	                   0	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\
 	*EXTRA Dir        -1	D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\scripts\metrics\
 	  New Dir          4	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\assign\
-	    New File  		   34053	HwyAssign_32core.job100%  
-	    New File  		   21454	HwyAssign_64core.job100%  
-	    New File  		   42541	PrepAssign.job100%  
+	    New File  		   34077	HwyAssign_32core.job100%  
+	    New File  		   21466	HwyAssign_64core.job100%  
+	    New File  		   42552	PrepAssign.job100%  
 	    New File  		   22099	TransitAssign.job100%  
 	  New Dir         18	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\block\
 	    New File  		   37015	Capclass_Speed_Capacity.xlsx100%  
@@ -336,7 +336,7 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 	  New Dir         14	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\core_summaries\
 	    New File  		    8299	AccessibilityMarkets.R100%  
 	    New File  		   10179	ConsolidateLoadedTransit.R100%  
-	    New File  		   78346	CoreSummaries.R100%  
+	    New File  		   78324	CoreSummaries.R100%  
 	    New File  		   13082	csvToTableauExtract.py100%  
 	    New File  		   13081	csvTotableausdk_Extract.py100%  
 	    New File  		    6290	logsumJoiner.R100%  
@@ -349,7 +349,7 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 	    New File  		   10960	transit_aggregate.r100%  
 	    New File  		     308	wfh_by_industry.csv100%  
 	  New Dir          1	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\database\
-	    New File  		   19408	SkimsDatabase.JOB100%  
+	    New File  		   19415	SkimsDatabase.JOB100%  
 	  New Dir          6	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\emfac\
 	    New File  		    9132	BetweenZonesVMT.py100%  
 	    New File  		   25570	CreateSpeedBinsWithinZones.job100%  
@@ -371,17 +371,17 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 	    New File  		  102349	emfac_flow_chart.png100%  
 	  New Dir          5	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\feedback\
 	    New File  		    8252	AverageNetworkVolumes.job100%  
-	    New File  		   10938	CalculateSpeeds.job100%  
+	    New File  		   10950	CalculateSpeeds.job100%  
 	    New File  		   16017	MergeNetworks.job100%  
 	    New File  		    6041	RenameAssignmentVariables.job100%  
 	    New File  		   11540	TestNetworkConvergence.job100%  
 	  New Dir         12	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\nonres\
-	    New File  		   47862	BCMAirport.job100%  
-	    New File  		   16796	BCMTrucks.job100%  
-	    New File  		    1901	create_trip_totals.py100%  
+	    New File  		   49341	BCMAirport.job100%  
+	    New File  		   17110	BCMTrucks.job100%  
+	    New File  		    2039	create_trip_totals.py100%  
 	    New File  		   15100	HsrTransitSubmodeChoice.job100%  
 	    New File  		   16097	IxForecasts.job100%  
-	    New File  		    9495	IxForecasts_horizon.job100%  
+	    New File  		    9541	IxForecasts_horizon.job100%  
 	    New File  		    4152	IxTimeOfDay.job100%  
 	    New File  		   12155	IxTollChoice.job100%  
 	    New File  		    5834	TruckTimeOfDay.job100%  
@@ -389,12 +389,12 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 	    New File  		    7021	TruckTripDistribution.job100%  
 	    New File  		    7557	TruckTripGeneration.job100%  
 	  New Dir         22	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\preprocess\
-	    New File  		    6235	BuildTazNetworks.job100%  
+	    New File  		    6375	BuildTazNetworks.job100%  
 	    New File  		    4216	codeLinkAreaType.py100%  
-	    New File  		    4449	CreateFiveHighwayNetworks.job100%  
+	    New File  		    4468	CreateFiveHighwayNetworks.job100%  
 	    New File  		    1635	CreatePnRList.job100%  
 	    New File  		    7889	createTazDensityFile.py100%  
-	    New File  		    5757	create_pnr_connectors.py100%  
+	    New File  		    5893	create_pnr_connectors.py100%  
 	    New File  		    3287	csvToDbf.py100%  
 	    New File  		    3119	filterUnconnectedDummyHouseholds.py100%  
 	    New File  		    5015	HsrTripGeneration.job100%  
@@ -412,19 +412,19 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 	    New File  		    9674	zone_seq_disseminator.py100%  
 	    New File  		    3271	zone_seq_net_builder.job100%  
 	  New Dir         22	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\skims\
-	    New File  		   23879	Accessibility.job100%  
+	    New File  		   23886	Accessibility.job100%  
 	    New File  		   27317	accessibilityCom.job100%  
 	    New File  		   27323	accessibilityDrvTrn.job100%  
-	    New File  		   15757	BuildTransitNetworks.job100%  
+	    New File  		   15861	BuildTransitNetworks.job100%  
 	    New File  		    4355	convert_to_dbf.R100%  
 	    New File  		     583	createLocalBusKNRs.awk100%  
 	    New File  		    2430	CreateNonMotorizedNetwork.job100%  
-	    New File  		    8043	create_optimal_suplinks.py100%  
+	    New File  		    8205	create_optimal_suplinks.py100%  
 	    New File  		     300	FindNoAccessZones.job100%  
 	    New File  		   31533	HwySkims_32core.job100%  
 	    New File  		   25718	HwySkims_64core.job100%  
 	    New File  		    3807	NonMotorizedSkims.job100%  
-	    New File  		    8437	PrepHwyNet.job100%  
+	    New File  		    8445	PrepHwyNet.job100%  
 	    New File  		     604	reverseLinks.awk100%  
 	    New File  		    5187	routeLinkMSA.py100%  
 	    New File  		   11168	routeLinkMSA_Update.py100%  
@@ -444,9 +444,9 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
 
 
-   Speed :            11324450 Bytes/sec.
-   Speed :             647.990 MegaBytes/min.
-   Ended : Monday, October 28, 2024 1:54:00 PM
+   Speed :            15251200 Bytes/sec.
+   Speed :             872.680 MegaBytes/min.
+   Ended : Monday, January 20, 2025 11:29:28 AM
 
 
 D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\metrics"   CTRAMP\scripts\metrics 
@@ -455,7 +455,7 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    ROBOCOPY     ::     Robust File Copy for Windows                              
 -------------------------------------------------------------------------------
 
-  Started : Monday, October 28, 2024 1:54:00 PM
+  Started : Monday, January 20, 2025 11:29:28 AM
    Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\metrics\
      Dest : D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\scripts\metrics\
 
@@ -473,14 +473,14 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 	    New File  		   22140	countTrips.py100%  
 	    New File  		   14763	debugAirportTravel.job100%  
 	    New File  		    1999	fix_hwynet_rows.py100%  
-	    New File  		   20682	hwynet.py100%  
+	    New File  		   20910	hwynet.py100%  
 	    New File  		    2828	joinTripsWithIncome.R100%  
 	    New File  		  483435	King-cobra.png 27%   54%   81%  100%  
 	    New File  		  402019	logsum_diff.twb 32%   65%   97%  100%  
 	    New File  		    5203	mapAccessibilityDiffs.py100%  
 	    New File  		    5541	net2csv_avgload5period.job100%  
 	    New File  		  128312	pba50_metrics.py100%  
-	    New File  		    8503	prepAssignIncome.job100%  
+	    New File  		    8477	prepAssignIncome.job100%  
 	    New File  		     903	quickboards.bat100%  
 	    New File  		     612	quickboards.ctl100%  
 	    New File  		   92457	QuickSummary.twb100%  
@@ -490,10 +490,10 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 	    New File  		  173720	RunResults.py 75%  100%  
 	    New File  		   39897	scenarioMetrics.py100%  
 	    New File  		    4256	setupCobraForRunSet.py100%  
-	    New File  		   54181	sumAutoTimes.job100%  
+	    New File  		   54155	sumAutoTimes.job100%  
 	    New File  		   77899	sumAutoTimes_HorizonRound2_TP_MeansBasedTolls.job100%  
 	    New File  		    4012	sumNonmotTimes.job100%  
-	    New File  		   18326	sumTransitTimes.job100%  
+	    New File  		   19508	sumTransitTimes.job100%  
 	    New File  		    1472	tallyAutos.py100%  
 	    New File  		   14481	tallyParking.R100%  
 	    New File  		    7846	topsheet.R100%  
@@ -512,9 +512,9 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
 
 
-   Speed :             7337571 Bytes/sec.
-   Speed :             419.859 MegaBytes/min.
-   Ended : Monday, October 28, 2024 1:54:00 PM
+   Speed :             7342336 Bytes/sec.
+   Speed :             420.131 MegaBytes/min.
+   Ended : Monday, January 20, 2025 11:29:28 AM
 
 
 D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\monitoring\notify_slack.py"                CTRAMP\scripts 
@@ -577,7 +577,7 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    ROBOCOPY     ::     Robust File Copy for Windows                              
 -------------------------------------------------------------------------------
 
-  Started : Monday, October 28, 2024 1:54:01 PM
+  Started : Monday, January 20, 2025 11:29:29 AM
    Source : Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\trn\
      Dest : D:\Scenarios\2020_BaseY_BCM2020\INPUT\trn\
 
@@ -613,9 +613,9 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
 
 
-   Speed :             2850297 Bytes/sec.
-   Speed :             163.095 MegaBytes/min.
-   Ended : Monday, October 28, 2024 1:54:01 PM
+   Speed :             3307753 Bytes/sec.
+   Speed :             189.271 MegaBytes/min.
+   Ended : Monday, January 20, 2025 11:29:29 AM
 
 
 D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\transit.lin"                                        	INPUT\trn\transit.lin 
@@ -660,7 +660,7 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
    ROBOCOPY     ::     Robust File Copy for Windows                              
 -------------------------------------------------------------------------------
 
-  Started : Monday, October 28, 2024 1:54:02 PM
+  Started : Monday, January 20, 2025 11:29:31 AM
    Source : Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\
      Dest : D:\Scenarios\2020_BaseY_BCM2020\INPUT\nonres\
 
@@ -670,9 +670,10 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 
 ------------------------------------------------------------------------------
 
-	  New Dir         11	Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\
+	  New Dir         12	Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\
 	    New File  		     290	2015_XX_Trips.DBF100%  
 	    New File  		   17669	AC10IXXI.DBF100%  
+	    New File  		    1039	airport_enplanements.dbf100%  
 	    New File  		   1.2 m	ixDaily2015.tpp 20%   40%   61%   81%  100%  
 	    New File  		    1086	ixDaily2015_totals.csv100%  
 	    New File  		     578	ixex_config.csv100%  
@@ -695,62 +696,25 @@ D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects
 
                Total    Copied   Skipped  Mismatch    FAILED    Extras
     Dirs :         3         3         0         0         0         0
-   Files :        17        17         0         0         0         0
+   Files :        18        18         0         0         0         0
    Bytes :    2.47 m    2.47 m         0         0         0         0
    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
 
 
-   Speed :            22784877 Bytes/sec.
-   Speed :            1303.761 MegaBytes/min.
-   Ended : Monday, October 28, 2024 1:54:02 PM
+   Speed :            37121642 Bytes/sec.
+   Speed :            2124.117 MegaBytes/min.
+   Ended : Monday, January 20, 2025 11:29:31 AM
 
 
-D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\telecommute"   		   				INPUT\landuse 
+D:\Scenarios\2020_BaseY_BCM2020>mkdir INPUT\metrics 
 
--------------------------------------------------------------------------------
-   ROBOCOPY     ::     Robust File Copy for Windows                              
--------------------------------------------------------------------------------
-
-  Started : Monday, October 28, 2024 1:54:03 PM
-   Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\telecommute\
-     Dest : D:\Scenarios\2020_BaseY_BCM2020\INPUT\landuse\
-
-    Files : *.*
-	    
-  Options : *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
-
-------------------------------------------------------------------------------
-
-	                   8	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\telecommute\
-	  *EXTRA File 		  248657	IZ_OZ_PCT_EXT.dat
-	  *EXTRA File 		  110186	SD2TAZ_KF.prn
-	  *EXTRA File 		  119068	TAZ2CO.prn
-	  *EXTRA File 		  118691	TAZ2COUNTY.prn
-	  *EXTRA File 		   56906	TAZ2SD.prn
-	  *EXTRA File 		   64838	walkAccessBuffers.float.csv
-	  *EXTRA File 		   3.2 m	ZMAST.dbf
-	    New File  		    6863	calibrateTelecommute.bat100%  
-	    New File  		  409007	telecommute.twb 32%   64%   96%  100%  
-	    New File  		   20291	telecommute_constants_2025.csv100%  
-	    New File  		   20291	telecommute_constants_2030.csv100%  
-	    New File  		   24018	telecommute_constants_2035.csv100%  
-	    New File  		   29694	telecommute_constants_2040.csv100%  
-	    New File  		   23886	telecommute_constants_2050.csv100%  
-	    New File  		     733	telecommute_max_rate_county.csv100%  
-
-------------------------------------------------------------------------------
-
-               Total    Copied   Skipped  Mismatch    FAILED    Extras
-    Dirs :         1         0         1         0         0         0
-   Files :         8         8         0         0         0         7
-   Bytes :   522.2 k   522.2 k         0         0         0    3.88 m
-   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
-
-
-   Speed :            10913938 Bytes/sec.
-   Speed :             624.500 MegaBytes/min.
-   Ended : Monday, October 28, 2024 1:54:03 PM
-
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\metrics\*.*"                                                     		INPUT\metrics 
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\metrics\BC_config.csv
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\metrics\emissionsLookup.csv
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\metrics\nodes.xls
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\metrics\nonRecurringDelayLookup.csv
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\metrics\transitModeAndLine.csv
+        5 file(s) copied.
 
 D:\Scenarios\2020_BaseY_BCM2020>set PREV_RUN_DIR=Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart 
 
@@ -803,8 +767,8 @@ D:\Scenarios\2020_BaseY_BCM2020>set TELECOMMUTE_CONFIG=Z:\projects\ccta\31000190
 
 D:\Scenarios\2020_BaseY_BCM2020>mkdir main 
 
-D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\telecommute_constants_2020.csv" "main/telecommute_constants_00.csv" 
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\telecommute_constants_2020.csv" "INPUT/landuse/telecommute_constants.csv" 
         1 file(s) copied.
 
-D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\telecommute_constants_2020.csv" "main/telecommute_constants.csv" 
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\telecommute_max_rate_county.csv" "INPUT/landuse/telecommute_max_rate_county.csv" 
         1 file(s) copied.
