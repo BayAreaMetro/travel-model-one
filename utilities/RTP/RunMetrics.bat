@@ -173,15 +173,15 @@ if not exist metrics\transit_boards_miles.csv (
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
 )
 
-if not exist metrics\transit_crowding.csv (
-  rem Summarize transit crowding
-  rem Input: \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\transitSeatCap.csv
-  rem        trn\trnlink[timeperiod]_ALLMSA.dbf
-  rem Output: metrics\transit_crowding_complete.csv
-  rem         metrics\transit_crowding.csv
-  rem         metrics\transit_crowding.log
-  call python "%CODE_DIR%\transitcrowding.py" .
-)
+rem       if not exist metrics\transit_crowding.csv (
+rem         rem Summarize transit crowding
+rem         rem Input: \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\transitSeatCap.csv
+rem         rem        trn\trnlink[timeperiod]_ALLMSA.dbf
+rem         rem Output: metrics\transit_crowding_complete.csv
+rem         rem         metrics\transit_crowding.csv
+rem         rem         metrics\transit_crowding.log
+rem         call python "%CODE_DIR%\transitcrowding.py" .
+rem       )
 
 :topsheet
 if not exist metrics\topsheet.csv (
