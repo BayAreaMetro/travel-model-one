@@ -27,12 +27,12 @@ def post_message(message):
     f.close()
     print("Read slack webhook URL: {}".format(SLACK_WEBHOOK_URL))
 
+    full_message = f"*{instance}*: {message}"
     headers  = { 'Content-type':'application/json'}
-    data     = { "text": message }
+    data     = { "text": full_message }
     if SLACK_WEBHOOK_URL:
         response = requests.post(SLACK_WEBHOOK_URL, headers=headers, json=data)
 
-    full_message = f"*{instance}*: {message}"
     print("*** {}".format(full_message))
     print("response: {}".format(response))
     print("")
