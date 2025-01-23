@@ -41,7 +41,7 @@ if not exist logsums\ShadowPricing_7.csv (
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
 if ERRORLEVEL 1 goto done
 
-:: List unconnected zones in skims\unconnected_zones.dbf
+:: List unconnected zones in skims\unconnected_zones.csv
 runtpp CTRAMP\scripts\skims\FindNoAccessZones.job
 if ERRORLEVEL 2 goto done
 
