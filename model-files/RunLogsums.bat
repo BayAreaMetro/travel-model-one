@@ -46,7 +46,7 @@ runtpp CTRAMP\scripts\skims\FindNoAccessZones.job
 if ERRORLEVEL 2 goto done
 
 :: Filter out households in those unconnected zones
-python CTRAMP\scripts\preprocess\filterUnconnectedDummyHouseholds.py
+python CTRAMP\scripts\preprocess\filterUnconnectedHouseholds.py logsum
 if ERRORLEVEL 1 goto done
 
 :: ------------------------------------------------------------------------------------------------------

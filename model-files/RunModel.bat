@@ -167,11 +167,11 @@ mkdir logsums
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt 
 
-:: Move the input files, which are not accessed by the model, to the working directories
+:: Copy the input files, which are not accessed by the model, to the working directories
+:: popsyn files will be copied by filterUnconnectedHouseholds.py
 copy INPUT\hwy\                 hwy\
 copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
-copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
