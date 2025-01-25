@@ -571,7 +571,7 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
   )
   source_county_df <- left_join(
     source_county_df, 
-    select(GQ_PUMS1YEAR_SUMMARY, County_Name, gq_type_univ, gq_type_mil, gq_type_othnon, gqpop) %>% rename(
+    select(detailed_GQ_county_targets, County_Name, gq_type_univ, gq_type_mil, gq_type_othnon, gqpop) %>% rename(
       gq_type_univ_target   = gq_type_univ,
       gq_type_mil_target    = gq_type_mil,
       gq_type_othnon_target = gq_type_othnon,
