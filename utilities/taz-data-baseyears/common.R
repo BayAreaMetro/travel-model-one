@@ -281,7 +281,7 @@ update_tazdata_to_county_target <- function(source_df, target_df, sum_var, parti
         
   print("Regional totals:")
   print(source_df %>% select(all_of(c(sum_var, partial_vars))) %>% summarise(across(where(is.numeric), sum)))
-  print(sprintf("Compare to target_df %s total=%d:", sum_var_target, 
+  print(sprintf("Compare to target_df %s total=%d", sum_var_target, 
     target_df %>% summarise(sum = sum(!!sym(sum_var_target))) %>% pull(sum)))
   return(source_df)
 }
@@ -560,7 +560,7 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
   print("source_df:")
   print(source_df)
 
-  # Now we have detailed targets in GQ_PUMS1YEAR_SUMMARY, so we'll update source_df to match
+  # Now we have detailed targets in detailed_GQ_county_targets, so we'll update source_df to match
   # First, summarize to county and join with targets and calculate diffs
   source_county_df <- source_df %>% group_by(County_Name) %>% summarize(
     gq_type_univ   = sum(gq_type_univ),
@@ -593,14 +593,18 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
   source_df <- update_disaggregate_data_to_aggregate_targets(source_df, source_county_df, "TAZ1454", "County_Name", "gq_type_mil")
   source_df <- update_disaggregate_data_to_aggregate_targets(source_df, source_county_df, "TAZ1454", "County_Name", "gq_type_othnon")
   source_df <- source_df %>% mutate(gqpop = gq_type_univ + gq_type_mil + gq_type_othnon)
-  print("Resuting group quarters by county:")
-  print(source_df %>% group_by(County_Name) %>% summarize(
+
+  source_df_bycounty <- source_df %>% 
+  group_by(County_Name) %>% summarize(
     gq_type_univ   = sum(gq_type_univ),
     gq_type_mil    = sum(gq_type_mil),
     gq_type_othnon = sum(gq_type_othnon),
     gqpop          = sum(gqpop),
     .groups = 'drop'
-  ))
+  )
+  print("Resulting group quarters by county:")
+  print(source_df_bycounty)
+  print(source_df_bycounty %>% summarise(across(where(is.numeric), sum)))
 
   return(list(source_df=source_df, detailed_GQ_county_targets=detailed_GQ_county_targets))
 }
@@ -619,7 +623,7 @@ update_empres_to_county_totals <- function(source_df, target_EMPRES_df) {
   print("########################## update_empres_to_county_totals() ##########################")
   # copy only needed target columns
   target_df <- select(target_EMPRES_df, County_Name, EMPRES_target)
-  print(sprintf("target_EMPRES_df EMPRES_target total=%d:", sum(target_df$EMPRES_target)))
+  print(sprintf("target_EMPRES_df EMPRES_target total=%d", sum(target_df$EMPRES_target)))
 
   # first, summarize existing pers_occ by county
   source_empres_county <- source_df %>% group_by(County_Name) %>% summarize(
@@ -682,7 +686,7 @@ update_empres_to_county_totals <- function(source_df, target_EMPRES_df) {
   source_df <- source_df %>% mutate(EMPRES = pers_occ_management + pers_occ_professional + pers_occ_services +
                                              pers_occ_retail + pers_occ_manual + pers_occ_military)
 
-  print("Resuting empres and pers_occ by county :")
+  print("Resulting empres and pers_occ by county :")
   print(source_df %>% group_by(County_Name) %>% summarize(
     EMPRES                = sum(EMPRES),
     pers_occ_management   = sum(pers_occ_management),

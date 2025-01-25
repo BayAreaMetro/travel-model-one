@@ -763,6 +763,7 @@ if (ACS_5year < ACS_PUMS_1year+2) {
 
   print("ACS_1year_target:")
   print(ACS_1year_target)
+  print(ACS_1year_target %>% summarise(across(where(is.numeric), sum)))
 
   # replace in county_targets
   county_targets <- county_targets %>% 
@@ -805,6 +806,7 @@ county_targets <- county_targets %>%
   ) %>% select(-EMPRES_LEHD_target)
 print("county_targets after adjustment:")
 print(county_targets)
+print(county_targets %>% summarise(across(where(is.numeric), sum)))
 
 ###############################################################################################################################################
 # Implement county_targets
