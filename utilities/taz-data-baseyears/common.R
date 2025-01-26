@@ -488,16 +488,10 @@ map_ACS5year_household_income_to_TM1_categories <- function(ACS_year) {
 #
 # Returns:
 #   source_df with updated data in columns gq_type_[mil,othnon,univ], gqpop
-#   estimated detailed_GQ_county_targets with columns:
-#     id variable: County_Name
-#     GQ variables: gq_type_[mil,othnon,univ], gqpop
-#     GQ population variables: AGE[0004,0519,2044,4564,65P], sum_age, where sum_age==gqpop
-#     GQ employed resident variables: pers_occ_[management,professional,services,retail,manual,military], EMPRES
-#         where EMPRES = (GQ_PUMS1YEAR_SUMMARY$EMPRES / GQ_PUMS1YEAR_SUMMARY$gqpop) * gqpop
-#         In other words, we assume that the share of PUMS1 GQ population that was employed remains the same
-update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year) {
+#
+update_gqpop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year) {
 
-  print(sprintf("########################## update_gqop_to_county_totals(%d) ##########################", ACS_PUMS_1year))
+  print(sprintf("########################## update_gqpop_to_county_totals(%d) ##########################", ACS_PUMS_1year))
   # copy only needed target columns
   target_df <- select(target_GQ_df, County_Name, GQPOP_target)
   print(sprintf("target_df with GQPOP_target total=%d:", sum(target_df$GQPOP_target)))
@@ -608,7 +602,11 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
   print(source_df_bycounty)
   print(source_df_bycounty %>% summarise(across(where(is.numeric), sum)))
 
-  return(list(source_df=source_df, detailed_GQ_county_targets=detailed_GQ_county_targets))
+  print("regional_summary of source_df being returned:")
+  regional_summary <- source_df %>% summarise(across(where(is.numeric), sum))
+  print(format(t(regional_summary), scientific = FALSE))
+
+  return(source_df)
 }
 
 # Update empres population in source_df to totals in target_EMPRES_df.

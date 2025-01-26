@@ -827,12 +827,9 @@ print(county_targets %>% summarise(across(where(is.numeric), sum)))
   
 # update from most specific to least specific
 # 1. group quarters population (includes employed residents and persons by age)
-return_list <- update_gqop_to_county_totals(tazdata_census, county_targets, ACS_PUMS_1year)
-tadata_census              <- return_list$source_df
-detailed_GQ_county_targets <- return_list$detailed_GQ_county_targets
+tazdata_census <- update_gqpop_to_county_totals(tazdata_census, county_targets, ACS_PUMS_1year)
 
 # 2. employed residents (not including households by workers)
-tazdata_census_orig   <- update_empres_to_county_totals(tazdata_census, county_targets)
 
 # use the generic version to verify these do the same thing (they do!)
 tazdata_census <- update_tazdata_to_county_target(
@@ -911,11 +908,18 @@ tazdata_census <- make_hhsizes_consistent_with_population(
   size_or_workers       = "hh_wrks",
   popsyn_ACS_PUMS_5year = 2021
 )
+# TOTHH = sum_size = sum_hh_wrks
+tazdata_census <- tazdata_census %>% mutate(
+  TOTHH = sum_size,
+  TOTPOP = HHPOP + gqpop,
+)
 
-print(paste0("tazdata_census (", nrow(tazdata_census)," rows):"))
+print(paste0("FINAL tazdata_census (", nrow(tazdata_census)," rows):"))
 print(tazdata_census)
-# print("str(tazdata_census):")
-# print(str(tazdata_census))
+
+print("FINAL tazdata_census sums:")
+regional_summary <- tazdata_census %>% summarise(across(where(is.numeric), sum))
+print(format(t(regional_summary), scientific = FALSE))
 
 # Remove sum variables
 tazdata_census <- tazdata_census %>%
