@@ -279,8 +279,10 @@ update_tazdata_to_county_target <- function(source_df, target_df, sum_var, parti
   print(source_df %>% group_by(County_Name) %>% 
         summarise(across(all_of(c(sum_var, partial_vars)), sum, .names = "{col}"), .groups = 'drop'))
         
-  print("Regional totals:")
-  print(source_df %>% select(all_of(c(sum_var, partial_vars))) %>% summarise(across(where(is.numeric), sum)))
+  print("regional_summary of source_df being returned:")
+  regional_summary <- source_df %>% summarise(across(where(is.numeric), sum))
+  print(format(t(regional_summary), scientific = FALSE))
+
   print(sprintf("Compare to target_df %s total=%d", sum_var_target, 
     target_df %>% summarise(sum = sum(!!sym(sum_var_target))) %>% pull(sum)))
   return(source_df)
@@ -920,38 +922,42 @@ make_hhsizes_consistent_with_population <- function(source_df, target_df, size_o
   print("source_df with new replacements")
   print(source_df %>% select(all_of(c("County_Name","TAZ1454","big_cat_avg",partial_vars))))
 
-  # recalculate sum_var and pop_var_est
+  # recalculate sum_var and pop_var (which is now estimated)
   if (size_or_workers == "hh_size") {
     source_df <- source_df %>% mutate(
       !!sum_var     := hh_size_1 + hh_size_2 + hh_size_3 + hh_size_4_plus,
-      !!pop_var_est := (hh_size_1*1) + (hh_size_2*2) + (hh_size_3*3) + (hh_size_4_plus*big_cat_avg)
+      !!pop_var     := (hh_size_1*1) + (hh_size_2*2) + (hh_size_3*3) + (hh_size_4_plus*big_cat_avg),
     )
   } else if (size_or_workers == "hh_wrks") {
     source_df <- source_df %>% mutate(
       !!sum_var     := hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus,
-      !!pop_var_est := (hh_wrks_1*1) + (hh_wrks_2*2) + (hh_wrks_3_plus*big_cat_avg)
+      !!pop_var     := (hh_wrks_1*1) + (hh_wrks_2*2) + (hh_wrks_3_plus*big_cat_avg)
     )
   }
 
   print("Returning source_df:")
-  print(source_df %>% select(all_of(c("County_Name","TAZ1454",partial_vars,sum_var,pop_var_est))))
+  print(source_df %>% select(all_of(c("County_Name","TAZ1454",partial_vars,sum_var,pop_var))))
   source_df <- source_df %>% select(-big_cat_avg) # don't return this column
 
   # summarize final totals for sum_var and partial_vars
   source_county_summary <- source_df %>% group_by(County_Name) %>%
-    summarise(across(all_of(c(sum_var, partial_vars, pop_var_est)), sum, .names = "{col}"), .groups = 'drop')
+    summarise(across(all_of(c(sum_var, partial_vars, pop_var)), sum, .names = "{col}"), .groups = 'drop')
   # join with target_df for pop_var_target
   source_county_summary <- left_join(source_county_summary, target_df,  by="County_Name")
   # calculate diff from target
   source_county_summary <- source_county_summary %>% mutate(
-    !!pop_var_diff := !!sym(pop_var_target) - !!sym(pop_var_est)
+    !!pop_var_diff := !!sym(pop_var_target) - !!sym(pop_var)
   )  
   print(sprintf("source_county_summary (regional %s=%.0f %s=%.0f %s=%.0f):",
-    pop_var_est,    source_county_summary %>% summarise(sum = sum(!!sym(pop_var_est)))    %>% pull(sum),
+    pop_var,        source_county_summary %>% summarise(sum = sum(!!sym(pop_var)))        %>% pull(sum),
     pop_var_target, source_county_summary %>% summarise(sum = sum(!!sym(pop_var_target))) %>% pull(sum),
     pop_var_diff,   source_county_summary %>% summarise(sum = sum(!!sym(pop_var_diff)))   %>% pull(sum)
   ))
   print(source_county_summary)
+
+  print("regional_summary of source_df being returned:")
+  regional_summary <- source_df %>% summarise(across(where(is.numeric), sum))
+  print(format(t(regional_summary), scientific = FALSE))
 
   return(source_df)
 }
