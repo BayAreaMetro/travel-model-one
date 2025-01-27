@@ -924,12 +924,12 @@ make_hhsizes_consistent_with_population <- function(source_df, target_df, size_o
   if (size_or_workers == "hh_size") {
     source_df <- source_df %>% mutate(
       !!sum_var     := hh_size_1 + hh_size_2 + hh_size_3 + hh_size_4_plus,
-      !!pop_var     := (hh_size_1*1) + (hh_size_2*2) + (hh_size_3*3) + (hh_size_4_plus*big_cat_avg),
+      !!pop_var     := round((hh_size_1*1) + (hh_size_2*2) + (hh_size_3*3) + (hh_size_4_plus*big_cat_avg))
     )
   } else if (size_or_workers == "hh_wrks") {
     source_df <- source_df %>% mutate(
       !!sum_var     := hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus,
-      !!pop_var     := (hh_wrks_1*1) + (hh_wrks_2*2) + (hh_wrks_3_plus*big_cat_avg)
+      !!pop_var     := round((hh_wrks_1*1) + (hh_wrks_2*2) + (hh_wrks_3_plus*big_cat_avg))
     )
   }
 
