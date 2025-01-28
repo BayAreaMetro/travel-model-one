@@ -5,29 +5,24 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\Blueprint\2035_TM160_DBP_Plan_01
+set M_DIR=M:\Application\Model One\RTP2025\Blueprint\2035_TM161_FBP_Plan_01
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
+set EN7=ENABLED
 
 :: set the location of the Travel Model Release
-:: use the v1.6_develop branch for now until we create a release
-set GITHUB_DIR=X:\travel-model-one-master
+set GITHUB_DIR=X:\travel-model-one-v1.6.1_develop
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-:: set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_64\net_2035_Blueprint
-set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v16\net_2035_Blueprint
+set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v20\net_2035_Blueprint
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-:: this path is updated since PBA50 because the tazdata file now requires the CORDON and CORDONCOST column
-set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\BAUS_DBP_v01\2035
-
-:: specify tazDataFileName
-set tazDataFileName=tazData_parkingStrategy_v01
+set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\BAUS_FBP_v01\2035
 
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
-:: set UrbanSimScenario=s24
+set UrbanSimScenario=s24
 
 :: set the location of the input directories for non resident travel, logsums and metrics
 set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_06
@@ -36,20 +31,15 @@ set METRICS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_16
+set PREV_RUN_DIR=M:\Application\Model One\RTP2025\Blueprint\2050_TM160_DBP_Plan_08b
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=X:\travel-model-one-master\utilities\RTP\config_RTP2025\params_2035_Blueprint.properties
+set PARAMS=X:\travel-model-one-v1.6.1_develop\utilities\RTP\config_RTP2025\params_2035_Blueprint.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=%GITHUB_DIR%\utilities\RTP\strategy_overrides
 
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 2:  Set up folder structure and copy CTRAMP
-::
-:: ------------------------------------------------------------------------------------------------------
 
 :: --------------------------------------------
 :: before setting up the folder structure and copying CTRAMP
@@ -83,9 +73,12 @@ goto :end
 
 :continue
 
-:: --------------------------------------------
 
-
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 2:  Set up folder structure and copy CTRAMP
+::
+:: ------------------------------------------------------------------------------------------------------
 
 SET computer_prefix=%computername:~0,4%
 
@@ -230,16 +223,14 @@ copy /Y INPUT\nonres\tripsAirPaxAM.tpp  INPUT\nonres\tripsAirPaxAM.tpp
 :: Step 4: Overrides for Blueprint Strategies
 ::
 :: ------------------------------------------------------------------------------------------------------
-:: AddStrategies section will enable this if appropriate
-set EN7=DISABLED
 if %AddStrategies%==No goto DoneAddingStrategies
 
 :: ----------------------------------------
 :: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
 :: -----------------------------------------
 if %MODEL_YEAR_NUM% GEQ 2035 (
-  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\%tazDataFileName%.csv"  INPUT\landuse\tazData.csv
-  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\%tazDataFileName%.dbf"  INPUT\landuse\tazData.dbf
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.csv"  INPUT\landuse\tazData.csv
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"  INPUT\landuse\tazData.dbf
 )
 
 :: another part of this strategy is to turn off free parking eligibility, which is done via the properties file.
@@ -253,10 +244,12 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: See: https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/skims/PrepHwyNet.job#L163
 :: To allow the links to have different BRT values for different time periods, a few additional lines of code is added to CreateFiveHighwayNetworks.job.
 
-if %MODEL_YEAR_NUM% GEQ 2035 (
+:: TODO: LMZ disabling this as I don't think these projects are in the FBP
+:: Also, this should be done in a more robust way if we do these, and not via SetUpModel.bat
+if %MODEL_YEAR_NUM% GEQ 3035 (
   copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
-  copy /Y  "M:\Application\Model One\NetworkProjects\_backup_20230719\FBP_MR_018_US101_BOS\mod_links.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
-  copy /Y  "M:\Application\Model One\NetworkProjects\_backup_20230719\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
+  copy /Y  "M:\Application\Model One\NetworkProjects\FBP_MR_018_US101_BOS\mod_links.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
+  copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
   copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
 )
 
@@ -300,14 +293,6 @@ if %MODEL_YEAR_NUM% GEQ 2025 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 :: Bay Skyway (formerly Bay Bridge West Span Bike Path)
 if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2045onwards.job"   "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
 
-:: ------
-:: Blueprint EN7 Expand Commute Trip Reduction Programs at Major Employers
-:: ------
-if %MODEL_YEAR_NUM% GEQ 2035 (
-  set EN7=ENABLED
-) ELSE (
-  set EN7=DISABLED
-)
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
@@ -316,7 +301,7 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 ::
 :: ------------------------------------------------------------------------------------------------------
 :: in case the TM release is behind, this is where we copy the most up-to-date scripts from master
-set GITHUB_MASTER=\\tsclient\X\travel-model-one-master
+set GITHUB_MASTER=X:\travel-model-one-master
 
 :: nothing yet
 
