@@ -101,7 +101,7 @@ print(paste("HH_FILE     =", HH_FILE  ))
 print(paste("PERS_FILE   =", PERS_FILE))
 
 input.pop.households <- read.table(file = HH_FILE, header=TRUE, sep=",")
-short_summary$'popsyn tothh'  <- nrow(input.pop.households)
+short_summary$'popsyn tothh'  <- nrow(input.pop.households %>% filter(UNITTYPE==1)) # filter to unitype=hh
 remove(input.pop.households) # it's big
 
 input.pop.persons    <- read.table(file = PERS_FILE, header=TRUE, sep=",")
