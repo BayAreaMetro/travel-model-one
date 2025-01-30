@@ -331,21 +331,27 @@ ACS_tract_variables <-  c(
 # Get group quarters from Decennial census because ACS only includes these at the state level
 DHC_tract_variables <-  c(
 # Group quarters for tracts by age and type of resident
+  gq_inst_m_0017              = "PCT19_004N", # Male     inst. under 18
   gq_noninst_m_0017_univ      = "PCT19_024N", # Male non-inst. under 18 university
   gq_noninst_m_0017_mil       = "PCT19_025N", # Male non-inst. under 18 military
   gq_noninst_m_0017_oth       = "PCT19_028N", # Male non-inst. under 18 other
+  gq_inst_m_1864              = "PCT19_036N", # Male     inst. 18-64
   gq_noninst_m_1864_univ      = "PCT19_056N", # Male non-inst. 18-64 university
   gq_noninst_m_1864_mil       = "PCT19_057N", # Male non-inst. 18-64 military
   gq_noninst_m_1864_oth       = "PCT19_060N", # Male non-inst. 18-64 other
+  gq_inst_m_65p               = "PCT19_068N", # Male     inst. 65+
   gq_noninst_m_65p_univ       = "PCT19_088N", # Male non-inst. 65+ university
   gq_noninst_m_65p_mil        = "PCT19_089N", # Male non-inst. 65+ military
   gq_noninst_m_65p_oth        = "PCT19_092N", # Male non-inst. 65+ other
+  gq_inst_f_0017              = "PCT19_101N", # Female     inst. under 18
   gq_noninst_f_0017_univ      = "PCT19_121N", # Female non-inst. under 18 university
   gq_noninst_f_0017_mil       = "PCT19_122N", # Female non-inst. under 18 military
   gq_noninst_f_0017_oth       = "PCT19_125N", # Female non-inst. under 18 other
+  gq_inst_f_1864              = "PCT19_133N", # Female     inst. 18-64
   gq_noninst_f_1864_univ      = "PCT19_153N", # Female non-inst. 18-64 university
   gq_noninst_f_1864_mil       = "PCT19_154N", # Female non-inst. 18-64 military
   gq_noninst_f_1864_oth       = "PCT19_157N", # Female non-inst. 18-64 other
+  gq_inst_f_65p               = "PCT19_165N", # Female     inst. 65+
   gq_noninst_f_65p_univ       = "PCT19_185N", # Female non-inst. 65+ university
   gq_noninst_f_65p_mil        = "PCT19_186N", # Female non-inst. 65+ military
   gq_noninst_f_65p_oth        = "PCT19_189N"  # Female non-inst. 65+ other
@@ -415,7 +421,8 @@ DHC_tract_raw <- tidycensus::get_decennial(
 DHC_tract_raw <- DHC_tract_raw %>% select(-NAME)
 
 print(paste0("DHC_tract_raw (",nrow(DHC_tract_raw)," rows):"))
-print(DHC_tract_raw)
+DHC_tract_summary <- DHC_tract_raw %>% summarise(across(where(is.numeric), sum))
+print(format(t(DHC_tract_summary), scientific = FALSE))
 
 # Remove MOEs from ACS variables,rename to drop "_E" suffix
 # Drop NAME variable for later joining
@@ -509,6 +516,9 @@ workingdata <- interim %>% mutate(
     occ_m_man_prod  + occ_f_man_prod )*sharebg,
   pers_occ_military     = (armedforces)*sharebg,
   # group quarters
+  gq_inst = (
+    gq_inst_m_0017 + gq_inst_m_1864 + gq_inst_m_65p +
+    gq_inst_f_0017 + gq_inst_f_1864 + gq_inst_f_65p)*sharetract,
   gq_type_univ  =(
     gq_noninst_m_0017_univ + gq_noninst_m_1864_univ + gq_noninst_m_65p_univ  +
     gq_noninst_f_0017_univ + gq_noninst_f_1864_univ + gq_noninst_f_65p_univ)*sharetract,
@@ -590,6 +600,7 @@ tazdata_census <- workingdata %>%
               hh_kids_yes             =sum(hh_kids_yes),
               hh_kids_no              =sum(hh_kids_no),
               AGE62P                  =sum(AGE62P),
+              gq_inst                 =sum(gq_inst),
               gq_type_univ            =sum(gq_type_univ),
               gq_type_mil             =sum(gq_type_mil),
               gq_type_othnon          =sum(gq_type_othnon),
@@ -617,17 +628,20 @@ print(tazdata_census)
 # print("str(tazdata_census):")
 # print(str(tazdata_census))
 
+# GQ pop does NOT include institutionalized but we're summing to see how big a share it is
 print("DHC GQ population:")
 DHC_gqpop <- tazdata_census %>%
-  select(TAZ1454, gq_type_univ, gq_type_mil, gq_type_othnon, gqpop) %>% 
+  select(TAZ1454, gq_inst, gq_type_univ, gq_type_mil, gq_type_othnon, gqpop) %>% 
   left_join(., select(TAZ_SD_COUNTY,ZONE,County_Name), by=c("TAZ1454"="ZONE")) %>% 
   group_by(County_Name) %>% summarize(
+    gq_inst       =sum(gq_inst),
     gq_type_univ  =sum(gq_type_univ), 
     gq_type_mil   =sum(gq_type_mil),
     gq_type_othnon=sum(gq_type_othnon),
     gqpop         =sum(gqpop))
 print(DHC_gqpop)
 print("Regional totals --")
+print(paste("gq_inst       :", format(sum(DHC_gqpop$gq_inst),        nsmall=0, big.mark=',')))
 print(paste("gq_type_univ  :", format(sum(DHC_gqpop$gq_type_univ),   nsmall=0, big.mark=',')))
 print(paste("gq_type_mil   :", format(sum(DHC_gqpop$gq_type_mil),    nsmall=0, big.mark=',')))
 print(paste("gq_type_othnon:", format(sum(DHC_gqpop$gq_type_othnon), nsmall=0, big.mark=',')))
@@ -761,7 +775,23 @@ if (ACS_5year < ACS_PUMS_1year+2) {
     ) %>% 
     mutate(GQPOP_target = TOTPOP_target - HHPOP_target)
 
-  print("ACS_1year_target:")
+  # but this includes institutionalized GQ so remove them
+  ACS_1year_target <- left_join(
+    ACS_1year_target, 
+    select(DHC_gqpop, County_Name, gq_inst), 
+    by="County_Name")
+
+  print("ACS_1year_target before removing institutionalized GQ:")
+  print(ACS_1year_target)
+  print(ACS_1year_target %>% summarise(across(where(is.numeric), sum)))
+
+  # remove institutionalized GQ (assuming unchanged from 2020)
+  ACS_1year_target <- ACS_1year_target %>% mutate(
+    TOTPOP_target = TOTPOP_target - gq_inst,
+    GQPOP_target  = GQPOP_target  - gq_inst
+  )
+
+  print("ACS_1year_target after removing institutionalized GQ:")
   print(ACS_1year_target)
   print(ACS_1year_target %>% summarise(across(where(is.numeric), sum)))
 
