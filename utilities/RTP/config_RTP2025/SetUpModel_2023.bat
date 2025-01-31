@@ -5,19 +5,19 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2023_TM160_IPA_56
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2023_TM161_IPA_27
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=No
 set EN7=DISABLED
 
 :: set the location of the Travel Model Release
-set GITHUB_DIR=X:\travel-model-one-master
+set GITHUB_DIR=X:\travel-model-one-v1.6.1_develop
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v13\net_2023_Blueprint
+set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v21\net_2023_Baseline
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\2023_v04
+set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\2023_v12
 
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
@@ -30,11 +30,11 @@ set METRICS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2023_TM160_IPA_55
+set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2023_TM161_IPA_26
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=X:\travel-model-one-master\utilities\RTP\config_RTP2025\params_2023.properties
+set PARAMS=X:\travel-model-one-v1.6.1_develop\utilities\RTP\config_RTP2025\params_2023.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=NA
@@ -298,7 +298,7 @@ if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 ::
 :: ------------------------------------------------------------------------------------------------------
 :: in case the TM release is behind, this is where we copy the most up-to-date scripts from master
-set GITHUB_MASTER=\\tsclient\X\travel-model-one-master
+set GITHUB_MASTER=X:\travel-model-one-master
 
 :: nothing yet
 
