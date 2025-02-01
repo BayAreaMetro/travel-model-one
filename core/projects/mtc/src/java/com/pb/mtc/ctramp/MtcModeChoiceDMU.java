@@ -233,6 +233,7 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
         methodIndexMap.put( "getHhIncomeInDollars", 38);
         methodIndexMap.put( "getOrigCordon", 39);
         methodIndexMap.put( "getOrigCordonCost", 40);
+        methodIndexMap.put( "getHhIncomePctOfPoverty", 41);
       }
     
         
@@ -284,6 +285,7 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
             case 38: return getHhIncomeInDollars();
             case 39: return getOrigCordon();
             case 40: return getOrigCordonCost();
+            case 41: return getHhIncomePctOfPoverty();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");

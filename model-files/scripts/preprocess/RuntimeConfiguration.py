@@ -233,16 +233,16 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     NonWorkTransitHesitance  = float(get_property(params_filename, params_contents, "NonWork_Transit_Hesitance"))
     RailTransitHesitance     = float(get_property(params_filename, params_contents, "Rail_Transit_Hesitance"))
 
+    # Toll Factors (discounts) - NonCordon & Cordon
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
-    MeansBasedFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
-    MeansBasedFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
-
-    # cordon
     MeansBasedCordonTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q1Factor"))
     MeansBasedCordonTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q2Factor"))
-    MeansBasedCordonFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
-    MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
+
+    # Transit Fare Factors (discounts) - NonCordon & Cordon
+    MeansBasedFarePctOfPovertyThreshold =   int(get_property(params_filename, params_contents, "Means_Based_Fare_PctOfPoverty_Threshold"))
+    MeansBasedFareFactor                = float(get_property(params_filename, params_contents, "Means_Based_Fare_Factor"))
+    MeansBasedCordonFareFactor          = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Factor"))
 
     # WFH factor
     WFH_Calibration_constant   = float(get_property(params_filename, params_contents, "WFH_Calibration_constant"))
@@ -310,15 +310,16 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     replacements[filepath]["(\nNonWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % NonWorkTransitHesitance
     replacements[filepath]["(\nRail_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % RailTransitHesitance
 
+    # Toll Factors (discounts) - NonCordon & Cordon
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
-    replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
-    replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
-
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
-    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
-    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
+
+    # Transit Fare Factors (discounts) - NonCordon & Cordon
+    replacements[filepath]["(\nMeans_Based_Fare_PctOfPoverty_Threshold[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d"   % MeansBasedFarePctOfPovertyThreshold
+    replacements[filepath]["(\nMeans_Based_Fare_Factor[ \t]*=[ \t]*)(\S*)"]                 = r"\g<1>%.2f" % MeansBasedFareFactor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Factor[ \t]*=[ \t]*)(\S*)"]          = r"\g<1>%.2f" % MeansBasedCordonFareFactor
 
     # WFH factor
     replacements[filepath]["(\nCDAP.WFH.CalibrationConstant[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFH_Calibration_constant

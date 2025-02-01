@@ -62,10 +62,13 @@ public class Household implements java.io.Serializable {
     
     private short humanVehicles;
     private short autonomousVehicles;
-    
+
 
     // guojy: added for M. Gucwa's research on automated vehicles
     private int hAnalyst; 
+
+    // For means-based fares in TM1.6.1; 200 means household income = 200 x federal poverty threshold
+    private short incomePercentOfPoverty;
     
     private float                     sampleRate;
 
@@ -311,7 +314,9 @@ public class Household implements java.io.Serializable {
     	hhType = (byte)type;
     }
 
-    
+    public void setIncomePercentOfPoverty(short percent) {
+        this.incomePercentOfPoverty = percent;
+    }
     
     public boolean getDebugChoiceModels () {
         return debugChoiceModels;
@@ -1442,8 +1447,7 @@ public class Household implements java.io.Serializable {
         Household.logHelper( logger, "maxAdultChildOverlaps: ", maxAdultChildOverlaps, totalChars );
         Household.logHelper( logger, "maxHoursAvailableAdult: ", maxHoursAvailableAdult, totalChars );
         Household.logHelper( logger, "maxHoursAvailableChild: ", maxHoursAvailableChild, totalChars );
-        // guojy: added for M. Gucwa's research on automated vehicles
-        Household.logHelper( logger, "hAnalyst: ", hAnalyst, totalChars );
+        Household.logHelper( logger, "incomePercentOfPoverty: ", incomePercentOfPoverty, totalChars );
 
         if ( jointTours != null ) {
             logger.info("Joint Tours:");
@@ -1495,6 +1499,10 @@ public class Household implements java.io.Serializable {
 		this.hAnalyst = hAnalyst;
 	}
 
+    
+    public short getIncomePercentOfPoverty() {
+        return this.incomePercentOfPoverty;
+    }
 
 	public short getHumanVehicles() {
 		return humanVehicles;
