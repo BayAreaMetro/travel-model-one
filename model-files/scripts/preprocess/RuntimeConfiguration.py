@@ -445,14 +445,17 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     OwnedAV_zpv      = float(get_property(params_filename, params_contents, "OwnedAV_ZPV_fac"))
     TNC_zpv          = float(get_property(params_filename, params_contents, "TNC_ZPV_fac"))
 
+    # Toll Factors (discounts) - NonCordon & Cordon
     MeansBasedTollsQ1Factor       = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor       = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
     MeansBasedCordonTollsQ1Factor = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q1Factor"))
     MeansBasedCordonTollsQ2Factor = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q2Factor"))
-    MeansBasedFareQ1Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
-    MeansBasedFareQ2Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
-    MeansBasedCordonFareQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
-    MeansBasedCordonFareQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
+
+    # Transit Fare Factors (discounts) - NonCordon & Cordon
+    MeansBasedFarePctOfPovertyThreshold =   int(get_property(params_filename, params_contents, "Means_Based_Fare_PctOfPoverty_Threshold"))
+    MeansBasedFareFactor                = float(get_property(params_filename, params_contents, "Means_Based_Fare_Factor"))
+    MeansBasedCordonFareFactor          = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Factor"))
+
     HSRInterregionalDisable       =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
@@ -478,10 +481,10 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
 
     # put the means based fare discount factors into CTRAMP\scripts\block\trnParam.block
     filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")
-    replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
-    replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
-    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
-    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
+    replacements[filepath]["(\nMeans_Based_Fare_PctOfPoverty_Threshold[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % MeansBasedFarePctOfPovertyThreshold
+    replacements[filepath]["(\nMeans_Based_Fare_Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareFactor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareFactor
+
     replacements[filepath]["(\nHSR_Interregional_Disable[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d"   % HSRInterregionalDisable
 
 def config_logsums(replacements, append):
