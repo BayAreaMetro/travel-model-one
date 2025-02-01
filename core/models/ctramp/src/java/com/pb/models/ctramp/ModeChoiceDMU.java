@@ -349,7 +349,9 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
         return hh.getIncomeInDollars();
     }
     
-    
+    public short getHhIncomePctOfPoverty(){
+        return hh.getIncomePercentOfPoverty();
+    }
     
     
     /**
