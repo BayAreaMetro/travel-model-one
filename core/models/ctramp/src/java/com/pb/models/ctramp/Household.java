@@ -1292,6 +1292,8 @@ public class Household implements java.io.Serializable {
         Household.logHelper( logger, "hhWorkers: ", hhWorkers, totalChars );
         Household.logHelper( logger, "homeTaz: ", homeTaz, totalChars );
         Household.logHelper( logger, "homeWalkSubzone: ", homeWalkSubzone, totalChars );
+        Household.logHelper( logger, "incomePercentOfPoverty: ", incomePercentOfPoverty, totalChars );
+
         Household.logHelper( logger, "aoModelAutos: ", aoModelAutos, totalChars );
         Household.logHelper( logger, "cdapModelPattern: ", cdapModelPattern, totalChars );
         Household.logHelper( logger, "imtfModelPattern: ", imtfModelPattern, totalChars );
