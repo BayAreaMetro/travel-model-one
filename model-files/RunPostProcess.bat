@@ -68,7 +68,7 @@ if %MODEL_YEAR% GTR 3000 (
 set PROJECT=%myfolder:~11,3%
 
 set FUTURE_ABBR=%myfolder:~15,2%
-set FUTURE=X
+set FUTURE=PBA50
 
 echo %PROJECT%=
 

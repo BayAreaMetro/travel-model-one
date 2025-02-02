@@ -192,7 +192,7 @@ if not exist metrics\topsheet.csv (
 )
 
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
-python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
+rem python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
 :cleanup
 move *.PRN logs
