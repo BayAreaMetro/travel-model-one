@@ -9,10 +9,11 @@ import pandas as pd
 import numpy as np
 
 total_trips=pd.read_csv('nonres/ixDaily2015_total_trips.csv', names=['origin','destination','matrix','total'])
-
-ext_zone_prod = total_trips[total_trips['origin']>6593].groupby(['origin'])['total'].sum().reset_index()
+zone_seq = pd.read_csv('hwy/complete_network_zone_seq.csv')
+ext_zone = zone_seq[zone_seq['EXTSEQ']>0].EXTSEQ.unique()
+ext_zone_prod = total_trips[total_trips['origin'].isin(ext_zone)].groupby(['origin'])['total'].sum().reset_index()
 ext_zone_prod=ext_zone_prod.rename(columns={'total':'PROD'})
-ext_zone_attr = total_trips[total_trips['destination']>6593].groupby(['destination'])['total'].sum().reset_index()
+ext_zone_attr = total_trips[total_trips['destination'].isin(ext_zone)].groupby(['destination'])['total'].sum().reset_index()
 ext_zone_attr=ext_zone_attr.rename(columns={'total':'ATTR'})
 
 ext_zone=pd.merge(ext_zone_prod, ext_zone_attr, left_on=['origin'], right_on=['destination'])

@@ -130,6 +130,9 @@ copy INPUT\warmstart\skims\      skims\
 :: Use interim network inputs until the networks are regenerated with all project card updates
 copy INPUT\hwy\complete_network_with_externals.net                 hwy\complete_network.net
 
+copy INPUT\landuse\telecommute_constants.csv main\telecommute_constants_00.csv
+copy INPUT\landuse\telecommute_constants.csv main\telecommute_constants.csv
+
 
 :: ------------------------------------------------------------------------------------------------------
 ::

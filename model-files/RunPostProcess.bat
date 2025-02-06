@@ -68,7 +68,7 @@ if %MODEL_YEAR% GTR 3000 (
 set PROJECT=%myfolder:~11,3%
 
 set FUTURE_ABBR=%myfolder:~15,2%
-set FUTURE=X
+set FUTURE=PBA50
 
 echo %PROJECT%=
 
@@ -92,6 +92,8 @@ echo %FUTURE%=
 
 set SAMPLESHARE=0.10
 set ITER=3
+
+call zoneSystem.bat
 
 runtpp CTRAMP\scripts\database\SkimsDatabase.job
 if ERRORLEVEL 2 goto done

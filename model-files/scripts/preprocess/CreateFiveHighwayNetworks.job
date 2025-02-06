@@ -100,7 +100,7 @@ loop period = 1, 5
      
       ; write out to the same name with the added variables   
       neto = hwy\avgload@token_period@.net
-      
+      ZONES = %TAZ_COUNT%
       ; set the time-period-specific congested times to free-flow times
       CTIM = FFT
       

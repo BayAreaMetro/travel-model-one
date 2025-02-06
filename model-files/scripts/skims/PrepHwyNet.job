@@ -97,7 +97,7 @@ loop period = 1,5
 	neti[2] = "%MODEL_DIR%\hwy\avgload@token_period@_taz.net"
 	
 	neto = "%MODEL_DIR%\hwy\tempavgload@token_period@_transit.net"
-    ZONES = 6593
+    ;ZONES = %TAZ_COUNT%
 	phase=linkmerge
 		
 		;CTIM = li.2.CTIM         

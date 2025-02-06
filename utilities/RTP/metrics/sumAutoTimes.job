@@ -130,7 +130,7 @@ loop auto = 1,15
    token_vtoll  = 'TOLLVTOLLS3'
   endif
 
-  DistributeMultistep processid = 'ctramp', processNum = auto, commpath = '%COMMPATH%'
+  DistributeMultistep processid = 'ctramp', processNum = auto
 
     ; Read toll discounts from the block file
     Read File = "CTRAMP\scripts\block\hwyParam.block"
@@ -677,7 +677,7 @@ endloop
 Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, CTRAMP6.script.end,
                  CTRAMP7.script.end, CTRAMP8.script.end, CTRAMP9.script.end, CTRAMP10.script.end, CTRAMP11.script.end, CTRAMP12.script.end,
                  CTRAMP13.script.end, CTRAMP14.script.end, CTRAMP15.script.end,
-           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+           printfiles = save, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the income files into one
 * copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv+metrics\auto_times_taxi.csv+metrics\auto_times_tnc_single.csv+metrics\auto_times_tnc_shared.csv+metrics\auto_times_da_av_notoll.csv+metrics\auto_times_da_av_toll.csv+metrics\auto_times_s2_av_notoll.csv+metrics\auto_times_s2_av_toll.csv+metrics\auto_times_s3_av_notoll.csv+metrics\auto_times_s3_av_toll.csv+metrics\auto_times_zpv_av.csv metrics\auto_times.csv

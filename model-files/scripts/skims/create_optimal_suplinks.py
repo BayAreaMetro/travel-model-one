@@ -18,6 +18,8 @@ knr_filename            = os.path.join("{}_bus_acclinks_KNR.dat".format(timeperi
 pnr_penalty             = pd.read_csv("../pnr_penalty.csv")
 pnr_penalty             =pnr_penalty[(pnr_penalty['PNR_impedence']!=0)&(pnr_penalty['pnr node'].notnull())]
 
+zone_seq = pd.read_csv(os.path.join("../../hwy/complete_network_zone_seq.csv"))
+int_zone = zone_seq[zone_seq['EXTSEQ']==0].TAZSEQ.unique()
 
 pnr_to_stops_grouped = pd.read_csv('../PNR_STOP.csv')
 
@@ -49,8 +51,8 @@ all_drive_links['destination']=all_drive_links['link'].apply(lambda x: int(x.spl
 all_pnr_to_stop_links['origin']=all_pnr_to_stop_links['link'].apply(lambda x: int(x.split('-')[0]))
 all_pnr_to_stop_links['destination']=all_pnr_to_stop_links['link'].apply(lambda x: int(x.split('-')[1]))
 
-all_drive_access_links=all_drive_links[all_drive_links['origin']<6594].sort_values(by=['origin','mode','dist'])
-all_drive_egress_links=all_drive_links[all_drive_links['origin']>6593].sort_values(by=['destination','mode','dist'])
+all_drive_access_links=all_drive_links[all_drive_links['origin'].isin(int_zone)].sort_values(by=['origin','mode','dist'])
+all_drive_egress_links=all_drive_links[~all_drive_links['origin'].isin(int_zone)].sort_values(by=['destination','mode','dist'])
 
 all_drive_access_links_pnr = all_drive_access_links.merge(pnr_to_stops_grouped[['PNR','Stop','transit_mode','distance']], left_on=['destination'], right_on=['PNR']).sort_values(by=['origin','transit_mode','dist','distance'])
 selected_drive_access_links = all_drive_access_links_pnr.groupby(['origin','transit_mode'], as_index=False).apply(lambda x: x.head(2)).reset_index()

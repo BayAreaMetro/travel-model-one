@@ -47,6 +47,13 @@ set TARGET_DIR=%CD%
 if not exist metrics (mkdir metrics)
 copy INPUT\metrics\BC_config.csv metrics
 
+if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
+  rem Export network to csv version (with vehicle class volumn columns intact)
+  rem Input : hwy\iter%ITER%\avgload5period.net
+  rem Output: hwy\iter%ITER%\avgload5period_vehclasses.csv
+  runtpp "CTRAMP\scripts\metrics\net2csv_avgload5period.job"
+  IF ERRORLEVEL 2 goto error
+)
 
 if not exist metrics\autos_owned.csv (
   rem Tally auto ownership from household data
@@ -166,15 +173,15 @@ if not exist metrics\transit_boards_miles.csv (
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
 )
 
-if not exist metrics\transit_crowding.csv (
-  rem Summarize transit crowding
-  rem Input: \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\transitSeatCap.csv
-  rem        trn\trnlink[timeperiod]_ALLMSA.dbf
-  rem Output: metrics\transit_crowding_complete.csv
-  rem         metrics\transit_crowding.csv
-  rem         metrics\transit_crowding.log
-  call python "%CODE_DIR%\transitcrowding.py" .
-)
+rem       if not exist metrics\transit_crowding.csv (
+rem         rem Summarize transit crowding
+rem         rem Input: \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\transitSeatCap.csv
+rem         rem        trn\trnlink[timeperiod]_ALLMSA.dbf
+rem         rem Output: metrics\transit_crowding_complete.csv
+rem         rem         metrics\transit_crowding.csv
+rem         rem         metrics\transit_crowding.log
+rem         call python "%CODE_DIR%\transitcrowding.py" .
+rem       )
 
 :topsheet
 if not exist metrics\topsheet.csv (
@@ -185,7 +192,7 @@ if not exist metrics\topsheet.csv (
 )
 
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
-python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
+rem python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
 :cleanup
 move *.PRN logs

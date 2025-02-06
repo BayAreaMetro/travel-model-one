@@ -13,6 +13,9 @@ buffer_dist = 0.125
 nodes_list = pd.read_csv('../transit_background_nodes.csv')
 transit_nodes = pd.read_csv('../all_transit_nodes.csv', names=['Node'])
 
+zone_seq = pd.read_csv('../../hwy/complete_network_zone_seq.csv')
+int_zone = zone_seq[zone_seq['EXTSEQ']==0].TAZSEQ.max()
+
 if os.path.isfile('../pnr_connectors.txt'):
     print "File created in 0th iteration"
 else:
@@ -56,7 +59,7 @@ else:
     pnr_to_stops['Stop']=pnr_to_stops['Stop'].apply(lambda x: str(x).replace('.0',''))
     pnr_to_stops['COL_1'] = 'PNR'
     pnr_to_stops['COL_2'] = 'NODE='+pnr_to_stops['PNR']+'-'+pnr_to_stops['Stop']
-    pnr_to_stops['COL_3'] = 'ZONES=1-6593'
+    pnr_to_stops['COL_3'] = 'ZONES=1-'+str(int_zone)
     # pnr_to_stops=pnr_to_stops[pnr_to_stops['PNR']!=pnr_to_stops['Stop']]
     pnr_connector = r'../pnr_connectors.txt'
     with open (pnr_connector, 'w') as f:
