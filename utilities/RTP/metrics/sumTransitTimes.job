@@ -107,7 +107,7 @@ counter = 0
       FILEI MATI[9] = "skims\trnskmPM_@token_access@_@token_path@_@token_egress@.tpp"
       FILEI MATI[10]= "skims\trnskmEV_@token_access@_@token_path@_@token_egress@.tpp"
 
-      FILEO PRINTO[1] = "metrics\transit_times_by_acc_mode_egr_@token_path@.csv", append=T
+      FILEO PRINTO[1] = "metrics\transit_times_by_acc_mode_egr_@token_path@_@accegg@.csv", append=T
 
       ; EA Transit Trips
       MW[1] = mi.1.@token_access@_@token_path@_@token_egress@            ; Trips
@@ -224,13 +224,25 @@ Wait4Files files=CTRAMP1.script.end,
            printfiles = save, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one
-* copy metrics\transit_times_by_acc_mode_egr_com.csv+metrics\transit_times_by_acc_mode_egr_hvy.csv+metrics\transit_times_by_acc_mode_egr_exp.csv+metrics\transit_times_by_acc_mode_egr_lrf.csv+metrics\transit_times_by_acc_mode_egr_loc.csv metrics\transit_times_by_acc_mode_egr.csv
+* copy metrics\transit_times_by_acc_mode_egr_com_1.csv+metrics\transit_times_by_acc_mode_egr_hvy_1.csv+metrics\transit_times_by_acc_mode_egr_exp_1.csv+metrics\transit_times_by_acc_mode_egr_lrf_1.csv+metrics\transit_times_by_acc_mode_egr_loc_1.csv+metrics\transit_times_by_acc_mode_egr_com_2.csv+metrics\transit_times_by_acc_mode_egr_hvy_2.csv+metrics\transit_times_by_acc_mode_egr_exp_2.csv+metrics\transit_times_by_acc_mode_egr_lrf_2.csv+metrics\transit_times_by_acc_mode_egr_loc_2.csv+metrics\transit_times_by_acc_mode_egr_com_3.csv+metrics\transit_times_by_acc_mode_egr_hvy_3.csv+metrics\transit_times_by_acc_mode_egr_exp_3.csv+metrics\transit_times_by_acc_mode_egr_lrf_3.csv+metrics\transit_times_by_acc_mode_egr_loc_3.csv metrics\transit_times_by_acc_mode_egr.csv
 ; delete the individual ones
-* del metrics\transit_times_by_acc_mode_egr_com.csv
-* del metrics\transit_times_by_acc_mode_egr_hvy.csv
-* del metrics\transit_times_by_acc_mode_egr_exp.csv
-* del metrics\transit_times_by_acc_mode_egr_lrf.csv
-* del metrics\transit_times_by_acc_mode_egr_loc.csv
+* del metrics\transit_times_by_acc_mode_egr_com_1.csv
+* del metrics\transit_times_by_acc_mode_egr_hvy_1.csv
+* del metrics\transit_times_by_acc_mode_egr_exp_1.csv
+* del metrics\transit_times_by_acc_mode_egr_lrf_1.csv
+* del metrics\transit_times_by_acc_mode_egr_loc_1.csv
+
+* del metrics\transit_times_by_acc_mode_egr_com_2.csv
+* del metrics\transit_times_by_acc_mode_egr_hvy_2.csv
+* del metrics\transit_times_by_acc_mode_egr_exp_2.csv
+* del metrics\transit_times_by_acc_mode_egr_lrf_2.csv
+* del metrics\transit_times_by_acc_mode_egr_loc_2.csv
+
+* del metrics\transit_times_by_acc_mode_egr_com_3.csv
+* del metrics\transit_times_by_acc_mode_egr_hvy_3.csv
+* del metrics\transit_times_by_acc_mode_egr_exp_3.csv
+* del metrics\transit_times_by_acc_mode_egr_lrf_3.csv
+* del metrics\transit_times_by_acc_mode_egr_loc_3.csv
 
 ; Transit attributes by mode and income quartile
 ; 1. Daily Trips
@@ -299,7 +311,7 @@ counter = 0
      FILEI MATI[20] = "skims\trnskmEV_wlk_@token_path@_drv.tpp"
 
 
-     FILEO PRINTO[1] = "metrics\transit_times_by_mode_income_@token_path@.csv",APPEND=T
+     FILEO PRINTO[1] = "metrics\transit_times_by_mode_income_@token_path@_@inc@.csv",APPEND=T
      FILEO PRINTO[2] = "metrics\debugM16M18_@token_path@.csv",APPEND=T
 
   ; Read Trips
@@ -448,10 +460,25 @@ Wait4Files files=CTRAMP1.script.end,
            printfiles = save, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one
-* copy metrics\transit_times_by_mode_income_com.csv+metrics\transit_times_by_mode_income_hvy.csv+metrics\transit_times_by_mode_income_exp.csv+metrics\transit_times_by_mode_income_lrf.csv+metrics\transit_times_by_mode_income_loc.csv metrics\transit_times_by_mode_income.csv
+* copy metrics\transit_times_by_mode_income_com_1.csv+metrics\transit_times_by_mode_income_hvy_1.csv+metrics\transit_times_by_mode_income_exp_1.csv+metrics\transit_times_by_mode_income_lrf_1.csv+metrics\transit_times_by_mode_income_loc_1.csv+metrics\transit_times_by_mode_income_com_2.csv+metrics\transit_times_by_mode_income_hvy_2.csv+metrics\transit_times_by_mode_income_exp_2.csv+metrics\transit_times_by_mode_income_lrf_2.csv+metrics\transit_times_by_mode_income_loc_2.csv+metrics\transit_times_by_mode_income_com_3.csv+metrics\transit_times_by_mode_income_hvy_3.csv+metrics\transit_times_by_mode_income_exp_3.csv+metrics\transit_times_by_mode_income_lrf_3.csv+metrics\transit_times_by_mode_income_loc_3.csv+metrics\transit_times_by_mode_income_com_4.csv+metrics\transit_times_by_mode_income_hvy_4.csv+metrics\transit_times_by_mode_income_exp_4.csv+metrics\transit_times_by_mode_income_lrf_4.csv+metrics\transit_times_by_mode_income_loc_4.csv metrics\transit_times_by_mode_income.csv
 ; delete the individual ones
-* del metrics\transit_times_by_mode_income_com.csv
-* del metrics\transit_times_by_mode_income_hvy.csv
-* del metrics\transit_times_by_mode_income_exp.csv
-* del metrics\transit_times_by_mode_income_lrf.csv
-* del metrics\transit_times_by_mode_income_loc.csv
+* del metrics\transit_times_by_mode_income_com_1.csv
+* del metrics\transit_times_by_mode_income_hvy_1.csv
+* del metrics\transit_times_by_mode_income_exp_1.csv
+* del metrics\transit_times_by_mode_income_lrf_1.csv
+* del metrics\transit_times_by_mode_income_loc_1.csv
+* del metrics\transit_times_by_mode_income_com_2.csv
+* del metrics\transit_times_by_mode_income_hvy_2.csv
+* del metrics\transit_times_by_mode_income_exp_2.csv
+* del metrics\transit_times_by_mode_income_lrf_2.csv
+* del metrics\transit_times_by_mode_income_loc_2.csv
+* del metrics\transit_times_by_mode_income_com_3.csv
+* del metrics\transit_times_by_mode_income_hvy_3.csv
+* del metrics\transit_times_by_mode_income_exp_3.csv
+* del metrics\transit_times_by_mode_income_lrf_3.csv
+* del metrics\transit_times_by_mode_income_loc_3.csv
+* del metrics\transit_times_by_mode_income_com_4.csv
+* del metrics\transit_times_by_mode_income_hvy_4.csv
+* del metrics\transit_times_by_mode_income_exp_4.csv
+* del metrics\transit_times_by_mode_income_lrf_4.csv
+* del metrics\transit_times_by_mode_income_loc_4.csv
