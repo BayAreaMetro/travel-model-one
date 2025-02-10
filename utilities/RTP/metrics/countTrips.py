@@ -1,16 +1,14 @@
-import collections, datetime, os, sys
-import numpy, pandas
-
-USAGE = r"""
+USAGE = """
 
   python countTrips.py
 
   Simple script that reads
 
+  * INPUT\\params.properties (for Means_Based_Fare_PctOfPoverty_Threshold)
   * main\\[indiv,joint]TripDataIncome_%ITER%.csv and
   * main\\jointTourData_%ITER%.csv (for the person ids for joint trips)
   * main\\personData_%ITER%.csv (for person ages)
-  * database\ActiveTimeSkimsDatabase[timeperiod].csv (for active times)
+  * database\\ActiveTimeSkimsDatabase[timeperiod].csv (for active times)
 
   and tallies the trips by timeperiod, income category and trip mode.
   Household income is $2000; see http://analytics.mtc.ca.gov/foswiki/Main/Household
@@ -24,11 +22,16 @@ USAGE = r"""
   Outputs:
 
   * main\\trips[EA,AM,MD,PM,EV]inc[1,2,3,4].dat
+  * main\\trips[EA,AM,MD,PM,EV]inc[1,2,3,4]_poverty[0,1].dat
   * main\\trips[EA,AM,MD,PM,EV]_2074.dat
   * main\\trips[EA,AM,MD,PM,EV]_2064.dat
-  * metrics\unique_active_travelers.csv
+  * metrics\\unique_active_travelers.csv
 
-  The latter two .dat files are the same as the first but not split by income category,
+  The first file is a trip table split by income quartile and the second file
+  is a trip table split by income quartile and poverty status, which is defined by if the household income
+  is under the federal poverty level specified in Means_Based_Fare_PctOfPoverty_Threshold.
+
+  The _2074.dat and _2064.dat files are the same as the first but not split by income category,
   and filtered by age (20-74 year olds and 20-64 year olds, respectively) to be used for
   the active-travel mortality reduction metrics.
 
@@ -37,8 +40,13 @@ USAGE = r"""
   doing the traveling.
 
   Note: this script DOES factor the trips by SAMPLESHARE.
+
 """
 
+import datetime, itertools, os, pathlib, re, sys
+import numpy, pandas
+
+MAX_TAZ = 1454
 # note that there are 32 modes and they are a hybrid of tour modes and those used in assignment
 # they include all 21 tour and trip modes in here  (https://github.com/BayAreaMetro/modeling-website/wiki/TravelModes#tour-and-trip-modes)
 # plus 'wlk_loc_drv', 'wlk_lrf_drv', 'wlk_exp_drv', 'wlk_hvy_drv', 'wlk_com_drv'
@@ -96,8 +104,8 @@ def find_number_of_active_adults(trips_df):
 
     # figure out how many minutes of activity per trip: join with activeTimeSkims
     for time_period in ['EA','AM','MD','PM','EV']:
-        filename = os.path.join("database", "ActiveTimeSkimsDatabase%s.csv" % time_period)
-        print("{} Reading {}".format(datetime.datetime.now().strftime("%x %X"), filename))
+        filename = pathlib.Path("database") / f"ActiveTimeSkimsDatabase{time_period}.csv"
+        print(f"{datetime.datetime.now().strftime('%x %X')} Reading {filename}")
         skim_df  = pandas.read_table(filename, sep=",")
         skim_df.loc[:, 'time_period'] = time_period
 
@@ -123,11 +131,8 @@ def find_number_of_active_adults(trips_df):
     active_adult_trips_df = active_adult_trips_df.loc[active_adult_trips_df['active_minutes']>0]
     # see how many trips had failed joins
     percent_fail = 100.0*len(active_adult_trips_df)/active_adult_trips_df_len
-    print("{} Have {} valid active times out of {}, or {:.2f}% join successes".format
-      (datetime.datetime.now().strftime("%x %X"),
-       len(active_adult_trips_df),
-       active_adult_trips_df_len,
-       percent_fail))
+    print(f"{datetime.datetime.now().strftime('%x %X')} Have {len(active_adult_trips_df)} " \
+          f"valid active times out of {active_adult_trips_df_len}, or {percent_fail:.2f}% join successes")
 
     # each row is 1 trip
     active_adult_trips_df['num_trips'] = 1
@@ -141,36 +146,70 @@ def find_number_of_active_adults(trips_df):
     active_counts_len = len(active_counts_df)
     active_counts_df  = active_counts_df.loc[active_counts_df['active_minutes']>=ACTIVE_MINUTES_THRESHOLD]
     percent_active = 100.0*len(active_counts_df)/active_counts_len
-    print("{} Have {} active (above {} minutes threshold) out of {} total adults with active minutes, or {:.2f}% very active".format
-        (datetime.datetime.now().strftime("%x %X"),
-         len(active_counts_df), ACTIVE_MINUTES_THRESHOLD,
-         active_counts_len, percent_active))
+    print(f"{datetime.datetime.now().strftime('%x %X')} Have {len(active_counts_df):,} active (above {ACTIVE_MINUTES_THRESHOLD} " \
+          f"minutes threshold) out of {active_counts_len} total adults with active minutes, or {percent_active:.2f}% very active")
     print(active_counts_df.describe())
     return(active_counts_df['num_participants'].sum())
 
-def write_trips_by_od(trips_df, by_income_cat, outsuffix):
+def write_trips_by_od(trips_df, by_category, outsuffix):
     """
-    Groups up the trip list by time_period, income_cat (if by_income_cat=true), orig_taz, dest_taz, trip_mode_str
+    Groups up the trip list by time_period, income_cat (if by_category=='income'), orig_taz, dest_taz, trip_mode_str
     And then unstacks so the trip_mode_str form columns.
-    Writes it out to main \ trips[timeperiod]inc[1-4][outsuffix].dat (inc part dropped if by_income_cat=false)
+    Writes it out to main \ trips[timeperiod]inc[1-4][outsuffix].dat (inc part dropped if by_category == 'age')
     """
     income_list = []
-    if by_income_cat:
+    if by_category=='income':
         # group it and then unstack to index = time_period, income_cat, orig_taz, dest_taz, trip_mode_str
-        trip_counts = trips_df[['time_period','income_cat','orig_taz','dest_taz','trip_mode_str','num_participants']].groupby(['time_period','income_cat','orig_taz','dest_taz','trip_mode_str']).sum()
+        trip_counts = trips_df[['time_period','income_cat','orig_taz','dest_taz','trip_mode_str','num_participants'
+                    ]].groupby(['time_period','income_cat','orig_taz','dest_taz','trip_mode_str']).sum()
         trip_counts = trip_counts.unstack().fillna(0)
         income_list = range(1,5)
-    else:
-        trip_counts = trips_df[['time_period',             'orig_taz','dest_taz','trip_mode_str','num_participants']].groupby(['time_period',             'orig_taz','dest_taz','trip_mode_str']).sum()
+    elif by_category=='poverty':
+        # group it and then unstack to index = time_period, income_cat, poverty, orig_taz, dest_taz, trip_mode_str
+        trip_counts = trips_df[['time_period','income_cat','poverty','orig_taz','dest_taz','trip_mode_str','num_participants'
+                    ]].groupby(['time_period','income_cat','poverty','orig_taz','dest_taz','trip_mode_str']).sum()
+        trip_counts = trip_counts.unstack().fillna(0)
+        income_list = list(itertools.product([1,2,3,4],[0,1])) # income quartile x poverty
+    elif by_category=='age':
+        trip_counts = trips_df[['time_period', 'orig_taz','dest_taz','trip_mode_str','num_participants'
+                    ]].groupby(['time_period', 'orig_taz','dest_taz','trip_mode_str']).sum()
         trip_counts = trip_counts.unstack().fillna(0)
         income_list = [0]
+    else:
+        raise NotImplementedError(f"write_trips_by_od() received invalid by_category:{by_category}")
+
+    print(f"write_trips_by_od()  {by_category=} {outsuffix=}")
+    # print(trip_counts.head())
 
     for timeperiod in ['EA','AM','MD','PM','EV']:
         for income_cat in income_list:
 
-            # select the specific ones
-            trip_counts_tpinc = trip_counts.loc[timeperiod, income_cat] if by_income_cat else trip_counts.loc[timeperiod]
+            # select the specific trips for this time period and income category
+            if by_category == "income":
+                trip_counts_tpinc = trip_counts.loc[timeperiod, income_cat]
+            elif by_category == "poverty":
+                try:
+                    trip_counts_tpinc = trip_counts.loc[timeperiod, income_cat[0], income_cat[1]]
+                except KeyError:
+                    # this is ok for poverty == 1 and higher incomes
+                    print(f"No trips found for timeperiod {timeperiod} incomeQ{income_cat[0]} poverty={income_cat[1]}")
+                    # make them zero for bike, otaz=1-3, dtaz=1-3
+                    row_index = pandas.MultiIndex.from_arrays([[1,2], [1,2]], names=('orig_taz', 'dest_taz'))
+                    col_index = pandas.MultiIndex.from_arrays([['num_participants'], ['bike']], names=(None, 'trip_mode_str'))
+                    trip_counts_tpinc = pandas.DataFrame([[0],[0]], index=row_index, columns=col_index)
+            elif by_category=='age':
+                trip_counts_tpinc = trip_counts.loc[timeperiod]
+
+            # print(trip_counts_tpinc.head())
+            # print(trip_counts_tpinc.columns)
+            # print(trip_counts_tpinc.index)
+
             trip_counts_tpinc.reset_index(inplace=True)
+            
+            # print(trip_counts_tpinc.head())
+            # print(trip_counts_tpinc.columns)
+            # print(trip_counts_tpinc.index)
+            
             # rename columns which we can't do with rename() I guess, because we have multiindex columns
             cols     = trip_counts_tpinc.columns.tolist()
             new_cols = []
@@ -188,28 +227,43 @@ def write_trips_by_od(trips_df, by_income_cat, outsuffix):
 
             trip_counts_tpinc = trip_counts_tpinc[COLUMNS]
             trip_counts_tpinc = trip_counts_tpinc.astype(int)
-            if by_income_cat:
-                output_filename = os.path.join("main", "trips%sinc%d%s.dat" % (timeperiod, income_cat, outsuffix))
-            else:
-                output_filename = os.path.join("main", "trips%s%s.dat" % (timeperiod, outsuffix))
+            if by_category=='income':
+                output_filename = pathlib.Path("main") / f"trips{timeperiod}inc{income_cat}{outsuffix}.dat"
+            elif by_category=="poverty":
+                output_filename = pathlib.Path("main") / f"trips{timeperiod}inc{income_cat[0]}_poverty{income_cat[1]}{outsuffix}.dat"                
+            elif by_category=='age':
+                output_filename = pathlib.Path("main") / f"trips{timeperiod}{outsuffix}.dat"
 
             trip_counts_tpinc.to_csv(output_filename, sep=' ',header=False, index=False)
-            print("{}  Wrote {}".format(datetime.datetime.now().strftime("%x %X"), output_filename))
+            print(f"{datetime.datetime.now().strftime('%x %X')}  Wrote {output_filename}")
 
 
 if __name__ == '__main__':
 
     pandas.set_option('display.width', 500)
+    pandas.set_option('display.max_columns', None)
+
     iteration       = int(os.environ['ITER'])
     sampleshare   = float(os.environ['SAMPLESHARE'])
     # (mode,time period,income,orig,dest) -> count
 
+    # read Means_Based_Fare_PctOfPoverty_Threshold from INPUT\params.properties
+    Means_Based_Fare_PctOfPoverty_Threshold = None
+    pattern = r"\nMeans_Based_Fare_PctOfPoverty_Threshold[ \t]*=[ \t]*(\S*)[ \t]*"
+    PARAMS_FILENAME = pathlib.Path("INPUT") / "params.properties"
+    with open(PARAMS_FILENAME, 'r') as params_file:
+        params_content = params_file.read()
+        matches = re.findall(pattern, params_content)
+        assert(len(matches) == 1)
+        Means_Based_Fare_PctOfPoverty_Threshold = int(matches[0])
+    print(f"Read from {PARAMS_FILENAME}: {Means_Based_Fare_PctOfPoverty_Threshold=}")
+
     trips_df = None
     for trip_type in ['indiv', 'joint']:
-        filename = os.path.join("main", "%sTripDataIncome_%d.csv" % (trip_type, iteration))
-        print("{} Reading {}".format(datetime.datetime.now().strftime("%x %X"), filename))
+        filename = pathlib.Path("main") / f"{trip_type}TripDataIncome_{iteration}.csv"
+        print(f"{datetime.datetime.now().strftime('%x %X')} Reading {filename}")
         temp_trips_df = pandas.read_table(filename, sep=",")
-        print("{} Done reading {} {} trips".format(datetime.datetime.now().strftime("%x %X"), len(temp_trips_df), trip_type))
+        print(f"{datetime.datetime.now().strftime('%x %X')} Done reading {len(temp_trips_df):,} {trip_type} trips")
 
         if trip_type == 'indiv':
             # each row is a trip; scale by sampleshare
@@ -221,8 +275,8 @@ if __name__ == '__main__':
             temp_trips_df['num_participants'] = temp_trips_df['num_participants']/sampleshare
             trips_df = pandas.concat([trips_df, temp_trips_df], axis=0)
 
-    print("{} Read {} lines total".format(datetime.datetime.now().strftime("%x %X"), len(trips_df)))
-    # print trips_df.head()
+    print(f"{datetime.datetime.now().strftime('%x %X')} Read {len(trips_df):,} lines total")
+    # print(trips_df.head())
 
     # set time period
     trips_df['time_period'] = "unknown"
@@ -283,21 +337,28 @@ if __name__ == '__main__':
     assert(len(trips_df.loc[trips_df['income_cat']==0])==0)
 
     # write it
-    write_trips_by_od(trips_df, by_income_cat=True, outsuffix="")
+    write_trips_by_od(trips_df, by_category='income', outsuffix="")
+
+    # set poverty category based on household income as percent of poverty and 
+    # Means_Based_Fare_PctOfPoverty_Threshold
+    trips_df['poverty'] = 0
+    trips_df.loc[trips_df.pct_of_poverty <= Means_Based_Fare_PctOfPoverty_Threshold, 'poverty'] = 1
+
+    # write it
+    write_trips_by_od(trips_df, by_category='poverty', outsuffix="")
 
     # Doing active transportation - drop auto
     trips_df = trips_df.loc[trips_df.trip_mode >= 7]
-    print("{} Filtered to non-auto trips, of which there are {}".format(datetime.datetime.now().strftime("%x %X"), len(trips_df)))
+    print(f"{datetime.datetime.now().strftime('%x %X')} Filtered to non-auto trips, of which there are {len(trips_df):,}")
 
     # Joint trips don't have person_ids -- remove them and fill them from joint tours
     joint_trips_df = trips_df.loc[trips_df['person_id'].isnull()]
     trips_df       = trips_df.loc[trips_df['person_id'].notnull()]
     num_joint_trips= joint_trips_df['num_participants'].sum()
-    print("{} => {} indiv trips, {} joint trip rows making {} joint trips".format
-        (datetime.datetime.now().strftime("%x %X"), len(trips_df), len(joint_trips_df), num_joint_trips))
+    print(f"{datetime.datetime.now().strftime('%x %X')} => {len(trips_df):,} indiv trips, {len(joint_trips_df):,} joint trip rows making {num_joint_trips:,} joint trips")
 
     # Read joint tours to get person ids for the joint trips
-    joint_tours   = pandas.read_table(os.path.join("main", "jointTourData_%d.csv" % iteration),
+    joint_tours   = pandas.read_table(pathlib.Path("main") / f"jointTourData_{iteration}.csv",
                                       sep=",", index_col=False)
     joint_tours   = joint_tours[['hh_id','tour_id','tour_participants']]
     joint_tours['num_participants'] = (joint_tours.tour_participants.str.count(' ') + 1.0)/sampleshare
@@ -322,14 +383,14 @@ if __name__ == '__main__':
 
     # put it back together
     trips_df = pandas.concat([trips_df, joint_trips_df], axis=0)
-    print("{} => {} total trips".format(datetime.datetime.now().strftime("%x %X"), len(trips_df)))
+    print(f"{datetime.datetime.now().strftime('%x %X')} => {len(trips_df):,} total trips")
 
     # join trips to persons for ages
     trips_df.drop('person_id', axis=1, inplace=True) # this will come from hh_id, person_num and persons table
-    filename = os.path.join("main", "personData_%d.csv" % iteration)
-    print("{} Reading {}".format(datetime.datetime.now().strftime("%x %X"), filename))
+    filename = pathlib.Path("main") / f"personData_{iteration}.csv"
+    print(f"{datetime.datetime.now().strftime('%x %X')} Reading {filename}")
     persons_df = pandas.read_table(filename, sep=",")
-    print("{} Done reading {} persons".format(datetime.datetime.now().strftime("%x %X"), len(persons_df)))
+    print(f"{datetime.datetime.now().strftime('%x %X')} Done reading {len(persons_df):,} persons")
     trips_df = pandas.merge(left=trips_df,
                             right=persons_df[['hh_id','person_num','person_id','age']],
                             how="left",
@@ -342,44 +403,39 @@ if __name__ == '__main__':
 
     # filter to 20-74 year olds for walking
     trips_df = trips_df.loc[(trips_df['age']>=20)&(trips_df['age']<=74)]
-    print("{} Filtered to {} trips between 20-74 year olds".format
-        (datetime.datetime.now().strftime("%x %X"), len(trips_df)))
+    print(f"{datetime.datetime.now().strftime('%x %X')} Filtered to {len(trips_df):,} trips between 20-74 year olds")
 
     # write it
-    write_trips_by_od(trips_df, by_income_cat=False, outsuffix="_2074")
+    write_trips_by_od(trips_df, by_category='age', outsuffix="_2074")
 
 
     # unique persons who walk
     walking_2074 = trips_df.loc[trips_df['trip_mode_str']=='walk']
     walking_2074 = walking_2074[['person_id']].drop_duplicates()
     travelers_dict['unique_walkers_2074'] = len(walking_2074)/sampleshare
-    print("{} => made by {} unique individuals walking".format
-        (datetime.datetime.now().strftime("%x %X"), travelers_dict['unique_walkers_2074']))
+    print(f"{datetime.datetime.now().strftime('%x %X')} => made by {travelers_dict['unique_walkers_2074']:,} unique individuals walking")
 
     # unique persons who transit
     transit_2074 = trips_df.loc[trips_df['trip_mode']>=9]
     transit_2074 = transit_2074[['person_id']].drop_duplicates()
     travelers_dict['unique_transiters_2074'] = len(transit_2074)/sampleshare
-    print("{} => made by {} unique individuals taking transit".format
-        (datetime.datetime.now().strftime("%x %X"), travelers_dict['unique_transiters_2074']))
+    print(f"{datetime.datetime.now().strftime('%x %X')} => made by {travelers_dict['unique_transiters_2074']:,} unique individuals taking transit")
 
     # filter to 20-64 year olds for biking
     trips_df = trips_df.loc[(trips_df['age']>=20)&(trips_df['age']<=64)]
-    print("{} Filtered to {} trips between 20-64 year olds".format
-        (datetime.datetime.now().strftime("%x %X"), len(trips_df)))
+    print(f"{datetime.datetime.now().strftime('%x %X')}  Filtered to {len(trips_df):,} trips between 20-64 year olds")
 
     # write it
-    write_trips_by_od(trips_df, by_income_cat=False, outsuffix="_2064")
+    write_trips_by_od(trips_df, by_category='age', outsuffix="_2064")
 
     # unique persons who bike
     biking_2064 = trips_df.loc[(trips_df['trip_mode_str']=='bike')]
     biking_2064[['trip_mode_str']].describe()
     biking_2064 = biking_2064[['person_id']].drop_duplicates()
     travelers_dict['unique_cyclists_2064'] = len(biking_2064)/sampleshare
-    print("{} => made by {} unique individuals biking".format
-        (datetime.datetime.now().strftime("%x %X"), travelers_dict['unique_cyclists_2064']))
+    print(f"{datetime.datetime.now().strftime('%x %X')} => made by {travelers_dict['unique_cyclists_2064']:,} unique individuals biking")
 
-    output_filename = os.path.join("metrics", "unique_active_travelers.csv")
+    output_filename = pathlib.Path("metrics") / "unique_active_travelers.csv"
     travelers_s = pandas.Series(travelers_dict.values(), index=travelers_dict.keys())
     travelers_s.to_csv(output_filename, index=True)
-    print("{}  Wrote {}".format(datetime.datetime.now().strftime("%x %X"), output_filename))
+    print(f"{datetime.datetime.now().strftime('%x %X')}  Wrote {output_filename}")
