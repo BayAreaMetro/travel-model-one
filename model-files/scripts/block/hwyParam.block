@@ -19,16 +19,16 @@ FIRSTVALUE    = 31	      ; first value toll has a TOLL code of 31
 TRUCK_DISTRIB_LOS_TOLL_PART = x.xx
 
 ; set by RuntimeConfiguration.py -- AVs
-AV_PCE_FT01  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway-to-freeway ramp
-AV_PCE_FT02  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway 
-AV_PCE_FT03  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = expressway
-AV_PCE_FT04  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = collector
-AV_PCE_FT05  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway ramp
-AV_PCE_FT06  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = centroid connector/dummy link
-AV_PCE_FT07  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = major arterial
-AV_PCE_FT08  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = metered ramp
-AV_PCE_FT09  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeways with ITS treatments and Golden Gate Bridge
-AV_PCE_FT10  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = expressways and arterials with ITS treatments
+AV_PCE_FT01  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 1 freeway-to-freeway ramp
+AV_PCE_FT02  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 2 freeway 
+AV_PCE_FT03  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 3 expressway
+AV_PCE_FT04  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 4 collector
+AV_PCE_FT05  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 5 freeway ramp
+AV_PCE_FT06  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 6 centroid connector/dummy link
+AV_PCE_FT07  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 7 major arterial
+AV_PCE_FT08  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 8 metered ramp
+AV_PCE_FT09  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 9 special facility
+AV_PCE_FT10  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = 10 toll plaza
 
 ; set by RuntimeConfiguration.py -- Zero Passenger Vehicles
 OwnedAV_ZPV_factor  = xx.xx     ; a factor between 0 to 1
