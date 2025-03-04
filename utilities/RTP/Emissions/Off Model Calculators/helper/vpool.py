@@ -24,17 +24,14 @@ class VanPools(OffModelCalculator):
         vMS=self.v['Main sheet']
 
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = OffModelCalculator.get_ipa(self, 0)[0]
-        mainsheet[vMS['Run_directory_2050']] = OffModelCalculator.get_ipa(self, 1)[0]
-        mainsheet[vMS['year_a']] = OffModelCalculator.get_ipa(self, 0)[1]
-        mainsheet[vMS['year_b']] = OffModelCalculator.get_ipa(self, 1)[1]
+        mainsheet[vMS['Run_directory']] = self.runs['run']
+        mainsheet[vMS['year']] = int(self.runs['year'])
 
         # save file
         newWorkbook.save(self.new_workbook_file)
         newWorkbook.close()
 
     def update_calculator(self):
-    
         # Step 1: Create run and copy files  
         OffModelCalculator.copy_workbook(self)
 
@@ -43,8 +40,8 @@ class VanPools(OffModelCalculator):
 
         # Step 3: add model data of selected runs to 'Model Data' sheet
         OffModelCalculator.write_model_data_to_excel(self,modelData,metaData)
-        
-        # Step 4:
+
+        # Step 4: Write model 
         self.write_runid_to_mainsheet()
 
         # Step 5: open close new wb
@@ -57,15 +54,12 @@ class VanPools(OffModelCalculator):
     def update_summary_file(self, summaryPath, folderName):
         df=pd.read_csv(summaryPath)
         row={
-            'year': [2035, 2050],
-            'daily_vehTrip_reduction': [self.rowDict['Vanpool_one_way_vehicle_trip_reductions_2035'][0],
-                                        self.rowDict['Vanpool_one_way_vehicle_trip_reductions_2050'][0]],
-            'daily_vmt_reduction':[self.rowDict['Out_daily_VMT_reduced_2035'][0],
-                                   self.rowDict['Out_daily_VMT_reduced_2050'][0]],
-            'daily_ghg_reduction':[self.rowDict['Out_daily_GHG_reduced_2035'][0],
-                                   self.rowDict['Out_daily_GHG_reduced_2050'][0]],
-            'strategy':[self.strategy,self.strategy],
-            'directory':[folderName,folderName],
+            'year': [self.runs['year']],
+            'daily_vehTrip_reduction': [self.rowDict['Vanpool_one_way_vehicle_trip_reductions'][0]],
+            'daily_vmt_reduction':[self.rowDict['Out_daily_VMT_reduced'][0]],
+            'daily_ghg_reduction':[self.rowDict['Out_daily_GHG_reduced'][0]],
+            'strategy':[self.strategy],
+            'directory':[folderName],
         }
 
         df_new=pd.DataFrame(row, index=None)

@@ -6,9 +6,7 @@ import os
 import openpyxl
 import time
 
-
 from helper import common
-
 
 class OffModelCalculator:
     """
@@ -29,14 +27,15 @@ class OffModelCalculator:
 
     def __init__(self, model_run_id, directory, uid, verbose=False):
         self.uid=uid
-        self.runs = [model_run_id[0], model_run_id[1]]
+        self.runs = model_run_id
         self.pathType=directory
-        self.modelDataPath, self.masterFilePath = common.get_directory_constants(self.pathType)
+        self.modelDataPath, self.masterFilePath = common.get_directory_constants(directory, model_run_id)
         self.masterWbName=""
         self.dataFileName=""
         self.baselineDir=None
+        self.masterLogPath=common.get_master_log_path(directory, model_run_id)
         self.verbose=verbose
-        self.varsDir=common.get_vars_directory(self.pathType)
+        self.varsDir=common.get_vars_directory(directory, model_run_id)
         
     def copy_workbook(self):
         # Start run
@@ -44,9 +43,11 @@ class OffModelCalculator:
         
         # make a copy of the workbook
         self.master_workbook_file = os.path.join(self.masterFilePath,f"{self.masterWbName}.xlsx")
-        self.new_workbook_file = os.path.join(self.newWbFilePath,f"{self.masterWbName}__{self.runs[0]}__{self.runs[1]}.xlsx")
-        
-        
+        self.new_workbook_file = os.path.join(self.newWbFilePath,f"{self.masterWbName}__{self.runs['run']}.xlsx")
+        print("New workbook file")
+        print(self.new_workbook_file)
+        print("master workbook file")
+        print(self.master_workbook_file)
         shutil.copy2(self.master_workbook_file, self.new_workbook_file)
 
         if self.verbose:
@@ -72,8 +73,8 @@ class OffModelCalculator:
         rawData=pd.read_csv(
             os.path.join(self.modelDataPath,f"{self.dataFileName}.csv"),
             skiprows=self.dataRow)
-        
-        filteredData=rawData.loc[rawData.directory.isin(self.runs+[self.baselineDir])]
+
+        filteredData=rawData.loc[rawData.directory.isin([self.runs['run']])]
         # Get metadata from model data
         metaData=OffModelCalculator.get_model_metadata(self)
         
@@ -84,34 +85,21 @@ class OffModelCalculator:
         return filteredData, metaData
 
     def get_sb_data(self):
-        sbPath=common.get_paths(self.pathType)
+        sbPath=common.get_paths(self.runs)
         return pd.read_csv(sbPath['SB375'])
-
-    def get_ipa(self, arg):
-        name=self.runs[arg]
-        pattern = r"(\d{4})_(TM\d{3})_(.*)"
-        matches = re.search(pattern, name)
-
-        if matches:
-            ipa = matches.group(3)
-            year = matches.group(1)
-
-        if self.verbose:
-            print(ipa)
-        
-        return [ipa, int(year)]
 
     def write_sbdata_to_excel(self):
         # add sb375 data
         data=OffModelCalculator.get_sb_data(self)
-        sbData=data.T.loc[['Year','Population', 'DailyCO2','RunID']]
+        data.loc[0,'dailyCO']=0   
+        sbData=data[['year','value', 'dailyCO','category','directory']].T
         with pd.ExcelWriter(self.new_workbook_file, engine='openpyxl', mode = 'a'
                             , if_sheet_exists = 'overlay'
                             ) as writer:  
             sbData.to_excel(writer,
-                            sheet_name='SB 375 Calcs',
+                            sheet_name='SB 375 calcs',
                             index=False,
-                            startcol=1,
+                            startcol=3,
                             header=False)
             
         if self.verbose:
@@ -160,7 +148,7 @@ class OffModelCalculator:
         
         self.updated_workbook_file=os.path.join(self.newWbFilePath,
                                                 f"{self.uid.replace(':','--')}__{self.masterWbName}.xlsx")
-        
+
         excel = win32com.client.Dispatch("Excel.Application")
         wb = excel.Workbooks.Open(self.new_workbook_file)
         excel.Visible=True
@@ -196,7 +184,7 @@ class OffModelCalculator:
 
         # collect data of interest
         data=[]
-        data+=[self.uid,self.runs[0],self.runs[1]]
+        data+=[self.uid,self.runs['run']]
         for metric in vNames:
             try:
                 data.append(mainsheet[vMS[metric]].value)
@@ -207,7 +195,7 @@ class OffModelCalculator:
                 print(f"{metric} Not found.")
                 pass
 
-        vNames=['Timestamp','Baseline Run ID','Horizon Run ID']+vNames
+        vNames=['Timestamp','directory']+vNames
         self.rowDict=dict(map(lambda i,j : (i,[j]) , vNames,data))
         
         # open output sheet
@@ -216,8 +204,13 @@ class OffModelCalculator:
         return log
     
     def check_last_log_index(self):
-        last_entry=pd.read_excel(self.master_workbook_file
-                                 , sheet_name='Output'
+        if len(self.masterWbName)>31:
+            WbName=self.masterWbName[:31]
+        else:
+            WbName=self.masterWbName
+        
+        last_entry=pd.read_excel(self.masterLogPath
+                                 , sheet_name=WbName
                                  , header=[1]
                                  , usecols=[0]
                                  , skiprows=0
@@ -228,23 +221,28 @@ class OffModelCalculator:
         return len(last_entry)
     
     def get_calculator_names(self):
-        log=pd.read_excel(self.master_workbook_file
-                                 , sheet_name='Output'
+        log=pd.read_excel(self.masterLogPath
+                                 , sheet_name=self.masterWbName
                                  , header=[1]
                                  , skiprows=0
                     )
 
-        return log.columns.tolist()[3:]
+        return log.columns.tolist()[2:]
     
     def log_run(self, vNames):
 
         dataTolog=self.extract_data_from_mainsheet(vNames)
         logLength=self.check_last_log_index()
 
-        with pd.ExcelWriter(self.master_workbook_file, engine='openpyxl', mode = 'a', if_sheet_exists = 'overlay') as writer:  
+        if len(self.masterWbName)>31:
+            WbName=self.masterWbName[:31]
+        else:
+            WbName=self.masterWbName
+
+        with pd.ExcelWriter(self.masterLogPath, engine='openpyxl', mode = 'a', if_sheet_exists = 'overlay') as writer:  
             # add log to main calc
             dataTolog.to_excel(writer, 
-                        sheet_name='Output', 
+                        sheet_name=WbName,
                         index=False,
                         header=False,
                         startrow=logLength+2)
@@ -262,9 +260,5 @@ class OffModelCalculator:
                 self.paths['OFF_MODEL_CALCULATOR_DIR_OUTPUT']
                 , self.uid.replace(':','--')
                 , f"off_model_summary_by_strategy_{baseRun}.csv")
-        
-        return summaryPath
 
-     
-            
-            
+        return summaryPath
