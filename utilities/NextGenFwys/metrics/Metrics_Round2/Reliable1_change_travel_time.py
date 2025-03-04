@@ -91,7 +91,7 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
     loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)|(loaded_network_df['useAM'] == 4)]
     loaded_network_df = loaded_network_df.loc[(loaded_network_df['ft'] != 6)]
-    if any(x in tm_run_id for x in ['NoProject','Path4', 'Path5', 'Path6']):
+    if any(x in tm_run_id for x in ['NoProject','Path4', 'Path5', 'Path6', 'Path8']):
         loaded_network_df = loaded_network_df.loc[(loaded_network_df['tollclass'] == 0)]
     
     # join to tolled minor group freeway links lookup table 
@@ -210,7 +210,7 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str)
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
     loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)|(loaded_network_df['useAM'] == 4)]
     loaded_network_df = loaded_network_df.loc[(loaded_network_df['ft'] != 6)]
-    if any(x in tm_run_id for x in ['NoProject','Path4', 'Path5', 'Path6']):
+    if any(x in tm_run_id for x in ['NoProject','Path4', 'Path5', 'Path6', 'Path8']):
         loaded_network_df = loaded_network_df.loc[(loaded_network_df['tollclass'] == 0)]
     
     # join to parallel arterial links lookup table
@@ -387,7 +387,7 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials_epc_non(tm_run_
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
     loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)|(loaded_network_df['useAM'] == 4)]
     loaded_network_df = loaded_network_df.loc[(loaded_network_df['ft'] != 6)]
-    if any(x in tm_run_id for x in ['NoProject','Path4', 'Path5', 'Path6']):
+    if any(x in tm_run_id for x in ['NoProject','Path4', 'Path5', 'Path6', 'Path8']):
         loaded_network_df = loaded_network_df.loc[(loaded_network_df['tollclass'] == 0)] 
    
     # join to parallel arterial links lookup table

@@ -25,8 +25,9 @@ If no iteration is specified, then these include:
  * Truck Trip Distribution gravity LOS term part from tolled time
    + Specify the value in INPUT\\params.properties
    + It will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
- * Telecommute constant
-   + It will be propagated to CTRAMP\\model\\CoordinatedDailyActivityPattern.xls
+ * WFH factors (WFH_Calibration_constant, WFH_Calibration_eastbay_SF)
+   + Specify the values in INPUT\\params.properties
+   + They will be propagated to CTRAMP\\runtime\\mtcTourBased.properties
  * Means Based Tolling (Q1 and Q2) factors
    + They will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
                                 CTRAMP\\runtime\\mtcTourBased.properties
@@ -230,22 +231,22 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     WorkTransitHesitance     = float(get_property(params_filename, params_contents, "Work_Transit_Hesitance"))
     NonWorkTransitHesitance  = float(get_property(params_filename, params_contents, "NonWork_Transit_Hesitance"))
-    BARTTransitHesitance     = float(get_property(params_filename, params_contents, "BART_Transit_Hesitance"))
+    RailTransitHesitance     = float(get_property(params_filename, params_contents, "Rail_Transit_Hesitance"))
 
+    # Toll Factors (discounts) - NonCordon & Cordon
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
-    MeansBasedFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
-    MeansBasedFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
-
-    # cordon
     MeansBasedCordonTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q1Factor"))
     MeansBasedCordonTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q2Factor"))
-    MeansBasedCordonFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
-    MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
 
-    # WFH factors
-    WFHFullTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_FullTimeWorker_Factor"))
-    WFHPartTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_PartTimeWorker_Factor"))
+    # Transit Fare Factors (discounts) - NonCordon & Cordon
+    MeansBasedFarePctOfPovertyThreshold =   int(get_property(params_filename, params_contents, "Means_Based_Fare_PctOfPoverty_Threshold"))
+    MeansBasedFareFactor                = float(get_property(params_filename, params_contents, "Means_Based_Fare_Factor"))
+    MeansBasedCordonFareFactor          = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Factor"))
+
+    # WFH factor
+    WFH_Calibration_constant   = float(get_property(params_filename, params_contents, "WFH_Calibration_constant"))
+    WFH_Calibration_eastbay_SF = float(get_property(params_filename, params_contents, "WFH_Calibration_eastbay_SF"))
 
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCshared_TourMode"))
@@ -307,21 +308,22 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     replacements[filepath]["(\nWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WorkTransitHesitance
     replacements[filepath]["(\nNonWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % NonWorkTransitHesitance
-    replacements[filepath]["(\nBART_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % BARTTransitHesitance
+    replacements[filepath]["(\nRail_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % RailTransitHesitance
 
+    # Toll Factors (discounts) - NonCordon & Cordon
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
-    replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
-    replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
-
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
-    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
-    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
 
-    # WFH factors
-    replacements[filepath]["(\nCDAP.WFH.FullTimeWorker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHFullTimeWorkerFactor
-    replacements[filepath]["(\nCDAP.WFH.PartTimeworker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHPartTimeWorkerFactor
+    # Transit Fare Factors (discounts) - NonCordon & Cordon
+    replacements[filepath]["(\nMeans_Based_Fare_PctOfPoverty_Threshold[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d"   % MeansBasedFarePctOfPovertyThreshold
+    replacements[filepath]["(\nMeans_Based_Fare_Factor[ \t]*=[ \t]*)(\S*)"]                 = r"\g<1>%.2f" % MeansBasedFareFactor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Factor[ \t]*=[ \t]*)(\S*)"]          = r"\g<1>%.2f" % MeansBasedCordonFareFactor
+
+    # WFH factor
+    replacements[filepath]["(\nCDAP.WFH.CalibrationConstant[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFH_Calibration_constant
+    replacements[filepath]["(\nCDAP.WFH.Calibration.eastbay_SF[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFH_Calibration_eastbay_SF
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
@@ -399,6 +401,15 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
         filepath = os.path.join("CTRAMP","runtime","logsums.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
 
+
+    # find the minimum value toll
+    MinimumValueToll = float(get_property(params_filename, params_contents, "min_vtoll"))
+
+    # put them into the CTRAMP\scripts\block\hwyParam.block
+    filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
+    replacements[filepath]["(\nmin_vtoll[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MinimumValueToll
+
+
     # put it into the UECs
     config_uec("%.2f" % auto_opc)
 
@@ -434,14 +445,17 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     OwnedAV_zpv      = float(get_property(params_filename, params_contents, "OwnedAV_ZPV_fac"))
     TNC_zpv          = float(get_property(params_filename, params_contents, "TNC_ZPV_fac"))
 
+    # Toll Factors (discounts) - NonCordon & Cordon
     MeansBasedTollsQ1Factor       = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor       = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
     MeansBasedCordonTollsQ1Factor = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q1Factor"))
     MeansBasedCordonTollsQ2Factor = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q2Factor"))
-    MeansBasedFareQ1Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
-    MeansBasedFareQ2Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
-    MeansBasedCordonFareQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
-    MeansBasedCordonFareQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
+
+    # Transit Fare Factors (discounts) - NonCordon & Cordon
+    MeansBasedFarePctOfPovertyThreshold =   int(get_property(params_filename, params_contents, "Means_Based_Fare_PctOfPoverty_Threshold"))
+    MeansBasedFareFactor                = float(get_property(params_filename, params_contents, "Means_Based_Fare_Factor"))
+    MeansBasedCordonFareFactor          = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Factor"))
+
     HSRInterregionalDisable       =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
@@ -467,10 +481,10 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
 
     # put the means based fare discount factors into CTRAMP\scripts\block\trnParam.block
     filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")
-    replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
-    replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
-    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
-    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
+    replacements[filepath]["(\nMeans_Based_Fare_PctOfPoverty_Threshold[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % MeansBasedFarePctOfPovertyThreshold
+    replacements[filepath]["(\nMeans_Based_Fare_Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareFactor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareFactor
+
     replacements[filepath]["(\nHSR_Interregional_Disable[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d"   % HSRInterregionalDisable
 
 def config_logsums(replacements, append):

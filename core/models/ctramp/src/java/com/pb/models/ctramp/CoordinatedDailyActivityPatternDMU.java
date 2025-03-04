@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.apache.log4j.Logger;
 
 import com.pb.common.calculator.IndexValues;
+import com.pb.common.calculator.MatrixDataManager;
 import com.pb.common.calculator.VariableTable;
 
 /**
@@ -32,27 +33,31 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
     public CoordinatedDailyActivityPatternDMU(){
     	dmuIndex = new IndexValues();
     }
-
-    public void setPropertyFileValues( HashMap<String, String> propertyMap ) {
-        // pass
-    }
     
-    public void setDmuIndexValues(int zoneId) {
-        dmuIndex.setZoneIndex(zoneId);
+    public void setDmuIndexValues(int hhId, int homeTaz, int workTaz, Logger localLogger) {
+        setDmuIndexValues(hhId, homeTaz, workTaz);
+        if ( householdObject.getDebugChoiceModels() ) {
+            localLogger.info("CoordinatedDailyActivityPatternDMU.setDmuIndexValues(): " + dmuIndex.toString());
+        }
+    }
 
+    public void setDmuIndexValues(int hhId, int homeTaz, int workTaz) {
+        dmuIndex.setHHIndex(hhId);
+        dmuIndex.setOriginZone(homeTaz);
+        dmuIndex.setDestZone(workTaz);
         dmuIndex.setDebug(false);
-        dmuIndex.setDebugLabel ( "" );
+        dmuIndex.setDebugLabel("");
+
         if ( householdObject.getDebugChoiceModels() ) {
             dmuIndex.setDebug(true);
-            dmuIndex.setDebugLabel ( "Debug CDAP UEC" );
+            dmuIndex.setDebugLabel ("Debug CDAP UEC");
         }
-
     }
     
     public IndexValues getIndexValues() {
         return dmuIndex; 
     }
-    
+
     public void setHousehold(Household passedInHouseholdObject){
     	
     	householdObject = passedInHouseholdObject;
@@ -71,9 +76,13 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
         dmuIndex.setStopZone(passedInPersonA.getPersonWorkLocationZone());
     }
 
-    public void setWorksFromHomeForPersonA(Logger cdapLogger) {
+    public void setIndustryForPersonA(Logger cdapLogger) {
         // pass -- implemented in subclass
     }
+    public IndexValues getDmuIndexValues() {
+        return dmuIndex;
+    }
+    
     
     public void setPersonB(Person passedInPersonB){
     	this.personB = passedInPersonB;
