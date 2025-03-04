@@ -2,8 +2,9 @@ USAGE = """
 
   Since more recent data is available from QCEW (as of July 2023), this script will:
    - calculate the percent change in annual employment, by county and ABAG6 industry 
-     category, from 2020 to 2022 in the QCEW annual data, and
-   - apply that percent change to the 2020 employment data.
+     category, from 2021 to 2023 in the QCEW annual data, and
+   - apply that percent change to the 2020 employment data (which is really 2021 employment
+     data -- see Note 5 in create_2020_tazdata.R).
 
   See discussion in Asana task: https://app.asana.com/0/0/1204885735452348/f
 
@@ -14,23 +15,23 @@ import numpy, pandas
 sys.path.append("..")
 from common import NAICS2_EMPSIX
 
-TAZ_EMPLOYMENT_2020_FILE        = "..\\2020\\Employment\\lodes_wac_employment.csv"
+TAZ_EMPLOYMENT_2021_FILE        = "..\\2020\\Employment\\lodes_wac_employment_2021.csv"
 TAZ_SUPERDISTRICT_COUNTY_FILE   = "X:\\travel-model-one-master\\utilities\\geographies\\taz-superdistrict-county.csv"
 QCEW_FILE                       = "M:\\Data\\QCEW\\qcew_BayArea_{}_annual.csv" # arg is year
-OUTPUT_FILE                     = "employment_2020_with_QCEW_pct_change_applied.csv"
+OUTPUT_FILE                     = "employment_2021_with_QCEW_pct_change_applied.csv"
 
 if __name__ == "__main__":
 
-    # first, read the QCEW data for 2020 and 2022    
+    # first, read the QCEW data for 2021 and 2023
     qcew_df = pandas.concat([
-        pandas.read_csv(QCEW_FILE.format(2020), 
+        pandas.read_csv(QCEW_FILE.format(2021), 
                         usecols=['year','industry_code','county','annual_avg_emplvl'],
                         dtype={'industry_code':str}),
-        pandas.read_csv(QCEW_FILE.format(2022),
+        pandas.read_csv(QCEW_FILE.format(2023),
                         usecols=['year','industry_code','county','annual_avg_emplvl'],
                         dtype={'industry_code':str})
     ])
-    print("Read {:,} lines from 2020, 2023 QCEW".format(len(qcew_df)))
+    print("Read {:,} lines from 2021, 2023 QCEW".format(len(qcew_df)))
 
     # filter to NAICS2
     qcew_df = qcew_df.loc[
@@ -52,20 +53,20 @@ if __name__ == "__main__":
     # pivot year to columns
     qcew_df = pandas.pivot_table(qcew_df, values='annual_avg_emplvl', index=['county','empsix'], columns=['year'])
     qcew_df.reset_index(drop=False, inplace=True)
-    qcew_df.rename(columns={2020:'qcew_emp_2020', 2022:'qcew_emp_2022'}, inplace=True)
+    qcew_df.rename(columns={2021:'qcew_emp_2021', 2023:'qcew_emp_2023'}, inplace=True)
 
     # calculate diff and percent diff
-    qcew_df['qcew_emp_diff'] = qcew_df.qcew_emp_2022 - qcew_df.qcew_emp_2020
-    qcew_df['qcew_pct_diff'] = qcew_df.qcew_emp_diff / qcew_df.qcew_emp_2020
+    qcew_df['qcew_emp_diff'] = qcew_df.qcew_emp_2023 - qcew_df.qcew_emp_2021
+    qcew_df['qcew_pct_diff'] = qcew_df.qcew_emp_diff / qcew_df.qcew_emp_2021
 
     # 8/9/2023: employment is too high -- apply half
     qcew_df['qcew_pct_diff'] = 0.5*qcew_df.qcew_pct_diff
     print("qcew_df final head():\n{}".format(qcew_df.head()))
 
-    # read 2020 employment data
-    employment_df = pandas.read_csv(TAZ_EMPLOYMENT_2020_FILE)
+    # read 2021 employment data
+    employment_df = pandas.read_csv(TAZ_EMPLOYMENT_2021_FILE)
     print("Read {:,} lines from {}".format(
-        len(employment_df), TAZ_EMPLOYMENT_2020_FILE))
+        len(employment_df), TAZ_EMPLOYMENT_2021_FILE))
     print(employment_df.head())
 
     # map TAZ to county
@@ -98,7 +99,7 @@ if __name__ == "__main__":
         j = 'empsix',
         sep = '_',
         suffix = '\D+').reset_index(drop=False)
-    employment_df.rename(columns={'EMPN':'emp_2020'}, inplace=True)
+    employment_df.rename(columns={'EMPN':'emp_2021'}, inplace=True)
     employment_df.empsix = employment_df.empsix + str("EMPN")
     print(employment_df.head())
 
@@ -124,8 +125,8 @@ if __name__ == "__main__":
 
     print("employment_df with qcew pct diff head():\n{}".format(employment_df.head()))
     # apply the percent diff (if non NaN)
-    employment_df['emp_2023'] = employment_df.emp_2020
-    employment_df.loc[ pandas.notna(employment_df.factor), 'emp_2023'] = employment_df.emp_2020*employment_df.factor
+    employment_df['emp_2023'] = employment_df.emp_2021
+    employment_df.loc[ pandas.notna(employment_df.factor), 'emp_2023'] = employment_df.emp_2021*employment_df.factor
 
     # round result and convert to int
     employment_df.emp_2023 = employment_df.emp_2023.round(0).astype(int)
@@ -134,9 +135,9 @@ if __name__ == "__main__":
     
     print("Final employment_df.head():\n{}".format(employment_df.head()))
     employment_2023_summary_df = employment_df.groupby(['county','empsix']).agg(
-        {'emp_2020':'sum','emp_2023':'sum', 'qcew_pct_diff':'first'})
-    employment_2023_summary_df['emp_diff'] = employment_2023_summary_df.emp_2023 - employment_2023_summary_df.emp_2020
-    employment_2023_summary_df['pct_diff'] = employment_2023_summary_df.emp_diff/employment_2023_summary_df.emp_2020
+        {'emp_2021':'sum','emp_2023':'sum', 'qcew_pct_diff':'first'})
+    employment_2023_summary_df['emp_diff'] = employment_2023_summary_df.emp_2023 - employment_2023_summary_df.emp_2021
+    employment_2023_summary_df['pct_diff'] = employment_2023_summary_df.emp_diff/employment_2023_summary_df.emp_2021
 
     print('Summary:\n{}'.format(employment_2023_summary_df))
     print('Total change: {:,}'.format(employment_2023_summary_df['emp_diff'].sum()))
@@ -148,6 +149,8 @@ if __name__ == "__main__":
         index=['TAZ1454'],
         columns=['empsix']
     ).reset_index(drop=False)
+    for col in ['AGREMPN','FPSEMPN','HEREMPN','MWTEMPN','OTHEMPN','RETEMPN']:
+        employment_2023_df[col] = employment_2023_df[col].astype(int)
     employment_2023_df['TOTEMP'] = \
         employment_2023_df.AGREMPN + \
         employment_2023_df.FPSEMPN + \

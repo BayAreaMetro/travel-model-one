@@ -533,7 +533,8 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
         scenario_metrics_df = scenario_metrics_df.loc[ 
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share') |
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_coc') |
-            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_epc') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_epc18') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_epc22') |
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_hra')]
 
         # extract mode, time, person_segment
@@ -599,7 +600,12 @@ def calculate_Connected2_crowding(model_runs_dict: dict):
         # read the transit crowing model results
         trn_crowding_file = model_run_dir / "OUTPUT" / "metrics" / "transit_crowding_complete.csv"
         LOGGER.info("    Reading {}".format(trn_crowding_file))
-        tm_crowding_df = pd.read_csv(trn_crowding_file, usecols=['TIME','SYSTEM','MODE','ABNAMESEQ','period','load_standcap','AB_VOL'])
+        try:
+            tm_crowding_df = pd.read_csv(trn_crowding_file, usecols=['TIME','SYSTEM','MODE','ABNAMESEQ','period','load_standcap','AB_VOL'])
+        except FileNotFoundError:
+            LOGGER.info(f"  f{trn_crowding_file} not found. Skipping")
+            continue
+    
 
         # select only AM
         tm_crowding_df = tm_crowding_df.loc[tm_crowding_df['period'] == "AM"]
@@ -1022,7 +1028,11 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
         
         jtw_modes_file = model_run_dir / "OUTPUT" / "core_summaries" / "JourneyToWork_modes.csv"
         LOGGER.info(f"  Reading {jtw_modes_file}")
-        jtw_modes_df = pd.read_csv(jtw_modes_file)
+        try:
+            jtw_modes_df = pd.read_csv(jtw_modes_file)
+        except FileNotFoundError:
+            LOGGER.info(f"  f{jtw_modes_file} not found. Skipping")
+            continue
         LOGGER.debug("  jtw_modes_df.head(10):\n{}".format(jtw_modes_df.head(10)))
 
         # groupby ptype_label, wfh_choice, tour_mode
@@ -1102,7 +1112,11 @@ def calculate_Vibrant1_mean_commute(model_runs_dict: dict):
         
         commute_file = model_run_dir / "OUTPUT" / "core_summaries" / "CommuteByIncomeHousehold.csv"
         LOGGER.info(f"  Reading {commute_file}")
-        tm_commute_df = pd.read_csv(commute_file)
+        try:
+            tm_commute_df = pd.read_csv(commute_file)
+        except FileNotFoundError:
+            LOGGER.info(f"  f{commute_file} not found. Skipping")
+            continue        
         LOGGER.debug("  tm_commute_df.head(10):\n{}".format(tm_commute_df))
 
         tm_commute_df['total_commute_miles'] = tm_commute_df['freq'] * tm_commute_df['distance']
@@ -1149,7 +1163,7 @@ if __name__ == '__main__':
     TM_RUN_LOCATION      = pathlib.Path('M:/Application/Model One/{}/'.format(my_args.rtp))
     TM_RUN_LOCATION_IP   = TM_RUN_LOCATION / 'IncrementalProgress'
     TM_RUN_LOCATION_BP   = TM_RUN_LOCATION / 'Blueprint'
-    MODELRUNS_XLSX       = pathlib.Path('../config_{}/ModelRuns_{}.xlsx'.format(my_args.rtp, my_args.rtp))
+    MODELRUNS_XLSX       = pathlib.Path('X:\\travel-model-one-master') / 'utilities' / 'RTP' / f'config_{my_args.rtp}' / f'ModelRuns_{my_args.rtp}.xlsx'
 
     # Set location of external inputs
     #All files are located in below folder / check sources.txt for sources
@@ -1161,7 +1175,7 @@ if __name__ == '__main__':
         BOX_METRICS_OUTPUT_DIR           = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "PBA50_reproduce_for_QA"
         METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
     else:
-        METRICS_BOX_DIR                  = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Draft_Blueprint"
+        METRICS_BOX_DIR                  = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Final_Blueprint"
         METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
         INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
         BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
@@ -1239,7 +1253,8 @@ if __name__ == '__main__':
 
     # Healthy
     if (my_args.only == None) or (my_args.only == 'healthy'):
-        extract_Healthy1_safety(model_runs_dict, my_args.rtp)
+        # TODO
+        # extract_Healthy1_safety(model_runs_dict, my_args.rtp)
         extract_Healthy1_PM25(model_runs_dict, my_args.rtp)
         extract_Healthy2_CO2_Emissions(model_runs_dict, my_args.rtp)
         calculate_Healthy2_commutemodeshare(model_runs_dict, my_args.rtp)

@@ -40,7 +40,6 @@ class Carshare(OffModelCalculator):
                                  , header=[1]
                                  , skiprows=0
                     )
-
         return log.columns.tolist()[2:]
 
     def update_calculator(self):

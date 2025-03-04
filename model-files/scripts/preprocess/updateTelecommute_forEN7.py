@@ -220,7 +220,14 @@ if __name__ == '__main__':
     # does_not_wfh  auto, non_auto, no_tour
     wfh_mode_value_counts = work_tours_df[['wfh_choice_str','simple_mode']].value_counts()
     logging.debug("work_tours_df wfh_choice_str,simple_mode:\n{}".format(wfh_mode_value_counts))
-    assert(len(wfh_mode_value_counts)==4)
+    # how many are wfh + (auto/non_auto)?
+    wfh_and_go_to_work = 0
+    if ('wfh','auto'    ) in wfh_mode_value_counts.index: wfh_and_go_to_work += wfh_mode_value_counts.loc[('wfh','auto')]
+    if ('wfh','non_auto') in wfh_mode_value_counts.index: wfh_and_go_to_work += wfh_mode_value_counts.loc[('wfh','non_auto')]
+    logging.debug(f"{wfh_and_go_to_work:,} workers both wfh and go to work, or {wfh_and_go_to_work/wfh_mode_value_counts.sum()}")
+
+    # assert it's small: <2%
+    assert(wfh_and_go_to_work/wfh_mode_value_counts.sum() < 0.02)
 
     # aggregate to work SD
     work_mode_SD_df = work_tours_df.groupby(

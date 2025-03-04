@@ -93,7 +93,6 @@ class OffModelCalculator:
         data=OffModelCalculator.get_sb_data(self)
         data.loc[0,'dailyCO']=0   
         sbData=data[['year','value', 'dailyCO','category','directory']].T
-
         with pd.ExcelWriter(self.new_workbook_file, engine='openpyxl', mode = 'a'
                             , if_sheet_exists = 'overlay'
                             ) as writer:  
@@ -261,9 +260,5 @@ class OffModelCalculator:
                 self.paths['OFF_MODEL_CALCULATOR_DIR_OUTPUT']
                 , self.uid.replace(':','--')
                 , f"off_model_summary_by_strategy_{baseRun}.csv")
-  
-        return summaryPath
 
-     
-            
-            
+        return summaryPath
