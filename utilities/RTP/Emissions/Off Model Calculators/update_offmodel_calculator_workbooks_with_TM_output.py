@@ -114,4 +114,3 @@ if __name__ == '__main__':
                 print("Summary file exists.")
             
             c.update_summary_file(outputSummary,r['run'])
-        

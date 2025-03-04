@@ -46,7 +46,6 @@ class OffModelCalculator:
         self.new_workbook_file = os.path.join(self.newWbFilePath,f"{self.masterWbName}__{self.runs['run']}.xlsx")
         print("New workbook file")
         print(self.new_workbook_file)
-
         print("master workbook file")
         print(self.master_workbook_file)
         shutil.copy2(self.master_workbook_file, self.new_workbook_file)
@@ -74,7 +73,7 @@ class OffModelCalculator:
         rawData=pd.read_csv(
             os.path.join(self.modelDataPath,f"{self.dataFileName}.csv"),
             skiprows=self.dataRow)
-        
+
         filteredData=rawData.loc[rawData.directory.isin([self.runs['run']])]
         # Get metadata from model data
         metaData=OffModelCalculator.get_model_metadata(self)
@@ -244,7 +243,7 @@ class OffModelCalculator:
         with pd.ExcelWriter(self.masterLogPath, engine='openpyxl', mode = 'a', if_sheet_exists = 'overlay') as writer:  
             # add log to main calc
             dataTolog.to_excel(writer, 
-                        sheet_name=WbName, 
+                        sheet_name=WbName,
                         index=False,
                         header=False,
                         startrow=logLength+2)
@@ -262,8 +261,7 @@ class OffModelCalculator:
                 self.paths['OFF_MODEL_CALCULATOR_DIR_OUTPUT']
                 , self.uid.replace(':','--')
                 , f"off_model_summary_by_strategy_{baseRun}.csv")
-        
-
+  
         return summaryPath
 
      

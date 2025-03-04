@@ -31,7 +31,7 @@ class TargetedTransAlt(OffModelCalculator):
             print(rawData['directory'].unique())
 
         return filteredData, metaData
-    
+
     def write_runid_to_mainsheet(self):
         # get variables location in calculator
         OffModelCalculator.get_variable_locations(self)

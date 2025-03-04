@@ -310,6 +310,17 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 ) ELSE (
   set EN7=DISABLED
 )
+
+:: ------
+:: Off-model calculation 
+:: ------
+set runOffModel=Yes
+if "%runOffModel%"=="Yes" (
+    mkdir CTRAMP\scripts\offmodel
+    c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\utilities\RTP\Emissions\Off Model Calculators"   CTRAMP\scripts\offmodel
+    copy /Y "%GITHUB_DIR%\utilities\RTP\RunOffmodel.bat" %CURRENT_DIR%
+)
+
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
