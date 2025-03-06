@@ -24,30 +24,7 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 
 :: The location of R and R libraries
 set R_HOME=C:\Program Files\R\R-4.2.1
-set R_LIB=C:\Users\mtcpb\Documents\R\win-library\3.5
-if "%COMPUTER_PREFIX%" == "WIN-" (
-  set R_LIB=C:\Users\Administrator\Documents\R\win-library\3.5
-)
-if "%computername%" == "MODEL2-D" (
-  set R_HOME=C:\Program Files\R\R-4.2.1
-  set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
-)
-if "%computername%" == "MODEL3-A" (
-  set R_HOME=C:\Program Files\R\R-4.2.1
-  set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
-)
-if "%computername%" == "MODEL3-B" (
-  set R_HOME=C:\Program Files\R\R-4.2.1
-  set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
-)
-if "%computername%" == "MODEL3-C" (
-  set R_HOME=C:\Program Files\R\R-4.2.1
-  set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
-)
-if "%computername%" == "MODEL3-D" (
-  set R_HOME=C:\Program Files\R\R-4.2.1
-  set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
-)
+set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
 
 :: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
