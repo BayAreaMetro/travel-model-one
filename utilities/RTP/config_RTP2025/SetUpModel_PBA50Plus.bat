@@ -40,6 +40,11 @@ set PARAMS=X:\travel-model-one-v1.6.1_develop\utilities\RTP\config_RTP2025\param
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=%GITHUB_DIR%\utilities\RTP\strategy_overrides
 
+:: set calculators for off-model strategies
+set runOffModel=Yes
+set offModelCalculator_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\offmodel_calculators
+set offModelCalculatorVersion=FBP_v2
+::set offModelCalculator_masterLog_DIR=M:\Application\Model One\RTP2025\off_model_master_log
 
 :: --------------------------------------------
 :: before setting up the folder structure and copying CTRAMP
@@ -296,11 +301,15 @@ if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 :: ------
 :: Off-model calculation 
 :: ------
-set runOffModel=Yes
-if "%runOffModel%"=="Yes" (
-    mkdir CTRAMP\scripts\offmodel
-    c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\utilities\RTP\Emissions\Off Model Calculators"   CTRAMP\scripts\offmodel
+if %runOffModel%==Yes (
+    :: copy over the off-model batch script
     copy /Y "%GITHUB_DIR%\utilities\RTP\RunOffmodel.bat" %CURRENT_DIR%
+    mkdir CTRAMP\scripts\offmodel
+    :: copy over other off-model data prep and calculation scripts
+    c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\utilities\RTP\Emissions\Off Model Calculators"   CTRAMP\scripts\offmodel
+    :: copy over off-model calculators - master excel workbooks
+    mkdir CTRAMP\scripts\offmodel\calculators
+    c:\windows\system32\Robocopy.exe /NP /E "%offModelCalculator_DIR%\%offModelCalculatorVersion%"     CTRAMP\scripts\offmodel\calculators
 )
 
 :DoneAddingStrategies
