@@ -164,7 +164,7 @@ def prep_data_for_TargetedAlt(taz_input_df, tripdist_output_df, popsyn_input_df)
 
     alt_all_summary.to_csv(os.path.join(OUTPUT_DIR, 'targetedTransportationAlternatives.csv'), index=False)
 
-######## Model Data - Bike Infrastructure.csv
+######## Bike Infrastructure.csv
 # Data needed: TAZ input, trips output
 def prep_data_for_bikeInfra(taz_input_df, tripdist_output_df, popsyn_input_df):
     """
@@ -270,6 +270,14 @@ def prep_data_for_bikeInfra(taz_input_df, tripdist_output_df, popsyn_input_df):
     
     sd_all_df_long.to_csv(os.path.join(OUTPUT_DIR, 'bikeInfrastructure.csv'), index=False)
 
+######## Other Calculators
+# The RegionalCharger, VehicleBuyback, and Ebike calculators do not use travel model data, but tot_pop is needed to calculate
+# per capita reduction
+def prep_data_for_totPop_only(popsyn_input_df):
+    tot_pop = pd.DataFrame(columns=['variable', 'value'])
+    tot_pop.loc[-1] = ['total_pop_popsyn', popsyn_input_df.shape[0]]
+
+    tot_pop.to_csv(os.path.join(OUTPUT_DIR, 'totPopOnly.csv'), index=False)
 
 if __name__ == '__main__':
 
@@ -350,3 +358,4 @@ if __name__ == '__main__':
     prep_data_for_employerShuttle(trips_df, popsyn_persons_df)
     prep_data_for_TargetedAlt(tazdata_df, tripdist_df, popsyn_persons_df)
     prep_data_for_bikeInfra(tazdata_df, tripdist_df, popsyn_persons_df)
+    prep_data_for_totPop_only(popsyn_persons_df)
