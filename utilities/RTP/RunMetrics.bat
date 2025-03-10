@@ -78,11 +78,13 @@ if not exist metrics (mkdir metrics)
 
 if not exist main\tripsEVinc1.dat (
   rem Convert trip tables into time/income/mode OD matrices
-  rem Input : main\(indiv|joint)TripDataIncome_%ITER%.csv
+  rem Input : INPUT\params.properties
+  rem         main\(indiv|joint)TripDataIncome_%ITER%.csv
   rem         main\jointTourData_%ITER%.csv
   rem         main\personData_%ITER%.csv
   rem         database\ActiveTimeSkimsDatabase(EA|AM|MD|PM|EV).csv
   rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].dat
+  rem         main\trips[EA|AM|MD|PM|EV]inc[1-4]_poverty[0|1].dat
   rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
   rem         metrics\unique_active_travelers.csv
@@ -92,12 +94,14 @@ if not exist main\tripsEVinc1.dat (
 
 if not exist main\tripsAM_no_zpv_allinc.tpp (
   rem Convert person trip tables into time/income/mode OD person trip matrices
-  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat,
-  rem         main\trips(EA|AM|MD|PM|EV)_2074.dat,
+  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat
+  rem         main\trips[EA|AM|MD|PM|EV]inc[1-4]_poverty[0|1].dat
+  rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
-  rem Output: main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
+  rem Output: main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp
+  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4]_poverty[0|1].tpp
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp
   runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
@@ -105,7 +109,9 @@ if not exist main\tripsAM_no_zpv_allinc.tpp (
 
 if not exist metrics\transit_times_by_mode_income.csv (
   rem Reads person trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp,
+  rem Input : CTRAMP\scripts\block\trnParam.block
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4]_poverty[0|1].tpp
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,

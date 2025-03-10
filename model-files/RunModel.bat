@@ -167,11 +167,11 @@ mkdir logsums
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt 
 
-:: Move the input files, which are not accessed by the model, to the working directories
+:: Copy the input files, which are not accessed by the model, to the working directories
+:: popsyn files will be copied by filterUnconnectedHouseholds.py
 copy INPUT\hwy\                 hwy\
 copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
-copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
@@ -419,7 +419,18 @@ if %PROJECT%==NGF (
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 17:  Directory clean up
+:: Step 17:  Off-model Calculation (only for 2035 and 2050)
+::
+:: ------------------------------------------------------------------------------------------------------
+
+if "%runOffModel%"=="Yes" (
+  call RunOffmodel
+  if ERRORLEVEL 2 goto done                         .
+)
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 18:  Directory clean up
 ::
 :: ------------------------------------------------------------------------------------------------------
 
