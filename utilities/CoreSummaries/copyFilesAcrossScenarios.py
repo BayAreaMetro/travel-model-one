@@ -16,6 +16,7 @@ USAGE = r"""
 """
 import argparse, os, re, pathlib, shutil
 import pandas
+import subprocess
 
 # output_dir -> file_list
 COPY_FILES = {
@@ -69,6 +70,10 @@ COPY_FILES = {
     ],
     "OUTPUT\\emfac":[
         "emfac_summary",
+    ],
+    "OUTPUT\\offmodel":[
+        "off_model_summary",
+        "off_model_tot"
     ],
     "INPUT\\landuse":[
         "tazData",
@@ -144,6 +149,12 @@ if __name__ == '__main__':
     # copy files
     for copy_dir in COPY_FILES.keys():
         print(f"Copying files for {copy_dir}")
+
+        if copy_dir == "OUTPUT\\offmodel":
+            dirname = os.path.dirname(__file__)
+            print(dirname)
+            print(os.path.join(dirname, "../RTP/Emissions/Off Model Calculators/extract_offmodel_results.py"))
+            subprocess.run(["python", os.path.join(dirname, "../RTP/Emissions/Off Model Calculators/extract_offmodel_results.py")])
 
         for copy_file in COPY_FILES[copy_dir]:
 
