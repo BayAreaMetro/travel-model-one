@@ -101,6 +101,8 @@ TRN_STOPS_SHPFILE = "network_trn_stops{}.shp"
 # aggregated by name set
 TRN_ROUTE_LINKS_SHPFILE = "network_trn_route_links.shp"
 
+COUNTY_SHPFILE    = "X:/travel-model-one-master/utilities/geographies/region_county.shp"
+
 TIMEPERIOD_DURATIONS = collections.OrderedDict([
     ("EA",3.0),
     ("AM",4.0),
@@ -957,18 +959,18 @@ if __name__ == '__main__':
 
 
     del stop_cursor
-    logging.info("Wrote {} stops to {}".format(stop_count, TRN_STOPS_SHPFILE))
+    logging.info(f"Wrote {stop_count:,} stops to {TRN_STOPS_SHPFILE.format('')}")
 
     del line_cursor
-    logging.info("Wrote {} lines to {}".format(line_count, TRN_LINES_SHPFILE))
+    logging.info(f"Wrote {line_count:,} lines to {TRN_LINES_SHPFILE.format('')}")
 
     del link_cursor
-    logging.info("Wrote {} links and {} support links to {}".format(link_count, len(support_df), TRN_LINKS_SHPFILE))
+    logging.info(f"Wrote {link_count:,} links and {len(support_df)} support links to {TRN_LINKS_SHPFILE.format('')}")
 
     # aggregate link level data
     links_df = pandas.DataFrame(columns=link_rows_cols, data=link_rows)
     links_df["LINE_COUNT"] = 1
-    logging.debug("\n{}".format(links_df.head(20)))
+    logging.debug(f"\n{links_df.head(20)}")
 
     # aggregate by A,B,MODE,MODE_NAME,MODE_TYPE,OPERATOR_T,NAME_SET
     links_df_GB = links_df.groupby(by=["A","B","A_STATION","B_STATION","NAME_SET","MODE","MODE_NAME","MODE_TYPE","OPERATOR_T"])
@@ -1063,7 +1065,7 @@ if __name__ == '__main__':
         link_cursor.insertRow(cursor_rec)
 
     del link_cursor
-    logging.info("Wrote {} links to {}".format(len(links_df), TRN_ROUTE_LINKS_SHPFILE))
+    logging.info(f"Wrote {len(links_df)} links to {TRN_ROUTE_LINKS_SHPFILE}")
 
 # Amend the network_trn_links shapefile:
 # Join network_trn_links shapefile to include county and network_trn_lines shapefile. 
@@ -1078,27 +1080,22 @@ if __name__ == '__main__':
 # Developed for task: Add transit VRH and transit boarding by county to Transit tableau
 # https://app.asana.com/0/1200580945030144/1205086281493905/f
 # Requires ArcPy
-print("Start the amendment the network_trn_links shapefile to include county and network_trn_lines shapefile")
+logging.info("Amending the network_trn_links shapefile to include county and frequency")
 
-# read the existing network_trn_links.shp
-TRN_LINKS_SHPFILE = 'network_trn_links.shp'
-print(TRN_LINKS_SHPFILE)
-# read the county shapefile
-COUNTY_SHPFILE    = "X:/travel-model-one-master/utilities/geographies/region_county.shp"
-print(COUNTY_SHPFILE)
 # Spatially join the network_trn_links.shp with the county shapefile
 TRN_LINKS_SHPFILE_COUNTY = "network_trn_links_county.shp"
-arcpy.analysis.SpatialJoin(TRN_LINKS_SHPFILE, COUNTY_SHPFILE, TRN_LINKS_SHPFILE_COUNTY, match_option = "HAVE_THEIR_CENTER_IN")
-print("finishd spatial joining")
+arcpy.analysis.SpatialJoin(TRN_LINKS_SHPFILE.format(''), COUNTY_SHPFILE, TRN_LINKS_SHPFILE_COUNTY, match_option = "HAVE_THEIR_CENTER_IN")
+logging.info("finished spatial joining transit links with county")
+
 # Join network_trn_links.shp with network_trn_lines.shp with to get the FREQ fields
 TRN_LINES_SHPFILE = "network_trn_lines.shp"
 arcpy.management.JoinField(TRN_LINKS_SHPFILE_COUNTY, 'NAME', TRN_LINES_SHPFILE, 'NAME',
                         ['FREQ_EA', 'FREQ_AM', 'FREQ_MD', 'FREQ_PM', 'FREQ_EV'])
-print("finishd joining")
+logging.info(f"finished joining links with lines")
 # delete the previous network_trn_lines.shp
-arcpy.management.Delete(TRN_LINKS_SHPFILE)
+arcpy.management.Delete(TRN_LINKS_SHPFILE.format(''))
 
 # rename the output as network_trn_lines.shp
-arcpy.management.Rename(TRN_LINKS_SHPFILE_COUNTY, 'network_trn_links.shp', "FeatureClass")
-print("finished Cube_to_Shapefile.py")
+arcpy.management.Rename(TRN_LINKS_SHPFILE_COUNTY, TRN_LINKS_SHPFILE.format(''), "FeatureClass")
+logging.info("finished cube_to_shapefile.py")
     
