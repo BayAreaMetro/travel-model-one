@@ -123,7 +123,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
     LOGGER.debug("  housing_costs_df.head() (len={}):\n{}".format(
         len(housing_costs_df), housing_costs_df.head()))
-    LOGGER.debug(f"{housing_costs_df.modelrun_alias.unique().tolist()}")
+    LOGGER.debug(f"{housing_costs_df.modelrun_alias.unique().tolist()=}")
     
     # select only columns we need
     housing_costs_df = housing_costs_df.loc[ 
@@ -137,16 +137,18 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     #                 BAUS aliases: 2023 No Project, 2050 No Project, 2050 DBP
     # convert BAUS modelrun_alias to match travel model
     housing_costs_df.replace(to_replace={
-        '2015 No Project':'2015',
-        '2023 No Project':'2023',
-        '2050 FBP'       :'2050 Plan',
-        '2050 DBP'       :'2050 Plan',
-        '2050 EIR Alt 1' :'2050 EIR Alt1',
-        '2050 EIR Alt 2' :'2050 EIR Alt2',
+        '2015 No Project'     :'2015',
+        '2023 No Project'     :'2023',
+        '2050 FBP'            :'2050 Plan',
+        '2050 Final Blueprint':'2050 Plan',
+        '2050 Draft Blueprint':'2050 DBP',
+        '2050 EIR Alt 1'      :'2050 EIR Alt1',
+        '2050 EIR Alt 2'      :'2050 EIR Alt2',
     }, inplace=True)
-    # RTP2025 Draft Blueprint - 2050 Trend instead of 2050 No Project
-    if args_rtp=="RTP2025":
-        housing_costs_df.replace(to_replace={'2050 No Project':'2050 Trend'}, inplace=True)
+    # remove 2015 No Project, 2023 DBP, and 2023 FBP
+    housing_costs_df = housing_costs_df.loc[ 
+        ~housing_costs_df.modelrun_alias.isin(['2015 No Project','2023 Draft Blueprint','2023 Final Blueprint'])]
+    LOGGER.debug(f"{housing_costs_df.modelrun_alias.unique().tolist()=}")
 
     # rename quartile and recode to match
     housing_costs_df.rename(columns={
@@ -292,6 +294,12 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
         # reset index and pull alias from ModelRuns.xlsx info
         tm_scen_metrics_df.reset_index(drop=False, inplace=True)
         tm_scen_metrics_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+        LOGGER.debug(f"  tm_scen_metrics_df:\n{tm_scen_metrics_df}")
+        LOGGER.debug(f"  housing_costs_df:\n{housing_costs_df}")
+
+        if model_runs_dict[tm_runid]['Alias'] not in housing_costs_df.modelrun_alias.unique().tolist():
+            LOGGER.debug(f"modelrun_alias {model_runs_dict[tm_runid]['Alias']} not in housing_costs_df alias list {housing_costs_df.modelrun_alias.unique().tolist()}")
+            continue
 
         # join to housing costs
         tm_scen_metrics_df = pd.merge(
@@ -499,7 +507,7 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
         modelrun_alias
         mode (e.g. 'bike', 'wtrn')
         time (e.g. 20, 45) - time threshold
-        person_segment ('coc','hra','all')
+        person_segment ('epc18','epc22,'hra','all')
         job_share
         accessible_jobs (job_share x TOTEMP)
     """
@@ -540,7 +548,7 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
         # extract mode, time, person_segment
         scenario_metrics_df['mode'] = scenario_metrics_df.metric_name.str.extract(r'^([a-z]+)')
         scenario_metrics_df['time'] = scenario_metrics_df.metric_name.str.extract(r'^[a-z]+[_]([0-9]+)')
-        scenario_metrics_df['person_segment'] = scenario_metrics_df.metric_name.str.extract(r'share[_]([a-z]*)$')
+        scenario_metrics_df['person_segment'] = scenario_metrics_df.metric_name.str.extract(r'share[_]([a-z0-9]*)$')
         scenario_metrics_df.loc[ pd.isna(scenario_metrics_df['person_segment']), 'person_segment' ] = 'all'
         LOGGER.debug("scenario_metrics_df:\n{}".format(scenario_metrics_df))
 
@@ -1253,8 +1261,7 @@ if __name__ == '__main__':
 
     # Healthy
     if (my_args.only == None) or (my_args.only == 'healthy'):
-        # TODO
-        # extract_Healthy1_safety(model_runs_dict, my_args.rtp)
+        extract_Healthy1_safety(model_runs_dict, my_args.rtp)
         extract_Healthy1_PM25(model_runs_dict, my_args.rtp)
         extract_Healthy2_CO2_Emissions(model_runs_dict, my_args.rtp)
         calculate_Healthy2_commutemodeshare(model_runs_dict, my_args.rtp)
