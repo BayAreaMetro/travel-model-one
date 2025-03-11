@@ -75,7 +75,7 @@ def extract_off_model_calculator_result(run_directory, run_id, calculator_name):
             'Out_daily_GHG_reduced_{}'.format(run_id[:4]), 
             'Out_per_capita_GHG_reduced_{}'.format(run_id[:4])]]
         off_model_df.rename(
-            columns={'Horizon Run ID': 'run_id',
+            columns={'Horizon Run ID': 'directory',
                      'Out_daily_GHG_reduced_{}'.format(run_id[:4]): 'daily_ghg_reduction',
                      'Out_per_capita_GHG_reduced_{}'.format(run_id[:4]): 'per_capita_ghg_reduction'},
             inplace=True)
@@ -98,7 +98,7 @@ def summarize_off_model_calculator_results(run_directory, run_id, calculator_nam
 
     if len(off_model_summary) > 0:
 
-        off_model_tot = off_model_summary.groupby('run_id').agg({
+        off_model_tot = off_model_summary.groupby('directory').agg({
             'daily_ghg_reduction'     : 'sum',
             'per_capita_ghg_reduction': 'sum'})
         logging.info(f'Off-model summary:\n{off_model_tot}')
