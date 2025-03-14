@@ -186,6 +186,28 @@ if not exist metrics\transit_crowding.csv (
   call python "%CODE_DIR%\transitcrowding.py" .
 )
 
+if not exist shapefile (
+  mkdir shapefile
+)
+cd shapefile
+if not exist shapefile\network_trn_links.shp (
+  rem requires geopandas
+  rem Export loaded network to shapefiles
+  rem Input: see command
+  rem Output: shapefile\network_[links|nodes].shp
+  rem         shapefile\network_trn_[links|lines|nodes|route_links].shp
+  call python "%CODE_DIR%\cube_to_shapefile.py" --trn_stop_info "M:\Application\Model One\Networks\TM1_2015_Base_Network\Node Description.xls" --linefile ..\INPUT\trn\transitLines.lin --loadvol_dir ..\trn --transit_crowding ..\metrics\transit_crowding_complete.csv ..\hwy\iter3\avgload5period.net
+)
+
+if not exist network_links_TAZ.csv (
+  rem requires geopandas
+  rem Input: shapefile\network_links.shp
+  rem        M:\Data\GIS layers\TM1_taz\bayarea_rtaz1454_rev1_WGS84.shp
+  rem Output: shapefile\network_links_TAZ.csv
+  call python "%CODE_DIR%\correspond_link_to_TAZ.py" network_links.shp network_links_TAZ.csv
+)
+cd ..
+
 :topsheet
 if not exist metrics\topsheet.csv (
   rem Short summaries for across many runs
