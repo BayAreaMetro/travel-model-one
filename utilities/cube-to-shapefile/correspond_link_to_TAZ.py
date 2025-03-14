@@ -58,8 +58,11 @@ if __name__ == '__main__':
 
     # read network_links shapefile; don't worry about other (non-geometry) columns beyond A,B
     network_links = gpd.read_file(my_args.link_shapefile, columns=['A','B'])
-    network_links.to_crs(2227, inplace=True)  # EPSG:2227 is Bay Area's local coordinate system - NAD83 / California zone 3 (ftUS)
     print(f"Read {len(network_links):,} links from {my_args.link_shapefile}")
+    print(f"network_links.crs={network_links.crs}")
+    # TODO: why isn't crs being picked up from the .prj file?
+    network_links.set_crs("EPSG:26910", inplace=True)
+    print(f"network_links.crs={network_links.crs}")
 
     # assert A,B are unique
     assert not network_links.duplicated(subset=['A', 'B']).any()
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     input_shapefile = TAZ_SHAPEFILE
     if (my_args.shapefile): input_shapefile = my_args.shapefile
     my_shapefile = gpd.read_file(input_shapefile, columns=[my_args.shp_id])
-    my_shapefile.to_crs(2227, inplace=True)     # EPSG:2227 is Bay Area's local coordinate system - NAD83 / California zone 3 (ftUS)
+    my_shapefile.to_crs(26910, inplace=True)
     print(f"Read {len(my_shapefile):,} links from {input_shapefile}")
 
     # intersect
