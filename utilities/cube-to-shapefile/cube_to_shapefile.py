@@ -81,6 +81,7 @@ import argparse, collections, copy, csv, logging, os, pathlib, re, subprocess, s
 import geopandas as gpd
 import pandas as pd
 import shapely.geometry
+import pyproj
 
 RUNTPP_PATH     = pathlib.Path("C:\\Program Files (x86)\\Citilabs\\CubeVoyager")
 LOG_FILE        = "cube_to_shapefile.log"
@@ -249,55 +250,27 @@ def get_name_set(line_name, mode_type):
     logging.debug("get_name_set: {:25}  [{}] [{}] [{}]".format(line_name, prefix, primary, suffix))
     return "{}_{}".format(prefix, primary)
 
-if __name__ == '__main__':
-    pd.options.display.width = 1000
-    # pd.options.display.max_rows = 1000
-    pd.options.display.max_columns = None
+def cube_network_to_shapefiles(
+    NETFILE: pathlib.Path,
+    LINE_FILE: pathlib.Path,
+    TRN_STOP_INFO_FILE: pathlib.Path,
+    LOADVOL_DIR: pathlib.Path,
+    TRANSIT_CROWDING_FILE: pathlib.Path,
+    WORKING_DIR: pathlib.Path
+):
+    """ See comprehensive documenation in USAGE string.
 
-    # assume code dir is where this script is
-    CODE_DIR    = pathlib.Path(__file__).parent
+    Args:
+        NETFILE (pathlib.Path): location of roadway network file
+        LINE_FILE (pathlib.Path): location of transit line file; Can be None
+        TRN_STOP_INFO_FILE (pathlib.Path): location of transit stop excel file, for labeling. Can be None.
+        LOADVOL_DIR (pathlib.Path): Location of loaded transit volumes file (trnlink.csv). Can be None.
+        TRANSIT_CROWDING_FILE (pathlib.Path): Location of transit crowding file. Can be None.
+        WORKING_DIR (pathlib.Path): Working directory (output will be created here)
 
-    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
-    parser.add_argument("netfile",  metavar="network.net", help="Cube input roadway network file")
-    parser.add_argument("--outdir", help="Output directory.  Assumes current dir if not specified.")
-    parser.add_argument("--linefile", metavar="transit.lin", help="Cube input transit line file", required=False)
-    parser.add_argument("--by_operator", action="store_true", help="Split transit lines by operator")
-    parser.add_argument("--trn_stop_info", metavar="transit_stops.xlsx", help="Workbook with extra transit stop information")
-    parser.add_argument("--loadvol_dir", help="Directory with loaded volume files for joining")
-    parser.add_argument("--transit_crowding", help="Transit crowding link file for joining. If this argument is specified, then specifying a loadvol_dir is also required.")
-    args = parser.parse_args()
-    # print(args)
-
-    NETFILE               = pathlib.Path(args.netfile)
-    LINE_FILE             = pathlib.Path(args.linefile) if args.linefile else None
-    TRN_STOP_INFO_FILE    = pathlib.Path(args.trn_stop_info) if args.trn_stop_info else None
-    LOADVOL_DIR           = pathlib.Path(args.loadvol_dir) if args.loadvol_dir else None
-    TRANSIT_CROWDING_FILE = pathlib.Path(args.transit_crowding) if args.transit_crowding else None
-
-    if TRANSIT_CROWDING_FILE and not LOADVOL_DIR:
-        print(USAGE)
-        print("\n\nFATAL: If --transit_crowding argument is specified, then specifying a loadvol_dir is also required.\n\n")
-        sys.exit(2)
-
-    # if output dir specified, normalize all other paths first and then switch to it
-    if args.outdir:
-        WORKING_DIR = pathlib.Path(args.outdir).absolute()
-        NETFILE     = NETFILE.absolute()
-
-        if LINE_FILE:
-            LINE_FILE   = LINE_FILE.absolute()
-        if TRN_STOP_INFO_FILE:
-            TRN_STOP_INFO_FILE = TRN_STOP_INFO_FILE.absolute()
-        if LOADVOL_DIR:
-            LOADVOL_DIR = LOADVOL_DIR.absolute()
-        if TRANSIT_CROWDING_FILE:
-            TRANSIT_CROWDING_FILE = TRANSIT_CROWDING_FILE.absolute()
-
-        os.chdir( WORKING_DIR )
-    else:
-        # assume current directory
-        WORKING_DIR = pathlib.Path.cwd()
-
+    Returns:
+        None
+    """
     # create logger
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -337,6 +310,13 @@ if __name__ == '__main__':
         runCubeScript(WORKING_DIR, CODE_DIR / "export_network.job", script_env)
         logging.info(f"Wrote network node file to {NODE_SHPFILE}")
         logging.info(f"Wrote network link file to {LINK_SHPFILE}")
+
+        # write the projection; cube doesn't do this
+        crs = pyproj.CRS.from_epsg(26910)
+        with open(NODE_SHPFILE.replace('.shp','.prj'), 'w') as prj_file:
+            prj_file.write(crs.to_wkt())
+        with open(LINK_SHPFILE.replace('.shp','.prj'), 'w') as prj_file:
+            prj_file.write(crs.to_wkt())
     else:
         logging.info(f"Opted out of re-exporting roadway network file.  Using existing {NODE_SHPFILE} and {LINK_SHPFILE}")
 
@@ -946,3 +926,61 @@ if __name__ == '__main__':
     agg_links_gdf = gpd.GeoDataFrame(agg_links_df, geometry='geometry', crs="EPSG:26910")
     agg_links_gdf.to_file(TRN_ROUTE_LINKS_SHPFILE)
     logging.info(f"Wrote {len(agg_links_gdf):,} links to {TRN_ROUTE_LINKS_SHPFILE}")
+
+if __name__ == '__main__':
+    pd.options.display.width = 1000
+    # pd.options.display.max_rows = 1000
+    pd.options.display.max_columns = None
+
+    # assume code dir is where this script is
+    CODE_DIR    = pathlib.Path(__file__).parent
+
+    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
+    parser.add_argument("netfile",  metavar="network.net", help="Cube input roadway network file")
+    parser.add_argument("--outdir", help="Output directory.  Assumes current dir if not specified.")
+    parser.add_argument("--linefile", metavar="transit.lin", help="Cube input transit line file", required=False)
+    parser.add_argument("--by_operator", action="store_true", help="Split transit lines by operator")
+    parser.add_argument("--trn_stop_info", metavar="transit_stops.xlsx", help="Workbook with extra transit stop information")
+    parser.add_argument("--loadvol_dir", help="Directory with loaded volume files for joining")
+    parser.add_argument("--transit_crowding", help="Transit crowding link file for joining. If this argument is specified, then specifying a loadvol_dir is also required.")
+    args = parser.parse_args()
+    # print(args)
+
+    NETFILE               = pathlib.Path(args.netfile)
+    LINE_FILE             = pathlib.Path(args.linefile) if args.linefile else None
+    TRN_STOP_INFO_FILE    = pathlib.Path(args.trn_stop_info) if args.trn_stop_info else None
+    LOADVOL_DIR           = pathlib.Path(args.loadvol_dir) if args.loadvol_dir else None
+    TRANSIT_CROWDING_FILE = pathlib.Path(args.transit_crowding) if args.transit_crowding else None
+
+    if TRANSIT_CROWDING_FILE and not LOADVOL_DIR:
+        print(USAGE)
+        print("\n\nFATAL: If --transit_crowding argument is specified, then specifying a loadvol_dir is also required.\n\n")
+        sys.exit(2)
+
+    # if output dir specified, normalize all other paths first and then switch to it
+    if args.outdir:
+        WORKING_DIR = pathlib.Path(args.outdir).absolute()
+        NETFILE     = NETFILE.absolute()
+
+        if LINE_FILE:
+            LINE_FILE = LINE_FILE.absolute()
+        if TRN_STOP_INFO_FILE:
+            TRN_STOP_INFO_FILE = TRN_STOP_INFO_FILE.absolute()
+        if LOADVOL_DIR:
+            LOADVOL_DIR = LOADVOL_DIR.absolute()
+        if TRANSIT_CROWDING_FILE:
+            TRANSIT_CROWDING_FILE = TRANSIT_CROWDING_FILE.absolute()
+
+        os.chdir( WORKING_DIR )
+    else:
+        # assume current directory
+        WORKING_DIR = pathlib.Path.cwd()
+
+        cube_network_to_shapefiles(
+            NETFILE,
+            LINE_FILE,
+            TRN_STOP_INFO_FILE,
+            LOADVOL_DIR,
+            TRANSIT_CROWDING_FILE,
+            WORKING_DIR
+        )
