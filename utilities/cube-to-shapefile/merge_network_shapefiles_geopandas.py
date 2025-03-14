@@ -13,12 +13,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('--output_dir', default='network_comparison_FinalBlueprint')
     parser.add_argument('--years', type=int, nargs='+') # 1 or more required
-    parser.add_argument('network_versions', type=str, nargs='+') # 1 or more required
+    parser.add_argument('--baseline_version', type=str, required=True, nargs='+')
+    parser.add_argument('--blueprint_version', type=str, required=True, nargs='+')
     args = parser.parse_args()
 
+    network_versions = list(set(args.baseline_version + args.blueprint_version))
     M_dir = pathlib.Path('M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\Networks')
     network_comparison_dir = M_dir / args.output_dir   # outputdir
-    scens = ['Blueprint', 'Baseline']
 
     # make this if it doesn't exist
     network_comparison_dir.mkdir(exist_ok=True)
@@ -40,16 +41,23 @@ if __name__ == '__main__':
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(fh)
 
+    # keep geoDataFrames for each version/year/scenario in this list
     network_links_list = []
     network_trn_lines_list = []
     network_trn_route_links_list = []
     network_trn_stops_list = []
     tolls_list = []
+    ferryfare_list = []
+
 
     # loop through versions and year
-    for version in args.network_versions:
+    for version in network_versions:
         for year in args.years:
-            for scen in scens:
+            for scen in  ['Blueprint', 'Baseline']:
+                # only handle requested baseline or blueprint network versions
+                if (scen == 'Baseline') and (version not in args.baseline_version): continue
+                if (scen == 'Blueprint') and (version not in args.blueprint_version): continue
+
                 logging.info(f'network version: {version}, year: {year}, scenario: {scen}')
 
                 network_dir = M_dir / f'BlueprintNetworks_{version}' / f'net_{year}_{scen}'
@@ -89,11 +97,24 @@ if __name__ == '__main__':
                 logging.debug(f'tolls.head()=\n{tolls.head()}')
                 tolls_list.append(tolls)
 
+                ferry_fares = pd.read_csv(network_dir / 'trn' / 'Ferry.far', comment=';', sep='\s+', dtype=int, 
+                                          names=['from_node','to_node','fare'])
+                ferry_fares['version'] = f'{version}_{year}_{scen}'
+                logging.debug(f'ferry_fares.head()=\n{ferry_fares.head()}')
+                # according to cube documentation, these are implicitly bi-directional if direction isn't specified, which it isn't
+                # so add the reverse
+                ferry_fares_reverse = ferry_fares.copy()
+                ferry_fares_reverse.rename(columns={'from_node':'to_node','to_node':'from_node'}, inplace=True)
+                logging.debug(f'ferry_fares_reverse.head()=\n{ferry_fares_reverse.head()}')
+
+                ferryfare_list.append(pd.concat([ferry_fares,ferry_fares_reverse]))
+
     network_links_comp = pd.concat(network_links_list)
     network_trn_lines_comp = pd.concat(network_trn_lines_list)
     network_trn_route_links_comp = pd.concat(network_trn_route_links_list)
     network_trn_stops_comp = pd.concat(network_trn_stops_list)
     tolls_comp = pd.concat(tolls_list)
+    ferry_fares_comp = pd.concat(ferryfare_list)
 
     # write them
     network_links_comp.to_file(network_comparison_dir / 'network_links_comp.shp')
@@ -110,3 +131,6 @@ if __name__ == '__main__':
 
     tolls_comp.to_csv(network_comparison_dir / 'tolls.csv', index=False)
     logger.info(f"Wrote {len(tolls_comp):,} rows to {network_comparison_dir / 'tolls.csv'}")
+
+    ferry_fares_comp.to_csv(network_comparison_dir / 'ferry_fares.csv', index=False)
+    logger.info(f"Wrote {len(ferry_fares_comp):,} rows to {network_comparison_dir / 'ferry_fares.csv'}")
