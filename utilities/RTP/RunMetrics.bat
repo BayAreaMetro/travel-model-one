@@ -78,11 +78,13 @@ if not exist metrics (mkdir metrics)
 
 if not exist main\tripsEVinc1.dat (
   rem Convert trip tables into time/income/mode OD matrices
-  rem Input : main\(indiv|joint)TripDataIncome_%ITER%.csv
+  rem Input : INPUT\params.properties
+  rem         main\(indiv|joint)TripDataIncome_%ITER%.csv
   rem         main\jointTourData_%ITER%.csv
   rem         main\personData_%ITER%.csv
   rem         database\ActiveTimeSkimsDatabase(EA|AM|MD|PM|EV).csv
   rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].dat
+  rem         main\trips[EA|AM|MD|PM|EV]inc[1-4]_poverty[0|1].dat
   rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
   rem         metrics\unique_active_travelers.csv
@@ -92,12 +94,14 @@ if not exist main\tripsEVinc1.dat (
 
 if not exist main\tripsAM_no_zpv_allinc.tpp (
   rem Convert person trip tables into time/income/mode OD person trip matrices
-  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat,
-  rem         main\trips(EA|AM|MD|PM|EV)_2074.dat,
+  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat
+  rem         main\trips[EA|AM|MD|PM|EV]inc[1-4]_poverty[0|1].dat
+  rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
-  rem Output: main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
+  rem Output: main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp
+  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4]_poverty[0|1].tpp
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp
   runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
@@ -105,7 +109,9 @@ if not exist main\tripsAM_no_zpv_allinc.tpp (
 
 if not exist metrics\transit_times_by_mode_income.csv (
   rem Reads person trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp,
+  rem Input : CTRAMP\scripts\block\trnParam.block
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4]_poverty[0|1].tpp
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
@@ -179,6 +185,28 @@ if not exist metrics\transit_crowding.csv (
   rem         metrics\transit_crowding.log
   call python "%CODE_DIR%\transitcrowding.py" .
 )
+
+if not exist shapefile (
+  mkdir shapefile
+)
+cd shapefile
+if not exist shapefile\network_trn_links.shp (
+  rem requires geopandas
+  rem Export loaded network to shapefiles
+  rem Input: see command
+  rem Output: shapefile\network_[links|nodes].shp
+  rem         shapefile\network_trn_[links|lines|nodes|route_links].shp
+  call python "%CODE_DIR%\cube_to_shapefile.py" --trn_stop_info "M:\Application\Model One\Networks\TM1_2015_Base_Network\Node Description.xls" --linefile ..\INPUT\trn\transitLines.lin --loadvol_dir ..\trn --transit_crowding ..\metrics\transit_crowding_complete.csv ..\hwy\iter3\avgload5period.net
+)
+
+if not exist network_links_TAZ.csv (
+  rem requires geopandas
+  rem Input: shapefile\network_links.shp
+  rem        M:\Data\GIS layers\TM1_taz\bayarea_rtaz1454_rev1_WGS84.shp
+  rem Output: shapefile\network_links_TAZ.csv
+  call python "%CODE_DIR%\correspond_link_to_TAZ.py" network_links.shp network_links_TAZ.csv
+)
+cd ..
 
 :topsheet
 if not exist metrics\topsheet.csv (

@@ -24,7 +24,7 @@
 
   DistributeMultistep processid = 'ctramp', processNum = period, commpath = '%COMMPATH%'
 
-  loop income = 1, 6
+  loop income = 1, 14
 
       if (income = 1)
         suffix = 'inc1'
@@ -38,6 +38,23 @@
         suffix  = '_2074'
       elseif (income = 6)
         suffix  = '_2064'
+      ; poverty x income
+      elseif (income = 7)
+        suffix = 'inc1_poverty1'
+      elseif (income = 8)
+        suffix = 'inc2_poverty1'
+      elseif (income = 9)
+        suffix = 'inc3_poverty1'
+      elseif (income = 10)
+        suffix = 'inc4_poverty1'
+      elseif (income = 11)
+        suffix = 'inc1_poverty0'
+      elseif (income = 12)
+        suffix = 'inc2_poverty0'
+      elseif (income = 13)
+        suffix = 'inc3_poverty0'
+      elseif (income = 14)
+        suffix = 'inc4_poverty0'
       endif
 
      ; convert the fixed format files to tp+ matrices
@@ -91,7 +108,8 @@
      endrun
 
      ; the last part only makes sense for incomes, not age groups
-     if (income>4) continue
+     if (income == 5) continue
+     if (income == 6) continue
 
      ; create zero passenger trip matrices
      run pgm = matrix

@@ -15,21 +15,21 @@ cat("ITER        = ",ITER,"\n")
 file_rundir       <- file.path(TARGET_DIR,"main",paste0("householdData_",ITER,".csv"))
 file_archive      <- file.path(TARGET_DIR,"OUTPUT",paste0("householdData_",ITER,".csv"))
 if (file.exists(file_rundir)) {
-  households      <- tbl_df(read.table(file=file_rundir, header=TRUE, sep=","))
+  households      <- tibble::as_tibble(read.table(file=file_rundir, header=TRUE, sep=","))
 } else {
-  households      <- tbl_df(read.table(file=file_archive,header=TRUE, sep=","))
+  households      <- tibble::as_tibble(read.table(file=file_archive,header=TRUE, sep=","))
 }
-households        <- select(households, hh_id, income) # just income
+households        <- select(households, hh_id, income, pct_of_poverty) # just income and pct_of_poverty
 cat(paste("Read",prettyNum(nrow(households),big.mark=","),"households\n"))
 
 # Read Individual Trips
 file_rundir       <- file.path(TARGET_DIR,"main",paste0("indivTripData_",ITER,".csv"))
 file_archive      <- file.path(TARGET_DIR,"OUTPUT",paste0("indivTripData_",ITER,".csv"))
 if (file.exists(file_rundir)) {
-  indiv_trips     <- tbl_df(read.table(file=file_rundir, header=TRUE, sep=","))
+  indiv_trips     <- tibble::as_tibble(read.table(file=file_rundir, header=TRUE, sep=","))
   outfile         <- file.path(TARGET_DIR,"main",paste0("indivTripDataIncome_",ITER,".csv"))
 } else {
-  indiv_trips     <- tbl_df(read.table(file=file_archive, header=TRUE, sep=","))
+  indiv_trips     <- tibble::as_tibble(read.table(file=file_archive, header=TRUE, sep=","))
   outfile         <- file.path(TARGET_DIR,"OUTPUT",paste0("indivTripDataIncome_",ITER,".csv"))
 }
 cat(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"indvidual trips\n"))
@@ -44,10 +44,10 @@ cat(paste("Wrote",outfile,"\n"))
 file_rundir       <- file.path(TARGET_DIR,"main",paste0("jointTripData_",ITER,".csv"))
 file_archive      <- file.path(TARGET_DIR,"OUTPUT",paste0("jointTripData_",ITER,".csv"))
 if (file.exists(file_rundir)) {
-  joint_trips     <- tbl_df(read.table(file=file_rundir, header=TRUE, sep=","))
+  joint_trips     <- tibble::as_tibble(read.table(file=file_rundir, header=TRUE, sep=","))
   outfile         <- file.path(TARGET_DIR,"main",paste0("jointTripDataIncome_",ITER,".csv"))
 } else {
-  joint_trips     <- tbl_df(read.table(file=file_archive, header=TRUE, sep=","))
+  joint_trips     <- tibble::as_tibble(read.table(file=file_archive, header=TRUE, sep=","))
   outfile         <- file.path(TARGET_DIR,"OUTPUT",paste0("jointTripDataIncome_",ITER,".csv"))
 }
 cat(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),

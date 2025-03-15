@@ -6,6 +6,7 @@
 
 library(scales)
 library(dplyr)
+library(stringr)
 library(reshape2)
 
 # For RStudio, these can be set in the .Rprofile
@@ -31,22 +32,40 @@ if (JUST_MES=="1") {
 }
 
 # read means-based cost factors
-MBT_factors <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/hwyParam.block"))
-MBF_factors <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/trnParam.block"))
+hwyparam_lines <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/hwyParam.block"))
+trnparam_lines <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/trnParam.block"))
 
-MBT_Q1_line <- grep("Means_Based_Tolling_Q1Factor",MBT_factors,value=TRUE)
-MBT_Q1_string <- substr(MBT_Q1_line,32,39)
-MBT_Q1_factor <- as.numeric(MBT_Q1_string)
-MBT_Q2_line <- grep("Means_Based_Tolling_Q2Factor",MBT_factors,value=TRUE)
-MBT_Q2_string <- substr(MBT_Q2_line,32,39)
-MBT_Q2_factor <- as.numeric(MBT_Q2_string)
+# extract Means Based Tolling Q1 Factor using regex
+MBT_Q1_line <- str_extract(hwyparam_lines, "^Means_Based_Tolling_Q1Factor\\s*=\\s*([0-9.]+)", group=1)
+MBT_Q1_line <- as.vector(na.omit(MBT_Q1_line))
+# make sure there's only one
+stopifnot(length(MBT_Q1_line)==1)
+MBT_Q1_factor <- as.numeric(MBT_Q1_line[1])
+print(paste("MBT_Q1_factor:", MBT_Q1_factor))
 
-MBF_Q1_line <- grep("Means_Based_Fare_Q1Factor",MBF_factors,value=TRUE)
-MBF_Q1_string <- substr(MBF_Q1_line,29,36)
-MBF_Q1_factor <- as.numeric(MBF_Q1_string)
-MBF_Q2_line <- grep("Means_Based_Fare_Q2Factor",MBF_factors,value=TRUE)
-MBF_Q2_string <- substr(MBF_Q2_line,29,36)
-MBF_Q2_factor <- as.numeric(MBF_Q2_string)
+# extract Means Based Tolling Q2 Factor using regex
+MBT_Q2_line <- str_extract(hwyparam_lines, "^Means_Based_Tolling_Q2Factor\\s*=\\s*([0-9.]+)", group=1)
+MBT_Q2_line <- as.vector(na.omit(MBT_Q2_line))
+# make sure there's only one
+stopifnot(length(MBT_Q2_line)==1)
+MBT_Q2_factor <- as.numeric(MBT_Q2_line[1])
+print(paste("MBT_Q2_factor:", MBT_Q2_factor))
+
+# extract Means Based Fare PctOfPoverty Threshold using regex
+MBF_line <- str_extract(trnparam_lines, "^Means_Based_Fare_PctOfPoverty_Threshold\\s*=\\s*([0-9]+)", group=1)
+MBF_line <- as.vector(na.omit(MBF_line))
+# make sure there's only one
+stopifnot(length(MBF_line)==1)
+MBF_PctOfPoverty_Treshold <- as.numeric(MBF_line[1])
+print(paste("MBF_PctOfPoverty_Treshold:", MBF_PctOfPoverty_Treshold))
+
+# extract Means Based Fare Factor using regex
+MBF_line <- str_extract(trnparam_lines, "^Means_Based_Fare_Factor\\s*=\\s*([0-9.]+)", group=1)
+MBF_line <- as.vector(na.omit(MBF_line))
+# make sure there's only one
+stopifnot(length(MBF_line)==1)
+MBF_factor <- as.numeric(MBF_line[1])
+print(paste("MBF_factor:", MBF_factor))
 
 
 # write results in TARGET_DIR/core_summaries
@@ -132,7 +151,9 @@ input.ct.households  <- read.table(file = file.path(MAIN_DIR,paste0("householdDa
 # drop random number fields
 input.ct.households  <- select(input.ct.households, -ao_rn, -fp_rn, -cdap_rn,
   -imtf_rn, -imtod_rn, -immc_rn, -jtf_rn, -jtl_rn, -jtod_rn, -jmc_rn, -inmtf_rn,
-  -inmtl_rn, -inmtod_rn, -inmmc_rn, -awf_rn, -awl_rn, -awtod_rn, -awmc_rn, -stf_rn, -stl_rn)
+  -inmtl_rn, -inmtod_rn, -inmmc_rn, -awf_rn, -awl_rn, -awtod_rn, -awmc_rn, -stf_rn, -stl_rn, 
+  -pct_of_poverty # drop this once since it's also in input.pop and we don't need it twice
+)
 
 # in case households aren't numeric - make the columns numeric
 for(i in names(input.pop.households)){
@@ -241,8 +262,8 @@ indiv_tours     <- tibble::as_tibble(read.table(file=file.path(MAIN_DIR, paste0(
                                      header=TRUE, sep=","))
 indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",substr(tour_purpose,1,4),tour_id))
 
-# Add income from household table
-indiv_tours     <- left_join(indiv_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
+# Add income and pct_of_poverty from household table
+indiv_tours     <- left_join(indiv_tours, select(households, hh_id, income, incQ, incQ_label, pct_of_poverty), by=c("hh_id"))
 indiv_tours     <- mutate(indiv_tours, num_participants=1)
 
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the tour destination
@@ -269,8 +290,8 @@ joint_tours    <- tibble::as_tibble(read.table(file=file.path(MAIN_DIR, paste0("
                                     header=TRUE, sep=","))
 joint_tours     <- mutate(joint_tours, tour_id=paste0("j",substr(tour_purpose,1,4),tour_id))
 
-# Add Income from household table
-joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
+# Add income and pct_of_poverty from household table
+joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ, incQ_label, pct_of_poverty), by=c("hh_id"))
 
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the tour destination
 joint_tours     <- left_join(joint_tours,
@@ -342,18 +363,14 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
              (costMode == 6 & incQ >= 3) * s3Toll +
              (costMode == 7) * 0.0 +
              (costMode == 8) * 0.0 +
-             (costMode == 9 & incQ == 1) * wTrnW * MBF_Q1_factor + 
-             (costMode == 9 & incQ == 2) * wTrnW * MBF_Q2_factor + 
-             (costMode == 9 & incQ >= 3) * wTrnW +
-             (costMode == 10 & incQ == 1) * (1 - reverse_od) * dTrnW * MBF_Q1_factor + 
-             (costMode == 10 & incQ == 2) * (1 - reverse_od) * dTrnW * MBF_Q2_factor + 
-             (costMode == 10 & incQ >= 3) * (1 - reverse_od) * dTrnW +
-             (costMode == 10 & incQ == 1) * (reverse_od) * wTrnD * MBF_Q1_factor + 
-             (costMode == 10 & incQ == 2) * (reverse_od) * wTrnD * MBF_Q2_factor + 
-             (costMode == 10 & incQ >= 3) * (reverse_od) * wTrnD +
-             (costMode == 11 & incQ == 1) * wTrnD * MBF_Q1_factor + 
-             (costMode == 11 & incQ == 2) * wTrnD * MBF_Q2_factor + 
-             (costMode == 11 & incQ >= 3) * wTrnD)
+             ((costMode == 9 ) & (pct_of_poverty <= MBF_PctOfPoverty_Treshold)) * wTrnW * MBF_factor + 
+             ((costMode == 9 ) & (pct_of_poverty >  MBF_PctOfPoverty_Treshold)) * wTrnW + 
+             ((costMode == 10) & (pct_of_poverty <= MBF_PctOfPoverty_Treshold)) * (1 - reverse_od) * dTrnW * MBF_factor + 
+             ((costMode == 10) & (pct_of_poverty >  MBF_PctOfPoverty_Treshold)) * (1 - reverse_od) * dTrnW +
+             ((costMode == 10) & (pct_of_poverty <= MBF_PctOfPoverty_Treshold)) * (reverse_od) * wTrnD * MBF_factor + 
+             ((costMode == 10) & (pct_of_poverty >  MBF_PctOfPoverty_Treshold)) * (reverse_od) * wTrnD +
+             ((costMode == 11) & (pct_of_poverty <= MBF_PctOfPoverty_Treshold)) * wTrnD * MBF_factor + 
+             ((costMode == 11) & (pct_of_poverty >  MBF_PctOfPoverty_Treshold)) * wTrnD)
 
 
   # re-code missing as zero and set a failure indicator
@@ -792,7 +809,7 @@ remove(indiv_trips,joint_person_trips)
 # Add some variable to trips, such as:
 #   * `timeCode`, a recoding of the `depart_hour` for joining skims
 #   * `home_taz` from household table
-#   * `incQ` and label from the household table
+#   * `incQ` and label and pct_of_poverty from the household table
 #   * `autoSuff` and label from the household table
 #   * `walk_subzone` and label from the household table
 #   * `ptype` and label, `fp_choice` from persons
@@ -808,7 +825,7 @@ trips <- left_join(trips, LOOKUP_TIMEPERIOD, by=c("timeCodeNum"))
 trips <- select(mutate(trips, timeCode=timeperiod_abbrev), -timeperiod_abbrev)
 trips <- left_join(trips,
                    mutate(households, home_taz=taz) %>%
-                     select(hh_id, incQ, incQ_label, income, autos, autoSuff, autoSuff_label,
+                     select(hh_id, incQ, incQ_label, income, pct_of_poverty, autos, autoSuff, autoSuff_label,
                             home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
 trips <- left_join(trips,
@@ -965,7 +982,7 @@ auto_labels <- c("Zero automobiles", "One automobile", "Two automobiles",
 
 ## Commute By Employment Location Summaries
 commute_tours   <- select(tours, hh_id, num_participants, tour_participants, orig_taz, dest_taz, dest_COUNTY, dest_county_name, dest_SD,
-                          tour_purpose, start_hour, end_hour, tour_mode, income, incQ, incQ_label, parking_cost)
+                          tour_purpose, start_hour, end_hour, tour_mode, income, incQ, incQ_label, pct_of_poverty, parking_cost)
 # select out non-work travel
 commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour_purpose!="atwork_eat"     &
                                           tour_purpose!="atwork_maint"    & tour_purpose!="eatout"         &
