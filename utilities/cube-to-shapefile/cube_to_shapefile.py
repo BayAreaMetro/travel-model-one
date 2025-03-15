@@ -256,7 +256,8 @@ def cube_network_to_shapefiles(
     TRN_STOP_INFO_FILE: pathlib.Path,
     LOADVOL_DIR: pathlib.Path,
     TRANSIT_CROWDING_FILE: pathlib.Path,
-    WORKING_DIR: pathlib.Path
+    WORKING_DIR: pathlib.Path,
+    by_operator: bool = False
 ):
     """ See comprehensive documenation in USAGE string.
 
@@ -317,7 +318,7 @@ def cube_network_to_shapefiles(
     import Wrangler
 
     operator_files = [""]
-    if args.by_operator:
+    if by_operator:
         operator_files = set(f"_{x[1]}" for x in list(MODE_NUM_TO_NAME.values()))
 
     # read the loaded trnlink csv
@@ -403,7 +404,7 @@ def cube_network_to_shapefiles(
     agg_link_dict_list = []
 
     # read the node points
-    nodes_gdf = gpd.read_file(NODE_SHPFILE)
+    nodes_gdf = gpd.read_file(WORKING_DIR / NODE_SHPFILE)
 
     node_dicts = {}
     node_dicts["X"] = dict(zip(nodes_gdf["N"].tolist(), nodes_gdf.geometry.x.tolist()))
@@ -501,10 +502,10 @@ def cube_network_to_shapefiles(
         # figure out the name set
         name_set  = get_name_set(line.name, mode_type)
 
-        if not args.by_operator:
-            operator_file = ""
-        else:
+        if by_operator:
             operator_file = "_{}".format(op_txt)
+        else:
+            operator_file = ""
 
         logging.info(f"Adding line {line_count+1:4}/{total_line_count:4} {line.name:15} set {name_set:15} operator {op_txt:15} to operator_file [{operator_file}]")
         # for attr_key in line.attr: print(attr_key, line.attr[attr_key])
@@ -984,5 +985,6 @@ if __name__ == '__main__':
         TRN_STOP_INFO_FILE,
         LOADVOL_DIR,
         TRANSIT_CROWDING_FILE,
-        WORKING_DIR
+        WORKING_DIR,
+        args.by_operator
     )
