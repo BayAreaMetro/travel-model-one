@@ -271,19 +271,8 @@ def cube_network_to_shapefiles(
     Returns:
         None
     """
-    # create logger
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    # console handler
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
-    logger.addHandler(ch)
-    # file handler
-    fh = logging.FileHandler(LOG_FILE, mode='w')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
-    logger.addHandler(fh)
+    # make sure this exists
+    os.makedirs(WORKING_DIR, exist_ok=True)
 
     # setup the environment
     script_env                 = os.environ.copy()
@@ -307,6 +296,8 @@ def cube_network_to_shapefiles(
 
     # run the script to do the work
     if do_export:
+        # assume code dir is where this script is
+        CODE_DIR = pathlib.Path(__file__).parent
         runCubeScript(WORKING_DIR, CODE_DIR / "export_network.job", script_env)
         logging.info(f"Wrote network node file to {NODE_SHPFILE}")
         logging.info(f"Wrote network link file to {LINK_SHPFILE}")
@@ -932,9 +923,6 @@ if __name__ == '__main__':
     # pd.options.display.max_rows = 1000
     pd.options.display.max_columns = None
 
-    # assume code dir is where this script is
-    CODE_DIR    = pathlib.Path(__file__).parent
-
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument("netfile",  metavar="network.net", help="Cube input roadway network file")
     parser.add_argument("--outdir", help="Output directory.  Assumes current dir if not specified.")
@@ -976,11 +964,25 @@ if __name__ == '__main__':
         # assume current directory
         WORKING_DIR = pathlib.Path.cwd()
 
-        cube_network_to_shapefiles(
-            NETFILE,
-            LINE_FILE,
-            TRN_STOP_INFO_FILE,
-            LOADVOL_DIR,
-            TRANSIT_CROWDING_FILE,
-            WORKING_DIR
-        )
+    # create logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    # console handler
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    logger.addHandler(ch)
+    # file handler
+    fh = logging.FileHandler(LOG_FILE, mode='w')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    logger.addHandler(fh)
+
+    cube_network_to_shapefiles(
+        NETFILE,
+        LINE_FILE,
+        TRN_STOP_INFO_FILE,
+        LOADVOL_DIR,
+        TRANSIT_CROWDING_FILE,
+        WORKING_DIR
+    )
