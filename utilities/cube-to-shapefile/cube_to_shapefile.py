@@ -253,21 +253,21 @@ def get_name_set(line_name, mode_type):
 def cube_network_to_shapefiles(
     NETFILE: pathlib.Path,
     LINE_FILE: pathlib.Path,
-    TRN_STOP_INFO_FILE: pathlib.Path,
     LOADVOL_DIR: pathlib.Path,
     TRANSIT_CROWDING_FILE: pathlib.Path,
     WORKING_DIR: pathlib.Path,
-    by_operator: bool = False
+    by_operator: bool = False,
+    TRN_STOP_INFO_FILE: pathlib.Path = pathlib.Path("M:\\Application\\Model One\\Networks\\TM1_2015_Base_Network\\Node Description.xls"),
 ):
     """ See comprehensive documenation in USAGE string.
 
     Args:
         NETFILE (pathlib.Path): location of roadway network file
         LINE_FILE (pathlib.Path): location of transit line file; Can be None
-        TRN_STOP_INFO_FILE (pathlib.Path): location of transit stop excel file, for labeling. Can be None.
         LOADVOL_DIR (pathlib.Path): Location of loaded transit volumes file (trnlink.csv). Can be None.
         TRANSIT_CROWDING_FILE (pathlib.Path): Location of transit crowding file. Can be None.
         WORKING_DIR (pathlib.Path): Working directory (output will be created here)
+        TRN_STOP_INFO_FILE (pathlib.Path): location of transit stop excel file, for labeling. Can be None.
 
     Returns:
         None
@@ -313,7 +313,7 @@ def cube_network_to_shapefiles(
         logging.info(f"Opted out of re-exporting roadway network file.  Using existing {NODE_SHPFILE} and {LINK_SHPFILE}")
 
     # if we don't have a transit file, then we're done
-    if not LINE_FILE: sys.exit(0)
+    if not LINE_FILE: return
 
     import Wrangler
 
@@ -412,6 +412,7 @@ def cube_network_to_shapefiles(
 
     # read the stop information, if there is any
     stops_to_station = {}
+    logging.info(f"{TRN_STOP_INFO_FILE=}")
     if TRN_STOP_INFO_FILE:
         stop_info_df = pd.read_excel(TRN_STOP_INFO_FILE, header=None, names=["Node", "Station"])
         logging.info(f"Read {len(stop_info_df):,} lines from {TRN_STOP_INFO_FILE}")
@@ -937,7 +938,6 @@ if __name__ == '__main__':
 
     NETFILE               = pathlib.Path(args.netfile)
     LINE_FILE             = pathlib.Path(args.linefile) if args.linefile else None
-    TRN_STOP_INFO_FILE    = pathlib.Path(args.trn_stop_info) if args.trn_stop_info else None
     LOADVOL_DIR           = pathlib.Path(args.loadvol_dir) if args.loadvol_dir else None
     TRANSIT_CROWDING_FILE = pathlib.Path(args.transit_crowding) if args.transit_crowding else None
 
@@ -953,8 +953,6 @@ if __name__ == '__main__':
 
         if LINE_FILE:
             LINE_FILE = LINE_FILE.absolute()
-        if TRN_STOP_INFO_FILE:
-            TRN_STOP_INFO_FILE = TRN_STOP_INFO_FILE.absolute()
         if LOADVOL_DIR:
             LOADVOL_DIR = LOADVOL_DIR.absolute()
         if TRANSIT_CROWDING_FILE:
@@ -982,9 +980,8 @@ if __name__ == '__main__':
     cube_network_to_shapefiles(
         NETFILE,
         LINE_FILE,
-        TRN_STOP_INFO_FILE,
         LOADVOL_DIR,
         TRANSIT_CROWDING_FILE,
         WORKING_DIR,
-        args.by_operator
+        args.by_operator,
     )
