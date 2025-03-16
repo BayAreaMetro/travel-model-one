@@ -89,8 +89,8 @@ c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\model-files\model"       C
 c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\model-files\runtime"     CTRAMP\runtime
 c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\model-files\scripts"     CTRAMP\scripts
 c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\utilities\RTP\metrics"   CTRAMP\scripts\metrics
-copy /Y "%GITHUB_DIR\utilities\cube-to-shapefile\cube_to_shapefile.py"         CTRAMP\scripts\metrics
-copy /Y "%GITHUB_DIR\utilities\cube-to-shapefile\correspond_link_to_TAZ.py"    CTRAMP\scripts\metrics
+copy /Y "%GITHUB_DIR%\utilities\cube-to-shapefile\cube_to_shapefile.py"         CTRAMP\scripts\metrics
+copy /Y "%GITHUB_DIR%\utilities\cube-to-shapefile\correspond_link_to_TAZ.py"    CTRAMP\scripts\metrics
 copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAMP
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
