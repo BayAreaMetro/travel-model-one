@@ -523,6 +523,8 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
 
         # read tazdata for total employment
         tazdata_file = model_run_dir / "INPUT" / "landuse" / "tazData.csv"
+        if not tazdata_file.exists(): continue
+
         LOGGER.info("    Reading {}".format(tazdata_file))
         tazdata_df = pd.read_csv(tazdata_file)
         LOGGER.debug("  TOTEMP: {:,}".format(tazdata_df['TOTEMP'].sum()))
@@ -833,6 +835,8 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         
         fatalities_injuries_file = model_run_dir / "OUTPUT" / "metrics" / "fatalities_injuries.csv"
+        if not fatalities_injuries_file.exists(): continue
+
         LOGGER.info(f"  Reading {fatalities_injuries_file}")
         tm_safety_df = pd.read_csv(fatalities_injuries_file)
         LOGGER.debug("  tm_safety_df.head(10):\n{}".format(tm_safety_df))
@@ -877,7 +881,7 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
 
     Per Harold in Update emission / pollution metrics (PM2.5)
     https://app.asana.com/0/0/1206701395344040/f
-    this comes from EIR\E2017\E2017web_[modelrun_id]_winter_planning_[timestamp].xlsx
+    this comes from EIR\E2021\E2021web_[modelrun_id]_winter_planning_[timestamp].xlsx
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
@@ -899,23 +903,23 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
 
             # this comes from EIR\E2017\E2017_[modelrun_id]_winter_planning_[timestamp].xlsx
-        emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
-        emfac2017_winter_planning_files = sorted(emfac2017_dir.glob(f"E2017web_{tm_runid}_winter_planning_*.xlsx"))
-        if len(emfac2017_winter_planning_files) != 1:
-            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_winter_planning_files: {emfac2017_winter_planning_files}")
+        emfac2021_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
+        emfac2021_winter_planning_files = sorted(emfac2021_dir.glob(f"E2017web_{tm_runid}_winter_planning_*.xlsx"))
+        if len(emfac2021_winter_planning_files) != 1:
+            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_winter_planning_files: {emfac2021_winter_planning_files}")
             LOGGER.info("    Skipping...")
             continue
-        LOGGER.info(f"  Reading {tm_runid} emfac2017_winter_planning_file:")
-        LOGGER.info(f"    {emfac2017_winter_planning_files[0]}")
-        emfac2017_winter_df = pd.read_excel(emfac2017_winter_planning_files[0], sheet_name="Total MTC")
+        LOGGER.info(f"  Reading {tm_runid} emfac2021_winter_planning_file:")
+        LOGGER.info(f"    {emfac2021_winter_planning_files[0]}")
+        emfac2021_winter_df = pd.read_excel(emfac2021_winter_planning_files[0], sheet_name="Total MTC")
         # remove leading or trailing spaces
-        emfac2017_winter_df.Veh_Tech = emfac2017_winter_df.Veh_Tech.str.strip()
-        LOGGER.debug("  emfac2017_winter_df.head():\n{}".format(emfac2017_winter_df.head()))
+        emfac2021_winter_df.Veh_Tech = emfac2021_winter_df.Veh_Tech.str.strip()
+        LOGGER.debug("  emfac2021_winter_df.head():\n{}".format(emfac2021_winter_df.head()))
 
         # select row with All Vehicles
-        emfac2017_winter_df = emfac2017_winter_df.loc[ emfac2017_winter_df.Veh_Tech == 'All Vehicles', :]
-        assert(len(emfac2017_winter_df)==1)
-        all_veh_series = emfac2017_winter_df.squeeze()
+        emfac2021_winter_df = emfac2021_winter_df.loc[ emfac2021_winter_df.Veh_Tech == 'All Vehicles', :]
+        assert(len(emfac2021_winter_df)==1)
+        all_veh_series = emfac2021_winter_df.squeeze()
         LOGGER.debug(f"  all_veh_series:\n{all_veh_series}")
 
         # verify other values
@@ -942,7 +946,7 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
 
     Per Harold in Update emission / pollution metrics (PM2.5)
     https://app.asana.com/0/0/1206701395344040/f
-    this comes from EIR\E2017\E2017web_[modelrun_id]_annnual_planning_[timestamp].xlsx
+    this comes from EIR\E2021\E2021web_[modelrun_id]_annual_planning_[timestamp].xlsx
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
@@ -968,29 +972,31 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
 
         # read tazdata for total population
         tazdata_file = model_run_dir / "INPUT" / "landuse" / "tazData.csv"
+        if not tazdata_file.exists(): continue
+
         LOGGER.info("    Reading {}".format(tazdata_file))
         tazdata_df = pd.read_csv(tazdata_file)
         TOTPOP = tazdata_df['TOTPOP'].sum()
         LOGGER.debug("  TOTPOP: {:,}".format(TOTPOP))
 
-        # this comes from EIR\E2017\E2017_[modelrun_id]_annual_planning_[timestamp].xlsx
-        emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
-        emfac2017_annual_planning_files = sorted(emfac2017_dir.glob(f"E2017web_{tm_runid}_annual_planning_*.xlsx"))
-        if len(emfac2017_annual_planning_files) != 1:
-            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_annual_planning_files: {emfac2017_annual_planning_files}")
+        # this comes from EIR\E2021\E2021_[modelrun_id]_annual_planning_[timestamp].xlsx
+        emfac2021_dir = model_run_dir / "OUTPUT/emfac/EIR/E2021"
+        emfac2021_annual_planning_files = sorted(emfac2021_dir.glob(f"E2021web_{tm_runid}_annual_planning_*.xlsx"))
+        if len(emfac2021_annual_planning_files) != 1:
+            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_annual_planning_files: {emfac2021_annual_planning_files}")
             LOGGER.info("    Skipping...")
             continue
-        LOGGER.info(f"  Reading {tm_runid} emfac2017_annual_planning_file:")
-        LOGGER.info(f"    {emfac2017_annual_planning_files[0]}")
-        emfac2017_annual_df = pd.read_excel(emfac2017_annual_planning_files[0], sheet_name="Total MTC")
+        LOGGER.info(f"  Reading {tm_runid} emfac2021_annual_planning_file:")
+        LOGGER.info(f"    {emfac2021_annual_planning_files[0]}")
+        emfac2021_annual_df = pd.read_excel(emfac2021_annual_planning_files[0], sheet_name="Total MTC")
         # remove leading or trailing spaces
-        emfac2017_annual_df.Veh_Tech = emfac2017_annual_df.Veh_Tech.str.strip()
-        LOGGER.debug("  emfac2017_annual_df.head():\n{}".format(emfac2017_annual_df.head()))
+        emfac2021_annual_df.Veh_Tech = emfac2021_annual_df.Veh_Tech.str.strip()
+        LOGGER.debug("  emfac2021_annual_df.head():\n{}".format(emfac2021_annual_df.head()))
 
         # select row with All Vehicles
-        emfac2017_annual_df = emfac2017_annual_df.loc[ emfac2017_annual_df.Veh_Tech == 'All Vehicles', :]
-        assert(len(emfac2017_annual_df)==1)
-        all_veh_series = emfac2017_annual_df.squeeze()
+        emfac2021_annual_df = emfac2021_annual_df.loc[ emfac2021_annual_df.Veh_Tech == 'All Vehicles', :]
+        assert(len(emfac2021_annual_df)==1)
+        all_veh_series = emfac2021_annual_df.squeeze()
         LOGGER.debug(f"  all_veh_series:\n{all_veh_series}")
 
         # verify other values
