@@ -151,10 +151,11 @@ if __name__ == '__main__':
         print(f"Copying files for {copy_dir}")
 
         if copy_dir == "OUTPUT\\offmodel":
-            dirname = os.path.dirname(__file__)
-            print(dirname)
-            print(os.path.join(dirname, "../RTP/Emissions/Off Model Calculators/extract_offmodel_results.py"))
-            subprocess.run(["python", os.path.join(dirname, "../RTP/Emissions/Off Model Calculators/extract_offmodel_results.py")])
+            dirname = pathlib.Path(__file__).parent
+            offmodel_script = dirname / "../RTP/Emissions/Off Model Calculators/extract_offmodel_results.py"
+            offmodel_script = offmodel_script.resolve()
+            print(f"{offmodel_script=}")
+            subprocess.run(["python", offmodel_script])
 
         for copy_file in COPY_FILES[copy_dir]:
 

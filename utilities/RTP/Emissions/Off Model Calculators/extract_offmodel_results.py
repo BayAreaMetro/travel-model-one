@@ -13,6 +13,11 @@ import argparse, datetime, logging, os, sys, pathlib
 import pandas as pd
 import xlwings as xl
 
+LOG_FILE = "extract_offmodel_results_{}.log"
+
+# create logger
+LOGGER = logging.getLogger(__name__)
+
 #####################################
 # inputs and outputs
 TM_RUN_LOCATION_BP   = r'M:\Application\Model One\RTP2025\Blueprint'
@@ -39,16 +44,16 @@ def refresh_excelworkbook(wb_file):
     excel_workbook.save()
     excel_workbook.close()
     excel_app.quit()
-    logging.info(f'Workbook {wb_file} refreshed')
+    LOGGER.info(f'Workbook {wb_file} refreshed')
 
 def get_runs_with_off_model(modelruns_xlsx):
     """
     Get the model runs that have off-model calculator workbooks generated.
     """
-    logging.info('Reading modelruns xlsx file: {}'.format(modelruns_xlsx))
+    LOGGER.info('Reading modelruns xlsx file: {}'.format(modelruns_xlsx))
     modelruns_df = pd.read_excel(modelruns_xlsx)
     modelruns_df = modelruns_df[['directory','year','run_offmodel']]
-    logging.info('modelruns off_model run tally:\n{}'.format(modelruns_df['run_offmodel'].value_counts()))
+    LOGGER.info('modelruns off_model run tally:\n{}'.format(modelruns_df['run_offmodel'].value_counts()))
     modelruns_with_off_model_IP = modelruns_df.loc[modelruns_df['run_offmodel']=='IP']
     modelruns_with_off_model_FBP = modelruns_df.loc[modelruns_df['run_offmodel']=='FBP']
     return modelruns_with_off_model_IP, modelruns_with_off_model_FBP
@@ -64,7 +69,7 @@ def extract_off_model_calculator_result(run_directory, run_id, calculator_name):
     off_model_wb = os.path.join(off_model_output_dir, 'PBA50+_OffModel_{}__{}.xlsx'.format(calculator_name, run_id))
 
     if not os.path.exists(off_model_wb):
-        logging.info(f'Workbook {off_model_wb} does not exist')
+        LOGGER.info(f'Workbook {off_model_wb} does not exist')
         return None
     else:
         refresh_excelworkbook(off_model_wb)
@@ -88,29 +93,28 @@ def summarize_off_model_calculator_results(run_directory, run_id, calculator_nam
     """
     all_calculators_results = []
     for name in calculator_names_list:
-        logging.info(f'Extracting {name} results for run {run_id}')
+        LOGGER.info(f'Extracting {name} results for run {run_id}')
         calculator_result = extract_off_model_calculator_result(run_directory, run_id, name)
         if calculator_result is not None:
             all_calculators_results.append(calculator_result)
 
-    off_model_summary = pd.concat(all_calculators_results)
-    logging.info(f'Completed for run {run_id}, Off-model summary:\n{off_model_summary}')
+    if len(all_calculators_results) == 0:
+        off_model_summary = pd.DataFrame()
+    else:
+        off_model_summary = pd.concat(all_calculators_results)
+    LOGGER.info(f'Completed for run {run_id}, Off-model summary:\n{off_model_summary}')
 
+    off_model_tot = None
     if len(off_model_summary) > 0:
 
         off_model_tot = off_model_summary.groupby('directory').agg({
             'daily_ghg_reduction'     : 'sum',
             'per_capita_ghg_reduction': 'sum'})
-        logging.info(f'Off-model summary:\n{off_model_tot}')
+        LOGGER.info(f'Off-model summary:\n{off_model_tot}')
 
     return off_model_summary, off_model_tot
 
 if __name__ == '__main__':
-
-    LOG_FILE = "extract_offmodel_results_{}.log"
-
-    # create logger
-    LOGGER = logging.getLogger(__name__)
     LOGGER.setLevel('INFO')
 
     # console handler
@@ -126,8 +130,8 @@ if __name__ == '__main__':
 
     # get all runs with off-model calculation
     runs_with_off_models_IP, runs_with_off_models_FBP = get_runs_with_off_model(MODELRUNS_XLSX)
-    logging.info(f'IPA runs with off-model calculations:\n{runs_with_off_models_IP}')
-    logging.info(f'Final Blueprint runs with off-model calculations:\n{runs_with_off_models_FBP}')
+    LOGGER.info(f'IPA runs with off-model calculations:\n{runs_with_off_models_IP}')
+    LOGGER.info(f'Final Blueprint runs with off-model calculations:\n{runs_with_off_models_FBP}')
 
     # extract FBP off-model results
     for run in runs_with_off_models_FBP['directory']:
@@ -143,9 +147,9 @@ if __name__ == '__main__':
                 off_model_summary.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_summary.csv'), index=False)
                 off_model_tot.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_tot.csv'))
         elif not os.path.exists(off_model_output_dir):
-            logging.info(f'Off-model output directory does not exist for run {run}')
+            LOGGER.info(f'Off-model output directory does not exist for run {run}')
         else:
-            logging.info(f'Off-model summary already exists for run {run}')
+            LOGGER.info(f'Off-model summary already exists for run {run}')
 
     # extract IP off-model results
     for run in runs_with_off_models_IP['directory']:
@@ -161,6 +165,6 @@ if __name__ == '__main__':
                 off_model_summary.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_summary.csv'), index=False)
                 off_model_tot.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_tot.csv'))
         elif not os.path.exists(off_model_output_dir):
-            logging.info(f'Off-model output directory does not exist for run {run}')
+            LOGGER.info(f'Off-model output directory does not exist for run {run}')
         else:
-            logging.info(f'Off-model summary already exists for run {run}')
+            LOGGER.info(f'Off-model summary already exists for run {run}')
