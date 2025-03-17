@@ -39,7 +39,7 @@ IF defined MODEL_YEAR (echo Using MODEL_YEAR=%MODEL_YEAR%) else (goto error)
 set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
 
 :: Location of the metrics scripts
-set CODE_DIR=.\CTRAMP\scripts\metrics
+set CODE_DIR=%CD%\CTRAMP\scripts\metrics
 :: Location of the model files
 set TARGET_DIR=%CD%
 
@@ -190,7 +190,7 @@ if not exist shapefile (
   mkdir shapefile
 )
 cd shapefile
-if not exist shapefile\network_trn_links.shp (
+if not exist network_trn_links.shp (
   rem requires geopandas
   rem Export loaded network to shapefiles
   rem Input: see command
