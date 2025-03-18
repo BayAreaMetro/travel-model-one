@@ -903,8 +903,8 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
 
             # this comes from EIR\E2017\E2017_[modelrun_id]_winter_planning_[timestamp].xlsx
-        emfac2021_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
-        emfac2021_winter_planning_files = sorted(emfac2021_dir.glob(f"E2017web_{tm_runid}_winter_planning_*.xlsx"))
+        emfac2021_dir = model_run_dir / "OUTPUT/emfac/EIR/E2021"
+        emfac2021_winter_planning_files = sorted(emfac2021_dir.glob(f"E2021web_{tm_runid}_winter_planning_*.xlsx"))
         if len(emfac2021_winter_planning_files) != 1:
             LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_winter_planning_files: {emfac2021_winter_planning_files}")
             LOGGER.info("    Skipping...")
