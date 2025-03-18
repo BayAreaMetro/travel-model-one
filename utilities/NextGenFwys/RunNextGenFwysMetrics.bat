@@ -14,6 +14,14 @@ set CODE_DIR=.\CTRAMP\scripts\metrics
 :: for testing
 :: set CODE_DIR=E:\GitHub\travel-model-one\utilities\NextGenFwys\metrics
 
+if not exist %CODE_DIR%\extract_cost_skims.job (
+   copy X:\travel-model-one-master\utilities\NextGenFwys\metrics\extract_cost_skims.job %CODE_DIR%
+)
+
+if not exist %CODE_DIR%\travel-cost-by-income-driving-households.r (
+   copy X:\travel-model-one-master\utilities\NextGenFwys\metrics\travel-cost-by-income-driving-households.r %CODE_DIR%
+)
+
 :: Location of the model files
 set TARGET_DIR=%CD%
 
