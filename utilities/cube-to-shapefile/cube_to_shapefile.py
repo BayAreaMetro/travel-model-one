@@ -309,9 +309,9 @@ def cube_network_to_shapefiles(
         # write the projection; cube doesn't do this
         crs = pyproj.CRS.from_epsg(26910)
         with open(NODE_SHPFILE.replace('.shp','.prj'), 'w') as prj_file:
-            prj_file.write(crs.to_wkt())
+            prj_file.write(crs.to_wkt(pyproj.enums.WktVersion.WKT1_ESRI))
         with open(LINK_SHPFILE.replace('.shp','.prj'), 'w') as prj_file:
-            prj_file.write(crs.to_wkt())
+            prj_file.write(crs.to_wkt(pyproj.enums.WktVersion.WKT1_ESRI))
     else:
         logger.info(f"Opted out of re-exporting roadway network file.  Using existing {NODE_SHPFILE} and {LINK_SHPFILE}")
 
