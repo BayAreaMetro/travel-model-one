@@ -111,6 +111,17 @@ if ERRORLEVEL 2 (
   goto donedone
 )
 
+:: Apply Regional Transit Fare Strategy
+:: This file should only be present if the Strategy is meant to be applied
+if exist "..\..\CTRAMP\scripts\skims\apply_regional_transit_fares_to_skims.job" (
+  runtpp "..\..\CTRAMP\scripts\skims\apply_regional_transit_fares_to_skims.job"
+  if ERRORLEVEL 2 (
+    set TRN_ERRORLEVEL=2
+    echo ERRORLEVEL is %ERRORLEVEL%
+    goto donedone
+  )
+)
+
 :: RUNNING OUT OF SPACE - delete this from the recycle bin too
 set THISDIR=%cd:X:\=X:\Recycle Bin\%
 IF "%THISDIR:~3,11%"=="Recycle Bin" (

@@ -51,30 +51,41 @@
 ;	       is less than plus or minus five minutes (transit_combined_headways.block);
 ;	  (9) A .block file containing access- and egress-mode-specific transfer prohibitor tables (transferprohibitors*.block);
 
-; Output: (A) A 16-table skim for each time-of-day, access/egress, and line-haul mode combination, containing the following:
+; Output: (A) A 27-table skim for each time-of-day, access/egress, and line-haul mode combination, containing the following:
 ;		 (1) Transit in-vehicle time, time (minutes x 100), ivt;
 ;		 (2) Initial wait time, time (minutes x 100), iwait;
 ;		 (3) Transfer wait time, time (minutes x 100), xwait;
-;		 (4) Walk access time (mode 1), time (minutes x 100), wacc;
-;		 (5) Auxiliary walk time (modes 3, 4, and 5), time (minutes x 100), waux;
-;		 (6) Walk egress time (mode 6), time (minutes x 100), wegr;
-;		 (7) Drive access and/or egress time (modes 2 or 7), time (minutes x 100), dtime;
-;		 (8) Drive access and/or egress distance (modes 2 or 7), distance (miles x 100), ddist;
-;		 (9) Fare, cents ($2000), fare;
-;		(10) Boardings, number, boards;
-;		(11) Local bus in-vehicle time (modes 10 through 79), time (minutes x 100), ivtLOC;
-;		(12) Light rail and/or ferry in-vehicle time (modes 100 through 119), time (minutes x 100), ivtLRF;
-;		(13) Express bus in-vehicle time (modes 80 through 99), time (minutes x 100), ivtEXP;
-;		(14) Heavy rail in-vehicle time (modes 120 trhough 129), time (minutes x 100), ivtHVY;
-;		(15) Commuter rail in-vehicle time (modes 130 through 139), time (minutes x 100), ivtCOM,
-;		(16) Ferry in-vehicle time (modes 100 through 109), time (minutes x 100), ivtFerry.
+;    (4) Total wait time, time (minutes x 100) wait;
+;		 (5) Walk access time (mode 1), time (minutes x 100), wacc;
+;		 (6) Auxiliary walk time (modes 3, 4, and 5), time (minutes x 100), waux;
+;		 (7) Walk egress time (mode 6), time (minutes x 100), wegr;
+;		 (8) Drive access and/or egress time (modes 2 or 7), time (minutes x 100), dtime;
+;		 (9) Drive access and/or egress distance (modes 2 or 7), distance (miles x 100), ddist;
+;		(10) Fare, cents ($2000), fare;
+;		(11) Boardings, number, boards;
+;		(12) Local bus in-vehicle time (modes 10 through 79), time (minutes x 100), ivtLOC;
+;		(13) Light rail and/or ferry in-vehicle time (modes 100 through 119), time (minutes x 100), ivtLRF;
+;		(14) Express bus in-vehicle time (modes 80 through 99), time (minutes x 100), ivtEXP;
+;		(15) Heavy rail in-vehicle time (modes 120 trough 129), time (minutes x 100), ivtHVY;
+;		(16) Commuter rail in-vehicle time (modes 130 through 139), time (minutes x 100), ivtCOM;
+;		(17) Ferry in-vehicle time (modes 100 through 109), time (minutes x 100), ivtFerry;
+;   (18) Muni local time (modes 20, 21), time (minutes x 100), ivtMUNILoc;
+;   (19) Muni metro time (mode 110), time (minutes x 100), ivtMUNIMet;
+;   (20) Local bus distance (modes 10 through 79), distance (miles x 100), distLOC;
+;   (21) Light rail and/or ferry distance (modes 100 through 119), distance (miles x 100), distLRF;
+;   (22) Express bus distance (modes 80 through 99), distance (miles x 100), distEXP;
+;   (23) Heavy rail distance (modes 120 trough 129), distance (miles x 100), distHVY;
+;   (24) Commuter rail distance (modes 130 through 139), distance (miles x 100), distCOM;
+;   (25) Ferry distance (modes 100 through 109), distance (miles x 100), ditsFerry;
+;   (26) First transit mode number, firstMode; and
+;   (27) Distance travelled on regional fare modes, distRegFar
 ;
 ; Notes:  (1) Script modified to use a single computer
 ;
 ; See also: (1) PrepHwyNet.job -- computes the bus time as a function of the highway time 
 ;
 ; version:  Travel Model One
-; authors:  dto, be (2014 02 03); dto (2011 10 27); gde; sai (2009 04 15)
+; authors:  dto, be, gde, sai in the old days; see git history for more modern times
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -347,7 +358,7 @@ loop period = 1,5
           ; set the desired output
           matrices name = ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
                           ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
-                          distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode,
+                          distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode, distRegFar,
             ; in-vehicle time for all transit modes, use TP+ code 1001    
             mw[1]  = time(1001),
             ; initial wait time, use TP+ code 'iwait'
@@ -399,7 +410,10 @@ loop period = 1,5
             ; capture the ferry distance in order to distinguish between ferry paths and light rail paths in the light rail/ferry choice (modes 100 to 109)
             mw[25] = dist(100,101,102,103,104,105,106,107,108,109),
             ; first transit mode
-            mw[26] = modet1
+            mw[26] = modet1,
+            ; distance travelled on regional fare modes for PBA50+ T2 Distance-based Regional Fares
+            ; https://app.asana.com/0/15119358130897/1208431274924535/f
+            mw[27] = dist(81,83,87,88,90,91,93,100,101,102,104,105,107,120,121,130,135)
 
           ; trace a selection of o/d pairs for debugging
           select trace=(i=@token_debug_origin@ && j=@token_debug_destination@)            
@@ -414,10 +428,10 @@ loop period = 1,5
             FILEI MATI[2]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.iter@token_trnassigniter@.tpp  ; current travel times +
             FILEI MATI[3]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_prevtrnassigniter@.tpp ; bring in averaged travel times
         
-            FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_trnassigniter@.tpp, MO=1-26,
+            FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_trnassigniter@.tpp, MO=1-27,
                           NAME=ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
                                ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
-                               distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode
+                               distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode, distRegFar
         
             FILEO PRINTO[1]=PHT_total_trnskm@token_period@_@token_access@_@token_path@_@token_egress@.csv, APPEND=T
 
@@ -462,6 +476,7 @@ loop period = 1,5
                 MW[24] =(MI.2.distCOM   *LAMBDA)+((1-LAMBDA)*MI.3.distCOM   )
                 MW[25] =(MI.2.distFerry *LAMBDA)+((1-LAMBDA)*MI.3.distFerry )
                 MW[26] =(MI.2.firstMode *LAMBDA)+((1-LAMBDA)*MI.3.firstMode )
+                MW[27] =(MI.2.distRegFar*LAMBDA)+((1-LAMBDA)*MI.3.distRegFar)
                 _BOTH = _BOTH+1
               ELSEIF (MI.2.@token_ivt@>0)
                 MW[1 ] =MI.2.ivt
@@ -490,6 +505,7 @@ loop period = 1,5
                 MW[24] =MI.2.distCOM  
                 MW[25] =MI.2.distFerry
                 MW[26] =MI.2.firstMode
+                MW[27] =MI.2.distRegFar
                 _ITERONLY = _ITERONLY+1
               ELSEIF (MI.3.@token_ivt@>0)
                 MW[1 ] =MI.3.ivt      
@@ -518,6 +534,7 @@ loop period = 1,5
                 MW[24] =MI.3.distCOM  
                 MW[25] =MI.3.distFerry
                 MW[26] =MI.3.firstMode
+                MW[27] =MI.3.distRegFar
                 _AVGONLY = _AVGONLY+1
               ENDIF
         

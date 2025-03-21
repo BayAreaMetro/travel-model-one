@@ -266,7 +266,7 @@ if %MODEL_YEAR_NUM% GEQ 3035 (
 :: ------
 :: Same as PPA project 6100_TransitFare_Integration
 if %MODEL_YEAR_NUM% GEQ 2035 (
-  copy /Y "%BP_OVERRIDE_DIR%\Regional_Transit_Fare_Policy\TransitSkims.job"     CTRAMP\scripts\skims
+  copy /Y "%BP_OVERRIDE_DIR%\Regional_Transit_Fare_Policy\apply_regional_transit_fares_to_skims.job"     CTRAMP\scripts\skims
 )
 :: means-based fare discount -- 50% off for Q1 -- are config in the parmas.properties file (see step 1)
 
