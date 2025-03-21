@@ -1,10 +1,9 @@
 
 ; set by RuntimeConfiguration.py -- Means-based fare
 ; these factors are not used in assignment; they are only used in summarization (e.g., sumTransitTimes.job)
-Means_Based_Fare_Q1Factor  = xx.xx          ; a factor between 0 to 1 indicating fare discount by income group
-Means_Based_Fare_Q2Factor  = xx.xx          ; a factor between 0 to 1 indicating fare discount by income group
-Means_Based_Cordon_Fare_Q1Factor  = xx.xx   ; a factor between 0 to 1 indicating fare discount by income group for trips/tours into/out of cordons
-Means_Based_Cordon_Fare_Q2Factor  = xx.xx   ; a factor between 0 to 1 indicating fare discount by income group for trips/tours into/out of cordons
+Means_Based_Fare_PctOfPoverty_Threshold = xxx 
+Means_Based_Fare_Factor = xx.xx
+Means_Based_Cordon_Fare_Factor  = xx.xx
 
 ; set by RuntimeConfiguration.py -- disable HSR interregional travel
 ; Set to 0 to leave trips ON, set to 1 to DISABLE

@@ -16,6 +16,7 @@ USAGE = r"""
 """
 import argparse, os, re, pathlib, shutil
 import pandas
+import subprocess
 
 # output_dir -> file_list
 COPY_FILES = {
@@ -69,6 +70,10 @@ COPY_FILES = {
     ],
     "OUTPUT\\emfac":[
         "emfac_summary",
+    ],
+    "OUTPUT\\offmodel":[
+        "off_model_summary",
+        "off_model_tot"
     ],
     "INPUT\\landuse":[
         "tazData",
@@ -145,6 +150,13 @@ if __name__ == '__main__':
     for copy_dir in COPY_FILES.keys():
         print(f"Copying files for {copy_dir}")
 
+        if copy_dir == "OUTPUT\\offmodel":
+            dirname = pathlib.Path(__file__).parent
+            offmodel_script = dirname / "../RTP/Emissions/Off Model Calculators/extract_offmodel_results.py"
+            offmodel_script = offmodel_script.resolve()
+            print(f"{offmodel_script=}")
+            subprocess.run(["python", offmodel_script])
+
         for copy_file in COPY_FILES[copy_dir]:
 
             if my_args.delete_other_run_files == "y":
@@ -161,6 +173,9 @@ if __name__ == '__main__':
                 for potential_file_to_delete in os.listdir(my_args.dest_dir):
                     match = re.search(potential_file_to_delete_re, potential_file_to_delete)
                     if match == None: continue
+
+                    # don't delete NTD files
+                    if potential_file_to_delete.endswith("NTD.csv"): continue
 
                     if match.group('run_id').lower() not in directory_copy_list:
                         print(f"    => Deleting {potential_file_to_delete}")

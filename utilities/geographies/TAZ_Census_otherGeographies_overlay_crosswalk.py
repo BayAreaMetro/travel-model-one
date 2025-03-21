@@ -149,7 +149,8 @@ if __name__ == '__main__':
         LOG_FILE = os.path.join(OUTPUT_DIR, 'create_{}_{}_crossawlk_{}_{}.log'.format(BASE_NAME, OVERLAY_NAME, SCENARIO, today))
     else:
         OUTPUT_FILE = os.path.join(OUTPUT_DIR, '{}_{}_crosswalk.csv'.format(BASE_NAME, OVERLAY_NAME))
-        LOG_FILE = os.path.join(OUTPUT_DIR, 'create_{}_{}_crossawlk_{}.log'.format(BASE_NAME, OVERLAY_NAME, today))        
+        LOG_FILE = os.path.join(OUTPUT_DIR, 'create_{}_{}_crossawlk_{}.log'.format(BASE_NAME, OVERLAY_NAME, today))
+        print(LOG_FILE)     
 
     # set up logging
     logger = logging.getLogger()
@@ -183,7 +184,7 @@ if __name__ == '__main__':
 
     # create crosswalk between base data ID and overlay data ID
     logger.info('creating {} - {} crosswalk'.format(BASE_NAME, OVERLAY_NAME))
-    crosswalk = geo_assign_fields(base_geo, BASE_GEO_ID, overlay_geo, [OVERLAY_GEO_ID], return_intersection_area=True)
+    crosswalk = geo_assign_fields(base_geo, BASE_GEO_ID, overlay_geo, [OVERLAY_GEO_ID], return_intersection_area=True, use_half_area_rule=False)
     logger.info('crosswalk created: {} rows, {} unique {}, with header \n{}'.format(
         crosswalk.shape[0], crosswalk[BASE_GEO_ID].nunique(), BASE_GEO_ID, crosswalk.head()))
     # add overlay name to the ID column name for clarity

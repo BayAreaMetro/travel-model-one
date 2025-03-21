@@ -16,7 +16,7 @@ import com.pb.models.ctramp.TazDataIf;
 
 public class HouseholdFreeParkingModel implements Serializable {
     
-    private transient Logger logger = Logger.getLogger(HouseholdFreeParkingModel.class);
+    private transient Logger logger = Logger.getLogger("freeparking");
 
     private static final String FP_CONTROL_FILE_TARGET = "UecFile.FreeParking";
     private static final int FP_DATA_SHEET = 0;
@@ -91,6 +91,7 @@ public class HouseholdFreeParkingModel implements Serializable {
 
         // write choice model alternative info to log file
         if ( hhObj.getDebugChoiceModels() ) {
+            fpModel.logUECResults(logger, "Free parking Choice");
             fpModel.logAlternativesInfo("Free parking Choice", String.format("PERS_%d", personObj.getPersonId()));
             fpModel.logSelectionInfo ( "Free parking Choice", String.format("PERS_%d", personObj.getPersonId()), randomNumber, chosenAlt);
         }
