@@ -254,11 +254,12 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 
 :: TODO: LMZ disabling this as I don't think these projects are in the FBP
 :: Also, this should be done in a more robust way if we do these, and not via SetUpModel.bat
-if %MODEL_YEAR_NUM% GEQ 3035 (
+if %MODEL_YEAR_NUM% GEQ 2035 (
   copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
   copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\mod_links_BRT_FBP_MR_018_US101_BOS.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
-  copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
-  copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
+  rem copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
+  rem copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
+  copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv    INPUT\hwy\mod_links_BRT.csv
 )
 
 :: ------
