@@ -95,9 +95,9 @@ if __name__ == '__main__':
             all_veh_series = total_mtc_df.squeeze()
             # print(all_veh_series)
             for extract_column in EXTRACT_COLUMNS:
-                # in EMFAC2021, VMT is 'Total_VMT'
+                # in EMFAC2021 and EMFAC202Y, VMT is 'Total_VMT'
                 emfac_extract_column = extract_column
-                if (match.group('emfac_version') in ['2021','2021web']) and (extract_column == 'VMT'):
+                if (match.group('emfac_version') in ['2021','2021web','202Y','202Yweb']) and (extract_column == 'VMT'):
                     emfac_extract_column = 'Total_VMT'
 
                 if emfac_extract_column in total_mtc_columns: 
