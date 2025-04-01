@@ -40,7 +40,7 @@ EXTRACT_COLUMNS  = ['Veh_Tech', 'VMT', 'Trips', 'CO2_RUNEX', 'CO2_IDLEX', 'CO2_S
 
 # emfac output file ends with timestamp: _YYYYMMDDHHMMSS.xlsx  e.g. _20240410131422.xlsx
 # by convention, it's E[emfacversion]_[model_run_id]_[season][_sb375?]_[YYYYMMDDHHMMSS].xlsx
-EMFAC_OUTPUT_STR = f"E(?P<emfac_version>2014|2017|2017web|2021|2021web)_{MODEL_RUN_ID}_(?P<season>annual|summer|winter)(?P<planning>_planning)?(?P<sb375>_sb375)?_(?P<run_timestamp>\d{{14}}).xlsx"
+EMFAC_OUTPUT_STR = f"E(?P<emfac_version>2014|2017|2017web|2021|2021web|202Yweb)_{MODEL_RUN_ID}_(?P<season>annual|summer|winter)(?P<planning>_planning)?(?P<sb375>_sb375)?_(?P<run_timestamp>\d{{14}}).xlsx"
 EMFAC_OUTPUT_RE  = re.compile(EMFAC_OUTPUT_STR)
 
 if __name__ == '__main__':
