@@ -121,8 +121,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     HOUSING_COSTS_FILE = BOX_METRICS_OUTPUT_DIR / 'metrics_affordable1_housing_cost_share_of_income.csv'
     LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
     housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
-    LOGGER.debug("  housing_costs_df.head() (len={}):\n{}".format(
-        len(housing_costs_df), housing_costs_df.head()))
+    LOGGER.debug(f"  housing_costs_df (len={len(housing_costs_df),}):\n{housing_costs_df}")
     LOGGER.debug(f"{housing_costs_df.modelrun_alias.unique().tolist()=}")
     
     # select only columns we need
