@@ -101,7 +101,10 @@ if __name__ == '__main__':
     parser.add_argument("ModelRuns_xlsx", metavar="ModelRuns.xlsx", help="ModelRuns.xlsx")
     parser.add_argument("--dest_dir", help="Destination directory")
     parser.add_argument("--status_to_copy", help="Status values to copy")
+    parser.add_argument("--run_set", help="Run sets to copy", nargs='+')
     parser.add_argument("--delete_other_run_files", help="Delete files related to other runs")
+    parser.add_argument("--skip_offmodel_workbook_refresh", help="Skip refreshing off-model workbooks?", action="store_true")
+    parser.add_argument("--force_emfac_postproc", help="Run emfac_postproc.py for all dirs?", action="store_true")
 
     # topsheet + scenario_metrics only option?
     my_args = parser.parse_args()
@@ -141,7 +144,15 @@ if __name__ == '__main__':
     print(my_args)
 
     # create list of model run directories to copy
-    directory_copy_list = list(model_runs_df.loc[model_runs_df['status'].isin(my_args.status_to_copy)]['directory'])
+    directory_copy_df = model_runs_df.loc[model_runs_df['status'].isin(my_args.status_to_copy)]
+    print(f"Filtered to {len(directory_copy_df)} runs with status in {my_args.status_to_copy}:\n{directory_copy_df}")
+    # filter to given run_set if supplied
+    if my_args.run_set:
+        directory_copy_df = directory_copy_df.loc[directory_copy_df['run_set'].isin(my_args.run_set)]
+        print(f"Filtered to {len(directory_copy_df)} runs with run_set in {my_args.run_set}\{directory_copy_df}")
+
+
+    directory_copy_list = directory_copy_df['directory'].tolist()
     # lower case these
     directory_copy_list = [dir.lower() for dir in directory_copy_list]
     print(f"{directory_copy_list=}")
@@ -150,7 +161,9 @@ if __name__ == '__main__':
     for copy_dir in COPY_FILES.keys():
         print(f"Copying files for {copy_dir}")
 
-        if copy_dir == "OUTPUT\\offmodel":
+        # off model results may workbook need refreshing
+        # (which has to be done on a machine with Microsoft Office installed)
+        if (copy_dir == "OUTPUT\\offmodel") and not (my_args.skip_offmodel_workbook_refresh):
             dirname = pathlib.Path(__file__).parent
             offmodel_script = dirname / "../RTP/Emissions/Off Model Calculators/extract_offmodel_results.py"
             offmodel_script = offmodel_script.resolve()
@@ -185,7 +198,7 @@ if __name__ == '__main__':
 
             for model_run in model_runs_df.itertuples():
                 # only copy if model run status was specified above
-                if model_run.status not in my_args.status_to_copy: 
+                if model_run.directory.lower() not in directory_copy_list: 
                     continue
 
                 if model_run.run_set not in RUN_SET_MODEL_PATHS.keys():
@@ -193,6 +206,9 @@ if __name__ == '__main__':
                     continue
 
                 source_dir = pathlib.Path(RUN_SET_MODEL_PATHS[model_run.run_set]) / model_run.directory
+                if not source_dir.exists():
+                    print(f"    Source dir {source_dir} does not exist -- skipping")
+                    continue
 
                 file_suffix_list = ["csv"]
                 if copy_dir.endswith("shapefile"):
@@ -205,6 +221,16 @@ if __name__ == '__main__':
                     if os.path.isfile(dest_file):
                         print(f"    Destination file {dest_file} exists -- skipping")
                         continue
+
+                    # if emfac_summary then generate this, since EMFAC is manual
+                    if copy_file == "emfac_summary":
+                        # if it was requested for all runs *or* if the file isn't there
+                        if (my_args.force_emfac_postproc) or not os.path.isfile(source_file):
+                            dirname = pathlib.Path(__file__).parent
+                            emfac_summary_script = dirname / "../../model-files/scripts/emfac/emfac_postproc.py"
+                            emfac_summary_script = emfac_summary_script.resolve()
+                            print(f"Running {emfac_summary_script=} {source_dir=}")
+                            subprocess.run(["python", emfac_summary_script], cwd=source_dir)
 
                     # skip if source file doesn't exist
                     if not os.path.isfile(source_file):
