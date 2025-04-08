@@ -43,7 +43,7 @@ import pandas as pd
 # -------------------------------------------------------------------
 # Input/output file names and locations
 # -------------------------------------------------------------------
-CWD          = pathlib.Path.cwd()
+CWD = pathlib.Path.cwd()
 MODEL_RUN_ID = CWD.name  # run this from M_DIR or model run dir on modeling machine
 CWD_OUTPUT   = CWD / "OUTPUT"
 
@@ -54,7 +54,7 @@ else:
     CWD_OUTPUT = CWD
     EMFAC_PREP = CWD / "emfac/emfac_prep"
 
-# These are the max speed for the row, so speed < [this value]
+# These are the max speed for the row, so speed < [this dvalue]
 # TODO: It would be less error prone if these were just in the input files rather than recoded here
 SPEED_BIN_TO_LABEL = [
     [ 1,  "5mph"],
@@ -78,6 +78,8 @@ SPEED_BIN_TO_LABEL = [
 ]
 SPEED_BIN_TO_LABEL_DF = pd.DataFrame.from_records(SPEED_BIN_TO_LABEL, columns=['speedBin','speedBin_label'])
 
+SEASONS = ['annual', 'summer', 'winter']
+
 # Mapping from county to Air Basin number
 # https://ww2.arb.ca.gov/applications/emissions-air-basin
 # SF = San Francisco Bay Area
@@ -98,6 +100,21 @@ COUNTY_GAI_AIRBASIN = [
     ["Sonoma",          22,                     "NC"]
 ]
 COUNTY_GAI_AIRBASIN_DF = pd.DataFrame.from_records(COUNTY_GAI_AIRBASIN, columns=['countyName', 'GAI', 'AirBasin'])
+AQ_ADJUSTMENT_FACTORS = [
+    #countyName         #GAI     #AdjustmentFactors for base year 2015
+    ["Alameda",         39,         0.97447878],
+    ["Contra Costa",    40,         1.07858030],
+    ["Marin",           41,         1.28140126],
+    ["Napa",            42,         1.33079776],
+    ["San Francisco",   43,         1.10441482],
+    ["San Mateo",       44,         0.93101458],
+    ["Santa Clara",     45,         0.99697844],
+    ["Solano",          46,         0.96634628],
+    ["Solano",          33,         0.96634628],
+    ["Sonoma",          47,         1.03322563],
+    ["Sonoma",          22,         1.03322563],
+]
+AQ_ADJUSTMENT_FACTORS_DF = pd.DataFrame.from_records(AQ_ADJUSTMENT_FACTORS, columns=['countyName', 'GAI', 'AdjustmentFactor'])
 
 # The Travel Model doesn't have the concept of Veh_Tech, so
 # - For the following 9 technologies, use the travel model's hourly fraction
@@ -136,6 +153,7 @@ def overwrite_worksheet_data(sheet, sheet_cols, sheet_index_cols, new_data_df):
                 sheet.cell(row=row_index+2, column=col_index+1).value = row[sheet_cols[col_index]]
     return
 
+
 if __name__ == '__main__':
     pd.options.display.width = 500 # this goes to log file
     pd.options.display.max_columns = 100
@@ -147,8 +165,9 @@ if __name__ == '__main__':
     parser.add_argument("--emfac_version",                 required=True, choices=['2014','2017','2021'])
     parser.add_argument("--run_mode",                      required=True, choices=['emissions','emissions-rates'])
     parser.add_argument("--sub_area",                      required=True, choices=['MPO-MTC','airbasin-SF'], help="Note: MPO_MTC==9 counties==11 subareas")
-    parser.add_argument("--season",                        required=True, choices=['annual','summer','winter'])
+    parser.add_argument("--season",                        required=True, choices=['all','annual','summer','winter']) 
     parser.add_argument("--VMT_data_type",                 required=True, choices=['totalDailyVMT','VMTbyVehFuelType'])
+    parser.add_argument("--base_year",                     required=False, choices=["2015","2023"])
     parser.add_argument("--custom_hourly_speed_fractions", action='store_true', help="For 'Custom Hourly Speed Fractions' checkbox")
     parser.add_argument("--file_suffix", default="", help="Optional suffix for output folders/files; to QA/compare against manually created versions")
 
@@ -162,6 +181,11 @@ if __name__ == '__main__':
     # Note that the template is the same for all seasons, so our templates will just reflect annual
     # And we'll change the custom activity file to reflect args.season later
     input_custom_activity_template = f"E{args.emfac_version}_{args.run_mode}_{args.sub_area}_{calendar_year}_annual_{args.VMT_data_type}"
+    # base_custom_activity_template
+    # if args.analysis_type=='AQConformity" then additional arg needed for base year
+    # yearIsRequired = (args.analysis_type=='AQConformity')
+    # parser.add_argument("--base_year",                      required=yearIsRequired, help="For AQConformity totalDailyVMT adjustments")
+
     # store true are optional add-ins
     if args.custom_hourly_speed_fractions:
         input_custom_activity_template = input_custom_activity_template + "_CustSpeed"
@@ -173,13 +197,26 @@ if __name__ == '__main__':
     input_custom_activity_template_fullpath = pathlib.Path(__file__).parent / "Custom_Activity_Templates" / input_custom_activity_template
 
     # ================= Output custom activity file is based on Harold's convention =================
-    output_custom_activity_file = f"E{args.emfac_version}_{MODEL_RUN_ID}_{args.season}{args.file_suffix}.xlsx"
     # and it's local
     output_custom_activity_dir = CWD_OUTPUT / "emfac" / args.analysis_type / f"E{args.emfac_version}{args.file_suffix}"
     # create it since log file will go there
     output_custom_activity_dir.mkdir(parents=True, exist_ok=True)
-    output_custom_activity_file_fullpath = output_custom_activity_dir / output_custom_activity_file
-    log_file_full_path = output_custom_activity_dir / output_custom_activity_file.replace(".xlsx",".log")
+    output_custom_activity_file_list = []
+    log_file_full_path_list = []
+
+    if args.season == "all":
+        for season in SEASONS: 
+            output_custom_activity_file = f"E{args.emfac_version}_{MODEL_RUN_ID}_{season}{args.file_suffix}.xlsx"
+            output_custom_activity_file_list.append(output_custom_activity_file)
+            output_custom_activity_file_fullpath = output_custom_activity_dir
+            log_file_name = f"E{args.emfac_version}_{MODEL_RUN_ID}_all{args.file_suffix}.log"
+            log_file_full_path = output_custom_activity_dir / log_file_name
+    else:
+        output_custom_activity_file = f"E{args.emfac_version}_{MODEL_RUN_ID}_{args.season}{args.file_suffix}.xlsx"
+        output_custom_activity_file_list.append(output_custom_activity_file)
+        output_custom_activity_file_fullpath = output_custom_activity_dir / output_custom_activity_file
+        log_file_full_path = output_custom_activity_dir / output_custom_activity_file.replace(".xlsx",".log")
+
 
     # check if input_custom_activity_template_fullpath exists
     # if not, raise NotImplementedError 
@@ -339,7 +376,8 @@ if __name__ == '__main__':
 
     # custom activity template is annual
     # if args.season differs, update settings
-    if args.season != 'annual':
+
+    if args.season != 'annual' or args.season != 'all':
         logging.info("-------------settings --------------------")
         sheet = workbook["Settings"]
 
@@ -470,10 +508,19 @@ if __name__ == '__main__':
         how     = 'left'
     )
     logging.debug("VMTbyGAI_df:\n{}".format(VMTbyGAI_df))
+    print("-------------------PRE-ADJUSTMENT-----------------------------")
+    
+    if args.analysis_type == "AQConformity":
+            VMTbyGAI_df = VMTbyGAI_df.merge(AQ_ADJUSTMENT_FACTORS_DF)
+            VMTbyGAI_df['HourlyTotalVMT'] = VMTbyGAI_df.HourlyTotalVMT * VMTbyGAI_df.AdjustmentFactor
+            logging.debug("VMTbyGAI_df with AQ Adjustment Factors:\n{}".format(VMTbyGAI_df))
+
     # columns are now: Sub-Area, GAI, DefaultVMT_GAI, countyName, AirBasin, HourlyTotalVMT (modeled), DefaultVMT_county
     # apportion based on share DefaultVMT for GAI / DefaultVMT for County
     VMTbyGAI_df['HourlyTotalVMT'] = VMTbyGAI_df.HourlyTotalVMT * (VMTbyGAI_df.DefaultVMT_GAI/VMTbyGAI_df.DefaultVMT_county)
     logging.debug("VMTbyGAI_df after apportioning county by GAI:\n{}".format(VMTbyGAI_df))
+    print("-------------------POST-ADJUSTMENT with SONOMA/SOLANO SHARE-----------------------------")
+    print(VMTbyGAI_df)
 
     # This section is for args.VMT_data_type=='VMTbyVehFuelType'
     # But for args.VMT_data_type=='totalDailyVMT', it doesn't actually do anything (percentVMT will be 1.0)
@@ -496,6 +543,7 @@ if __name__ == '__main__':
     # keep the relevant columns for writing to the excel file, but replace 'New Total VMT' with 'Modeled VMT'
     sheet_cols[sheet_cols.index('New Total VMT')] = 'Modeled VMT'
     TM_VMT_df =  DefaultVMT_detail_df[sheet_cols]
+
     logging.info(f"DefaultVMT_df.shape = {DefaultVMT_df.shape}")
     logging.info(f"TM_VMT_df.shape = {TM_VMT_df.shape}")
     assert(DefaultVMT_df.shape == TM_VMT_df.shape)
@@ -518,7 +566,24 @@ if __name__ == '__main__':
     # emfac2017 web refuses it too
     # rely on logfile instead
 
-    # save it once here
-    workbook.save(output_custom_activity_file_fullpath)
-    logging.info(f"Saved {output_custom_activity_file_fullpath}")
-    workbook.close()
+    # save excel files for each season here
+    if args.season == "all":
+        for season in SEASONS: 
+            logging.info("-------------settings --------------------")
+            sheet = workbook["Settings"]
+            logging.info("sheet[A3].value=[{}]".format(sheet["A3"].value))
+            assert(sheet["A3"].value == "Season/Month")
+            sheet["B3"] = season.capitalize()
+            logging.info(f"Saved Settings > Season/Month to {season.capitalize()}")
+            for output_custom_activity_file in output_custom_activity_file_list:
+                if season in output_custom_activity_file: 
+                    output_custom_activity_file_fullpath = output_custom_activity_dir / output_custom_activity_file
+                    workbook.save(output_custom_activity_file_fullpath)
+                    logging.info(f"Saved {output_custom_activity_file_fullpath}")
+                    workbook.close()
+    else: 
+        for output_custom_activity_file in output_custom_activity_file_list:
+            output_custom_activity_file_fullpath = output_custom_activity_dir / output_custom_activity_file
+            workbook.save(output_custom_activity_file_fullpath)
+            logging.info(f"Saved {output_custom_activity_file_fullpath}")
+            workbook.close()
