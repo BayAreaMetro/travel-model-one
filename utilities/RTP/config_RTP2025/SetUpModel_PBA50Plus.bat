@@ -297,10 +297,11 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 :: ------
 :: Bike Access 
 :: ------
-:: Bike/ped improvement on the San Rafael Bridge
-if %MODEL_YEAR_NUM% GEQ 2025 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2025-2040.job"     "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
-:: Bay Skyway (formerly Bay Bridge West Span Bike Path)
-if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2045onwards.job"   "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
+:: Bike/ped improvement on the San Rafael Bridge -- this is up in the air but also not a strategy
+:: RSR Bike Lane path: https://app.asana.com/1/11860278793487/project/1204959680579890/task/1208801153014930?focus=true
+
+:: Bay Skyway (formerly Bay Bridge West Span Bike Path) - is this a project in PBA50+
+:: if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2045onwards.job"   "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
 
 :: ------
 :: Off-model calculation 
