@@ -234,7 +234,7 @@ copy /Y INPUT\nonres\tripsAirPaxAM.tpp  INPUT\nonres\tripsAirPaxAM.tpp
 if %AddStrategies%==No goto DoneAddingStrategies
 
 :: ----------------------------------------
-:: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
+:: Pricing: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
 :: -----------------------------------------
 if %MODEL_YEAR_NUM% GEQ 2035 (
   copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01_wSFCordon_wTICordon.csv"  INPUT\landuse\tazData.csv
@@ -245,14 +245,13 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: see: https://github.com/BayAreaMetro/travel-model-one/blob/master/config/params_PBA50_Blueprint2050.properties#L156
 
 :: ----------------------------------------
-:: Bus on shoulder by time period
+:: Transit Project: Bus on shoulder by time period
 :: -----------------------------------------
 :: For bus on highway shoulder, BRT is set to 3.
 :: The script assumes 35 mph or congested time, whichever is less.
 :: See: https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/skims/PrepHwyNet.job#L163
 :: To allow the links to have different BRT values for different time periods, a few additional lines of code is added to CreateFiveHighwayNetworks.job.
 
-:: TODO: LMZ disabling this as I don't think these projects are in the FBP
 :: Also, this should be done in a more robust way if we do these, and not via SetUpModel.bat
 if %MODEL_YEAR_NUM% GEQ 2035 (
   copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
@@ -263,36 +262,19 @@ copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv    INPUT\hwy\mod_links_BRT
 )
 
 :: ------
-:: Blueprint Regional Transit Fare Policy
+:: Transit Policy: Blueprint Regional Transit Fare Policy
 :: ------
-:: Same as PPA project 6100_TransitFare_Integration
 if %MODEL_YEAR_NUM% GEQ 2035 (
   copy /Y "%BP_OVERRIDE_DIR%\Regional_Transit_Fare_Policy\apply_regional_transit_fares_to_skims.job"     CTRAMP\scripts\skims
 )
-:: means-based fare discount -- 50% off for Q1 -- are config in the parmas.properties file (see step 1)
 
 :: ------
-:: Blueprint Vision Zero
+:: Safety: Blueprint Vision Zero
 :: ------
 :: Start year (freeways): 2030
 :: Start year (local streets): 2025
-
 if %MODEL_YEAR_NUM%==2025 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2025.block"            "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
 if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2030to2050.block"   "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
-
-:: ------
-:: Blueprint Per-Mile Tolling on Congested Freeways
-:: ------
-:: no override needed, as we confirmed that all ODs have free paths
-:: see asana task: https://app.asana.com/0/572982923864207/1174201042245385
-
-:: toll rate discount -- 50% discount for Q1 and Q2 -- are specified in the properties file (see step 1)
-
-:: ------
-:: Complete Streets
-:: ------
-:: no override needed since it's now in config
-:: see asana task: https://app.asana.com/0/450971779231601/1186351402141779/f
 
 :: ------
 :: Bike Access 
