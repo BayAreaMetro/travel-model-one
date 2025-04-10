@@ -1,8 +1,15 @@
 USAGE = """
+    Joins the output network csvs with 1) crosswalks of link-CARE Communities (RTP2021/PBA50) and link-Overburdened Communities (RTP2025/PBA50+),
+    and 2) the emission rates by county, model year, and CARE/non-CARE or Overburdened/non-Overburdened; emission rates for pollutants other than PM2.5
+    are also based on speed, which is joined to int(CSPD) in the network output.
+
+    PlanBayArea2050 / RTP2021 Asana Task: https://app.asana.com/0/316552326098022/1200007791721297/f
+    PlanBayArea2050 / RTP2021 Amd1 Asana Task: https://app.asana.com/0/1201730518396783/1208059626391587/f
+    PlanBayArea2050+ / RTP2025 Asana Task: https://app.asana.com/1/11860278793487/project/1159042832247728/task/1209490522594295?focus=true
 
 """
 
-import argparse, os, pathlib
+import argparse, os
 import pandas as pd
 import numpy as np
 
@@ -119,24 +126,24 @@ if __name__ == '__main__':
         network_long_df["vmttot"] = network_long_df["voltot"] * network_long_df["distance"]
         assert len(network_long_df) == len(cspd_tp_df)
 
-        # Read CARE mapping
-        care_file = os.path.join(NETWORK_DIRS[network], f"link_to_COUNTY_{analysis_name}.csv")
-        care_df = pd.read_csv(care_file)
-        print(f"Read {len(care_df)} lines from {care_file}; head:")
-        print(care_df.head())
+        # Read CARE/Overburdened mapping
+        link_crosswalk_file = os.path.join(NETWORK_DIRS[network], f"link_to_COUNTY_{analysis_name}.csv")
+        link_crosswalk = pd.read_csv(link_crosswalk_file)
+        print(f"Read {len(link_crosswalk)} lines from {link_crosswalk}; head:")
+        print(link_crosswalk.head())
 
         # Combine with network_long
-        network_long_care_df = network_long_df.merge(
-            care_df[["A", "B", "COUNTYCARE", "linkCC_share"]],
+        network_long_crosswalk_df = network_long_df.merge(
+            link_crosswalk[["A", "B", "COUNTYCARE", "linkCC_share"]],
             left_on=["a", "b"], right_on=["A", "B"], how="left"
         )
         #TODO: filters
-        network_long_care_df["county_census"] = network_long_care_df["COUNTYCARE"].str[:3]
-        network_long_care_df["CARE"] = network_long_care_df["COUNTYCARE"].str.len() > 3
+        network_long_crosswalk_df["county_census"] = network_long_crosswalk_df["COUNTYCARE"].str[:3]
+        network_long_crosswalk_df["CARE"] = network_long_crosswalk_df["COUNTYCARE"].str.len() > 3
 
         # Filter out dummy links
-        network_long_care_df = network_long_care_df[network_long_care_df["ft"] != 6]
-        print(f"network_long_care_df has {len(network_long_care_df)} rows")
+        network_long_crosswalk_df = network_long_crosswalk_df[network_long_crosswalk_df["ft"] != 6]
+        print(f"network_long_crosswalk_df has {len(network_long_crosswalk_df)} rows")
 
         # Read exhaust-based emissions
         if f"AL-{model_year}" not in emissions_rates:
@@ -157,13 +164,13 @@ if __name__ == '__main__':
             emissions_rates[non_exhaust_key] = emissions_df
 
         # Initialize emissions columns
-        network_long_care_df = network_long_care_df.assign(
+        network_long_crosswalk_df = network_long_crosswalk_df.assign(
             EO_PM2_5=0.0, EO_Benzene=0.0, EO_Butadiene=0.0, EO_DieselPM=0.0,
             Tire_Wear=0.0, Brake_Wear=0.0, Entrained_Road_Dust=0.0
         )
 
         # Process emissions for each county
-        network_long_care_emissions_df = pd.DataFrame()
+        network_long_emissions_df = pd.DataFrame()
 
         for _, row in LOOKUP_COUNTY.iterrows():
             county2 = row["county2"]
@@ -174,9 +181,7 @@ if __name__ == '__main__':
             non_exhaust_rates = emissions_rates[non_exhaust_key].query(f"County == '{county_name}'")
 
             # Filter for this county
-            this_co_df = network_long_care_df.query(f"county_census == '{county_census}'")
-            # other_co_df = network_long_care_df.query(f"county_census != '{county_census}' or county_census.isna()")
-            # assert len(this_co_df) + len(other_co_df) == len(network_long_care_df)
+            this_co_df = network_long_crosswalk_df.query(f"county_census == '{county_census}'")
 
             # Join based on congested speed int
             print(county_name)
@@ -198,23 +203,20 @@ if __name__ == '__main__':
                 Brake_Wear=np.where(this_co_df["CARE"], non_exhaust_rates["C_Brake_Wear"].values[0], non_exhaust_rates["NC_Brake_Wear"].values[0]),
                 Entrained_Road_Dust=np.where(this_co_df["CARE"], non_exhaust_rates["C_Entrained_Road_Dust"].values[0], non_exhaust_rates["NC_Entrained_Road_Dust"].values[0])
             )
-            # this_co_df["CARE"] = this_co_df["CARE"].astype(int)
-            # this_co_df.loc[this_co_df["CARE"] == 0, "EO_PM2_5"] = this_co_df["NC_EO_PM2_5"]
-            # this_co_df.loc[this_co_df["CARE"] == 1, "EO_PM2_5"] = this_co_df["C_EO_PM2_5"]
             this_co_df = this_co_df.drop(columns=["C_EO_PM2_5", "NC_EO_PM2_5", "C_EO_Benzene", "NC_EO_Benzene",
                                                 "C_EO_Butadiene", "NC_EO_Butadiene", "C_EO_DieselPM", "NC_EO_DieselPM"])
-            # network_long_care_df = pd.concat([this_co_df, other_co_df])
+
             print('this_co_df after assign')
             print(this_co_df.head())
-            network_long_care_emissions_df = pd.concat([network_long_care_emissions_df, this_co_df])
+            network_long_emissions_df = pd.concat([network_long_emissions_df, this_co_df])
 
-        print(list(network_long_care_emissions_df))
-        print(network_long_care_emissions_df)
+        print(list(network_long_emissions_df))
+        print(network_long_emissions_df)
         # Write the result
         if my_args.rtp == 'RTP2021':
             output_fullpath = os.path.join(BASE_DIR, "links_CARE_EMFAC2021_FEIR", f"links_CARE_{model_dir}.csv")
         elif my_args.rtp == 'RTP2025':
             output_fullpath = os.path.join(BASE_DIR, "links_OverBurdened_EMFAC2021_PBA50plus", f"links_OverBurdened_{model_dir}.csv")
         
-        network_long_care_df.to_csv(output_fullpath, float_format='%.7f', index=False)
-        print(f"Wrote {len(network_long_care_emissions_df)} rows and {len(list(network_long_care_emissions_df))} columns to {output_fullpath}")
+        network_long_emissions_df.to_csv(output_fullpath, float_format='%.7f', index=False)
+        print(f"Wrote {len(network_long_emissions_df)} rows and {len(list(network_long_emissions_df))} columns to {output_fullpath}")
