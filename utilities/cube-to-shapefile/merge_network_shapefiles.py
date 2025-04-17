@@ -1,89 +1,136 @@
 USAGE = """
 
-Merge (e.g. concatenate) network shapefiles from two different directories into a single shapefile via arcpy.
+Merge (e.g. concatenate) network shapefiles from two different directories into a single shapefile via geopandas.
 Assumes that the shapefiles have the same fields.
 
 """
+import geopandas as gpd
+import pandas as pd
+import argparse, logging, pathlib, time
 
-import argparse, os, sys
-import arcpy
-
-# shapefiles to merge
-SHAPEFILES = [
-    "network_links.shp",
-    "network_nodes.shp",
-    "network_trn_lines.shp",
-    "network_trn_links.shp",
-    "network_trn_stops.shp",
-    "trnlinkam_withSupport.shp",
-    "trnlinkpm_withSupport.shp"
-]
 
 if __name__ == '__main__':
-    WORKING_DIR = os.getcwd()
-
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
-    parser.add_argument("indir1",  help="Input directory 1")
-    parser.add_argument("indir2",  help="Input directory 2")
-    parser.add_argument("outdir",  help="Output directory")
+    parser.add_argument('--output_dir', default='network_comparison_FinalBlueprint')
+    parser.add_argument('--years', type=int, nargs='+') # 1 or more required
+    parser.add_argument('--baseline_version', type=str, required=True, nargs='+')
+    parser.add_argument('--blueprint_version', type=str, required=True, nargs='+')
     args = parser.parse_args()
 
-    arcpy.env.workspace = WORKING_DIR
+    network_versions = list(set(args.baseline_version + args.blueprint_version))
+    M_dir = pathlib.Path('M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\Networks')
+    network_comparison_dir = M_dir / args.output_dir   # outputdir
 
-    for shapefile in SHAPEFILES:
-        infile1 = os.path.join(args.indir1, shapefile)
-        infile2 = os.path.join(args.indir2, shapefile)
-        outfile = os.path.join(args.outdir, shapefile)
+    # make this if it doesn't exist
+    network_comparison_dir.mkdir(exist_ok=True)
 
-        print("infile1: {}".format(infile1))
-        print("infile2: {}".format(infile2))
-        print("outfile: {}".format(outfile))
+    TODAY_STR = time.strftime('%Y_%m_%d')
+    LOG_FILE = network_comparison_dir / f'merge_networks_{TODAY_STR}.log'
 
-        if not arcpy.Exists(infile1):
-            print("{} doesn't exist -- skipping".format(infile1))
-            continue
+    # set up logging
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    # console handler
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    logger.addHandler(ch)
+    # file handler
+    fh = logging.FileHandler(LOG_FILE, mode='w')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    logger.addHandler(fh)
 
-        if not arcpy.Exists(infile2):
-            print("{} doesn't exist -- skipping".format(infile2))
-            continue
+    # keep geoDataFrames for each version/year/scenario in this list
+    network_links_list = []
+    network_trn_lines_list = []
+    network_trn_route_links_list = []
+    network_trn_stops_list = []
+    tolls_list = []
+    ferryfare_list = []
 
-        if arcpy.Exists(outfile):
-            print("Found existing {} - deleting".format(outfile))
-            arcpy.Delete_management(outfile)
 
-        # Create FieldMappings object to manage merge output fields
-        field_mappings = arcpy.FieldMappings()
+    # loop through versions and year
+    for version in network_versions:
+        for year in args.years:
+            for scen in  ['Blueprint', 'Baseline']:
+                # only handle requested baseline or blueprint network versions
+                if (scen == 'Baseline') and (version not in args.baseline_version): continue
+                if (scen == 'Blueprint') and (version not in args.blueprint_version): continue
 
-        # Add all fields from both infile2
-        infile1_fieldnames = [f.name for f in arcpy.ListFields(infile1)]
-        infile2_fields     = arcpy.ListFields(infile2)
+                logging.info(f'network version: {version}, year: {year}, scenario: {scen}')
 
-        print(infile1_fieldnames)
-        # print(infile2_fields)
+                network_dir = M_dir / f'BlueprintNetworks_{version}' / f'net_{year}_{scen}'
+                shapefile_dir = network_dir / 'shapefiles'
+                logging.info(f'network_dir: {network_dir}')
 
-        for field in infile2_fields:
-            field_name = field.name
-            if field_name in ["FID","Shape"]: continue
+                if not network_dir.exists():
+                    logging.warning(f'network version: {version}, year: {year}, scenario: {scen} does not exist.')
+                    continue
 
-            field_map = arcpy.FieldMap()
+                if not shapefile_dir.exists():
+                    logging.warning(f'{shapefile_dir} not yet created.')
+                    continue
 
-            if field_name in infile1_fieldnames:
-                field_map.addInputField(infile1, field_name)
-            field_map.addInputField(infile2, field_name)
+                network_links = gpd.read_file(shapefile_dir / 'network_links.shp')
+                network_links['version'] = f'{version}_{year}_{scen}'
+                logging.debug(f'network_links.head()=\n{network_links.head()}')
+                network_links_list.append(network_links)
+                
+                network_trn_lines = gpd.read_file(shapefile_dir / 'network_trn_lines.shp')
+                network_trn_lines['version'] = f'{version}_{year}_{scen}'
+                logging.debug(f'network_trn_lines.head()=\n{network_trn_lines.head()}')
+                network_trn_lines_list.append(network_trn_lines)
 
-            # define the resulting field based on infile2 definition
-            out_field = arcpy.Field()
-            out_field.name        = field_name
-            out_field.type        = field.type
-            out_field.length      = field.length
-            out_field.scale       = field.scale
-            out_field.precision   = field.precision
-            field_map.outputField = out_field 
+                network_trn_route_links = gpd.read_file(shapefile_dir / 'network_trn_route_links.shp')
+                network_trn_route_links['version'] = f'{version}_{year}_{scen}'
+                logging.debug(f'network_trn_route_links.head()=\n{network_trn_route_links.head()}')
+                network_trn_route_links_list.append(network_trn_route_links)
 
-            print("  field_map inputFieldCount={} mergeRule={} outputField.name=[{}] type={} length={}  field2.length={}".format(
-                field_map.inputFieldCount, field_map.mergeRule,
-                field_map.outputField.name, field_map.outputField.type, field_map.outputField.length, field.length))
+                network_trn_stops = gpd.read_file(shapefile_dir / 'network_trn_stops.shp')
+                network_trn_stops['version'] = f'{version}_{year}_{scen}'
+                logging.debug(f'network_trn_stops.head()=\n{network_trn_stops.head()}')
+                network_trn_stops_list.append(network_trn_stops)
 
-            field_mappings.addFieldMap(field_map)
+                tolls = pd.read_csv(network_dir / 'hwy' / 'tolls.csv')
+                tolls['version'] = f'{version}_{year}_{scen}'
+                logging.debug(f'tolls.head()=\n{tolls.head()}')
+                tolls_list.append(tolls)
 
-        arcpy.Merge_management([infile1, infile2], outfile, field_mappings, add_source="ADD_SOURCE_INFO")
+                ferry_fares = pd.read_csv(network_dir / 'trn' / 'Ferry.far', comment=';', sep='\s+', dtype=int, 
+                                          names=['from_node','to_node','fare'])
+                ferry_fares['version'] = f'{version}_{year}_{scen}'
+                logging.debug(f'ferry_fares.head()=\n{ferry_fares.head()}')
+                # according to cube documentation, these are implicitly bi-directional if direction isn't specified, which it isn't
+                # so add the reverse
+                ferry_fares_reverse = ferry_fares.copy()
+                ferry_fares_reverse.rename(columns={'from_node':'to_node','to_node':'from_node'}, inplace=True)
+                logging.debug(f'ferry_fares_reverse.head()=\n{ferry_fares_reverse.head()}')
+
+                ferryfare_list.append(pd.concat([ferry_fares,ferry_fares_reverse]))
+
+    network_links_comp = pd.concat(network_links_list)
+    network_trn_lines_comp = pd.concat(network_trn_lines_list)
+    network_trn_route_links_comp = pd.concat(network_trn_route_links_list)
+    network_trn_stops_comp = pd.concat(network_trn_stops_list)
+    tolls_comp = pd.concat(tolls_list)
+    ferry_fares_comp = pd.concat(ferryfare_list)
+
+    # write them
+    network_links_comp.to_file(network_comparison_dir / 'network_links_comp.shp')
+    logger.info(f"Wrote {len(network_links_comp):,} rows to {network_comparison_dir / 'network_links_comp.shp'}")
+
+    network_trn_lines_comp.to_file(network_comparison_dir /'network_trn_lines_comp.shp')
+    logger.info(f"Wrote {len(network_trn_lines_comp):,} rows to {network_comparison_dir / 'network_trn_lines_comp.shp'}")
+
+    network_trn_route_links_comp.to_file(network_comparison_dir / 'network_trn_route_links_comp.shp')
+    logger.info(f"Wrote {len(network_trn_route_links_comp):,} rows to {network_comparison_dir / 'network_trn_route_links_comp.shp'}")
+
+    network_trn_stops_comp.to_file(network_comparison_dir / 'network_trn_stops_comp.shp')
+    logger.info(f"Wrote {len(network_trn_stops_comp):,} rows to {network_comparison_dir / 'network_trn_stops_comp.shp'}")
+
+    tolls_comp.to_csv(network_comparison_dir / 'tolls.csv', index=False)
+    logger.info(f"Wrote {len(tolls_comp):,} rows to {network_comparison_dir / 'tolls.csv'}")
+
+    ferry_fares_comp.to_csv(network_comparison_dir / 'ferry_fares.csv', index=False)
+    logger.info(f"Wrote {len(ferry_fares_comp):,} rows to {network_comparison_dir / 'ferry_fares.csv'}")

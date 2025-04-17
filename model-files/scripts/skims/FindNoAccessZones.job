@@ -1,14 +1,22 @@
 ;
-; find no access zones
-;
+; Find no access zones.
+; Write them to dbf and csv both.
+
+; header line
+*echo ZONE,NOCONNECT > "skims\unconnected_zones.csv"
+
 RUN PGM=MATRIX
   FILEI MATI[1]   = "skims\HWYSKMAM.tpp"
-  FILEO RECO[1]   = "skims\unconnected_zones.dbf", FIELDS=ZONE(5.0), NOCONNECT(3.0)
+  FILEO RECO[1]   = "skims\unconnected_zones.dbf", FIELDS=ZONE(5.0), NOCONNECT(10.0)
+  FILEO PRINTO[1] = "skims\unconnected_zones.csv", APPEND=T
 
-  MW[1] = MI.1.DISTDA
+  ; unconnected means no TOLLED DA path
+  MW[1] = MI.1.TOLLDISTDA
   IF (ROWMIN(1) == 500000)
     RO.ZONE = I
     RO.NOCONNECT = 1
     WRITE RECO=1
+
+    PRINT CSV=T PRINTO=1 LIST=I(0.0LRT),1(0.0LRT)
   ENDIF
 ENDRUN

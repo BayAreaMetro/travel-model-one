@@ -359,7 +359,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     print("  Read TAZs in equity priority communities:\n {}".format(tazdata_df[["taz_epc22", "taz_epc18"]].sum()))
 
     # read hra
-    input_file = pathlib.Path("INPUT/metrics/taz1454_hraPBA50plus_2024_02_23.csv")
+    input_file = pathlib.Path("INPUT/metrics/taz1454_hraPBA50plus_2025_02_22.csv")
     print(f"  Reading {input_file}")
     hra_df = pandas.read_csv(input_file)
     hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
