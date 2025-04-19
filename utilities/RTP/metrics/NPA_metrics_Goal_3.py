@@ -175,6 +175,7 @@ def process_direction(df, origin, destination, out_folder):
 
     out_folder.mkdir(parents=True, exist_ok=True)
     route.to_csv(out_folder / f"od_travel_time_df.csv", index=False)
+    print(f"Wrote {out_folder / 'od_travel_time_df.csv'}")
 
 # Process route direction
 for origin, destination in ROUTE_PAIRS:
@@ -188,12 +189,19 @@ for direction in OD_DIRECTIONS:
         min_transit_row = df.loc[df[f'wTrnW_{period}'] != -999]
         min_transit_row = min_transit_row.loc[min_transit_row[f'wTrnW_{period}'] == min_transit_row[f'wTrnW_{period}'].min()]
         min_transit_time = min_transit_row[f'wTrnW_{period}'] 
+
+        print(f"min_transit_row for {direction} {period}\n:{min_transit_row}")
         
         # Find the minimum auto travel time for the same od pair
         orig_taz = min_transit_row['orig_taz'].values[0]
         dest_taz = min_transit_row['dest_taz'].values[0]
         condition = ((df['orig_taz'] == orig_taz) & (df['dest_taz'] == dest_taz))
+        print(f"df.loc[condition]:\n{df.loc[condition]}")
+        # this should be a single row, right?
+        # then, how is this the minimum or the best?  isn't it just the travel time?
         min_auto_time = df.loc[condition, f'da_{period}'].min()
+        metrics_3A[f"best_transit_origin_{direction}_{period}"] = orig_taz
+        metrics_3A[f"best_transit_destination_{direction}_{period}"] = dest_taz
         metrics_3A[f"best_transit_travel_time_{direction}_{period}"] = min_transit_time.values[0]
         metrics_3A[f"best_auto_travel_time_{direction}_{period}"] = min_auto_time
 
