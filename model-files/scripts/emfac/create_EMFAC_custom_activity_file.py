@@ -119,7 +119,7 @@ AQ_ADJUSTMENT_FACTORS_DF = pd.DataFrame.from_records(AQ_ADJUSTMENT_FACTORS, colu
 # The Travel Model doesn't have the concept of Veh_Tech, so
 # - For the following 9 technologies, use the travel model's hourly fraction
 # - For the rest, keep the default hourly fraction from the EMFAC template
-VEH_TECH_EXTRACT_TO_PARTS = r'^(?P<vehicle>[^\-]+\S)(?P<space>\s?[-]\s?)(?P<tech>Gas|Elec|Dsl|NG|Phe)$'
+VEH_TECH_EXTRACT_TO_PARTS = r'^(?P<vehicle>[^\-]+\S)(?P<space>\s?[-]\s?)(?P<tech>Gas|Elec|Dsl|NG|Phe|BEV)$'
 # vehicles that match these will use travel-model-VMT for speed distribution
 USE_TRAVEL_MODEL_VMT_FOR_VEHICLE = ['LDA','LDT1','LDT2','MCY','MDV']
 
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--analysis_type",                 required=True, choices=['SB375','EIR','AQConformity'],
                         help="IF SB375 passed, assume 'Generate SB375 Template' is true")
-    parser.add_argument("--emfac_version",                 required=True, choices=['2014','2017','2021'])
+    parser.add_argument("--emfac_version",                 required=True, choices=['2014','2017','2021','2025'])
     parser.add_argument("--run_mode",                      required=True, choices=['emissions','emissions-rates'])
     parser.add_argument("--sub_area",                      required=True, choices=['MPO-MTC','airbasin-SF'], help="Note: MPO_MTC==9 counties==11 subareas")
     parser.add_argument("--season",                        required=True, choices=['all','annual','summer','winter']) 
@@ -406,6 +406,9 @@ if __name__ == '__main__':
         DefaultHourlyFraction_df = pd.DataFrame(DefaultHourlyFraction, columns=sheet_cols)
         logging.info("Finished reading <Hourly_Fraction_Veh_Tech_Speed>")
         logging.debug("DefaultHourlyFraction_df with columns={}:\n{}".format(sheet_cols, DefaultHourlyFraction_df))
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+        
         # log Veh_Tech categories
         Veh_Tech_List = DefaultHourlyFraction_df.Veh_Tech.unique().tolist()
         logging.debug("DefaultHourlyFraction_df.Veh_Tech:\n{}".format(str("\n").join(Veh_Tech_List)))
@@ -413,7 +416,7 @@ if __name__ == '__main__':
         # Some further notes about the "Hourly_Fraction_Veh_Tech_Speed" worksheet:
 
         # The "Hourly_Fraction_Veh_Tech_Speed" is essentially a table of subarea (11) x hour (24) x speed bins (18).
-        # The rows are subarea (11) x hour (24) x Veh_Tech (51)
+        # The rows are subarea (11) x hour (24) x Veh_Tech (55)
         # The columns are the 18 speed bins, plus index columns (Sub-Area, GAI, Sub-Area, Cal_Year, Veh_Tech, Hour)
 
         # merge DataFrames
@@ -456,9 +459,11 @@ if __name__ == '__main__':
         # make list of sheet_index_columns -- these are all of them that don't end if mph
         sheet_index_cols = []
         for sheet_col in sheet_cols: 
-            if sheet_col.endswith('mph')==False: sheet_index_cols.append(sheet_col)
+            if sheet_col.endswith('mph')==False: 
+                sheet_index_cols.append(sheet_col)
         overwrite_worksheet_data(sheet, sheet_cols, sheet_index_cols, TM_HourlyFraction_df)
         logging.info("Wrote Travel Model results to <Hourly_Fraction_Veh_Tech_Speed>")
+        # TM_HourlyFraction_df.to_csv('M:/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_30/OUTPUT/emfac/TM_HourlyFraction_df.csv') 
 
     # -------------------------------------------------------------------
     # Reading from and writing to the EMFAC Custom Activity Template
@@ -508,7 +513,6 @@ if __name__ == '__main__':
         how     = 'left'
     )
     logging.debug("VMTbyGAI_df:\n{}".format(VMTbyGAI_df))
-    print("-------------------PRE-ADJUSTMENT-----------------------------")
     
     if args.analysis_type == "AQConformity":
             VMTbyGAI_df = VMTbyGAI_df.merge(AQ_ADJUSTMENT_FACTORS_DF)
@@ -519,8 +523,7 @@ if __name__ == '__main__':
     # apportion based on share DefaultVMT for GAI / DefaultVMT for County
     VMTbyGAI_df['HourlyTotalVMT'] = VMTbyGAI_df.HourlyTotalVMT * (VMTbyGAI_df.DefaultVMT_GAI/VMTbyGAI_df.DefaultVMT_county)
     logging.debug("VMTbyGAI_df after apportioning county by GAI:\n{}".format(VMTbyGAI_df))
-    print("-------------------POST-ADJUSTMENT with SONOMA/SOLANO SHARE-----------------------------")
-    print(VMTbyGAI_df)
+
 
     # This section is for args.VMT_data_type=='VMTbyVehFuelType'
     # But for args.VMT_data_type=='totalDailyVMT', it doesn't actually do anything (percentVMT will be 1.0)
