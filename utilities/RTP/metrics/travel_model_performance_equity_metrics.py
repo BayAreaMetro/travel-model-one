@@ -1160,6 +1160,7 @@ if __name__ == '__main__':
         description = USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025'])
+    parser.add_argument('--sequence', type=str, help='If passed, analayzing a run sequence')
     parser.add_argument('--test', action='store_true', help='If passed, writes output to cwd instead of METRICS_OUTPUT_DIR')
     parser.add_argument('--only', required=False, choices=['affordable','connected','diverse','growth','healthy','vibrant'], 
                         help='To only run one metric set')
@@ -1187,12 +1188,22 @@ if __name__ == '__main__':
         # This is for reproducing RTP2021 (PBA50) metrics for QAQC
         BOX_METRICS_OUTPUT_DIR           = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "PBA50_reproduce_for_QA"
         METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
-    else:
-        METRICS_BOX_DIR                  = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Final_Blueprint"
-        METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
-        INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
-        BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
-        METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
+    elif my_args.rtp == 'RTP2025':
+        if my_args.sequence:
+            SEQ_DIR                          = pathlib.Path(f"M:\\Application\\Model One\\RTP2025\\Blueprint\\across_runs_{my_args.sequence}_sequential")
+            MODELRUNS_XLSX                   = SEQ_DIR / 'ModelRuns_RTP2025_sequential.xlsx'
+            METRICS_BOX_DIR                  = SEQ_DIR / "metrics"
+            # use the same inputs
+            METRICS_SOURCE_DIR               = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Final_Blueprint" / "metrics_input_files"
+            INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
+            BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
+            METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
+        else:
+            METRICS_BOX_DIR                  = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Final_Blueprint"
+            METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
+            INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
+            BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
+            METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
 
     #### Test Mode ################################################################################################################
     # test mode -- write output here
@@ -1230,9 +1241,10 @@ if __name__ == '__main__':
     MODELRUNS_COLUMNS = ['directory','year','run_set','category','status','Alias']
     if my_args.rtp == 'RTP2025': MODELRUNS_COLUMNS = MODELRUNS_COLUMNS + ['description']
     model_runs_df = model_runs_df[MODELRUNS_COLUMNS]
-    # select current runs with Alias
-    model_runs_df = model_runs_df.loc[ model_runs_df.status == 'current' ]
-    model_runs_df = model_runs_df.loc[ pd.notna(model_runs_df.Alias) ]
+    if not my_args.sequence:
+        # select current runs with Alias
+        model_runs_df = model_runs_df.loc[ model_runs_df.status == 'current' ]
+        model_runs_df = model_runs_df.loc[ pd.notna(model_runs_df.Alias) ]
 
     if my_args.rtp == 'RTP2021':
         # for RTP2021, select base year (pre 2025) and horizon year (2050)
@@ -1251,7 +1263,7 @@ if __name__ == '__main__':
     # Note: These methods iterate through all the relevant runs and output the metrics results
 
     # Affordable
-    if (my_args.only == None) or (my_args.only == 'affordable'):
+    if ((my_args.only == None) or (my_args.only == 'affordable')) and not my_args.sequence:
         affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict, my_args.rtp, BOX_METRICS_OUTPUT_DIR)
         calculate_Affordable1_trip_costs(model_runs_dict, affordable_hplust_costs_df)
 
