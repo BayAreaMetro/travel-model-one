@@ -216,6 +216,13 @@ if not exist metrics\topsheet.csv (
   call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\topsheet.R"
 )
 
+:NPA_metrics
+if not exist metrics\NPA1_metrics.csv (
+  rem Network Performance Assessment metrics
+  rem Output: metrics/NPA_Metrics_Goal_1A_to_1F.csv
+  call python "%CODE_DIR%\NPA_metrics_Goal_1A_to_1F.py.py"
+)
+
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
 python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
