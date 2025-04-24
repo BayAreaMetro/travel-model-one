@@ -253,12 +253,15 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: To allow the links to have different BRT values for different time periods, a few additional lines of code is added to CreateFiveHighwayNetworks.job.
 
 :: Also, this should be done in a more robust way if we do these, and not via SetUpModel.bat
-if %MODEL_YEAR_NUM% GEQ 2035 (
-  copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
-  copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\mod_links_BRT_FBP_MR_018_US101_BOS.csv"          INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
+if %MODEL_YEAR_NUM% GEQ 2030 (
+  copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"                  CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
+  :: FBP_MR_018_US101_BOS is a network project in 2030
+  copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\mod_links_BRT_FBP_MR_018_US101_BOS.csv"                       INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
+  :: FBP_NP_040_VINE_Exp_Bus_Enhancements is a network project in 2030
+  copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv"           INPUT\hwy\mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv
   rem copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
   rem copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
-copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv    INPUT\hwy\mod_links_BRT.csv
+  copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv    INPUT\hwy\mod_links_BRT.csv
 )
 
 :: ------
