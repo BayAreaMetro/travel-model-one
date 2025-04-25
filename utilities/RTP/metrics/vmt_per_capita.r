@@ -62,10 +62,21 @@ if (RTP==2013) {
                      "2050_TM152_FBP_NoProject_24", "2050_TM152_FBP_PlusCrossing_24",
                      "2050_TM152_EIR_Alt1_06", "2050_TM152_EIR_Alt2_05")
 } else if (RTP==2025) {
-  MODEL_RUN_IDS <- c("2015_TM160_IPA_06",
-                     "2023_TM160_IPA_55",
+  MODEL_RUN_IDS <- c("2005_TM161_IPA_01",
+                     "2015_TM161_IPA_09",
+                     "2023_TM161_IPA_35",
                      "2035_TM160_DBP_Plan_08b",
-                     "2050_TM160_DBP_Plan_08b")
+                     "2050_TM160_DBP_Plan_08b",
+                     "2035_TM161_FBP_NoProject_13",
+                     "2035_TM161_FBP_NPtoPlan_13_seq2",
+                     "2035_TM161_FBP_NPtoPlan_13_seq3",
+                     "2035_TM161_FBP_NPtoPlan_13_seq4",
+                     "2035_TM161_FBP_NPtoPlan_13_seq5",
+                     "2035_TM161_FBP_NPtoPlan_13_seq6",
+                     "2035_TM161_FBP_NPtoPlan_13_seq7",
+                     "2035_TM161_FBP_Plan_13",
+                     "2050_TM161_FBP_NoProject_13",
+                     "2050_TM161_FBP_NPtoPlan_13_seq2")
 }
 
 
@@ -75,6 +86,7 @@ taz_shp <- st_read('M:\\Data\\GIS layers\\Travel_Analysis_Zones_(TAZ1454)\\Trave
 
 # Loop through runs
 for (MODEL_RUN_ID in MODEL_RUN_IDS) {
+  print(MODEL_RUN_ID)
 
   # directory of core_summaries
   if ((RTP==2013) || (RTP==2017)) {
@@ -83,14 +95,15 @@ for (MODEL_RUN_ID in MODEL_RUN_IDS) {
       CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'Blueprint', MODEL_RUN_ID,"OUTPUT","core_summaries")
     } else if ((RTP==2021) && (MODEL_RUN_ID=='2015_TM152_IPA_17')) {
       CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'IncrementalProgress', MODEL_RUN_ID,"OUTPUT","core_summaries")
-    } else if ((RTP==2025) && ((MODEL_RUN_ID=='2015_TM160_IPA_06') || (MODEL_RUN_ID=='2023_TM160_IPA_55'))) {
+    } else if ((RTP==2025) && ((MODEL_RUN_ID=='2005_TM161_IPA_01') || (MODEL_RUN_ID=='2015_TM161_IPA_09') || (MODEL_RUN_ID=='2023_TM161_IPA_35'))) {
       CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'IncrementalProgress', MODEL_RUN_ID,"OUTPUT","core_summaries")
-    } else if ((RTP==2025) && (MODEL_RUN_ID!='2015_TM160_IPA_06') && (MODEL_RUN_ID!='2023_TM160_IPA_55')) {
+    } else if ((RTP==2025) && (MODEL_RUN_ID!='2005_TM161_IPA_01') && (MODEL_RUN_ID!='2015_TM161_IPA_09') && (MODEL_RUN_ID!='2023_TM161_IPA_35')) {
       CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'Blueprint', MODEL_RUN_ID,"OUTPUT","core_summaries")
     }
   
   vmt_data <- file.path(CORE_SUMMARIES_DIR, "AutoTripsVMT_perOrigDestHomeWork.rdata")
 
+  print("vmt_data")
   print(vmt_data)
   load(vmt_data)
 
@@ -99,6 +112,7 @@ for (MODEL_RUN_ID in MODEL_RUN_IDS) {
   total_vmt_by_workplace <- ungroup(model_summary) %>% group_by(WorkLocation) %>% summarise(total_vmt = sum(vmt))
   
   persons_data <- file.path(CORE_SUMMARIES_DIR, "AutoTripsVMT_personsHomeWork.rdata")
+  print("persons_data")
   print(persons_data)
   load(persons_data)
 
@@ -114,8 +128,17 @@ for (MODEL_RUN_ID in MODEL_RUN_IDS) {
     mutate(vmtperworker=total_vmt/total_pop)
   
   # write it
-  write.csv(vmt_pop_by_residence, file.path(OUTPUT_DIR, paste0("Home_",MODEL_RUN_ID,".csv")), row.names=FALSE)
-  write.csv(vmt_pop_by_workplace, file.path(OUTPUT_DIR, paste0("Work_",MODEL_RUN_ID,".csv")), row.names=FALSE)
+  home_csv = file.path(OUTPUT_DIR, paste0("Home_",MODEL_RUN_ID,".csv"))
+  work_csv = file.path(OUTPUT_DIR, paste0("Work_",MODEL_RUN_ID,".csv"))
+  print("write out .csv tables")
+  print(home_csv)
+  print(work_csv)
+  if (!file.exists(home_csv)) {
+    write.csv(vmt_pop_by_residence, home_csv, row.names=FALSE)
+  }
+  if (!file.exists(work_csv)) {
+    write.csv(vmt_pop_by_workplace, work_csv, row.names=FALSE)
+  }
 
   # join to TAZ1454 shapes
   vmt_pop_by_residence <- vmt_pop_by_residence %>% rename('TAZ1454' = 'taz')
@@ -124,7 +147,17 @@ for (MODEL_RUN_ID in MODEL_RUN_IDS) {
   vmt_pop_by_workplace_shp <- taz_shp %>% left_join(vmt_pop_by_workplace, by='TAZ1454')
   
   # write it
-  st_write(vmt_pop_by_residence_shp, file.path(OUTPUT_GIS_DIR, paste0("Home_",MODEL_RUN_ID,".shp")))
-  st_write(vmt_pop_by_workplace_shp, file.path(OUTPUT_GIS_DIR, paste0("Work_",MODEL_RUN_ID,".shp")))
+  home_shp = file.path(OUTPUT_GIS_DIR, paste0("Home_",MODEL_RUN_ID,".shp"))
+  work_shp = file.path(OUTPUT_GIS_DIR, paste0("Work_",MODEL_RUN_ID,".shp"))
+  print("write out .shp files")
+  print(home_shp)
+  print(work_shp)
+  if (!file.exists(home_shp)) {
+    st_write(vmt_pop_by_residence_shp, home_shp)
+  }
+  if (!file.exists(work_shp)) {
+    st_write(vmt_pop_by_workplace_shp, work_shp)
+  }
+  
 }
 
