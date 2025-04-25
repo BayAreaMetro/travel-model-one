@@ -21,6 +21,7 @@ The script writes the following output files:
   + wtrn_45_acc_accessible_job_share: wtrn_45_acc_jobs_weighted/total_jobs_weighted
   + acc_jobs_to_all_jobs_ratio
 
+Goal 1 scripts asana task: https://app.asana.com/1/11860278793487/project/1205004773899709/task/1209227244858523?focus=true
 """
 
 import os
@@ -136,6 +137,9 @@ def tally_access_to_jobs_v3(household_autos_df):
     accessiblejobs_df.to_csv(debug_out, index=False)
     print(f"Debug file written to {debug_out}")
     
+    # TODO: Why are the weightings done differently for EPCs vs auto ownership categories?
+    # TODO: It seems like they could be done similarly...
+    # TODO: And given that this is about job accessibility, maybe EMPRES would make more sense?
     # --------------------------- Compute population‐weighted accessible jobs ---------------------------
     accessiblejobs_df['sum(wtrn_45*TOTEMP)*TOTPOP'] = accessiblejobs_df['sum(wtrn_45*TOTEMP)'] * accessiblejobs_df['TOTPOP']
     print(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")

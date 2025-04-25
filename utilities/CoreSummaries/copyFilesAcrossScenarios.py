@@ -37,7 +37,9 @@ COPY_FILES = {
         "vmt_vht_metrics_by_taz",
         "trips_cordon_mode_summary",
         "truck_trips_by_timeperiod",
-        "transit_crowding_complete"
+        "transit_crowding_complete",
+        "NPA_Metrics_Goal_1A_to_1F",
+        "NPA_Metrics_Goal_1G_1H"
     ],
     "OUTPUT\\core_summaries":[
         "ActiveTransport",
