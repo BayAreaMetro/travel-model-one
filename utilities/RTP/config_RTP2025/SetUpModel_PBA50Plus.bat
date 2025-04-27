@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\Blueprint\2035_TM161_FBP_Plan_11
+set M_DIR=M:\Application\Model One\RTP2025\Blueprint\2050_TM161_FBP_Plan_15
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 set EN7=ENABLED
@@ -14,10 +14,10 @@ set EN7=ENABLED
 set GITHUB_DIR=X:\travel-model-one-v1.6.1_develop
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v30\net_2035_Blueprint
+set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v34\net_2050_Blueprint
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\BAUS_FBP_v05\2035
+set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\BAUS_FBP_v08\2050
 
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
@@ -30,7 +30,7 @@ set METRICS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2025\Blueprint\2035_TM161_FBP_Plan_10
+set PREV_RUN_DIR=M:\Application\Model One\RTP2025\Blueprint\2050_TM161_FBP_Plan_14
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
@@ -276,8 +276,8 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: ------
 :: Start year (freeways): 2030
 :: Start year (local streets): 2025
-if %MODEL_YEAR_NUM%==2025 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2025.block"            "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
-if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2030to2050.block"   "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
+if %MODEL_YEAR_NUM%==2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2030.block"            "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
+if %MODEL_YEAR_NUM% GEQ 2035 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2035to2050.block"   "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
 
 :: ------
 :: Bike Access 
