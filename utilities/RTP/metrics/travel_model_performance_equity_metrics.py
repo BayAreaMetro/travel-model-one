@@ -121,9 +121,8 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     HOUSING_COSTS_FILE = BOX_METRICS_OUTPUT_DIR / 'metrics_affordable1_housing_cost_share_of_income.csv'
     LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
     housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
-    LOGGER.debug("  housing_costs_df.head() (len={}):\n{}".format(
-        len(housing_costs_df), housing_costs_df.head()))
-    LOGGER.debug(f"{housing_costs_df.modelrun_alias.unique().tolist()}")
+    LOGGER.debug(f"  housing_costs_df (len={len(housing_costs_df),}):\n{housing_costs_df}")
+    LOGGER.debug(f"{housing_costs_df.modelrun_alias.unique().tolist()=}")
     
     # select only columns we need
     housing_costs_df = housing_costs_df.loc[ 
@@ -137,16 +136,18 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     #                 BAUS aliases: 2023 No Project, 2050 No Project, 2050 DBP
     # convert BAUS modelrun_alias to match travel model
     housing_costs_df.replace(to_replace={
-        '2015 No Project':'2015',
-        '2023 No Project':'2023',
-        '2050 FBP'       :'2050 Plan',
-        '2050 DBP'       :'2050 Plan',
-        '2050 EIR Alt 1' :'2050 EIR Alt1',
-        '2050 EIR Alt 2' :'2050 EIR Alt2',
+        '2015 No Project'     :'2015',
+        '2023 No Project'     :'2023',
+        '2050 FBP'            :'2050 Plan',
+        '2050 Final Blueprint':'2050 Plan',
+        '2050 Draft Blueprint':'2050 DBP',
+        '2050 EIR Alt 1'      :'2050 EIR Alt1',
+        '2050 EIR Alt 2'      :'2050 EIR Alt2',
     }, inplace=True)
-    # RTP2025 Draft Blueprint - 2050 Trend instead of 2050 No Project
-    if args_rtp=="RTP2025":
-        housing_costs_df.replace(to_replace={'2050 No Project':'2050 Trend'}, inplace=True)
+    # remove 2015 No Project, 2023 DBP, and 2023 FBP
+    housing_costs_df = housing_costs_df.loc[ 
+        ~housing_costs_df.modelrun_alias.isin(['2015 No Project','2023 Draft Blueprint','2023 Final Blueprint'])]
+    LOGGER.debug(f"{housing_costs_df.modelrun_alias.unique().tolist()=}")
 
     # rename quartile and recode to match
     housing_costs_df.rename(columns={
@@ -292,6 +293,12 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
         # reset index and pull alias from ModelRuns.xlsx info
         tm_scen_metrics_df.reset_index(drop=False, inplace=True)
         tm_scen_metrics_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+        LOGGER.debug(f"  tm_scen_metrics_df:\n{tm_scen_metrics_df}")
+        LOGGER.debug(f"  housing_costs_df:\n{housing_costs_df}")
+
+        if model_runs_dict[tm_runid]['Alias'] not in housing_costs_df.modelrun_alias.unique().tolist():
+            LOGGER.debug(f"modelrun_alias {model_runs_dict[tm_runid]['Alias']} not in housing_costs_df alias list {housing_costs_df.modelrun_alias.unique().tolist()}")
+            continue
 
         # join to housing costs
         tm_scen_metrics_df = pd.merge(
@@ -499,7 +506,7 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
         modelrun_alias
         mode (e.g. 'bike', 'wtrn')
         time (e.g. 20, 45) - time threshold
-        person_segment ('coc','hra','all')
+        person_segment ('epc18','epc22,'hra','all')
         job_share
         accessible_jobs (job_share x TOTEMP)
     """
@@ -515,6 +522,8 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
 
         # read tazdata for total employment
         tazdata_file = model_run_dir / "INPUT" / "landuse" / "tazData.csv"
+        if not tazdata_file.exists(): continue
+
         LOGGER.info("    Reading {}".format(tazdata_file))
         tazdata_df = pd.read_csv(tazdata_file)
         LOGGER.debug("  TOTEMP: {:,}".format(tazdata_df['TOTEMP'].sum()))
@@ -540,7 +549,7 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
         # extract mode, time, person_segment
         scenario_metrics_df['mode'] = scenario_metrics_df.metric_name.str.extract(r'^([a-z]+)')
         scenario_metrics_df['time'] = scenario_metrics_df.metric_name.str.extract(r'^[a-z]+[_]([0-9]+)')
-        scenario_metrics_df['person_segment'] = scenario_metrics_df.metric_name.str.extract(r'share[_]([a-z]*)$')
+        scenario_metrics_df['person_segment'] = scenario_metrics_df.metric_name.str.extract(r'share[_]([a-z0-9]*)$')
         scenario_metrics_df.loc[ pd.isna(scenario_metrics_df['person_segment']), 'person_segment' ] = 'all'
         LOGGER.debug("scenario_metrics_df:\n{}".format(scenario_metrics_df))
 
@@ -600,7 +609,12 @@ def calculate_Connected2_crowding(model_runs_dict: dict):
         # read the transit crowing model results
         trn_crowding_file = model_run_dir / "OUTPUT" / "metrics" / "transit_crowding_complete.csv"
         LOGGER.info("    Reading {}".format(trn_crowding_file))
-        tm_crowding_df = pd.read_csv(trn_crowding_file, usecols=['TIME','SYSTEM','MODE','ABNAMESEQ','period','load_standcap','AB_VOL'])
+        try:
+            tm_crowding_df = pd.read_csv(trn_crowding_file, usecols=['TIME','SYSTEM','MODE','ABNAMESEQ','period','load_standcap','AB_VOL'])
+        except FileNotFoundError:
+            LOGGER.info(f"  f{trn_crowding_file} not found. Skipping")
+            continue
+    
 
         # select only AM
         tm_crowding_df = tm_crowding_df.loc[tm_crowding_df['period'] == "AM"]
@@ -820,6 +834,8 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         
         fatalities_injuries_file = model_run_dir / "OUTPUT" / "metrics" / "fatalities_injuries.csv"
+        if not fatalities_injuries_file.exists(): continue
+
         LOGGER.info(f"  Reading {fatalities_injuries_file}")
         tm_safety_df = pd.read_csv(fatalities_injuries_file)
         LOGGER.debug("  tm_safety_df.head(10):\n{}".format(tm_safety_df))
@@ -864,7 +880,7 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
 
     Per Harold in Update emission / pollution metrics (PM2.5)
     https://app.asana.com/0/0/1206701395344040/f
-    this comes from EIR\E2017\E2017web_[modelrun_id]_winter_planning_[timestamp].xlsx
+    this comes from EIR\E2021\E2021web_[modelrun_id]_winter_planning_[timestamp].xlsx
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
@@ -886,23 +902,23 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
 
             # this comes from EIR\E2017\E2017_[modelrun_id]_winter_planning_[timestamp].xlsx
-        emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
-        emfac2017_winter_planning_files = sorted(emfac2017_dir.glob(f"E2017web_{tm_runid}_winter_planning_*.xlsx"))
-        if len(emfac2017_winter_planning_files) != 1:
-            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_winter_planning_files: {emfac2017_winter_planning_files}")
+        emfac2021_dir = model_run_dir / "OUTPUT/emfac/EIR/E2021"
+        emfac2021_winter_planning_files = sorted(emfac2021_dir.glob(f"E2021web_{tm_runid}_winter_planning_*.xlsx"))
+        if len(emfac2021_winter_planning_files) != 1:
+            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_winter_planning_files: {emfac2021_winter_planning_files}")
             LOGGER.info("    Skipping...")
             continue
-        LOGGER.info(f"  Reading {tm_runid} emfac2017_winter_planning_file:")
-        LOGGER.info(f"    {emfac2017_winter_planning_files[0]}")
-        emfac2017_winter_df = pd.read_excel(emfac2017_winter_planning_files[0], sheet_name="Total MTC")
+        LOGGER.info(f"  Reading {tm_runid} emfac2021_winter_planning_file:")
+        LOGGER.info(f"    {emfac2021_winter_planning_files[0]}")
+        emfac2021_winter_df = pd.read_excel(emfac2021_winter_planning_files[0], sheet_name="Total MTC")
         # remove leading or trailing spaces
-        emfac2017_winter_df.Veh_Tech = emfac2017_winter_df.Veh_Tech.str.strip()
-        LOGGER.debug("  emfac2017_winter_df.head():\n{}".format(emfac2017_winter_df.head()))
+        emfac2021_winter_df.Veh_Tech = emfac2021_winter_df.Veh_Tech.str.strip()
+        LOGGER.debug("  emfac2021_winter_df.head():\n{}".format(emfac2021_winter_df.head()))
 
         # select row with All Vehicles
-        emfac2017_winter_df = emfac2017_winter_df.loc[ emfac2017_winter_df.Veh_Tech == 'All Vehicles', :]
-        assert(len(emfac2017_winter_df)==1)
-        all_veh_series = emfac2017_winter_df.squeeze()
+        emfac2021_winter_df = emfac2021_winter_df.loc[ emfac2021_winter_df.Veh_Tech == 'All Vehicles', :]
+        assert(len(emfac2021_winter_df)==1)
+        all_veh_series = emfac2021_winter_df.squeeze()
         LOGGER.debug(f"  all_veh_series:\n{all_veh_series}")
 
         # verify other values
@@ -929,7 +945,7 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
 
     Per Harold in Update emission / pollution metrics (PM2.5)
     https://app.asana.com/0/0/1206701395344040/f
-    this comes from EIR\E2017\E2017web_[modelrun_id]_annnual_planning_[timestamp].xlsx
+    this comes from EIR\E2021\E2021web_[modelrun_id]_annual_planning_[timestamp].xlsx
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
@@ -955,29 +971,31 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
 
         # read tazdata for total population
         tazdata_file = model_run_dir / "INPUT" / "landuse" / "tazData.csv"
+        if not tazdata_file.exists(): continue
+
         LOGGER.info("    Reading {}".format(tazdata_file))
         tazdata_df = pd.read_csv(tazdata_file)
         TOTPOP = tazdata_df['TOTPOP'].sum()
         LOGGER.debug("  TOTPOP: {:,}".format(TOTPOP))
 
-        # this comes from EIR\E2017\E2017_[modelrun_id]_annual_planning_[timestamp].xlsx
-        emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
-        emfac2017_annual_planning_files = sorted(emfac2017_dir.glob(f"E2017web_{tm_runid}_annual_planning_*.xlsx"))
-        if len(emfac2017_annual_planning_files) != 1:
-            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_annual_planning_files: {emfac2017_annual_planning_files}")
+        # this comes from EIR\E2021\E2021_[modelrun_id]_annual_planning_[timestamp].xlsx
+        emfac2021_dir = model_run_dir / "OUTPUT/emfac/EIR/E2021"
+        emfac2021_annual_planning_files = sorted(emfac2021_dir.glob(f"E2021web_{tm_runid}_annual_planning_*.xlsx"))
+        if len(emfac2021_annual_planning_files) != 1:
+            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_annual_planning_files: {emfac2021_annual_planning_files}")
             LOGGER.info("    Skipping...")
             continue
-        LOGGER.info(f"  Reading {tm_runid} emfac2017_annual_planning_file:")
-        LOGGER.info(f"    {emfac2017_annual_planning_files[0]}")
-        emfac2017_annual_df = pd.read_excel(emfac2017_annual_planning_files[0], sheet_name="Total MTC")
+        LOGGER.info(f"  Reading {tm_runid} emfac2021_annual_planning_file:")
+        LOGGER.info(f"    {emfac2021_annual_planning_files[0]}")
+        emfac2021_annual_df = pd.read_excel(emfac2021_annual_planning_files[0], sheet_name="Total MTC")
         # remove leading or trailing spaces
-        emfac2017_annual_df.Veh_Tech = emfac2017_annual_df.Veh_Tech.str.strip()
-        LOGGER.debug("  emfac2017_annual_df.head():\n{}".format(emfac2017_annual_df.head()))
+        emfac2021_annual_df.Veh_Tech = emfac2021_annual_df.Veh_Tech.str.strip()
+        LOGGER.debug("  emfac2021_annual_df.head():\n{}".format(emfac2021_annual_df.head()))
 
         # select row with All Vehicles
-        emfac2017_annual_df = emfac2017_annual_df.loc[ emfac2017_annual_df.Veh_Tech == 'All Vehicles', :]
-        assert(len(emfac2017_annual_df)==1)
-        all_veh_series = emfac2017_annual_df.squeeze()
+        emfac2021_annual_df = emfac2021_annual_df.loc[ emfac2021_annual_df.Veh_Tech == 'All Vehicles', :]
+        assert(len(emfac2021_annual_df)==1)
+        all_veh_series = emfac2021_annual_df.squeeze()
         LOGGER.debug(f"  all_veh_series:\n{all_veh_series}")
 
         # verify other values
@@ -1023,7 +1041,11 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
         
         jtw_modes_file = model_run_dir / "OUTPUT" / "core_summaries" / "JourneyToWork_modes.csv"
         LOGGER.info(f"  Reading {jtw_modes_file}")
-        jtw_modes_df = pd.read_csv(jtw_modes_file)
+        try:
+            jtw_modes_df = pd.read_csv(jtw_modes_file)
+        except FileNotFoundError:
+            LOGGER.info(f"  f{jtw_modes_file} not found. Skipping")
+            continue
         LOGGER.debug("  jtw_modes_df.head(10):\n{}".format(jtw_modes_df.head(10)))
 
         # groupby ptype_label, wfh_choice, tour_mode
@@ -1103,7 +1125,11 @@ def calculate_Vibrant1_mean_commute(model_runs_dict: dict):
         
         commute_file = model_run_dir / "OUTPUT" / "core_summaries" / "CommuteByIncomeHousehold.csv"
         LOGGER.info(f"  Reading {commute_file}")
-        tm_commute_df = pd.read_csv(commute_file)
+        try:
+            tm_commute_df = pd.read_csv(commute_file)
+        except FileNotFoundError:
+            LOGGER.info(f"  f{commute_file} not found. Skipping")
+            continue        
         LOGGER.debug("  tm_commute_df.head(10):\n{}".format(tm_commute_df))
 
         tm_commute_df['total_commute_miles'] = tm_commute_df['freq'] * tm_commute_df['distance']
@@ -1134,6 +1160,7 @@ if __name__ == '__main__':
         description = USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025'])
+    parser.add_argument('--sequence', type=str, help='If passed, analayzing a run sequence')
     parser.add_argument('--test', action='store_true', help='If passed, writes output to cwd instead of METRICS_OUTPUT_DIR')
     parser.add_argument('--only', required=False, choices=['affordable','connected','diverse','growth','healthy','vibrant'], 
                         help='To only run one metric set')
@@ -1150,7 +1177,7 @@ if __name__ == '__main__':
     TM_RUN_LOCATION      = pathlib.Path('M:/Application/Model One/{}/'.format(my_args.rtp))
     TM_RUN_LOCATION_IP   = TM_RUN_LOCATION / 'IncrementalProgress'
     TM_RUN_LOCATION_BP   = TM_RUN_LOCATION / 'Blueprint'
-    MODELRUNS_XLSX       = pathlib.Path('../config_{}/ModelRuns_{}.xlsx'.format(my_args.rtp, my_args.rtp))
+    MODELRUNS_XLSX       = pathlib.Path('X:\\travel-model-one-master') / 'utilities' / 'RTP' / f'config_{my_args.rtp}' / f'ModelRuns_{my_args.rtp}.xlsx'
 
     # Set location of external inputs
     #All files are located in below folder / check sources.txt for sources
@@ -1161,12 +1188,22 @@ if __name__ == '__main__':
         # This is for reproducing RTP2021 (PBA50) metrics for QAQC
         BOX_METRICS_OUTPUT_DIR           = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "PBA50_reproduce_for_QA"
         METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
-    else:
-        METRICS_BOX_DIR                  = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Draft_Blueprint"
-        METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
-        INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
-        BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
-        METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
+    elif my_args.rtp == 'RTP2025':
+        if my_args.sequence:
+            SEQ_DIR                          = pathlib.Path(f"M:\\Application\\Model One\\RTP2025\\Blueprint\\across_runs_{my_args.sequence}_sequential")
+            MODELRUNS_XLSX                   = SEQ_DIR / 'ModelRuns_RTP2025_sequential.xlsx'
+            METRICS_BOX_DIR                  = SEQ_DIR / "metrics"
+            # use the same inputs
+            METRICS_SOURCE_DIR               = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Final_Blueprint" / "metrics_input_files"
+            INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
+            BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
+            METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
+        else:
+            METRICS_BOX_DIR                  = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Final_Blueprint"
+            METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
+            INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
+            BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
+            METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
 
     #### Test Mode ################################################################################################################
     # test mode -- write output here
@@ -1204,9 +1241,10 @@ if __name__ == '__main__':
     MODELRUNS_COLUMNS = ['directory','year','run_set','category','status','Alias']
     if my_args.rtp == 'RTP2025': MODELRUNS_COLUMNS = MODELRUNS_COLUMNS + ['description']
     model_runs_df = model_runs_df[MODELRUNS_COLUMNS]
-    # select current runs with Alias
-    model_runs_df = model_runs_df.loc[ model_runs_df.status == 'current' ]
-    model_runs_df = model_runs_df.loc[ pd.notna(model_runs_df.Alias) ]
+    if not my_args.sequence:
+        # select current runs with Alias
+        model_runs_df = model_runs_df.loc[ model_runs_df.status == 'current' ]
+        model_runs_df = model_runs_df.loc[ pd.notna(model_runs_df.Alias) ]
 
     if my_args.rtp == 'RTP2021':
         # for RTP2021, select base year (pre 2025) and horizon year (2050)
@@ -1225,7 +1263,7 @@ if __name__ == '__main__':
     # Note: These methods iterate through all the relevant runs and output the metrics results
 
     # Affordable
-    if (my_args.only == None) or (my_args.only == 'affordable'):
+    if ((my_args.only == None) or (my_args.only == 'affordable')) and not my_args.sequence:
         affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict, my_args.rtp, BOX_METRICS_OUTPUT_DIR)
         calculate_Affordable1_trip_costs(model_runs_dict, affordable_hplust_costs_df)
 

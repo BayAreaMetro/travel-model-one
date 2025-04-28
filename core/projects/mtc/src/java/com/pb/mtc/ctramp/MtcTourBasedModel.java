@@ -217,7 +217,7 @@ public class MtcTourBasedModel {
         
         ResourceBundle rb = null;
 
-        logger.info( String.format( "MTC Tour Based Model using CT-RAMP version %s, 22feb2011 build %s", CtrampApplication.VERSION, 2 ) );
+        logger.info( String.format( "MTC Tour Based Model using CT-RAMP version %s, 21Oct2024 build", CtrampApplication.VERSION) );
         
         if ( args.length == 0 ) {
             logger.error( String.format( "no properties file base name (without .properties extension) was specified as an argument." ) );

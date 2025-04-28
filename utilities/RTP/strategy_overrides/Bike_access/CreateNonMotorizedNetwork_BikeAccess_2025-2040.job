@@ -173,7 +173,7 @@ run pgm = hwynet
    if (a = 2784 & b = 2802 ) WALKOK = 1
    if (a = 2802 & b = 2787 ) WALKOK = 1
 
-   ; allow bicycle access on San Rafael Bridge WB (opening year: 2024)
+   ; allow bicycle access on San Rafael Bridge WB (opened in 2019, may close in 2025?)
    if ( a = 2359 & b= 2360 ) BIKEOK = 1
    if ( a = 2360 & b= 2247 ) BIKEOK = 1
    if ( a = 2374 & b= 2247 ) BIKEOK = 1
@@ -184,7 +184,7 @@ run pgm = hwynet
    if ( a = 2342 & b= 7894 ) BIKEOK = 1
    if ( a = 7894 & b= 7854 ) BIKEOK = 1
 
-   ; allow walk access on San Rafael Bridge WB (opening year: 2024)
+   ; allow walk access on San Rafael Bridge WB (opened in 2019, may close in 2025?)
    if ( a = 2359 & b= 2360 ) WALKOK = 1
    if ( a = 2360 & b= 2247 ) WALKOK = 1
    if ( a = 2374 & b= 2247 ) WALKOK = 1
@@ -195,7 +195,7 @@ run pgm = hwynet
    if ( a = 2342 & b= 7894 ) WALKOK = 1
    if ( a = 7894 & b= 7854 ) WALKOK = 1
 
-   ; allow bicycle access on San Rafael Bridge EB (opening year: 2024)
+   ; allow bicycle access on San Rafael Bridge EB ((opened in 2019, may close in 2025?)
    if ( a = 7854 & b= 7853 ) BIKEOK = 1
    if ( a = 7853 & b= 2341 ) BIKEOK = 1
    if ( a = 2341 & b= 2357 ) BIKEOK = 1
@@ -203,7 +203,7 @@ run pgm = hwynet
    if ( a = 2356 & b= 2375 ) BIKEOK = 1
    if ( a = 2375 & b= 2474 ) BIKEOK = 1
 
-   ; allow walk access on San Rafael Bridge EB (opening year: 2024)
+   ; allow walk access on San Rafael Bridge EB (opened in 2019, may close in 2025?)
    if ( a = 7854 & b= 7853 ) WALKOK = 1
    if ( a = 7853 & b= 2341 ) WALKOK = 1
    if ( a = 2341 & b= 2357 ) WALKOK = 1
