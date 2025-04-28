@@ -34,7 +34,7 @@ set PREV_RUN_DIR=M:\Application\Model One\RTP2025\Blueprint\2050_TM161_FBP_Plan_
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=%GITHUB_DIR%\utilities\RTP\config_RTP2025\params_2035_Blueprint.properties
+set PARAMS=%GITHUB_DIR%\utilities\RTP\config_RTP2025\params_2050_Blueprint.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=%GITHUB_DIR%\utilities\RTP\strategy_overrides
