@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-This script processes transit and vehicle miles traveled (VMT) metrics.
-It computes:
-(a) transit counts from individual and joint tour files,
-(b) transit mode share metrics for commute and non‐commute tours, and
-(c) VMT metrics.
-All computed metrics are combined and written to a single CSV file named "Transit_and_VMT_metrics.csv" in the data_output directory.
-The script reads the following input files:
-  - main/indivTourData_{ITER}.csv (Individual tour data)
-  - main/jointTourData_{ITER}.csv (Joint tour data)
+This script calculates key transit and vehicle miles traveled (VMT) metrics using dedicated computation functions.
+It performs the following calculations:
+  1. Total Transit Trips: Sums the frequency counts for trips in transit modes (mode numbers 9 through 18) from the TripDistance.csv file.
+  2. Transit Mode Share: Determines mode share for both commute and non‐commute tours by processing individual and joint tour data (iteration 3 files), while adjusting for a 0.5 sample rate.
+  3. VMT Metrics: Computes total passenger vehicle VMT and VMT per capita based on the VehicleMilesTraveled.csv data.
+
+Input files used:
+  - core_summaries/TripDistance.csv (Transit trip data)
+  - main/indivTourData_3.csv and main/jointTourData_3.csv (Tour data for mode share calculation)
   - core_summaries/VehicleMilesTraveled.csv (VMT data)
+
+The final output is a single CSV file named "{OUTPUT_Dir}/NPA_metrics_Goal_2.csv".
+To make it suitable for Tableau, a reordered CSV file is generated as {OUTPUT_Dir}/NPA_metrics_Goal_2_reordered.csv, and an Excel file is created as {OUTPUT_Dir_Tableau}/NPA_metrics_Goal_2_{WORK_DIR.name}.xlsx.
 """
 
 import os
@@ -20,169 +23,165 @@ import pandas as pd
 # ---------------------------
 # Set working directory & options
 # ---------------------------
-WORK_DIR = pathlib.Path("../2050_TM160_DBP_Plan_08b")
+WORK_DIR = pathlib.Path("../2035_TM161_FBP_NoProject_06")
 os.chdir(WORK_DIR)
 print("Current working directory:", os.getcwd())
-os.makedirs("../data_output", exist_ok=True)
-OUTPUT_Dir = pathlib.Path("../data_output")
+
+os.makedirs(f"../data_output/{WORK_DIR.name}/NPA_Metrics_Goal_2", exist_ok=True)
+OUTPUT_Dir = pathlib.Path(f"../data_output/{WORK_DIR.name}/NPA_Metrics_Goal_2")
+
+os.makedirs(f"../data_output/Tableau_NPA_Metrics_Goal_2", exist_ok=True)
+OUTPUT_Dir_Tableau = pathlib.Path(f"../data_output/Tableau_NPA_Metrics_Goal_2")
 
 pd.set_option('display.width', 500)
 pd.set_option('display.precision', 10)
 
 # ---------------------------
-# Part 1: Compute Transit Tours Counts
+# Part 1: Compute Transit Trips 
 # ---------------------------
-def compute_transit_counts():
+def compute_transit_trips():
     """
-    Compute total transit counts from individual and joint tour data files.
-    For each tour type and iteration, transit trips are counted (using transit mode codes 9–18).
-    Returns a DataFrame with transit count metrics.
+    Sum(freq) = trips
     """
-    iterations = [3]
     transit_modes = list(range(9, 19))  # transit mode numbers from 9 to 18 inclusive
-
-    totals = {"indiv": 0, "joint": 0}
-
-    for tour_type in ["indiv", "joint"]:
-        for ITER in iterations:
-            input_file = pathlib.Path(f"main/{tour_type}TourData_{ITER}.csv")
-            print(f"Reading file: {input_file}")
-            df = pd.read_csv(input_file)
-            transit_trips = df[df["tour_mode"].isin(transit_modes)]
-            count = transit_trips.shape[0]
-            totals[tour_type] += count
-            print(f"Count for {tour_type} in iteration {ITER}: {count}")
-    
-    grand_total = totals["indiv"] + totals["joint"]
-    print(f"Total Indiv Transit Tours:  {totals['indiv']}")
-    print(f"Total Joint Transit Tours:  {totals['joint']}")
-    print(f"Grand Total Transit Tours:  {grand_total}")
-
-    # Prepare metrics list (each tuple: run_name, variable description, value, group code)
-    run_name = os.path.split(os.getcwd())[1]
-    metrics_list = [
-        (run_name, "Total Indiv Transit Tours", totals["indiv"], "2A"),
-        (run_name, "Total Joint Transit Tours", totals["joint"], "2A"),
-        (run_name, "Grand Total Transit Tours", grand_total, "2A")
-    ]
-    df_metrics = pd.DataFrame(metrics_list, columns=["run_name", "variable_desc", "value", "group_code"])
-    return df_metrics
+    df = pd.read_csv(pathlib.Path(f"core_summaries/TripDistance.csv"))
+    trips = df[df["trip_mode"].isin(transit_modes)]['freq'].sum()
+    return trips
 
 # ---------------------------
 # Part 2: Compute Transit Mode Share for Commute and Non-Commute Tours
 # ---------------------------
 def compute_transit_mode_share():
     """
-    Compute transit mode share metrics for commute and non‐commute tours.
-    Uses iteration 3 from the indiv and joint tour files.
-    Returns a DataFrame with a set of metrics (counts and ratios).
+    Compute transit mode share metrics for commute and non‐commute tours using iteration 3 files.
+    Returns a tuple:
+      (transit_commute_tours, transit_noncommute_tours,
+       total_commute_tours, total_noncommute_tours,
+       transit_mode_share_commute, transit_mode_share_noncommute)
     """
-    iterations = [3]
-    transit_modes = list(range(9, 19))
-    # For mode share we use the first (and only) iteration in the list.
-    ITER = iterations[0]
-
-    # Process Individual Tours
-    input_file_indiv = pathlib.Path(f"main/indivTourData_{ITER}.csv")
-    total_df_indiv = pd.read_csv(input_file_indiv)
-    commute_purposes = ['work_low', 'work_med', 'work_high', 'work_very high']
-    commute_df_indiv = total_df_indiv[total_df_indiv['tour_purpose'].isin(commute_purposes)]
-    noncommute_df_indiv = total_df_indiv[~total_df_indiv['tour_purpose'].isin(commute_purposes)]
-    transit_commute_df_indiv = commute_df_indiv[commute_df_indiv["tour_mode"].isin(transit_modes)]
-    transit_noncommute_df_indiv = noncommute_df_indiv[noncommute_df_indiv["tour_mode"].isin(transit_modes)]
-
-    # Process Joint Tours
-    input_file_joint = pathlib.Path(f"main/jointTourData_{ITER}.csv")
-    total_df_joint = pd.read_csv(input_file_joint)
-    commute_df_joint = total_df_joint[total_df_joint['tour_purpose'].isin(commute_purposes)]
-    noncommute_df_joint = total_df_joint[~total_df_joint['tour_purpose'].isin(commute_purposes)]
-    transit_commute_df_joint = commute_df_joint[commute_df_joint["tour_mode"].isin(transit_modes)]
-    transit_noncommute_df_joint = noncommute_df_joint[noncommute_df_joint["tour_mode"].isin(transit_modes)]
-
-    # Compute totals for commute tours
-    transit_commute_tours = transit_commute_df_indiv.shape[0] + transit_commute_df_joint.shape[0]
-    total_commute_tours = commute_df_indiv.shape[0] + commute_df_joint.shape[0]
-
-    # Compute totals for non‐commute tours
-    transit_noncommute_tours = transit_noncommute_df_indiv.shape[0] + transit_noncommute_df_joint.shape[0]
-    total_noncommute_tours = noncommute_df_indiv.shape[0] + noncommute_df_joint.shape[0]
-
-    # Calculate mode share ratios (with a simple protection against division by zero)
-    transit_mode_share_commute = (round((transit_commute_tours / total_commute_tours) * 100, 2) if total_commute_tours > 0 else np.nan)
-    transit_mode_share_noncommute = (round((transit_noncommute_tours / total_noncommute_tours) * 100, 2) if total_noncommute_tours > 0 else np.nan)
-
-    # Prepare metrics list
-    run_name = os.path.split(os.getcwd())[1]
-    metrics_list = [
-        (run_name, "Commute Tours - Indiv", commute_df_indiv.shape[0], "2B"),
-        (run_name, "Commute Tours - Joint", commute_df_joint.shape[0], "2B"),
-        (run_name, "Transit Commute Tours - Indiv", transit_commute_df_indiv.shape[0], "2B"),
-        (run_name, "Transit Commute Tours - Joint", transit_commute_df_joint.shape[0], "2B"),
-        (run_name, "Total Commute Tours", total_commute_tours, "2B"),
-        (run_name, "Total Transit Commute Tours", transit_commute_tours, "2B"),
-        (run_name, "Transit Mode Share Commute (%)", transit_mode_share_commute, "2B"),
-        (run_name, "Non-Commute Tours - Indiv", noncommute_df_indiv.shape[0], "2C"),
-        (run_name, "Non-Commute Tours - Joint", noncommute_df_joint.shape[0], "2C"),
-        (run_name, "Transit Non-Commute Tours - Indiv", transit_noncommute_df_indiv.shape[0], "2C"),
-        (run_name, "Transit Non-Commute Tours - Joint", transit_noncommute_df_joint.shape[0], "2C"),
-        (run_name, "Total Non-Commute Tours", total_noncommute_tours, "2C"),
-        (run_name, "Total Transit Non-Commute Tours", transit_noncommute_tours, "2C"),
-        (run_name, "Transit Mode Share Non-Commute (%)", transit_mode_share_noncommute, "2C")
-    ]
-    df_metrics = pd.DataFrame(metrics_list, columns=["run_name", "variable_desc", "value", "group_code"])
-    return df_metrics
+    transit_modes = set(range(9, 19))
+    commute_purposes = {'work_low', 'work_med', 'work_high', 'work_very high'}
+    files = [pathlib.Path("main/indivTourData_3.csv"),
+             pathlib.Path("main/jointTourData_3.csv")]
+    
+    total_commute = total_noncommute = 0
+    transit_commute = transit_noncommute = 0
+    
+    for f in files:
+        df = pd.read_csv(f)
+        is_commute = df['tour_purpose'].isin(commute_purposes)
+        total_commute += is_commute.sum()
+        total_noncommute += (~is_commute).sum()
+        transit_commute += df.loc[is_commute, 'tour_mode'].isin(transit_modes).sum()
+        transit_noncommute += df.loc[~is_commute, 'tour_mode'].isin(transit_modes).sum()
+    
+    # Each tour counts as two trips because the sample rate is 0.5
+    transit_commute_tours = transit_commute * 2
+    total_commute_tours = total_commute * 2
+    transit_noncommute_tours = transit_noncommute * 2
+    total_noncommute_tours = total_noncommute * 2
+    
+    share_commute = (transit_commute_tours / total_commute_tours
+                     if total_commute_tours else np.nan)
+    share_noncommute = (transit_noncommute_tours / total_noncommute_tours
+                        if total_noncommute_tours else np.nan)
+    
+    return (transit_commute_tours, transit_noncommute_tours,
+            total_commute_tours, total_noncommute_tours,
+            share_commute, share_noncommute)
 
 # ---------------------------
 # Part 3: Compute Vehicle Miles Traveled (VMT) Metrics
 # ---------------------------
-def compute_vmt_metrics():
+def compute_passenger_vehicle_vmt():
     """
     Compute VMT metrics from the VehicleMilesTraveled.csv file.
     Calculates total personal VMT (vmt*freq summed over all records) and VMT per capita.
     Returns a DataFrame with VMT metrics.
     """
-    input_file = pathlib.Path("core_summaries/VehicleMilesTraveled.csv")
-    df = pd.read_csv(input_file)
+    df = pd.read_csv(pathlib.Path("core_summaries/VehicleMilesTraveled.csv"))
     vmt = (df['vmt'] * df['freq']).sum()
     total_freq = df['freq'].sum()
     vmt_per_capita = vmt / total_freq if total_freq > 0 else np.nan
 
-    print(f"total personal VMT: {vmt}")
-    print(f"VMT per capita: {vmt_per_capita}")
-
-    run_name = os.path.split(os.getcwd())[1]
-    metrics_list = [
-        (run_name, "Total Personal VMT", vmt, "2D"),
-        (run_name, "Total Number of Persons", total_freq, "2E"),
-        (run_name, "VMT per Capita", vmt_per_capita, "2E")
-    ]
-    df_metrics = pd.DataFrame(metrics_list, columns=["run_name", "variable_desc", "value", "group_code"])
-    return df_metrics
+    return vmt, total_freq, vmt_per_capita
 
 # ---------------------------
 # Main routine
 # ---------------------------
-def main():
-    # Compute transit counts metrics
-    transit_counts_df = compute_transit_counts()
+if __name__ == '__main__':
+    run_name = os.path.split(os.getcwd())[1]
+    metrics = []
+
+    # Add transit trips metric
+    metrics.append((run_name, "total_linked_transit_trips", compute_transit_trips(), "2A"))
     
-    # Compute transit mode share metrics
-    transit_mode_share_df = compute_transit_mode_share()
+    # Add transit mode share metrics
+    tms = compute_transit_mode_share()
+    metrics.extend([
+        (run_name, "transit_commute_tours", tms[0], "2B"),
+        (run_name, "total_commute_tours", tms[2], "2B"),
+        (run_name, "transit_mode_share_commute", round(tms[4], 3), "2B"),
+        (run_name, "transit_noncommute_tours", tms[1], "2C"),
+        (run_name, "total_noncommute_tours", tms[3], "2C"),
+        (run_name, "transit_mode_share_noncommute", round(tms[5], 3), "2C")
+    ])
     
-    # Compute VMT metrics
-    vmt_metrics_df = compute_vmt_metrics()
+    # Add VMT metrics
+    vmt = compute_passenger_vehicle_vmt()
+    metrics.extend([
+        (run_name, "total_passenger_vehicle_vmt", round(vmt[0], 0), "2D"),
+        (run_name, "total_passenger", round(vmt[1], 0), "2E"),
+        (run_name, "passenger_vehicle_vmt_per_capita", round(vmt[2], 2), "2E")
+    ])
     
-    # Combine all metrics into one DataFrame
-    combined_df = pd.concat([transit_counts_df, transit_mode_share_df, vmt_metrics_df], ignore_index=True)
-    
-    # Write the combined metrics to a single CSV file
+    # Create DataFrame, drop run_name column, and output the CSV
+    combined_df = pd.DataFrame(metrics, columns=["run_name", "variable_desc", "current_value", "measure_names"])
+    combined_df.drop(columns="run_name", inplace=True)
     output_filename = pathlib.Path(OUTPUT_Dir, "NPA_metrics_Goal_2.csv")
-    combined_df.to_csv(output_filename, header=False, float_format='%.5f', index=False)
-    print("Combined metrics written to", output_filename)
+    combined_df.to_csv(output_filename, header=True, float_format='%.5f', index=False)
     
-    # Print a summary of the computed metrics
+    print("Combined metrics written to", output_filename)
     print("\nCombined Metrics:")
     print(combined_df)
 
-if __name__ == '__main__':
-    main()
+# ---------------------------
+# Reorder the output
+# ---------------------------
+def reorder_metrics(row):
+    desc = row['variable_desc']
+    if row['measure_names'] in ['2D', '2E']:
+        mode, tour_purpose = None, None
+    else:
+        mode = 'transit' if 'transit' in desc else 'all'
+        tour_purpose = 'commute' if '_commute' in desc else 'noncommute' if '_noncommute' in desc else 'all'
+    
+    conditions = [
+        ('total_linked_transit_trips', 'trips'),
+        ('transit_commute_tours', 'tours'),
+        ('total_commute_tours', 'tours'),
+        ('transit_mode_share_commute', 'mode_share'),
+        ('transit_noncommute_tours', 'tours'),
+        ('total_noncommute_tours', 'tours'),
+        ('transit_mode_share_noncommute', 'mode_share'),
+        ('total_passenger_vehicle_vmt', 'total_passenger_vehicle_vmt'),
+        ('total_passenger', 'total_number_of_persons'),
+        ('passenger_vehicle_vmt_per_capita', 'vmt_per_capita')
+    ]
+    metric_name = next((name for key, name in conditions if key in desc), None)
+    return pd.Series({'mode': mode, 'tour_purpose': tour_purpose, 'metric_name': metric_name})
+
+combined_df[['mode', 'tour_purpose', 'metric_name']] = combined_df.apply(reorder_metrics, axis=1)
+
+df_pivot = combined_df.pivot(
+    index=['measure_names', 'variable_desc', 'mode', 'tour_purpose'],
+    columns='metric_name',
+    values='current_value'
+).reset_index()
+
+order = ['trips', 'tours', 'mode_share', 'total_passenger_vehicle_vmt', 'total_number_of_persons', 'vmt_per_capita']
+final_columns = ['measure_names', 'variable_desc', 'mode', 'tour_purpose'] + [m for m in order if m in df_pivot.columns]
+df_pivot = df_pivot[final_columns]
+
+df_pivot.to_csv(pathlib.Path(OUTPUT_Dir, "NPA_metrics_Goal_2_reordered.csv"), index=False)
+df_pivot.to_excel(pathlib.Path(OUTPUT_Dir_Tableau, f"NPA_metrics_Goal_2_{WORK_DIR.name}.xlsx"), index=False)
