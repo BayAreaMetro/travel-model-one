@@ -217,10 +217,15 @@ if not exist metrics\topsheet.csv (
 )
 
 :NPA_metrics
-if not exist metrics\NPA1_metrics.csv (
+if not exist metrics\NPA_Metrics_Goal_1A_to_1F.csv (
   rem Network Performance Assessment metrics
-  rem Output: metrics/NPA_Metrics_Goal_1A_to_1F.csv
-  call python "%CODE_DIR%\NPA_metrics_Goal_1A_to_1F.py.py"
+  rem Output: metrics\NPA_Metrics_Goal_1A_to_1F.csv
+  call python "%CODE_DIR%\NPA_metrics_Goal_1A_to_1F.py"
+)
+if not exist metrics\NPA_Metrics_Goal_2.csv (
+  rem Network Performance Assessment metrics
+  rem Output: metrics\NPA_Metrics_Goal_2.csv
+  call python "%CODE_DIR%\NPA_metrics_Goal_2.py"
 )
 
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")

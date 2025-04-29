@@ -39,7 +39,8 @@ COPY_FILES = {
         "truck_trips_by_timeperiod",
         "transit_crowding_complete",
         "NPA_Metrics_Goal_1A_to_1F",
-        "NPA_Metrics_Goal_1G_1H"
+        "NPA_Metrics_Goal_1G_1H",
+        "NPA_Metrics_Goal_2",
     ],
     "OUTPUT\\core_summaries":[
         "ActiveTransport",
