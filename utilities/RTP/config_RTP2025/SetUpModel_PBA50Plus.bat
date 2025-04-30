@@ -42,7 +42,7 @@ set BP_OVERRIDE_DIR=%GITHUB_DIR%\utilities\RTP\strategy_overrides
 :: set calculators for off-model strategies
 set runOffModel=Yes
 set offModelCalculator_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\offmodel_calculators
-set offModelCalculatorVersion=FBP_v2
+set offModelCalculatorVersion=FBP_v3_update2005
 ::set offModelCalculator_masterLog_DIR=M:\Application\Model One\RTP2025\off_model_master_log
 
 :: --------------------------------------------
