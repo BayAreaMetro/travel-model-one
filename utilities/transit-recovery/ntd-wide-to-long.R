@@ -63,7 +63,7 @@ BayArea_UZAs = c(
 
 BOX_DIR          <- "E:\\Box"
 WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Share Data", "national-transit-database")
-INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "August 2024 Complete Monthly Ridership (with adjustments and estimates)_241002.xlsx")
+INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "February 2025 Complete Monthly Ridership (with adjustments and estimates)_250401.xlsx")
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 INPUT_UPT_MONTHLY_TO_DAILY <- file.path(WORKING_DIR, "MonthlyToTypicalWeekdayRidership.xlsx")
@@ -288,8 +288,13 @@ NTD_model_df <- mutate(NTD_model_df,
   `Transit Mode Name` = ifelse(is.na(`Transit Mode Name`), `Transit Mode Name backup`, `Transit Mode Name`),
   `Mode Category`     = ifelse(is.na(`Mode Category`),     `Mode Category backup`,     `Mode Category`)
 )
+options(width=200)
+missing_mode <- filter(NTD_model_df, is.na(`Transit Mode`))
+if (nrow(missing_mode) > 0) {
+  print(missing_mode)
+}
 # verify we've solved it -- no more undefined transit modes
-stopifnot(nrow(filter(NTD_model_df, is.na(`Transit Mode`)))==0)
+stopifnot(nrow(missing_mode)==0)
 # remove backup cols
 NTD_model_df <- select(NTD_model_df, 
   -`Mode backup`, -`Transit Mode backup`, -`Transit Mode Name backup`, -`Mode Category backup`)
