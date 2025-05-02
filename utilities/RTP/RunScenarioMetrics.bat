@@ -28,11 +28,13 @@ if not exist metrics (mkdir metrics)
 
 if not exist main\tripsEVinc1.dat (
   rem Convert trip tables into time/income/mode OD matrices
-  rem Input : main\(indiv|joint)TripDataIncome_%ITER%.csv
+  rem Input : INPUT\params.properties
+  rem         main\(indiv|joint)TripDataIncome_%ITER%.csv
   rem         main\jointTourData_%ITER%.csv
   rem         main\personData_%ITER%.csv
   rem         database\ActiveTimeSkimsDatabase(EA|AM|MD|PM|EV).csv
   rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].dat
+  rem         main\trips[EA|AM|MD|PM|EV]inc[1-4]_poverty[0|1].dat
   rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
   rem         metrics\unique_active_travelers.csv
@@ -40,14 +42,16 @@ if not exist main\tripsEVinc1.dat (
   if ERRORLEVEL 2 goto error
 )
 
-if not exist main\tripsEVinc1.tpp (
+if not exist main\tripsEV_no_zpv_allinc.tpp (
   rem Convert trip tables into time/income/mode OD matrices
-  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat,
-  rem         main\trips(EA|AM|MD|PM|EV)_2074.dat,
+  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat
+  rem         main\trips[EA|AM|MD|PM|EV]inc[1-4]_poverty[0|1].dat
+  rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
-  rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_2074.tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_2064.tpp,
+  rem Output: main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp
+  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4]_poverty[0|1].tpp
+  rem         main\trips(EA|AM|MD|PM|EV)_2074.tpp
+  rem         main\trips(EA|AM|MD|PM|EV)_2064.tpp
   rem         main\trips(EA|AM|MD|PM|EV)allinc.tpp
   runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
@@ -55,7 +59,12 @@ if not exist main\tripsEVinc1.tpp (
 
 if not exist metrics\transit_times_by_mode_income.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp,
+  rem Input : CTRAMP\scripts\block\trnParam.block
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4]_poverty[0|1].tpp
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
   rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
   rem Output: metrics\transit_times_by_acc_mode_egr.csv,
   rem         metrics\transit_times_by_mode_income.csv
@@ -85,7 +94,29 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
   IF ERRORLEVEL 2 goto error
 )
 
-copy INPUT\metrics\CommunitiesOfConcern.csv metrics
-python "%CODE_DIR%\scenarioMetrics.py"
+if not exist metrics\scenario_metrics.csv (
+  rem Creates scenario metrics, including travel costs, access to jobs, 
+  rem goods movement delay, non-auto mode share, road operating cost and VMT
+  rem Input: (travel costs)
+  rem          metrics\transit_times_by_mode_income.csv
+  rem          metrics\auto_times.csv
+  rem          main\householdData_{ITER}.csv
+  rem        (access to jobs v2)
+  rem          database\TimeSkimsDatabaseAM.csv
+  rem          landuse\tazData.csv
+  rem          INPUT\metrics\taz1454_epcPBA50plus_2024_02_23.csv
+  rem          INPUT\metrics\taz1454_hraPBA50plus_2024_02_23.csv
+  rem          INPUT\metrics\taz1454_urban_suburban_rural.csv
+  rem        (goods movement delay)
+  rem          hwy\iter3\avgload5period_vehclasses.csv
+  rem          landuse\tazData.csv
+  rem        (non auto mode share)
+  rem          main\indivTripData_3.csv
+  rem          main\jointTripData_3.csv
+  rem        (roads cost and vmt)
+  rem          hwy\iter3\avgload5period_vehclasses.csv
+  rem   rem Output: metrics\scenario_metrics.csv
+  python "%CODE_DIR%\scenarioMetrics.py"
+)
 
 :error

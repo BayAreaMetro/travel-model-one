@@ -126,7 +126,7 @@ if (PROJECT == "PBA50+") {
 
   # BASE YEAR -- required for 1) General correction
   BASE_YEAR                 <- 2015
-  MODEL_RUN_ID_BASE_YEAR    <- "2015_TM160_IPA_06"
+  MODEL_RUN_ID_BASE_YEAR    <- "2015_TM161_IPA_08"
 
   # IPA runs
   if (str_detect(MODEL_RUN_ID_SCENARIO, "IPA")) {

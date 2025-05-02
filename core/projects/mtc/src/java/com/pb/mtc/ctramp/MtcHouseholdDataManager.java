@@ -45,9 +45,7 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
     private float meanValueOfTime[] = new float[MtcModelStructure.NUM_INCOME_CATEGORIES];  
     private LognormalDist valueOfTimeDistribution[] = new LognormalDist[MtcModelStructure.NUM_INCOME_CATEGORIES]; 
 
-    // guojy: added for M. Gucwa's research on automated vehicles
-    private static final String HH_ANALYST_FIELD_NAME = "hAnalyst";
-    private static final String PERSON_ANALYST_FIELD_NAME = "pAnalyst";
+    public static final String HH_PCT_OF_POVERTY_FIELD_NAME  = "pct_of_poverty";
     
     public MtcHouseholdDataManager() {
         super();
@@ -165,12 +163,8 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
                 short type = (short)hhTable.getValueAt( r, hhTable.getColumnPosition( HH_TYPE_FIELD_NAME ));
                 hh.setHhType( type );
                 
-                // guojy: added for M. Gucwa's research on automated vehicles
-/*                int hAnalyst = (int)hhTable.getValueAt( r, hhTable.getColumnPosition( HH_ANALYST_FIELD_NAME ));
-                hh.setHAnalyst(hAnalyst);
-                
-*/  
-
+                short pct_of_poverty = (short)hhTable.getValueAt(r, hhTable.getColumnPosition( HH_PCT_OF_POVERTY_FIELD_NAME ));
+                hh.setIncomePercentOfPoverty(pct_of_poverty);
               
                 hh.initializeWindows();
                 hhArray[newIndex] = hh;
@@ -240,8 +234,8 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
                 int empCat = (int)personTable.getValueAt( p, personTable.getColumnPosition( PERSON_EMPLOYMENT_CATEGORY_FIELD_NAME ) );
                 person.setPersEmploymentCategory ( empCat );
 
-                // set to null to start
-                person.setPersWorksFromHomeCategory( Person.WorkFromHomeStatus.nul.ordinal() );
+                // set to NA to start
+                person.setPersWorksFromHomeCategory( Person.WorkFromHomeStatus.NOT_APPLICABLE );
 
                 // Student status (1 - student in grade or high school; 2 - student in college or higher; 3 - not a student)
                 int studentCat = (int)personTable.getValueAt( p, personTable.getColumnPosition(PERSON_STUDENT_CATEGORY_FIELD_NAME));

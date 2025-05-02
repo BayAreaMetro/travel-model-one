@@ -1,0 +1,52 @@
+;
+; Extract a set of trip tables into a csv file (e.g. for tableau)
+;
+
+token_nonrestripsdir = '%NONRES_TRIPS_DIR%'
+
+; time period loop
+loop period = 1,5
+  if (period = 1)   
+     token_period   = 'ea'
+  elseif (period = 2)
+     token_period   = 'am'
+  elseif (period = 3)
+     token_period   = 'md'
+  elseif (period = 4)
+     token_period   = 'pm'
+  elseif (period = 5)
+     token_period   = 'ev'
+  endif
+
+  DistributeMultistep processid = "ctramp", processnum = period,  commpath = '%COMMPATH%'
+
+  run PGM=MATRIX
+    filei mati[1] = "@token_nonrestripsdir@\tripsIx@token_period@.tpp"
+    filei mati[2] = "@token_nonrestripsdir@\tripsAirPax@token_period@.tpp"
+    fileo mato[1] = "nonres_trips@token_period@_noheader.csv", FORMAT=txt, PATTERN=IJM:V, MO=1-16, DELIMITER=',', MAXFIELDS=16
+    
+    MW[1] = 1
+
+    ; trips IX: DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
+    FILLMW MW[2]=MI.1.1(6)
+    MW[8] = MI.1.DA + MI.1.SR2 + MI.1.SR3 + MI.1.DATOLL + MI.1.SR2TOLL + MI.1.SR3TOLL
+
+    ; tripsAirPax: DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
+    FILLMW MW[9]=MI.2.1(6)
+    MW[15] = MI.2.DA + MI.2.SR2 + MI.2.SR3 + MI.2.DATOLL + MI.2.SR2TOLL + MI.2.SR3TOLL
+
+    MW[16] = 1
+
+  endrun
+      
+   ; add header
+   *echo orig, dest, one_a, one_b, ix_da, ix_sr2, ix_sr3, ix_datoll, ix_sr2toll, ix_sr3toll, ix_total, airpax_da, airpax_sr2, airpax_sr3, airpax_datoll, airpax_sr2_toll, airpax_sr3toll, airpax_total, one_c  > "nonres_trips@token_period@.csv"
+   *type "nonres_trips@token_period@_noheader.csv" >> "nonres_trips@token_period@.csv"
+   *del "nonres_trips@token_period@_noheader.csv"
+  
+  EndDistributeMultistep
+
+endloop ; time period loop
+
+wait4files files = ctramp1.script.end,  ctramp2.script.end,  ctramp3.script.end,  ctramp4.script.end,  ctramp5.script.end,
+          printfiles = merge, DelDistribFiles = t, CheckReturnCode = t

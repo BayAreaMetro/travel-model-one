@@ -1,0 +1,523 @@
+<?xml version='1.0' encoding='utf-8' ?>
+
+<!-- build 20243.25.0208.0338                               -->
+<workbook original-version='18.1' source-build='2024.3.4 (20243.25.0208.0338)' source-platform='win' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <document-format-change-manifest>
+    <AnimationOnByDefault />
+    <MarkAnimation />
+    <ObjectModelEncapsulateLegacy />
+    <ObjectModelTableType />
+    <SchemaViewerObjectModel />
+    <SheetIdentifierTracking />
+    <SortTagCleanup />
+    <WindowsPersistSimpleIdentifiers />
+  </document-format-change-manifest>
+  <preferences>
+    <preference name='ui.encoding.shelf.height' value='24' />
+    <preference name='ui.shelf.height' value='26' />
+  </preferences>
+  <datasources>
+    <datasource caption='Sheet1 (NPA_metrics_Goal_1G_1H_base_2035_TM161_FBP_NoProject_06_vs_scen_2050_TM160_DBP_Plan_08b)' inline='true' name='federated.1erk0ib1t62nea199nxx40k6kshp' version='18.1'>
+      <connection class='federated'>
+        <named-connections>
+          <named-connection caption='NPA_metrics_Goal_1G_1H_base_2035_TM161_FBP_NoProject_06_vs_scen_2050_TM160_DBP_Plan_08b' name='excel-direct.0wcr8j20wm8dnx17rh4jk0jxzdua'>
+            <connection class='excel-direct' cleaning='no' compat='no' dataRefreshTime='' filename='C:/Users/YuetongWang/OneDrive - insighttcinc.com/Documents/MTC/data_output/Tableau_NPA_Metrics_Goal_1/NPA_metrics_Goal_1G_1H_base_2035_TM161_FBP_NoProject_06_vs_scen_2050_TM160_DBP_Plan_08b.xlsx' interpretationMode='0' password='' server='' validate='no' />
+          </named-connection>
+        </named-connections>
+        <relation all='true' connection='excel-direct.0wcr8j20wm8dnx17rh4jk0jxzdua' include-siblings='false' is-recursive='false' name='Sheet1+' path='' type='batch-union'>
+          <database-filter>
+            <expression op='='>
+              <expression op='NPA_metrics_Goal_1G_1H*.xlsx' />
+            </expression>
+          </database-filter>
+          <table-filter />
+          <columns header='yes'>
+            <column datatype='string' name='base' />
+            <column datatype='string' name='alt' />
+            <column datatype='string' name='measure_names' />
+            <column datatype='string' name='epc_population' />
+            <column datatype='string' name='tour_classification' />
+            <column datatype='integer' name='access_benefits' />
+            <column datatype='integer' name='num_persons' />
+            <column datatype='integer' name='num_workers_students' />
+            <column datatype='real' name='per_capita_access_benefits' />
+            <column datatype='real' name='per_capita_access_benefits_to_total_ratio' />
+            <column datatype='string' name='Path' />
+            <column datatype='string' name='Sheet' />
+          </columns>
+        </relation>
+        <metadata-records>
+          <metadata-record class='capability'>
+            <remote-name />
+            <remote-type>0</remote-type>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias />
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>base</remote-name>
+            <remote-type>130</remote-type>
+            <local-name>[base]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>base</remote-alias>
+            <ordinal>0</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>alt</remote-name>
+            <remote-type>130</remote-type>
+            <local-name>[alt]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>alt</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>measure_names</remote-name>
+            <remote-type>130</remote-type>
+            <local-name>[measure_names]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>measure_names</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>epc_population</remote-name>
+            <remote-type>130</remote-type>
+            <local-name>[epc_population]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>epc_population</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>tour_classification</remote-name>
+            <remote-type>130</remote-type>
+            <local-name>[tour_classification]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>tour_classification</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>access_benefits</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[access_benefits]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>access_benefits</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>num_persons</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[num_persons]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>num_persons</remote-alias>
+            <ordinal>6</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>num_workers_students</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[num_workers_students]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>num_workers_students</remote-alias>
+            <ordinal>7</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita_access_benefits</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita_access_benefits]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>per_capita_access_benefits</remote-alias>
+            <ordinal>8</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita_access_benefits_to_total_ratio</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita_access_benefits_to_total_ratio]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>per_capita_access_benefits_to_total_ratio</remote-alias>
+            <ordinal>9</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>Path</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[Path]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>Path</remote-alias>
+            <ordinal>10</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>Sheet</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[Sheet]</local-name>
+            <parent-name>[Sheet1+]</parent-name>
+            <remote-alias>Sheet</remote-alias>
+            <ordinal>11</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <object-id>[Sheet1_9D2AECCC96444D3499584A486CC67674]</object-id>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column caption='Sheet1' datatype='table' name='[__tableau_internal_object_id__].[Sheet1_9D2AECCC96444D3499584A486CC67674]' role='measure' type='quantitative' />
+      <column caption='Access Benefits' datatype='integer' name='[access_benefits]' role='measure' type='quantitative' />
+      <column caption='Alt' datatype='string' name='[alt]' role='dimension' type='nominal' />
+      <column caption='Base' datatype='string' name='[base]' role='dimension' type='nominal' />
+      <column caption='Epc Population' datatype='string' name='[epc_population]' role='dimension' type='nominal' />
+      <column caption='Measure Names1' datatype='string' name='[measure_names]' role='dimension' type='nominal' />
+      <column caption='Num Persons' datatype='integer' name='[num_persons]' role='measure' type='quantitative' />
+      <column caption='Num Workers Students' datatype='integer' name='[num_workers_students]' role='measure' type='quantitative' />
+      <column caption='Per Capita Access Benefits' datatype='real' name='[per_capita_access_benefits]' role='measure' type='quantitative' />
+      <column caption='Per Capita Access Benefits To Total Ratio' datatype='real' name='[per_capita_access_benefits_to_total_ratio]' role='measure' type='quantitative' />
+      <column caption='Tour Classification' datatype='string' name='[tour_classification]' role='dimension' type='nominal' />
+      <layout dim-ordering='alphabetic' measure-ordering='alphabetic' show-structure='true' />
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
+      </semantic-values>
+      <object-graph>
+        <objects>
+          <object caption='Sheet1' id='Sheet1_9D2AECCC96444D3499584A486CC67674'>
+            <properties context=''>
+              <relation all='true' connection='excel-direct.0wcr8j20wm8dnx17rh4jk0jxzdua' include-siblings='false' is-recursive='false' name='Sheet1+' path='' type='batch-union'>
+                <database-filter>
+                  <expression op='='>
+                    <expression op='NPA_metrics_Goal_1G_1H*.xlsx' />
+                  </expression>
+                </database-filter>
+                <table-filter />
+                <columns header='yes'>
+                  <column datatype='string' name='base' />
+                  <column datatype='string' name='alt' />
+                  <column datatype='string' name='measure_names' />
+                  <column datatype='string' name='epc_population' />
+                  <column datatype='string' name='tour_classification' />
+                  <column datatype='integer' name='access_benefits' />
+                  <column datatype='integer' name='num_persons' />
+                  <column datatype='integer' name='num_workers_students' />
+                  <column datatype='real' name='per_capita_access_benefits' />
+                  <column datatype='real' name='per_capita_access_benefits_to_total_ratio' />
+                  <column datatype='string' name='Path' />
+                  <column datatype='string' name='Sheet' />
+                </columns>
+              </relation>
+            </properties>
+          </object>
+        </objects>
+      </object-graph>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Sheet 1'>
+      <layout-options>
+        <title>
+          <formatted-text>
+            <run>NPA Metric Goal 1G &amp; 1H</run>
+          </formatted-text>
+        </title>
+      </layout-options>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Sheet1 (NPA_metrics_Goal_1G_1H_base_2035_TM161_FBP_NoProject_06_vs_scen_2050_TM160_DBP_Plan_08b)' name='federated.1erk0ib1t62nea199nxx40k6kshp' />
+          </datasources>
+          <datasource-dependencies datasource='federated.1erk0ib1t62nea199nxx40k6kshp'>
+            <column caption='Access Benefits' datatype='integer' name='[access_benefits]' role='measure' type='quantitative' />
+            <column caption='Alt' datatype='string' name='[alt]' role='dimension' type='nominal' />
+            <column caption='Base' datatype='string' name='[base]' role='dimension' type='nominal' />
+            <column caption='Epc Population' datatype='string' name='[epc_population]' role='dimension' type='nominal' />
+            <column caption='Measure Names1' datatype='string' name='[measure_names]' role='dimension' type='nominal' />
+            <column-instance column='[alt]' derivation='None' name='[none:alt:nk]' pivot='key' type='nominal' />
+            <column-instance column='[base]' derivation='None' name='[none:base:nk]' pivot='key' type='nominal' />
+            <column-instance column='[epc_population]' derivation='None' name='[none:epc_population:nk]' pivot='key' type='nominal' />
+            <column-instance column='[measure_names]' derivation='None' name='[none:measure_names:nk]' pivot='key' type='nominal' />
+            <column-instance column='[tour_classification]' derivation='None' name='[none:tour_classification:nk]' pivot='key' type='nominal' />
+            <column caption='Num Persons' datatype='integer' name='[num_persons]' role='measure' type='quantitative' />
+            <column caption='Num Workers Students' datatype='integer' name='[num_workers_students]' role='measure' type='quantitative' />
+            <column caption='Per Capita Access Benefits' datatype='real' name='[per_capita_access_benefits]' role='measure' type='quantitative' />
+            <column caption='Per Capita Access Benefits To Total Ratio' datatype='real' name='[per_capita_access_benefits_to_total_ratio]' role='measure' type='quantitative' />
+            <column-instance column='[access_benefits]' derivation='Sum' name='[sum:access_benefits:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[num_persons]' derivation='Sum' name='[sum:num_persons:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[num_workers_students]' derivation='Sum' name='[sum:num_workers_students:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita_access_benefits]' derivation='Sum' name='[sum:per_capita_access_benefits:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita_access_benefits_to_total_ratio]' derivation='Sum' name='[sum:per_capita_access_benefits_to_total_ratio:qk]' pivot='key' type='quantitative' />
+            <column caption='Tour Classification' datatype='string' name='[tour_classification]' role='dimension' type='nominal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.1erk0ib1t62nea199nxx40k6kshp].[:Measure Names]'>
+            <groupfilter function='union' user:op='manual'>
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:access_benefits:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:num_persons:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:num_workers_students:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:per_capita_access_benefits:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:per_capita_access_benefits_to_total_ratio:qk]&quot;' />
+            </groupfilter>
+          </filter>
+          <manual-sort column='[federated.1erk0ib1t62nea199nxx40k6kshp].[:Measure Names]' direction='ASC'>
+            <dictionary>
+              <bucket>&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:access_benefits:qk]&quot;</bucket>
+              <bucket>&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:num_workers_students:qk]&quot;</bucket>
+              <bucket>&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:num_persons:qk]&quot;</bucket>
+              <bucket>&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:per_capita_access_benefits:qk]&quot;</bucket>
+              <bucket>&quot;[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:per_capita_access_benefits_to_total_ratio:qk]&quot;</bucket>
+            </dictionary>
+          </manual-sort>
+          <slices>
+            <column>[federated.1erk0ib1t62nea199nxx40k6kshp].[:Measure Names]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='height' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[none:tour_classification:nk]' value='52' />
+            <format attr='width' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[:Measure Names]' value='262' />
+            <format attr='text-format' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:per_capita_access_benefits:qk]' value='n#,##0.00;-#,##0.00' />
+            <format attr='text-format' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[sum:per_capita_access_benefits_to_total_ratio:qk]' value='n#,##0.00;-#,##0.00' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='wrap' data-class='subtotal' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[none:base:nk]' value='on' />
+            <format attr='width' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[none:tour_classification:nk]' value='228' />
+            <format attr='width' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[none:epc_population:nk]' value='148' />
+            <format attr='width' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[none:measure_names:nk]' value='124' />
+          </style-rule>
+          <style-rule element='field-labels-decoration'>
+            <format attr='wrap' value='auto' />
+          </style-rule>
+          <style-rule element='label'>
+            <format attr='wrap' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[none:alt:nk]' value='on' />
+            <format attr='wrap' field='[federated.1erk0ib1t62nea199nxx40k6kshp].[none:base:nk]' value='on' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <encodings>
+              <text column='[federated.1erk0ib1t62nea199nxx40k6kshp].[Multiple Values]' />
+            </encodings>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minheight' value='-1' />
+                <format attr='maxheight' value='-1' />
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows>([federated.1erk0ib1t62nea199nxx40k6kshp].[none:base:nk] / ([federated.1erk0ib1t62nea199nxx40k6kshp].[none:alt:nk] / ([federated.1erk0ib1t62nea199nxx40k6kshp].[none:measure_names:nk] / ([federated.1erk0ib1t62nea199nxx40k6kshp].[none:epc_population:nk] / [federated.1erk0ib1t62nea199nxx40k6kshp].[none:tour_classification:nk]))))</rows>
+        <cols>[federated.1erk0ib1t62nea199nxx40k6kshp].[:Measure Names]</cols>
+      </table>
+      <simple-id uuid='{C26AFC0C-23CE-470B-9E03-6C8DFCB983B0}' />
+    </worksheet>
+  </worksheets>
+  <windows saved-dpi-scale-factor='1.5' source-height='44'>
+    <window class='worksheet' maximized='true' name='Sheet 1'>
+      <cards>
+        <edge name='left'>
+          <strip size='133'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+            <card type='measures' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='24'>
+            <card type='title' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.1erk0ib1t62nea199nxx40k6kshp].[none:alt:nk]</field>
+            <field>[federated.1erk0ib1t62nea199nxx40k6kshp].[none:base:nk]</field>
+            <field>[federated.1erk0ib1t62nea199nxx40k6kshp].[none:epc_population:nk]</field>
+            <field>[federated.1erk0ib1t62nea199nxx40k6kshp].[none:measure_names:nk]</field>
+            <field>[federated.1erk0ib1t62nea199nxx40k6kshp].[none:tour_classification:nk]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{E0E170A4-0E88-4EA8-83EC-57815C1230B4}' />
+    </window>
+  </windows>
+  <thumbnails>
+    <thumbnail height='192' name='Sheet 1' width='192'>
+      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
+    </thumbnail>
+  </thumbnails>
+</workbook>

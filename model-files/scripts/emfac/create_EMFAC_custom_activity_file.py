@@ -102,7 +102,7 @@ COUNTY_GAI_AIRBASIN_DF = pd.DataFrame.from_records(COUNTY_GAI_AIRBASIN, columns=
 # The Travel Model doesn't have the concept of Veh_Tech, so
 # - For the following 9 technologies, use the travel model's hourly fraction
 # - For the rest, keep the default hourly fraction from the EMFAC template
-VEH_TECH_EXTRACT_TO_PARTS = r'^(?P<vehicle>[^\-]+\S)(?P<space>\s?[-]\s?)(?P<tech>Gas|Elec|Dsl|NG|Phe)$'
+VEH_TECH_EXTRACT_TO_PARTS = r'^(?P<vehicle>[^\-]+\S)(?P<space>\s?[-]\s?)(?P<tech>Gas|Elec|Dsl|NG|Phe|BEV)$'
 # vehicles that match these will use travel-model-VMT for speed distribution
 USE_TRAVEL_MODEL_VMT_FOR_VEHICLE = ['LDA','LDT1','LDT2','MCY','MDV']
 
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--analysis_type",                 required=True, choices=['SB375','EIR','AQConformity'],
                         help="IF SB375 passed, assume 'Generate SB375 Template' is true")
-    parser.add_argument("--emfac_version",                 required=True, choices=['2014','2017','2021'])
+    parser.add_argument("--emfac_version",                 required=True, choices=['2014','2017','2021','202Y'])
     parser.add_argument("--run_mode",                      required=True, choices=['emissions','emissions-rates'])
     parser.add_argument("--sub_area",                      required=True, choices=['MPO-MTC','airbasin-SF'], help="Note: MPO_MTC==9 counties==11 subareas")
     parser.add_argument("--season",                        required=True, choices=['annual','summer','winter'])
@@ -375,7 +375,7 @@ if __name__ == '__main__':
         # Some further notes about the "Hourly_Fraction_Veh_Tech_Speed" worksheet:
 
         # The "Hourly_Fraction_Veh_Tech_Speed" is essentially a table of subarea (11) x hour (24) x speed bins (18).
-        # The rows are subarea (11) x hour (24) x Veh_Tech (51)
+        # The rows are subarea (11) x hour (24) x Veh_Tech (51-55)
         # The columns are the 18 speed bins, plus index columns (Sub-Area, GAI, Sub-Area, Cal_Year, Veh_Tech, Hour)
 
         # merge DataFrames
@@ -394,7 +394,7 @@ if __name__ == '__main__':
         # split Veh_Tech into vehicle and tech
         veh_tech_parts = TM_HourlyFraction_df.Veh_Tech.str.extract(VEH_TECH_EXTRACT_TO_PARTS)
         TM_HourlyFraction_df = pd.concat([TM_HourlyFraction_df, veh_tech_parts], axis='columns')
-        logging.debug("TM_HourlyFraction_df.vehicle.unique().tolist():{}".format(TM_HourlyFraction_df.vehicle.unique().tolist()))
+        logging.debug(f"{TM_HourlyFraction_df.vehicle.unique().tolist()=} len={len(TM_HourlyFraction_df.vehicle.unique().tolist())}")
         TM_HourlyFraction_df['use_TM_VMT'] = TM_HourlyFraction_df.vehicle.isin(USE_TRAVEL_MODEL_VMT_FOR_VEHICLE)
 
         logging.debug('TM_HourlyFraction_df[["Veh_Tech","vehicle","space","tech","use_TM_VMT"]].drop_duplicates():\n{}'.format(
@@ -408,6 +408,12 @@ if __name__ == '__main__':
         for speedbin in SPEED_BIN_TO_LABEL_DF.speedBin_label.tolist():
             TM_HourlyFraction_df.loc[ TM_HourlyFraction_df.use_TM_VMT == True, speedbin] = \
                 TM_HourlyFraction_df[f'HourlyFraction_{speedbin}']
+
+        # fractions should sum to 1.0
+        TM_HourlyFraction_df['HourlyFractionSum'] = TM_HourlyFraction_df[SPEED_BIN_TO_LABEL_DF.speedBin_label.tolist()].sum(axis=1)
+
+        # Check if there are any that sum to 0.0 -- I think this is a bug in EMFAC202Y
+        logging.debug(f"HourlyFractionSum with zero sum:\n{TM_HourlyFraction_df.loc[TM_HourlyFraction_df.HourlyFractionSum==0, ['Sub-Area','Veh_Tech']].drop_duplicates()}")
 
         # use original columns - replace all cells
         TM_HourlyFraction_df = TM_HourlyFraction_df[sheet_cols]
