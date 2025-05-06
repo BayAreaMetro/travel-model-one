@@ -880,7 +880,7 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
 
     Per Harold in Update emission / pollution metrics (PM2.5)
     https://app.asana.com/0/0/1206701395344040/f
-    this comes from EIR\E2021\E2021web_[modelrun_id]_winter_planning_[timestamp].xlsx
+    this comes from EIR\E2021\E2021[web?]_[modelrun_id]_winter_planning_[timestamp].xlsx
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
@@ -905,9 +905,14 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
         emfac2021_dir = model_run_dir / "OUTPUT/emfac/EIR/E2021"
         emfac2021_winter_planning_files = sorted(emfac2021_dir.glob(f"E2021web_{tm_runid}_winter_planning_*.xlsx"))
         if len(emfac2021_winter_planning_files) != 1:
-            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_winter_planning_files: {emfac2021_winter_planning_files}")
-            LOGGER.info("    Skipping...")
-            continue
+            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021web_winter_planning_files: {emfac2021_winter_planning_files}")
+
+             # try non-web
+            emfac2021_winter_planning_files = sorted(emfac2021_dir.glob(f"E2021_{tm_runid}_winter_planning_*.xlsx"))
+            if len(emfac2021_winter_planning_files) != 1:
+                LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_winter_planning_files: {emfac2021_winter_planning_files}")
+                LOGGER.info("    Skipping...")
+                continue
         LOGGER.info(f"  Reading {tm_runid} emfac2021_winter_planning_file:")
         LOGGER.info(f"    {emfac2021_winter_planning_files[0]}")
         emfac2021_winter_df = pd.read_excel(emfac2021_winter_planning_files[0], sheet_name="Total MTC")
@@ -945,7 +950,7 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
 
     Per Harold in Update emission / pollution metrics (PM2.5)
     https://app.asana.com/0/0/1206701395344040/f
-    this comes from EIR\E2021\E2021web_[modelrun_id]_annual_planning_[timestamp].xlsx
+    this comes from EIR\E2021\E2021[web?]_[modelrun_id]_annual_planning_[timestamp].xlsx
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
@@ -982,9 +987,14 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
         emfac2021_dir = model_run_dir / "OUTPUT/emfac/EIR/E2021"
         emfac2021_annual_planning_files = sorted(emfac2021_dir.glob(f"E2021web_{tm_runid}_annual_planning_*.xlsx"))
         if len(emfac2021_annual_planning_files) != 1:
-            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_annual_planning_files: {emfac2021_annual_planning_files}")
-            LOGGER.info("    Skipping...")
-            continue
+            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021web_annual_planning_files: {emfac2021_annual_planning_files}")
+
+            # try non-web
+            emfac2021_annual_planning_files = sorted(emfac2021_dir.glob(f"E2021_{tm_runid}_annual_planning_*.xlsx"))
+            if len(emfac2021_annual_planning_files) != 1:
+                LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2021_annual_planning_files: {emfac2021_annual_planning_files}")
+                LOGGER.info("    Skipping...")
+                continue
         LOGGER.info(f"  Reading {tm_runid} emfac2021_annual_planning_file:")
         LOGGER.info(f"    {emfac2021_annual_planning_files[0]}")
         emfac2021_annual_df = pd.read_excel(emfac2021_annual_planning_files[0], sheet_name="Total MTC")
