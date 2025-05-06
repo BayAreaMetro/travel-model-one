@@ -6,7 +6,6 @@ Requires geopandas.
 
 Run it in the directory in which you want the shapefile, e.g. model_dir\\OUTPUT\\shapefile
 python cube_to_shapefile.py
-  --trn_stop_info "M:\\Application\Model One\\Networks\\TM1_2015_Base_Network\\Node Description.xls"
   --linefile ..\\..\\trn\\transitLines.lin
   --loadvol_dir ..\\trn
   --transit_crowding ..\\metrics\\transit_crowding_complete.csv

@@ -11,15 +11,17 @@ import argparse, logging, pathlib, time
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
-    parser.add_argument('--output_dir', default='network_comparison_FinalBlueprint')
+    parser.add_argument('--output_dir', default='.')
     parser.add_argument('--years', type=int, nargs='+') # 1 or more required
     parser.add_argument('--baseline_version', type=str, required=True, nargs='+')
     parser.add_argument('--blueprint_version', type=str, required=True, nargs='+')
+    parser.add_argument('--bpwithouttransit_version', type=str, required=False, default=[], nargs='+')
     args = parser.parse_args()
+    print(args)
 
-    network_versions = list(set(args.baseline_version + args.blueprint_version))
+    network_versions = list(set(args.baseline_version + args.blueprint_version + args.bpwithouttransit_version))
     M_dir = pathlib.Path('M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\Networks')
-    network_comparison_dir = M_dir / args.output_dir   # outputdir
+    network_comparison_dir = pathlib.Path(args.output_dir)   # outputdir
 
     # make this if it doesn't exist
     network_comparison_dir.mkdir(exist_ok=True)
@@ -53,10 +55,11 @@ if __name__ == '__main__':
     # loop through versions and year
     for version in network_versions:
         for year in args.years:
-            for scen in  ['Blueprint', 'Baseline']:
+            for scen in  ['Blueprint', 'Baseline', 'BPwithoutTransit']:
                 # only handle requested baseline or blueprint network versions
                 if (scen == 'Baseline') and (version not in args.baseline_version): continue
                 if (scen == 'Blueprint') and (version not in args.blueprint_version): continue
+                if (scen == 'BPwithoutTransit') and (version not in args.bpwithouttransit_version): continue
 
                 logging.info(f'network version: {version}, year: {year}, scenario: {scen}')
 
