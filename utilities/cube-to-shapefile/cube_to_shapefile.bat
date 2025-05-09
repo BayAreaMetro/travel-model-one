@@ -10,7 +10,7 @@ for %%y in (2015 2023 2035 2050) do (
     if %%y LEQ 2023 (
         set NETWORKS=Baseline
     ) else (
-        set NETWORKS=Baseline Blueprint BPwithoutTransit
+        set NETWORKS=Baseline Blueprint BPwithoutTransit Alt1
     )
     echo Processing %%y and networks !NETWORKS!
 
