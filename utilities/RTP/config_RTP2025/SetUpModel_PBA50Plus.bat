@@ -42,7 +42,7 @@ set BP_OVERRIDE_DIR=%GITHUB_DIR%\utilities\RTP\strategy_overrides
 :: set calculators for off-model strategies
 set runOffModel=Yes
 set offModelCalculator_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\offmodel_calculators
-set offModelCalculatorVersion=FBP_v2
+set offModelCalculatorVersion=FBP_v3_update2005
 ::set offModelCalculator_masterLog_DIR=M:\Application\Model One\RTP2025\off_model_master_log
 
 :: --------------------------------------------
@@ -274,8 +274,8 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: ------
 :: Safety: Blueprint Vision Zero
 :: ------
-:: Start year (freeways): 2030
-:: Start year (local streets): 2025
+:: Start year (freeways): 2035
+:: Start year (local streets): 2030
 if %MODEL_YEAR_NUM%==2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2030.block"            "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
 if %MODEL_YEAR_NUM% GEQ 2035 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2035to2050.block"   "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
 

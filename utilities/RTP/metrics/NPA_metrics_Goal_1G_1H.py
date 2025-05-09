@@ -14,7 +14,7 @@ The script reads the following input files:
 - {base_dir}|{scenario_dir}/core_summaries/AccessibilityMarkets.csv (accessibility markets)
 
 The script writes the following output files:
-- {scenario_dir}/OUTPUT/metrics/NPA_Metrics_Goal_1G_1H.csv with columns:
+- {scenario_dir}/OUTPUT/metrics/NPA_metrics_Goal_1G_1H.csv with columns:
   + epc_category:          one of all_taz, epc_22, epc_18
   + base_id:               base model run ID
   + scenario_id:           scenario model run ID
@@ -181,6 +181,6 @@ if __name__ == '__main__':
     access_benefit_df = compute_access_benefits_metrics(
         blueprint_dir, my_args.base_id, my_args.scen_id)
     
-    output_file = blueprint_dir / my_args.scen_id / "OUTPUT" / "metrics" / "NPA_Metrics_Goal_1G_1H.csv"
+    output_file = blueprint_dir / my_args.scen_id / "OUTPUT" / "metrics" / "NPA_metrics_Goal_1G_1H.csv"
     access_benefit_df.to_csv(output_file, index = False)
     print(f"Wrote {len(access_benefit_df)} rows to {output_file}")

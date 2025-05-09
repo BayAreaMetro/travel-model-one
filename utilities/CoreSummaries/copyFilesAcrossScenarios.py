@@ -38,8 +38,11 @@ COPY_FILES = {
         "trips_cordon_mode_summary",
         "truck_trips_by_timeperiod",
         "transit_crowding_complete",
-        "NPA_Metrics_Goal_1A_to_1F",
-        "NPA_Metrics_Goal_1G_1H"
+        "NPA_metrics_Goal_1A_to_1F",
+        "NPA_metrics_Goal_1G_1H",
+        "NPA_metrics_Goal_2",
+        "NPA_metrics_Goal_3A_to_3D",
+        "NPA_metrics_Goal_3E_3F"
     ],
     "OUTPUT\\core_summaries":[
         "ActiveTransport",
@@ -208,6 +211,11 @@ if __name__ == '__main__':
                     continue
 
                 source_dir = pathlib.Path(RUN_SET_MODEL_PATHS[model_run.run_set]) / model_run.directory
+
+                # TODO - don't commit following hack; it's just for reproducing NPA metrics
+                if model_run.directory=="2035_TM161_FBP_NoProject_06":
+                    source_dir =  pathlib.Path(RUN_SET_MODEL_PATHS[model_run.run_set]) / "Archive_FBP" / model_run.directory
+
                 if not source_dir.exists():
                     print(f"    Source dir {source_dir} does not exist -- skipping")
                     continue

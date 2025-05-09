@@ -219,6 +219,6 @@ if __name__ == '__main__':
     
     # Compute the job access metrics (accessible jobs)
     metrics_df = tally_access_to_jobs_v3(household_autos_df)
-    output_file = pathlib.Path("metrics", "NPA_Metrics_Goal_1A_to_1F.csv")
+    output_file = pathlib.Path("metrics", "NPA_metrics_Goal_1A_to_1F.csv")
     metrics_df.to_csv(output_file, index=True)
     print(f"Wrote {output_file}")
