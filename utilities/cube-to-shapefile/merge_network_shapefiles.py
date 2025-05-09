@@ -15,11 +15,21 @@ if __name__ == '__main__':
     parser.add_argument('--years', type=int, nargs='+') # 1 or more required
     parser.add_argument('--baseline_version', type=str, required=True, nargs='+')
     parser.add_argument('--blueprint_version', type=str, required=True, nargs='+')
-    parser.add_argument('--bpwithouttransit_version', type=str, required=False, default=[], nargs='+')
+    parser.add_argument('--extra_scenario', type=str, nargs=2, help="Specify another scenario and version e.g. 'Alt1' or 'BPwithoutTransit'")
     args = parser.parse_args()
     print(args)
 
-    network_versions = list(set(args.baseline_version + args.blueprint_version + args.bpwithouttransit_version))
+    # extra_scenario=['BPwithoutTransit', 'v35']
+    if args.extra_scenario:
+        network_versions = list(set(args.baseline_version + args.blueprint_version + [args.extra_scenario[1]]))
+    else:
+        network_versions = list(set(args.baseline_version + args.blueprint_version))
+
+    if args.extra_scenario:
+        scenarios = ['Blueprint', 'Baseline', args.extra_scenario[0]]
+    else:
+        scenarios = ['Blueprint', 'Baseline']
+
     M_dir = pathlib.Path('M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\Networks')
     network_comparison_dir = pathlib.Path(args.output_dir)   # outputdir
 
@@ -43,6 +53,9 @@ if __name__ == '__main__':
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(fh)
 
+    logger.info(f"{network_versions=}")
+    logger.info(f"{scenarios=}")
+
     # keep geoDataFrames for each version/year/scenario in this list
     network_links_list = []
     network_trn_lines_list = []
@@ -55,11 +68,11 @@ if __name__ == '__main__':
     # loop through versions and year
     for version in network_versions:
         for year in args.years:
-            for scen in  ['Blueprint', 'Baseline', 'BPwithoutTransit']:
+            for scen in scenarios:
                 # only handle requested baseline or blueprint network versions
                 if (scen == 'Baseline') and (version not in args.baseline_version): continue
                 if (scen == 'Blueprint') and (version not in args.blueprint_version): continue
-                if (scen == 'BPwithoutTransit') and (version not in args.bpwithouttransit_version): continue
+                if (args.extra_scenario and scen == args.extra_scenario[0]) and (version != args.extra_scenario[1]): continue
 
                 logging.info(f'network version: {version}, year: {year}, scenario: {scen}')
 
