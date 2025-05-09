@@ -35,7 +35,7 @@ NETWORK_DBF_PATH <- file.path(NETWORK_DIR, "shapefile", "network_links.dbf")
 print(paste("Network dbf path:", NETWORK_DBF_PATH))
 
 TOLLS_CSV_PATH <- paste(NETWORK_DIR, "hwy", "tolls.csv", sep = "/")
-TOLLCLASS_DES_PATH <- "X:/travel-model-one-master/utilities/NextGenFwys/TOLLCLASS_Designations.xlsx"
+TOLLCLASS_DES_PATH <- "X:/travel-model-one-master/utilities/NextGenFwys/TOLLCLASS_Designations--MOVED_TO_tm1_2015_Base_Network_REPO.xlsx"
 
 NETWORK_DBF <- read.dbf(NETWORK_DBF_PATH)
 TOLLS_CSV <- read.csv(TOLLS_CSV_PATH)
