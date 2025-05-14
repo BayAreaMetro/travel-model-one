@@ -162,7 +162,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--analysis_type",                 required=True, choices=['SB375','EIR','AQConformity'],
                         help="IF SB375 passed, assume 'Generate SB375 Template' is true")
-    parser.add_argument("--emfac_version",                 required=True, choices=['2014','2017','2021','202Y'])
+    parser.add_argument("--emfac_version",                 required=True, choices=['2014','2017','2021','2025_v2.0.0-rc.5'])
     parser.add_argument("--run_mode",                      required=True, choices=['emissions','emissions-rates'])
     parser.add_argument("--sub_area",                      required=True, choices=['MPO-MTC','airbasin-SF'], help="Note: MPO_MTC==9 counties==11 subareas")
     parser.add_argument("--season",                        required=True, choices=['all','annual','summer','winter']) 
