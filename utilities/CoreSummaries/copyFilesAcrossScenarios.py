@@ -14,7 +14,7 @@ USAGE = r"""
   python copyFilesAcrossScenarios.py ModelRuns.xlsx --dest_dir . --status_to_copy current --delete_other_run_files n
 
 """
-import argparse, os, re, pathlib, shutil
+import argparse, os, re, string, pathlib, shutil
 import pandas
 import subprocess
 
@@ -211,6 +211,8 @@ if __name__ == '__main__':
                     continue
 
                 source_dir = pathlib.Path(RUN_SET_MODEL_PATHS[model_run.run_set]) / model_run.directory
+                if str.find(model_run.directory, "_16_seq") >=0:
+                    source_dir = pathlib.Path(RUN_SET_MODEL_PATHS[model_run.run_set]) / "run_sequence_v16" / model_run.directory
 
                 # TODO - don't commit following hack; it's just for reproducing NPA metrics
                 if model_run.directory=="2035_TM161_FBP_NoProject_06":
