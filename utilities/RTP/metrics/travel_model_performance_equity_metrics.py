@@ -212,8 +212,8 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
             # https://github.com/BayAreaMetro/travel-model-one/blob/24a6ca135f4fcf71f3fdc7d310075466c23883b2/utilities/RTP/metrics/pba50_metrics.py#L229-L234
             scenario_includes_UBI = model_run_category in ['Plus','Alt1','Alt2']
         elif args_rtp == "RTP2025":
-            # Plan run includes UBI
-            scenario_includes_UBI = (model_runs_dict[tm_runid]['Alias'].find(' Plan') >= 0)
+            # Plan run includes UBI and EIR Alternatives
+            scenario_includes_UBI = (model_runs_dict[tm_runid]['Alias'].find(' Plan') >= 0) or ((model_runs_dict[tm_runid]['Alias'].find(' EIR') >= 0))
         LOGGER.info(f"    => scenario_includes_UBI: {scenario_includes_UBI}")
 
         if scenario_includes_UBI:
