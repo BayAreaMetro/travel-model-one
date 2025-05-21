@@ -38,7 +38,7 @@ if __name__ == '__main__':
         LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_CARE_EMFAC2021_FEIR")
     elif my_args.rtp == 'RTP2025':
         BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/OverburdenedCommunities_analysis/PBA50plus"
-        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups")
+        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups - EMFAC25 Candidate Ver")
         LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened")
     
     ######################################################################
@@ -77,17 +77,17 @@ if __name__ == '__main__':
     elif my_args.rtp == 'RTP2025':
         MODEL_DIRS = {
             "IP_2023": "M:/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35",
-            "NP_2050": "M:/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_NoProject_16",
+            "NP_2050": "M:/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_NoProject_17",
             "FBP_2050": "M:/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16",
-            # "Alt1_2050": "M:/Application/Model One/RTP2025/Blueprint/2050_TM152_EIR_Alt1_06",
-            # "Alt2_2050": "M:/Application/Model One/RTP2025/Blueprint/2050_TM152_EIR_Alt2_05"
+            "Alt1_2050": "M:/Application/Model One/RTP2025/Blueprint/2050_TM161_EIR_Alt1_02",
+            "Alt2_2050": "M:/Application/Model One/RTP2025/Blueprint/2050_TM161_EIR_Alt2_01"
         }
         NETWORK_DIRS = {
             "IP_2023": "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/shapefiles",
             "NP_2050": "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Baseline/shapefiles",
             "FBP_2050": "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Blueprint/shapefiles",
-            # "Alt1_2050": "M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64/net_2050_Alt1/shapefile",
-            # "Alt2_2050": "M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64/net_2050_Alt2/shapefile"
+            "Alt1_2050": "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v36/net_2050_Alt1/shapefiles",
+            "Alt2_2050": "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Blueprint/shapefiles"
         }
 
     # Name of the analysis: "CARE" in RTP2021 and "OverBurdened" in RTP2025
@@ -177,7 +177,7 @@ if __name__ == '__main__':
         # Read CARE/Overburdened mapping
         link_crosswalk_file = os.path.join(NETWORK_DIRS[network], f"link_to_COUNTY_{analysis_name}.csv")
         link_crosswalk = pd.read_csv(link_crosswalk_file)
-        LOGGER.info(f"Read {len(link_crosswalk)} lines from {link_crosswalk}; head:")
+        LOGGER.info(f"Read {len(link_crosswalk)} lines from {link_crosswalk_file}; head:")
         LOGGER.info(link_crosswalk.head())
 
         # Combine with network_long
