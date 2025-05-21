@@ -38,7 +38,7 @@ if __name__ == '__main__':
         LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_CARE_EMFAC2021_FEIR")
     elif my_args.rtp == 'RTP2025':
         BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/OverburdenedCommunities_analysis/PBA50plus"
-        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups - EMFAC25 Candidate Ver")
+        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups")
         LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened")
     
     ######################################################################
