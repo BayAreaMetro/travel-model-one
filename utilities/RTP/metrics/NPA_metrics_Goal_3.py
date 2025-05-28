@@ -85,7 +85,7 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
     3A) Best AM peak and midday auto and transit travel times selected origin-destination pairs
     3B) Transit to auto AM peak period travel time ratio
     3C) Transit to auto midday travel time ratio
-    3D) Best AM peak-to-midday transit travel time ratio
+    3D) midday / AM peak transit travel time ratio for OD with best midday and best AM transit travel time
 
     The result is written to metrics/NPA_metrics_Goal_3A_to_3D.csv
     """
@@ -111,7 +111,7 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
     skim_merge['orig_CITY'] = skim_merge.orig_taz.map(od_cities_map)
     skim_merge['dest_CITY'] = skim_merge.dest_taz.map(od_cities_map)
     valid = (skim_merge[['wTrnW_am_peak','wTrnW_midday']] != -999).all(axis=1)
-    skim_merge['wTrnW_ratio'] = (skim_merge.wTrnW_am_peak / skim_merge.wTrnW_midday).where(valid)
+    skim_merge['wTrnW_ratio'] = (skim_merge.wTrnW_midday / skim_merge.wTrnW_am_peak).where(valid)
     logger.info(f"skim_merge:\n{skim_merge}")
 
     # Compute best travel times (3A) and best ratio (3D)
@@ -142,8 +142,8 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
             # note: this is the auto travel time for the same OD taz as best_transit_travel_time_
             metrics["auto_travel_time"] = selected_od.loc[ix][da_col]
 
-            # note the ratio_am_peak_midday for this TAZ / period as well
-            metrics["transit_ratio_am_peak_midday"] = selected_od.loc[ix]["wTrnW_ratio"]
+            # note the ratio_midday_over_am for this TAZ / period as well
+            metrics["transit_ratio_midday_over_am"] = selected_od.loc[ix]["wTrnW_ratio"]
 
             metrics_odper_key[(od_key,period)] = metrics
 
