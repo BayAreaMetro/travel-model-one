@@ -130,23 +130,22 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
             trn_col = f"wTrnW_{period}"
             da_col = f"da_{period}"
 
-            # select row with lowest walk-transit=walk time
+            # select row with lowest walk-transit-walk time
             ix = selected_od.loc[selected_od[trn_col] != -999, trn_col].idxmin()
             logger.info(f"{period} transit time idxmin() ix:{ix}; selected_od.loc[{ix}]:\n{selected_od.loc[ix]}")
+
+            # retain these
+            metrics["orig_taz"] = selected_od.loc[ix]['orig_taz']
+            metrics["dest_taz"] = selected_od.loc[ix]['dest_taz']
 
             metrics["best_transit_travel_time"] = selected_od.loc[ix][trn_col]
             # note: this is the auto travel time for the same OD taz as best_transit_travel_time_
             metrics["auto_travel_time"] = selected_od.loc[ix][da_col]
 
+            # note the ratio_am_peak_midday for this TAZ / period as well
+            metrics["transit_ratio_am_peak_midday"] = selected_od.loc[ix]["wTrnW_ratio"]
+
             metrics_odper_key[(od_key,period)] = metrics
-        
-        # this metric is not period-specific
-        metrics_odper_key[(od_key,'both')] = {
-            'period':'both',
-            'origin_city':','.join(origins),
-            'destination_city':','.join(dests),
-            'best_transit_ratio_am_peak_midday':selected_od.wTrnW_ratio.max()
-        }
 
     logger.info(f"{metrics_odper_key=}")
     # --------------------------
