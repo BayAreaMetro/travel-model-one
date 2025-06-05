@@ -9,7 +9,7 @@
 # Input:
 #  1) NTD monthly data spreadsheet downloaded from the NTD website 
 #     (https://www.transit.dot.gov/ntd/data-product/monthly-module-raw-data-release)
-#     and saved tonational-transit-database > Source 
+#     and saved to national-transit-database > Source 
 #     (https://mtcdrive.box.com/s/786348kj1u364225mxfylklq0pt8yeay)
 #
 #  2) MonthlyToTypicalWeekdayRidership.xlsx
@@ -22,7 +22,7 @@
 #     NTD's Common.Agency.Name and NTD.mode (i.e. MB, CB, etc)
 #
 # Output:
-#  1) NTD_long_[UPT,VRH,RVM].rdata (https://mtcdrive.box.com/v/national-transit-database)
+#  1) NTD_long_[UPT,VRH,VRM].rdata (https://mtcdrive.box.com/v/national-transit-database)
 #     which is consumed by SanFranciscoBayArea_NationalTransitDatabase.twb and published to
 #     https://public.tableau.com/views/SanFranciscoBayArea_NationalTransitDatabase/Navigation
 #
