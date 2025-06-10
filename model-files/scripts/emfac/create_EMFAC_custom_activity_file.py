@@ -167,7 +167,7 @@ if __name__ == '__main__':
     parser.add_argument("--sub_area",                      required=True, choices=['MPO-MTC','airbasin-SF'], help="Note: MPO_MTC==9 counties==11 subareas")
     parser.add_argument("--season",                        required=True, choices=['all','annual','summer','winter']) 
     parser.add_argument("--VMT_data_type",                 required=True, choices=['totalDailyVMT','VMTbyVehFuelType'])
-    parser.add_argument("--base_year",                     required=False, choices=["2015","2023"])
+    parser.add_argument("--adjustment",                     required=False, choices=["E2021","E2025"])
     parser.add_argument("--custom_hourly_speed_fractions", action='store_true', help="For 'Custom Hourly Speed Fractions' checkbox")
     parser.add_argument("--file_suffix", default="", help="Optional suffix for output folders/files; to QA/compare against manually created versions")
 
@@ -181,12 +181,10 @@ if __name__ == '__main__':
     # Note that the template is the same for all seasons, so our templates will just reflect annual
     # And we'll change the custom activity file to reflect args.season later
     input_custom_activity_template = f"E{args.emfac_version}_{args.run_mode}_{args.sub_area}_{calendar_year}_annual_{args.VMT_data_type}"
-    # base_custom_activity_template
-    # if args.analysis_type=='AQConformity" then additional arg needed for base year
-    # yearIsRequired = (args.analysis_type=='AQConformity')
-    # parser.add_argument("--base_year",                      required=yearIsRequired, help="For AQConformity totalDailyVMT adjustments")
 
     # store true are optional add-ins
+    if args.analysis_type == "AQConformity":
+        input_custom_activity_template_AQ = input_custom_activity_template.replace(input_custom_activity_template.split("_",1)[0],args.adjustment)
     if args.custom_hourly_speed_fractions:
         input_custom_activity_template = input_custom_activity_template + "_CustSpeed"
     if args.analysis_type == "SB375":
@@ -195,6 +193,8 @@ if __name__ == '__main__':
 
     # and it's in GitHub
     input_custom_activity_template_fullpath = pathlib.Path(__file__).parent / "Custom_Activity_Templates" / input_custom_activity_template
+    if args.analysis_type == "AQConformity":
+        input_custom_activity_template_fullpath_AQ = pathlib.Path(__file__).parent / "Custom_Activity_Templates" / input_custom_activity_template_AQ
 
     # ================= Output custom activity file is based on Harold's convention =================
     # and it's local
@@ -224,6 +224,11 @@ if __name__ == '__main__':
         error_str = f"Custom Activity Template {input_custom_activity_template_fullpath} not found.\n"
         error_str += "These EMFAC paramaters aren't supported yet."
         raise NotImplementedError(error_str)
+    if args.analysis_type == "AQConformity":
+        if not input_custom_activity_template_fullpath_AQ.exists():
+            error_str = f"Custom Activity Template {input_custom_activity_template_fullpath_AQ} not found.\n"
+            error_str += "These EMFAC paramaters aren't supported yet."
+            raise NotImplementedError(error_str)
     # ================= Create logger =================
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -373,6 +378,9 @@ if __name__ == '__main__':
 
     workbook = openpyxl.load_workbook(filename=input_custom_activity_template_fullpath)
     logging.info("Workbook sheetnames: {}".format(workbook.sheetnames))
+    if args.analysis_type == "AQConformity":
+        workbook_AQ = openpyxl.load_workbook(filename=input_custom_activity_template_fullpath_AQ)
+        logging.info("AQ workbook sheetnames: {}".format(workbook.sheetnames))
 
     # custom activity template is annual
     # if args.season differs, update settings
@@ -519,17 +527,11 @@ if __name__ == '__main__':
         how     = 'left'
     )
     logging.debug("VMTbyGAI_df:\n{}".format(VMTbyGAI_df))
-    
-    if args.analysis_type == "AQConformity":
-            VMTbyGAI_df = VMTbyGAI_df.merge(AQ_ADJUSTMENT_FACTORS_DF)
-            VMTbyGAI_df['HourlyTotalVMT'] = VMTbyGAI_df.HourlyTotalVMT * VMTbyGAI_df.AdjustmentFactor
-            logging.debug("VMTbyGAI_df with AQ Adjustment Factors:\n{}".format(VMTbyGAI_df))
 
     # columns are now: Sub-Area, GAI, DefaultVMT_GAI, countyName, AirBasin, HourlyTotalVMT (modeled), DefaultVMT_county
     # apportion based on share DefaultVMT for GAI / DefaultVMT for County
     VMTbyGAI_df['HourlyTotalVMT'] = VMTbyGAI_df.HourlyTotalVMT * (VMTbyGAI_df.DefaultVMT_GAI/VMTbyGAI_df.DefaultVMT_county)
     logging.debug("VMTbyGAI_df after apportioning county by GAI:\n{}".format(VMTbyGAI_df))
-
 
     # This section is for args.VMT_data_type=='VMTbyVehFuelType'
     # But for args.VMT_data_type=='totalDailyVMT', it doesn't actually do anything (percentVMT will be 1.0)
@@ -548,6 +550,35 @@ if __name__ == '__main__':
     DefaultVMT_detail_df['Modeled VMT']  = DefaultVMT_detail_df.HourlyTotalVMT * DefaultVMT_detail_df.percentVMT
     logging.debug("DefaultVMT_detail_df after merge to original dataframe (which may include vehicle/fuel types):\n{}".format(
         DefaultVMT_detail_df))
+
+    if args.analysis_type == "AQConformity":
+        sheet_AQ = workbook_AQ[ACTIVITY_TEMPLATE_VMT_SHEETNAME[args.VMT_data_type]]
+        logging.info(f"Reading in the AQ worksheet <{ACTIVITY_TEMPLATE_VMT_SHEETNAME[args.VMT_data_type]}>")
+        AQ_VMT = sheet.values
+
+        # Column A has the first Area categorization: MPO, County or Sub-Area
+        sheet_cols = next(AQ_VMT)
+        sheet_cols = list(sheet_cols) # convert to list
+        AQ_VMT = list(AQ_VMT)
+        AQ_VMT_df = pd.DataFrame(AQ_VMT, columns=sheet_cols)
+        logging.debug("DefaultHourlyFraction_df with columns={}:\n{}".format(sheet_cols, AQ_VMT))
+
+        # first calculate EMFAC default VMT by GAI
+        AQ_VMTbyGAI_df = AQ_VMT_df[['Sub-Area','GAI','New Total VMT']].groupby(['Sub-Area','GAI'], as_index=False).sum()
+        # rename the 'New Total VMT' column to avoid confusion
+        AQ_VMTbyGAI_df.rename(columns={"New Total VMT": "AQ_VMT_GAI"}, inplace=True)
+        logging.debug("AQ_VMTbyGAI_df:\n{}".format(AQ_VMTbyGAI_df))
+
+        DefaultVMT_detail_df = pd.merge(
+        left    = DefaultVMT_df,
+        right   = AQ_VMTbyGAI_df, 
+        on      = ['Sub-Area','GAI'],
+        how     = 'left'
+    )
+        DefaultVMT_detail_df['AQ_VMT_Adj'] = DefaultVMT_detail_df['DefaultVMT_GAI']/DefaultVMT_detail_df['Modeled VMT']
+        DefaultVMT_detail_df['Modeled VMT'] = DefaultVMT_detail_df['Modeled VMT']*DefaultVMT_detail_df['AQ_VMT_Adj']
+
+
 
     # keep the relevant columns for writing to the excel file, but replace 'New Total VMT' with 'Modeled VMT'
     sheet_cols[sheet_cols.index('New Total VMT')] = 'Modeled VMT'
