@@ -76,10 +76,19 @@ if (RTP==2013) {
                      "2035_TM161_FBP_NPtoPlan_16_seq7",
                      "2035_TM161_FBP_NPtoPlan_16_seq8",
                      "2035_TM161_FBP_Plan_16",
-                     "2050_TM161_FBP_NoProject_16",
+                     "2035_TM161_EIR_Alt1_02",
+                     "2035_TM161_EIR_Alt2_01",
+                     "2050_TM161_FBP_NoProject_17",
                      "2050_TM161_FBP_NPtoPlan_16_seq2",
                      "2050_TM161_FBP_NPtoPlan_16_seq3",
-                     "2050_TM161_FBP_Plan_16")
+                     "2050_TM161_FBP_NPtoPlan_16_seq4",
+                     "2050_TM161_FBP_NPtoPlan_16_seq5",
+                     "2050_TM161_FBP_NPtoPlan_16_seq6",
+                     "2050_TM161_FBP_NPtoPlan_16_seq7",
+                     "2050_TM161_FBP_NPtoPlan_16_seq8", 
+                     "2050_TM161_FBP_Plan_16",
+                     "2050_TM161_EIR_Alt1_02",
+                     "2050_TM161_EIR_Alt2_01")
 }
 
 
@@ -100,7 +109,9 @@ for (MODEL_RUN_ID in MODEL_RUN_IDS) {
       CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'IncrementalProgress', MODEL_RUN_ID,"OUTPUT","core_summaries")
     } else if ((RTP==2025) && ((MODEL_RUN_ID=='2005_TM161_IPA_01') || (MODEL_RUN_ID=='2015_TM161_IPA_09') || (MODEL_RUN_ID=='2023_TM161_IPA_35'))) {
       CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'IncrementalProgress', MODEL_RUN_ID,"OUTPUT","core_summaries")
-    } else if ((RTP==2025) && (MODEL_RUN_ID!='2005_TM161_IPA_01') && (MODEL_RUN_ID!='2015_TM161_IPA_09') && (MODEL_RUN_ID!='2023_TM161_IPA_35')) {
+    } else if ((RTP==2025) && (grepl("NPtoPlan", MODEL_RUN_ID))) {
+      CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'Blueprint', 'run_sequence_v16', MODEL_RUN_ID,"OUTPUT","core_summaries")
+    } else {
       CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'Blueprint', MODEL_RUN_ID,"OUTPUT","core_summaries")
     }
   
