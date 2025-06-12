@@ -76,7 +76,7 @@ def compute_access_benefits_metrics(blueprint_dir, base_id, scen_id):
         base_nonmandatoryAccessibilities=base_nonmandatory,
         accessibilityMarkets            =scen_markets,
         base_accessibilityMarkets       =base_markets,
-        debug_dir=None  
+        debug_dir                       =blueprint_dir / scen_id / "OUTPUT" / "metrics"
     )
     print(f"mandatoryAccess:\n{mandatoryAccess}")
     print(f"nonmandatoryAccess:\n{nonmandatoryAccess}")
@@ -134,16 +134,21 @@ def compute_access_benefits_metrics(blueprint_dir, base_id, scen_id):
         metrics_dict['num_workers_students'] = 0.5*mandatoryAccess.loc[   mandatoryAccess[epc_category]==1, 'base_num_workers_students'].sum() + \
                                                0.5*mandatoryAccess.loc[   mandatoryAccess[epc_category]==1, 'scen_num_workers_students'].sum()
         metrics_dict['per_capita CS diff work/school'] = metrics_dict['CS diff work/school'] / metrics_dict['num_workers_students']
+        # annualized
+        metrics_dict['per_capita CS diff work/school annualized'] = metrics_dict['per_capita CS diff work/school']*RunResults.RunResults.WORK_ANNUALIZATION
 
         # nonmandatory
         metrics_dict['CS diff nonmand']     =     nonmandatoryAccess.loc[nonmandatoryAccess[epc_category]==1, 'CS diff all'].sum()
         metrics_dict['num_persons']         = 0.5*nonmandatoryAccess.loc[nonmandatoryAccess[epc_category]==1, 'base_num_persons'].sum() + \
                                               0.5*nonmandatoryAccess.loc[nonmandatoryAccess[epc_category]==1, 'scen_num_persons'].sum()
         metrics_dict['per_capita CS diff nonmand'] = metrics_dict['CS diff nonmand'] / metrics_dict['num_persons']
+        # annualized
+        metrics_dict['per_capita CS diff nonmand annualized'] = metrics_dict['per_capita CS diff nonmand']*RunResults.RunResults.ANNUALIZATION
 
         # combination of both (does this make sense?)
-        metrics_dict['per_capita CS diff combined'] = (metrics_dict['CS diff work/school'] + metrics_dict['CS diff nonmand']) / \
-                                                     (metrics_dict['num_workers_students'] + metrics_dict['num_persons'])
+        metrics_dict['per_capita CS diff annualized combined'] = (metrics_dict['CS diff work/school']*RunResults.RunResults.WORK_ANNUALIZATION + 
+                                                                  metrics_dict['CS diff nonmand'    ]*RunResults.RunResults.ANNUALIZATION) / \
+                                                                 (metrics_dict['num_workers_students'] + metrics_dict['num_persons'])
         metrics_dict_list.append(metrics_dict)
 
         # 1H) Ratio of the per-capita regional accessibility benefit for EPC residents relative to the
@@ -154,8 +159,8 @@ def compute_access_benefits_metrics(blueprint_dir, base_id, scen_id):
         metrics_dict['per_capita CS diff nonmand relative_to_all'] = metrics_dict['per_capita CS diff nonmand'] / \
                                                              metrics_dict_list[0]['per_capita CS diff nonmand']
         
-        metrics_dict['per_capita CS diff combined relative_to_all'] = metrics_dict['per_capita CS diff combined'] / \
-                                                              metrics_dict_list[0]['per_capita CS diff combined']
+        metrics_dict['per_capita CS diff annualized combined relative_to_all'] = metrics_dict['per_capita CS diff annualized combined'] / \
+                                                                                 metrics_dict_list[0]['per_capita CS diff annualized combined']
     metrics_df = pd.DataFrame(metrics_dict_list)
     print(f"metrics_df:\n{metrics_df}")
 
@@ -174,8 +179,6 @@ if __name__ == '__main__':
     my_args = parser.parse_args()
 
     blueprint_dir = pathlib.Path("M:\Application\Model One\RTP2025\Blueprint")
-    # temporary for testing
-    # blueprint_dir = blueprint_dir / "Archive_FBP"
 
     # Compute the access benefits (logsum) metrics
     access_benefit_df = compute_access_benefits_metrics(
