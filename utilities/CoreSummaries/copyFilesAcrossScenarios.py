@@ -89,6 +89,7 @@ COPY_FILES = {
 RUN_SET_MODEL_PATHS = {
     'RTP_2025IP'    :'M:\\Application\\Model One\\RTP2025\\IncrementalProgress',
     'RTP2025'       :'M:\\Application\\Model One\\RTP2025\\Blueprint',
+    'RTP_2025Sens'  :'M:\\Application\\Model One\\RTP2025\\SensitivityTests_CARB',
     'IP'            :'M:\\Application\\Model One\\RTP2021\\IncrementalProgress',
     'RTP2021'       :'M:\\Application\\Model One\\RTP2021\\Blueprint',
     'DraftBlueprint':'M:\\Application\\Model One\\RTP2021\\IncrementalProgress',
