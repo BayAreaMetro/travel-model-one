@@ -1,3 +1,4 @@
+import argparse
 import pathlib
 import shutil
 import subprocess
@@ -22,16 +23,27 @@ server_to_drive = {
     'model3-c': 'V:\\'
 }
 
+output_files = {
+    '1A_to_1F': ['NPA_Metrics_Goal_1A_to_1F.csv'],
+    '2':['NPA_metrics_Goal_2.csv'],
+    '3':['NPA_metrics_Goal_3A_to_3D.csv','NPA_metrics_Goal_3E_3F.csv','NPA_metrics_Goal_3.log']
+}
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description = "Utility for rerunning NPA metrics",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('script_num', type=str, choices=['1A_to_1F','2','3'])
+    my_args = parser.parse_args()
+
     M_BP_DIR = pathlib.Path("M:\\Application\\Model One\\RTP2025\\Blueprint")
     M_IP_DIR = pathlib.Path("M:\\Application\\Model One\\RTP2025\\IncrementalProgress")
     ACROSS_DIR = pathlib.Path("M:\\Application\\Model One\\RTP2025\\Blueprint\\across_runs_NetworkPerformanceAssessment")
 
-    SCRIPT_NUM = "1A_to_1F"
-    SCRIPT = pathlib.Path(f"X:\\travel-model-one-master\\utilities\\RTP\\metrics\\NPA_metrics_Goal_{SCRIPT_NUM}.py")
+    SCRIPT = pathlib.Path(f"X:\\travel-model-one-master\\utilities\\RTP\\metrics\\NPA_metrics_Goal_{my_args.script_num}.py")
     for model_run_id in run_dirs.keys():
         # temp
-        if run_dirs[model_run_id]!="model3-b": continue
+        # if int(model_run_id[:4]) > 2025: continue
 
         print(f"Processing {model_run_id}")
         M_dir = M_BP_DIR / model_run_id
@@ -56,15 +68,17 @@ if __name__ == '__main__':
             print("Script succeeded!")
         
         # copy output
-        output_file = model_full_path / "metrics" / f"NPA_metrics_Goal_{SCRIPT_NUM}.csv"
-        shutil.copy2(output_file, model_full_path / "extractor" / "metrics" / f"NPA_metrics_Goal_{SCRIPT_NUM}.csv")
+        for output_filename in output_files[my_args.script_num]:
+            output_file = model_full_path / "metrics" / output_filename
+            shutil.copy2(output_file, model_full_path / "extractor" / "metrics" / output_filename)
 
-        M_output_file = M_dir / "OUTPUT" / "metrics" / f"NPA_metrics_Goal_{SCRIPT_NUM}.csv"
-        shutil.copy2(output_file, M_output_file)
-        print(f"Saved output to {M_output_file}")
+            M_output_file = M_dir / "OUTPUT" / "metrics" / output_filename
+            shutil.copy2(output_file, M_output_file)
+            print(f"Saved output to {M_output_file}")
 
-        M_output_file = ACROSS_DIR / f"NPA_metrics_Goal_{SCRIPT_NUM}_{model_run_id}.csv"
-        shutil.copy2(output_file, M_output_file)
-        print(f"Saved output to {M_output_file}")
+            if output_filename.endswith(".log"): continue
+            M_output_file = ACROSS_DIR / output_filename.replace(".csv",f"_{model_run_id}.csv")
+            shutil.copy2(output_file, M_output_file)
+            print(f"Saved output to {M_output_file}")
 
     print("Complete")

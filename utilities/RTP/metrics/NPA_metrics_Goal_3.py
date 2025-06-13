@@ -306,7 +306,7 @@ def calculate_crowded_passenger_hours(logger, MODEL_DIR):
     logger.info("Calculating transit capacity and crowding metrics")
     trn_crowding_df = pd.read_csv(
         MODEL_DIR / "metrics" / "transit_crowding_complete.csv",
-        usecols=['A','B','MODE','period','run_per_hr','AB_VOL','ivtt_hours','period_seatcap','period_standcap'] 
+        usecols=['A','B','MODE','period','run_per_hr','AB_VOL','ivtt_hours','load_standcap','period_standcap'] 
     )
     logger.info(f"trn_crowding_df:\n{trn_crowding_df}")
 
@@ -315,9 +315,8 @@ def calculate_crowded_passenger_hours(logger, MODEL_DIR):
     trn_crowding_df['passenger_hours'] = trn_crowding_df['AB_VOL'] * trn_crowding_df['ivtt_hours']
 
     trn_crowding_df['is_crowded'] = False
-    # TODO: I think this is incorrect; these shouldn't be added
-    # TODO: This should just one or the other
-    trn_crowding_df.loc[ trn_crowding_df.AB_VOL > 0.85*(trn_crowding_df.period_seatcap + trn_crowding_df.period_standcap), 'is_crowded'] = True
+    # Consistent with utilities\RTP\metrics\travel_model_performance_equity_metrics.py::calculate_Connected2_crowding()
+    trn_crowding_df.loc[ trn_crowding_df.load_standcap > 0.85, 'is_crowded'] = True
     logger.info(f"trn_crowding_df:\n{trn_crowding_df}")
 
     trn_crowding_by_mode_df       = trn_crowding_df.groupby(['MODE']).agg({'passenger_hours':'sum'})
