@@ -38,7 +38,7 @@ These are written to metrics/NPA_metrics_Goal_3E_3F.csv
 import os
 import pathlib
 import pandas as pd
-import re
+import geopandas
 import logging
 
 # Mode definitions
@@ -237,7 +237,49 @@ def calculate_brt_service_miles(logger, MODEL_DIR):
     # transit runs per period = hours * 60 / frequency
     trn_data['service_miles'] = (trn_data.timeperiod_interval * 60.0 / trn_data.frequency) * trn_data.distance
 
-    logger.info(f'trn_date:\n{trn_data}')
+    logger.info(f'trn_data:\n{trn_data}')
+    logger.info(f'\n{trn_data.describe()}')
+    # columns: A, B, name, mode, timeperiod, distance, AB_VOL, timeperiod_interval, frequency, service_miles
+
+    #### Read shapefiles for the shape for A, B
+    trn_links_gdf = geopandas.read_file(MODEL_DIR / "shapefile" / "network_trn_links.shp", columns=['A','B','MODE','geometry'])
+    logger.info("Read network_trn_links.shp")
+    trn_links_gdf = trn_links_gdf.loc[trn_links_gdf.MODE >= 10]  # filter out support modes
+    trn_links_gdf.rename(columns={'MODE':'mode'}, inplace=True)
+    trn_links_gdf.drop_duplicates(inplace=True)
+    logger.info(f"trn_links_gdf:\n{trn_links_gdf}")
+    logger.info(f'\n{trn_links_gdf.describe()}')
+
+    COUNTIES_SHAPEFILE = pathlib.Path("M:\\Data\\GIS layers\\Counties\\bay_counties.shp")
+    counties_gdf = geopandas.read_file(COUNTIES_SHAPEFILE, columns=['NAME','geometry'])
+    counties_gdf.rename(columns={'NAME':'county_name'}, inplace=True)
+    logger.info(f"counties_gdf:\n{counties_gdf}")
+
+    # Ensure same CRS
+    counties_gdf = counties_gdf.to_crs(trn_links_gdf.crs)
+    trn_links_counties_gdf = geopandas.overlay(trn_links_gdf, counties_gdf, how='intersection')
+    # Calculate segment length (in CRS units, e.g., meters if projected)
+    trn_links_counties_gdf['segment_length'] = trn_links_counties_gdf.geometry.length
+
+    # For each original link, find the polygon with the longest segment
+    idx = trn_links_counties_gdf.groupby(['A','B'])['segment_length'].idxmax()
+    longest_segments = trn_links_counties_gdf.loc[idx]
+    # Merge 'county_name' back to trn_links_gdf
+    trn_links_gdf = trn_links_gdf.merge(
+        longest_segments[['A', 'B', 'county_name']],
+        on=['A', 'B'],
+        how='left'
+    )
+    logger.info(f"trn_links_gdf with county_name:\n{trn_links_gdf}")
+    # merge county name back into trn_data
+    trn_data = pd.merge(
+        left=trn_data,
+        right=trn_links_gdf[['A', 'B', 'mode','county_name']],
+        how='left',
+        validate='many_to_one',
+    )
+    logger.info(f'trn_data:\n{trn_data}')
+    logger.info(f'\n{trn_data.describe()}')
 
     # Load roadway network BRT treatment data
     loaded_roadway_file = MODEL_DIR/"hwy"/"iter3"/"avgload5period_vehclasses.csv"
@@ -264,24 +306,30 @@ def calculate_brt_service_miles(logger, MODEL_DIR):
     trn_data.fillna({'brt':0}, inplace=True)
     trn_data['is_brt'] = trn_data['brt'] > 0
 
-    # by mode
-    trn_data_by_mode     = trn_data.groupby(['mode'         ]).agg({'service_miles':'sum'})
-    trn_data_by_mode_brt = trn_data.groupby(['mode','is_brt']).agg({'service_miles':'sum'})
-    logger.info(f"trn_data_by_mode:\n{trn_data_by_mode}")
-    logger.info(f"trn_data_by_mode_brt:\n{trn_data_by_mode_brt}")
-
     metrics_dict_list = []
-    for mode_num in trn_data_by_mode.index.to_list():
-        metrics = {'mode':mode_num}
-        metrics['transit_service_miles']     = trn_data_by_mode.loc[mode_num]['service_miles']
-        metrics['transit_service_miles_brt'] = 0
-        if (mode_num, True) in trn_data_by_mode_brt.index:
-            metrics['transit_service_miles_brt'] = trn_data_by_mode_brt.loc[mode_num,True]['service_miles']
+    # by mode or county
+    for groupby_col in ['mode','county_name']:
+        trn_data_grouped     = trn_data.groupby([groupby_col        ]).agg({'service_miles':'sum'})
+        trn_data_grouped_brt = trn_data.groupby([groupby_col,'is_brt']).agg({'service_miles':'sum'})
+        logger.info(f"trn_data_grouped:\n{trn_data_grouped}")
+        logger.info(f"trn_data_grouped_brt:\n{trn_data_grouped_brt}")
 
-        metrics_dict_list.append(metrics)
+        # for county-based metric, leave mode = None
+        # for mode-based metric, leave county_name = None
+        for grouped_val in trn_data_grouped.index.to_list():
+            if groupby_col == "mode":
+                metrics = {'mode':grouped_val}
+            else:
+                metrics = {'county_name':grouped_val}
+            metrics['transit_service_miles']     = trn_data_grouped.loc[grouped_val]['service_miles']
+            metrics['transit_service_miles_brt'] = 0
+            if (grouped_val, True) in trn_data_grouped_brt.index:
+                metrics['transit_service_miles_brt'] = trn_data_grouped_brt.loc[grouped_val,True]['service_miles']
+
+            metrics_dict_list.append(metrics)
     
-    # all modes: use mode=0
-    metrics = {'mode':'0'}
+    # all modes/counties: use mode=0
+    metrics = {'mode':'0', 'county_name':'All Counties'}
     metrics['transit_service_miles'    ] = trn_data.service_miles.sum()
     metrics['transit_service_miles_brt'] = trn_data.loc[trn_data.is_brt, 'service_miles'].sum()
     metrics_dict_list.append(metrics)
@@ -348,7 +396,7 @@ def calculate_crowded_passenger_hours(logger, MODEL_DIR):
     return metrics_df
 
 if __name__ == '__main__':
-    pd.set_option('display.width', None)
+    pd.set_option('display.width', 800)
     pd.set_option('display.max_columns', None)
 
     MODEL_DIR = pathlib.Path(".")
@@ -373,12 +421,14 @@ if __name__ == '__main__':
 
     # these both have a mode column; join
     metrics_df = pd.merge(
-        left=metrics_brt_df,
+        left=metrics_brt_df.loc[pd.notnull(metrics_brt_df['mode'])],
         right=metrics_crowding_df,
         on='mode',
         how='outer',
         validate='one_to_one'
     )
+    # concatenate with county summaries of brt
+    metrics_df = pd.concat([metrics_df, metrics_brt_df.loc[pd.isnull(metrics_brt_df['mode'])]], ignore_index=True)
     # write it out
     output_file = MODEL_DIR / "metrics" / "NPA_metrics_Goal_3E_3F.csv"
     metrics_df.to_csv(output_file, index=False)
