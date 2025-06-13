@@ -68,16 +68,16 @@ def tally_access_to_jobs_v3(household_autos_df):
     """
     print("\nTallying accessible jobs (v3)...")
     # Read travel‐time (time‐skim) data
-    tt_file = pathlib.Path("database/TimeSkimsDatabaseAM.csv")
-    print(f"Reading travel‐time data from: {tt_file}")
+    tt_file = pathlib.Path("database") / "TimeSkimsDatabaseAM.csv"
+    print(f"Reading travel time data from: {tt_file}")
     traveltime_df = pd.read_csv(tt_file)[['orig', 'dest', 'da', 'daToll', 'wTrnW', 'bike', 'walk']]
     traveltime_df.replace(-999.0, np.nan, inplace=True)
     traveltime_df['wtrn_45'] = (traveltime_df['wTrnW'] <= 45).astype(int)
 
     # Read TAZ employment and socioeconomic data
-    taz_file = pathlib.Path("landuse/tazData.csv")
+    taz_file = pathlib.Path("landuse") / "tazData.csv"
     print(f"Reading TAZ data from: {taz_file}")
-    taz_df = pd.read_csv(taz_file)[['ZONE', 'TOTHH', 'TOTPOP', 'EMPRES', 'TOTEMP']]
+    taz_df = pd.read_csv(taz_file)[['ZONE','TOTHH', 'TOTPOP', 'EMPRES', 'TOTEMP']]
     total_emp = taz_df['TOTEMP'].sum()
     total_pop = taz_df['TOTPOP'].sum()
     total_hh  = taz_df['TOTHH'].sum()
@@ -86,11 +86,22 @@ def tally_access_to_jobs_v3(household_autos_df):
     print(f"Regional TOTHH={taz_df['TOTHH'].sum():,}")
     # metrics_dict.update({"total_jobs": total_emp, "total_pop": total_pop, "total_hh": total_hh})
 
+    # read taz -> county mapping
+    taz_county_df = pd.read_csv(
+        pathlib.Path(__file__).parent.parent.parent / "geographies" / "taz-superdistrict-county.csv",
+        usecols=['ZONE','COUNTY_NAME']
+    )
+    taz_county_df.rename(columns={'COUNTY_NAME':'county_name'}, inplace=True)
+    taz_df = pd.merge(left=taz_df, right=taz_county_df, how='left', validate='one_to_one')
+    COUNTIES_LIST = taz_county_df['county_name'].drop_duplicates().tolist()
+    if 'External' in COUNTIES_LIST: COUNTIES_LIST.remove('External')
+
     # Merge employment counts to time-skims (matching destination TAZ)
-    traveltime_df = traveltime_df.merge(taz_df[['ZONE', 'TOTEMP']], left_on="dest", right_on="ZONE", how="left")
+    traveltime_df = traveltime_df.merge(taz_df[['ZONE','TOTEMP']], left_on="dest", right_on="ZONE", how="left")
     traveltime_df.drop(columns="ZONE", inplace=True)
     traveltime_df['wtrn_45*TOTEMP'] = traveltime_df['wtrn_45']*traveltime_df['TOTEMP']  # employment within 45 min
     traveltime_df['wTrnW'] = pd.to_numeric(traveltime_df['wTrnW'])
+    print(f"traveltime_df.head():\n{traveltime_df.head()}")
 
     # Aggregate accessible jobs to origins
     accessiblejobs_df = traveltime_df.groupby('orig').agg(
@@ -126,7 +137,7 @@ def tally_access_to_jobs_v3(household_autos_df):
 
     # Merge concerned socioeconomic info into aggregated accessible jobs (match origin TAZ)
     accessiblejobs_df = accessiblejobs_df.merge(
-        taz_df[['TAZ1454', 'TOTPOP', 'TOTHH', 'taz_epc_22', 'taz_epc_18', 'zero_car_hh', 'car_light_hh']],
+        taz_df[['TAZ1454', 'county_name', 'TOTPOP', 'TOTHH', 'taz_epc_22', 'taz_epc_18', 'zero_car_hh', 'car_light_hh']],
         left_on='orig', right_on='TAZ1454', how='left', validate="one_to_one")
     print(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
     # columns are now: orig, wTrnW_mean, TOTEMP_sum , wtrn_45_TOTEMP_sum, 
@@ -145,18 +156,28 @@ def tally_access_to_jobs_v3(household_autos_df):
     print(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
 
     metrics_dict_list = []
-    for epc in ["all_taz", "epc_22", "epc_18"]:
+    for geography in ["all_taz", "epc_22", "epc_18"] + COUNTIES_LIST:
         metrics_dict = {}
-        metrics_dict['epc_category'] = epc
+
+        metrics_dict['county'] = 'all counties'
+        metrics_dict['epc_category'] = 'N/A'
+        if geography.startswith("epc"):
+            metrics_dict['epc_category'] = geography
+        elif geography != 'all_taz':
+            metrics_dict['county'] = geography
+
         metrics_dict['auto_hh_category'] = 'N/A'
 
-        # select for within EPC
-        if epc == "all_taz":
+        # select for within EPC or within county
+        if geography == "all_taz":
             sub_df = accessiblejobs_df
             totalpop_subset = total_pop
+        elif geography.startswith("epc"):
+            sub_df = accessiblejobs_df[accessiblejobs_df[f"taz_{geography}"] == 1]
+            totalpop_subset = taz_df.loc[taz_df[f"taz_{geography}"] == 1, "TOTPOP"].sum()
         else:
-            sub_df = accessiblejobs_df[accessiblejobs_df[f"taz_{epc}"] == 1]
-            totalpop_subset = taz_df.loc[taz_df[f"taz_{epc}"] == 1, "TOTPOP"].sum()
+            sub_df = accessiblejobs_df[accessiblejobs_df['county_name'] == geography]
+            totalpop_subset = taz_df.loc[taz_df['county_name'] == geography, "TOTPOP"].sum()
 
         # metrics_dict[f"wtrn_45_acc_jobs{suffix}"] = sub_df['wtrn_45'].sum()
         metrics_dict["wtrn_45_acc_jobs_weighted"] = sub_df['sum(wtrn_45*TOTEMP)*TOTPOP'].sum()
@@ -166,7 +187,7 @@ def tally_access_to_jobs_v3(household_autos_df):
 
         metrics_dict_list.append(metrics_dict)
 
-        # ratio of EPC / all -- the first one (index=zero) is epc=N\A
+        # ratio of EPC / all -- the first one (index=zero) is region-wide
         metrics_dict["acc_jobs_to_all_jobs_ratio"] = \
             metrics_dict["wtrn_45_acc_accessible_job_share"] / metrics_dict_list[0]["wtrn_45_acc_accessible_job_share"]
 
@@ -179,6 +200,7 @@ def tally_access_to_jobs_v3(household_autos_df):
     metrics_dict_list = []
     for auto_hh_category in ["TOTHH","zero_car_hh", "car_light_hh"]:
         metrics_dict = {}
+        metrics_dict['county'] = 'all counties'
         metrics_dict['epc_category'] = 'N/A'
         metrics_dict['auto_hh_category'] = auto_hh_category
 
