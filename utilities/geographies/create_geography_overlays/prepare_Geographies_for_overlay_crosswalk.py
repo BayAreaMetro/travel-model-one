@@ -1,6 +1,8 @@
 USAGE = """
 
-Create intersection of Growth Geography and TRAs for PBA50+.
+In PBA50+, we have to create a number of crosswalks between policy geographies (e.g. Growth Geographies, TRAs) and TAZs.
+The crosswalks are usually created via spatial overlay script (\utilities\geographies\create_geography_overlays\TAZ_otherGeographies_overlay_crosswalk.py). This script
+prepares the geographies data for the overlay crosswalk script, including: assigning unique ID, dissolving/intersecting/unioning raw geographies into the desired categories, etc. 
 
 """
 
@@ -50,8 +52,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description = USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('rtp_v', type=str, choices=['RTP2021FBP','RTP2025DBP', 'RTP2025FBP', 'RTP2025EIR2'], help='RTP and version of Growth Geographies data')
-    # parser.add_argument('--test', action='store_true', help='If passed, writes output to cwd instead of METRICS_OUTPUT_DIR')
+    parser.add_argument('rtp_v', type=str, choices=['RTP2021FBP','RTP2025DBP', 'RTP2025FBP', 'RTP2025EIR2'], help='RTP and version of Geographies data')
     my_args = parser.parse_args()
 
     # set up logging
@@ -90,6 +91,8 @@ if __name__ == '__main__':
         GG_nonPPA_TOC_SHAPE_FILE = os.path.join(QAQC_DIR, 'gg_nonPPA_toc_pba50plus_eir2.shp')        
     ## create dissolved or unioned growth geographies based on RTP and growth geographies version
     
+    LOG_FILE = os.path.join(OUTPUT_M_DIR, 'prepare_Geographies_for_overlay_crosswalk_{}_{}.log'.format(my_args.rtp_v, today))
+
     if my_args.rtp_v == 'RTP2021FBP':   # PBA50
 
         # GG

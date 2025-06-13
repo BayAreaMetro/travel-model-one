@@ -3,6 +3,8 @@ USAGE = """
 Create crosswalk between TAZ and Census geographies (e.g. tract, block, etc.), or between TAZ / Tract and other geographies (e.g. Growth Geographies, TRA).
 It is based on "largest area within" method, i.e. if a TAZ falls into multiple Census Tracts, it is assigned to the Tract with the largest intersection area with the TAZ.
 
+Depending on the needs, may run \utilities\geographies\create_geography_overlays\prepare_Geographies_for_overlay_crosswalk.py first to prepare the base and overlay geographies.
+
 Args:
     base_geo_file: full directory of the base spatial layer
     base_geo_name: short name of the base layer, e.g. 'TAZ1454', 'Tract20', 'TRA'
