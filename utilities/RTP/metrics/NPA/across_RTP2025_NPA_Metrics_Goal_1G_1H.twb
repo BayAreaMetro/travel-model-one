@@ -1,0 +1,865 @@
+<?xml version='1.0' encoding='utf-8' ?>
+
+<!-- build 20251.25.0520.1026                               -->
+<workbook original-version='18.1' source-build='2025.1.2 (20251.25.0520.1026)' source-platform='win' version='18.1' xml:base='https://10ay.online.tableau.com' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <document-format-change-manifest>
+    <AnimationOnByDefault />
+    <MarkAnimation />
+    <ObjectModelEncapsulateLegacy />
+    <ObjectModelTableType />
+    <SchemaViewerObjectModel />
+    <SheetIdentifierTracking />
+    <SortTagCleanup />
+    <WindowsPersistSimpleIdentifiers />
+  </document-format-change-manifest>
+  <repository-location id='across_RTP2025_FBP_NPA_Metrics_Goal_1G_1H' path='/t/metropolitantransportationcommission/workbooks' revision='1.6' site='metropolitantransportationcommission' />
+  <preferences>
+    <preference name='ui.encoding.shelf.height' value='24' />
+    <preference name='ui.shelf.height' value='26' />
+  </preferences>
+  <datasources>
+    <datasource caption='NPA_Metrics_Goal_1G_1H' inline='true' name='federated.0ok1dmo1gjcpiw12b3bb60q7b338' version='18.1'>
+      <connection class='federated'>
+        <named-connections>
+          <named-connection caption='NPA_Metrics_Goal_1G_1H' name='textscan.0xi0b6p181py7w1b4h9w91cq0yet'>
+            <connection class='textscan' directory='M:/Application/Model One/RTP2025/Blueprint/across_runs_NetworkPerformanceAssessment' filename='NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv' password='' server='' workgroup-auth-mode='as-is' />
+          </named-connection>
+          <named-connection caption='ModelRuns_RTP2025' name='excel-direct.0z2qwgk0t8lzxu1evncfa0pakw2e'>
+            <connection class='excel-direct' cleaning='no' compat='no' dataRefreshTime='' filename='M:/Application/Model One/RTP2025/Blueprint/across_runs_NetworkPerformanceAssessment/ModelRuns_NPA.xlsx' interpretationMode='0' password='' server='' validate='no' workgroup-auth-mode='as-is' />
+          </named-connection>
+        </named-connections>
+        <relation all='true' connection='textscan.0xi0b6p181py7w1b4h9w91cq0yet' include-siblings='false' is-recursive='false' name='NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+' path='' type='batch-union'>
+          <database-filter>
+            <expression op='='>
+              <expression op='NPA_Metrics_Goal_1G_1H_*' />
+            </expression>
+          </database-filter>
+          <table-filter />
+          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+            <column datatype='string' name='epc_category' />
+            <column datatype='string' name='base_id' />
+            <column datatype='string' name='scenario_id' />
+            <column datatype='real' name='CS diff work/school' />
+            <column datatype='real' name='num_workers_students' />
+            <column datatype='real' name='per_capita CS diff work/school' />
+            <column datatype='real' name='CS diff nonmand' />
+            <column datatype='real' name='num_persons' />
+            <column datatype='real' name='per_capita CS diff nonmand' />
+            <column datatype='real' name='per_capita CS diff combined' />
+            <column datatype='real' name='per_capita CS diff work/school relative_to_all' />
+            <column datatype='real' name='per_capita CS diff nonmand relative_to_all' />
+            <column datatype='real' name='per_capita CS diff combined relative_to_all' />
+            <column datatype='string' name='Path' />
+          </columns>
+        </relation>
+        <metadata-records>
+          <metadata-record class='capability'>
+            <remote-name />
+            <remote-type>0</remote-type>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias />
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>epc_category</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[epc_category]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>epc_category</remote-alias>
+            <ordinal>0</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>base_id</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[base_id]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>base_id</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>scenario_id</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[scenario_id]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>scenario_id</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>CS diff work/school</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[CS diff work/school]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>CS diff work/school</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>num_workers_students</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[num_workers_students]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>num_workers_students</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita CS diff work/school</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita CS diff work/school]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>per_capita CS diff work/school</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita CS diff work/school annualized</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita CS diff work/school annualized]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>per_capita CS diff work/school annualized</remote-alias>
+            <ordinal>6</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>CS diff nonmand</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[CS diff nonmand]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>CS diff nonmand</remote-alias>
+            <ordinal>7</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>num_persons</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[num_persons]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>num_persons</remote-alias>
+            <ordinal>8</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita CS diff nonmand</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita CS diff nonmand]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>per_capita CS diff nonmand</remote-alias>
+            <ordinal>9</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita CS diff nonmand annualized</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita CS diff nonmand annualized]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>per_capita CS diff nonmand annualized</remote-alias>
+            <ordinal>10</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita CS diff annualized combined</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita CS diff annualized combined]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>per_capita CS diff annualized combined</remote-alias>
+            <ordinal>11</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita CS diff work/school relative_to_all</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita CS diff work/school relative_to_all]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>per_capita CS diff work/school relative_to_all</remote-alias>
+            <ordinal>12</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita CS diff nonmand relative_to_all</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita CS diff nonmand relative_to_all]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>per_capita CS diff nonmand relative_to_all</remote-alias>
+            <ordinal>13</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>per_capita CS diff annualized combined relative_to_all</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[per_capita CS diff annualized combined relative_to_all]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>per_capita CS diff annualized combined relative_to_all</remote-alias>
+            <ordinal>14</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>Path</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[Path]</local-name>
+            <parent-name>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+]</parent-name>
+            <remote-alias>Path</remote-alias>
+            <ordinal>15</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <object-id>[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]</object-id>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column datatype='string' name='[:Measure Names]' role='dimension' type='nominal'>
+        <aliases>
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:CS diff nonmand:qk]&quot;' value='Accessibility Benefit (Non Mandatory)' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:CS diff work/school:qk]&quot;' value='Accessibility Benefit (Mandatory)' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff annualized combined relative_to_all:qk]&quot;' value='1H: Per-capita Accessibility Benefit ratio, EPC/all ' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff annualized combined:qk]&quot;' value='1G: Per-Capita Accessibility Benefit, Annualized' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff combined relative_to_all:qk]&quot;' value='1H: Per-capita Accessibility Benefit ratio, EPC/all' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff combined:qk]&quot;' value='1G: Per-capita Accessibility Benefit' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand annualized:qk]&quot;' value='Per-capita Accessibility Benefit, Annualized (Non Mandatory)' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand relative_to_all:qk]&quot;' value='Per-capita Accessibility Benefit (Non Mandatory) ratio, EPC/all' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand:qk]&quot;' value='Per-capita Accessibility Benefit (Non Mandatory)' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school annualized:qk]&quot;' value='Per-capita Accessibility Benefit, Annualized (Mandatory)' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school relative_to_all:qk]&quot;' value='Per-capita Accessibility Benefit (Mandatory) ratio, EPC/all' />
+          <alias key='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school:qk]&quot;' value='Per-capita Accessibility Benefit (Mandatory)' />
+        </aliases>
+      </column>
+      <column datatype='real' name='[CS diff nonmand]' role='measure' type='quantitative' />
+      <column datatype='real' name='[CS diff work/school]' role='measure' type='quantitative' />
+      <column caption='NPA_Metrics_Goal_1G_1H' datatype='table' name='[__tableau_internal_object_id__].[NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A]' role='measure' type='quantitative' />
+      <column caption='Base Id' datatype='string' name='[base_id]' role='dimension' type='nominal' />
+      <column caption='Epc Category' datatype='string' name='[epc_category]' role='dimension' type='nominal' />
+      <column caption='Num Persons' datatype='real' name='[num_persons]' role='measure' type='quantitative' />
+      <column caption='Num Workers Students' datatype='real' name='[num_workers_students]' role='measure' type='quantitative' />
+      <column datatype='real' default-format='n#,##0.00;-#,##0.00' name='[per_capita CS diff annualized combined relative_to_all]' role='measure' type='quantitative' />
+      <column datatype='real' name='[per_capita CS diff annualized combined]' role='measure' type='quantitative' />
+      <column datatype='real' name='[per_capita CS diff nonmand annualized]' role='measure' type='quantitative' />
+      <column caption='per capita CS diff nonmand relative to all' datatype='real' default-format='n#,##0.0;-#,##0.0' name='[per_capita CS diff nonmand relative_to_all]' role='measure' type='quantitative' />
+      <column caption='per capita CS diff nonmand' datatype='real' default-format='n#,##0.000;-#,##0.000' name='[per_capita CS diff nonmand]' role='measure' type='quantitative' />
+      <column datatype='real' name='[per_capita CS diff work/school annualized]' role='measure' type='quantitative' />
+      <column caption='per capita CS diff work/school relative to all' datatype='real' default-format='n#,##0.0;-#,##0.0' name='[per_capita CS diff work/school relative_to_all]' role='measure' type='quantitative' />
+      <column caption='per capita CS diff work/school' datatype='real' default-format='n#,##0.000;-#,##0.000' name='[per_capita CS diff work/school]' role='measure' type='quantitative' />
+      <column caption='Scenario Id' datatype='string' name='[scenario_id]' role='dimension' type='nominal' />
+      <column-instance column='[CS diff nonmand]' derivation='Attribute' name='[attr:CS diff nonmand:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[CS diff work/school]' derivation='Attribute' name='[attr:CS diff work/school:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[per_capita CS diff annualized combined relative_to_all]' derivation='Attribute' name='[attr:per_capita CS diff annualized combined relative_to_all:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[per_capita CS diff annualized combined]' derivation='Attribute' name='[attr:per_capita CS diff annualized combined:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[per_capita CS diff nonmand annualized]' derivation='Attribute' name='[attr:per_capita CS diff nonmand annualized:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[per_capita CS diff nonmand relative_to_all]' derivation='Attribute' name='[attr:per_capita CS diff nonmand relative_to_all:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[per_capita CS diff nonmand]' derivation='Attribute' name='[attr:per_capita CS diff nonmand:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[per_capita CS diff work/school annualized]' derivation='Attribute' name='[attr:per_capita CS diff work/school annualized:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[per_capita CS diff work/school relative_to_all]' derivation='Attribute' name='[attr:per_capita CS diff work/school relative_to_all:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[per_capita CS diff work/school]' derivation='Attribute' name='[attr:per_capita CS diff work/school:qk]' pivot='key' type='quantitative' />
+      <folders-common>
+        <folder name='Mandatory Tour Accessibility'>
+          <folder-item name='[CS diff work/school]' type='field' />
+          <folder-item name='[num_persons]' type='field' />
+          <folder-item name='[per_capita CS diff work/school annualized]' type='field' />
+          <folder-item name='[per_capita CS diff work/school relative_to_all]' type='field' />
+          <folder-item name='[per_capita CS diff work/school]' type='field' />
+        </folder>
+        <folder name='NonMandatory Tour Accessibility'>
+          <folder-item name='[CS diff nonmand]' type='field' />
+          <folder-item name='[num_workers_students]' type='field' />
+          <folder-item name='[per_capita CS diff nonmand annualized]' type='field' />
+          <folder-item name='[per_capita CS diff nonmand relative_to_all]' type='field' />
+          <folder-item name='[per_capita CS diff nonmand]' type='field' />
+        </folder>
+      </folders-common>
+      <layout dim-ordering='alphabetic' measure-ordering='alphabetic' show-structure='false' />
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
+      </semantic-values>
+      <object-graph>
+        <objects>
+          <object caption='NPA_Metrics_Goal_1G_1H' id='NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv_8BC8E9A36AA94191B52AAA03D8FF054A'>
+            <properties context=''>
+              <relation all='true' connection='textscan.0xi0b6p181py7w1b4h9w91cq0yet' include-siblings='false' is-recursive='false' name='NPA_Metrics_Goal_1G_1H_2035_TM160_DBP_Plan_08b.csv+' path='' type='batch-union'>
+                <database-filter>
+                  <expression op='='>
+                    <expression op='NPA_Metrics_Goal_1G_1H_*' />
+                  </expression>
+                </database-filter>
+                <table-filter />
+                <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+                  <column datatype='string' name='epc_category' />
+                  <column datatype='string' name='base_id' />
+                  <column datatype='string' name='scenario_id' />
+                  <column datatype='real' name='CS diff work/school' />
+                  <column datatype='real' name='num_workers_students' />
+                  <column datatype='real' name='per_capita CS diff work/school' />
+                  <column datatype='real' name='CS diff nonmand' />
+                  <column datatype='real' name='num_persons' />
+                  <column datatype='real' name='per_capita CS diff nonmand' />
+                  <column datatype='real' name='per_capita CS diff combined' />
+                  <column datatype='real' name='per_capita CS diff work/school relative_to_all' />
+                  <column datatype='real' name='per_capita CS diff nonmand relative_to_all' />
+                  <column datatype='real' name='per_capita CS diff combined relative_to_all' />
+                  <column datatype='string' name='Path' />
+                </columns>
+              </relation>
+            </properties>
+          </object>
+        </objects>
+      </object-graph>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Accessibility Metrics Table'>
+      <layout-options>
+        <caption>
+          <formatted-text>
+            <run>Goal 1 scripts: </run>
+            <run auto-url='true' hyperlink='tabdoc:load-url url=&amp;quot;https://app.asana.com/1/11860278793487/project/1205004773899709/task/1209227244858523?focus=true&amp;quot;'>https://app.asana.com/1/11860278793487/project/1205004773899709/task/1209227244858523?focus=true</run>
+            <run>
+Operationalize Goal 1 Scripts: </run>
+            <run auto-url='true' hyperlink='tabdoc:load-url url=&amp;quot;https://app.asana.com/1/11860278793487/project/1205004773899709/task/1210076017362252?focus=true&amp;quot;'>https://app.asana.com/1/11860278793487/project/1205004773899709/task/1210076017362252?focus=true</run>
+            <run>&#10;Source: </run>
+            <run auto-url='true' hyperlink='tabdoc:load-url url=&amp;quot;https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/RTP/metrics/NPA_metrics_Goal_1G_1H.py&amp;quot;'>https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/RTP/metrics/NPA_metrics_Goal_1G_1H.py</run>
+            <run>
+
+Note that the table names are aliased from the variable names.
+</run>
+            <run fontcolor='#000000' fontsize='9'>Goal #1: Develop an integrated, well-connected transit network that: improves access, particularly for equity priority and transit reliant populations; improves connections between different transit modes and operators; and enables transit to be the preferred mode of travel for more types of trips.</run>
+            <run>Æ&#10;</run>
+            <run fontcolor='#000000'>1G) Total regional accessibility benefit in annualized minutes of equivalent travel time savings</run>
+            <run>Æ&#10;</run>
+            <run fontcolor='#000000'>1H) Ratio of the per-capita regional accessibility benefit for EPC residents relative to the per-capita regional accessibility benefit for all travelers</run>
+          </formatted-text>
+        </caption>
+      </layout-options>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='NPA_Metrics_Goal_1G_1H' name='federated.0ok1dmo1gjcpiw12b3bb60q7b338' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0ok1dmo1gjcpiw12b3bb60q7b338'>
+            <column datatype='real' name='[CS diff nonmand]' role='measure' type='quantitative' />
+            <column datatype='real' name='[CS diff work/school]' role='measure' type='quantitative' />
+            <column-instance column='[CS diff nonmand]' derivation='Attribute' name='[attr:CS diff nonmand:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[CS diff work/school]' derivation='Attribute' name='[attr:CS diff work/school:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[num_persons]' derivation='Attribute' name='[attr:num_persons:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[num_workers_students]' derivation='Attribute' name='[attr:num_workers_students:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita CS diff annualized combined relative_to_all]' derivation='Attribute' name='[attr:per_capita CS diff annualized combined relative_to_all:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita CS diff annualized combined]' derivation='Attribute' name='[attr:per_capita CS diff annualized combined:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita CS diff nonmand annualized]' derivation='Attribute' name='[attr:per_capita CS diff nonmand annualized:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita CS diff nonmand relative_to_all]' derivation='Attribute' name='[attr:per_capita CS diff nonmand relative_to_all:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita CS diff nonmand]' derivation='Attribute' name='[attr:per_capita CS diff nonmand:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita CS diff work/school annualized]' derivation='Attribute' name='[attr:per_capita CS diff work/school annualized:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita CS diff work/school relative_to_all]' derivation='Attribute' name='[attr:per_capita CS diff work/school relative_to_all:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[per_capita CS diff work/school]' derivation='Attribute' name='[attr:per_capita CS diff work/school:qk]' pivot='key' type='quantitative' />
+            <column caption='Base Id' datatype='string' name='[base_id]' role='dimension' type='nominal' />
+            <column caption='Epc Category' datatype='string' name='[epc_category]' role='dimension' type='nominal' />
+            <column-instance column='[base_id]' derivation='None' name='[none:base_id:nk]' pivot='key' type='nominal' />
+            <column-instance column='[epc_category]' derivation='None' name='[none:epc_category:nk]' pivot='key' type='nominal' />
+            <column-instance column='[scenario_id]' derivation='None' name='[none:scenario_id:nk]' pivot='key' type='nominal' />
+            <column caption='Num Persons' datatype='real' name='[num_persons]' role='measure' type='quantitative' />
+            <column caption='Num Workers Students' datatype='real' name='[num_workers_students]' role='measure' type='quantitative' />
+            <column datatype='real' default-format='n#,##0.00;-#,##0.00' name='[per_capita CS diff annualized combined relative_to_all]' role='measure' type='quantitative' />
+            <column datatype='real' name='[per_capita CS diff annualized combined]' role='measure' type='quantitative' />
+            <column datatype='real' name='[per_capita CS diff nonmand annualized]' role='measure' type='quantitative' />
+            <column caption='per capita CS diff nonmand relative to all' datatype='real' default-format='n#,##0.0;-#,##0.0' name='[per_capita CS diff nonmand relative_to_all]' role='measure' type='quantitative' />
+            <column caption='per capita CS diff nonmand' datatype='real' default-format='n#,##0.000;-#,##0.000' name='[per_capita CS diff nonmand]' role='measure' type='quantitative' />
+            <column datatype='real' name='[per_capita CS diff work/school annualized]' role='measure' type='quantitative' />
+            <column caption='per capita CS diff work/school relative to all' datatype='real' default-format='n#,##0.0;-#,##0.0' name='[per_capita CS diff work/school relative_to_all]' role='measure' type='quantitative' />
+            <column caption='per capita CS diff work/school' datatype='real' default-format='n#,##0.000;-#,##0.000' name='[per_capita CS diff work/school]' role='measure' type='quantitative' />
+            <column caption='Scenario Id' datatype='string' name='[scenario_id]' role='dimension' type='nominal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[:Measure Names]'>
+            <groupfilter function='union' user:op='manual'>
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:CS diff work/school:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:num_workers_students:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school annualized:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school relative_to_all:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:CS diff nonmand:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:num_persons:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand annualized:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand relative_to_all:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff annualized combined:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff annualized combined relative_to_all:qk]&quot;' />
+            </groupfilter>
+          </filter>
+          <manual-sort column='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[:Measure Names]' direction='ASC'>
+            <dictionary>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:CS diff work/school:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:num_workers_students:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school annualized:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff work/school relative_to_all:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:CS diff nonmand:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:num_persons:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand annualized:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff nonmand relative_to_all:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff annualized combined:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[attr:per_capita CS diff annualized combined relative_to_all:qk]&quot;</bucket>
+            </dictionary>
+          </manual-sort>
+          <filter class='categorical' column='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:base_id:nk]'>
+            <groupfilter function='except' user:ui-domain='database' user:ui-enumeration='exclusive' user:ui-marker='enumerate'>
+              <groupfilter function='level-members' level='[none:base_id:nk]' />
+              <groupfilter function='member' level='[none:base_id:nk]' member='&quot;2035_TM161_FBP_NoProject_06&quot;' />
+            </groupfilter>
+          </filter>
+          <manual-sort column='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:epc_category:nk]' direction='ASC'>
+            <dictionary>
+              <bucket>&quot;all_taz&quot;</bucket>
+              <bucket>&quot;epc_22&quot;</bucket>
+              <bucket>&quot;epc_18&quot;</bucket>
+            </dictionary>
+          </manual-sort>
+          <slices>
+            <column>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[:Measure Names]</column>
+            <column>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:base_id:nk]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' field='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[:Measure Names]' value='79' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='width' field='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:base_id:nk]' value='88' />
+            <format attr='height' field='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[:Measure Names]' value='96' />
+            <format attr='width' field='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:scenario_id:nk]' value='80' />
+            <format attr='width' field='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:epc_category:nk]' value='64' />
+          </style-rule>
+          <style-rule element='label'>
+            <format attr='vertical-align' field='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[:Measure Names]' value='bottom' />
+            <format attr='wrap' field='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:base_id:nk]' value='on' />
+            <format attr='wrap' field='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:scenario_id:nk]' value='on' />
+          </style-rule>
+          <style-rule element='pane'>
+            <format attr='band-color' scope='cols' value='#f3ebf3' />
+          </style-rule>
+          <style-rule element='table'>
+            <format attr='band-size' scope='cols' value='5' />
+          </style-rule>
+          <style-rule element='worksheet'>
+            <format attr='font-size' value='8' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <encodings>
+              <text column='[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[Multiple Values]' />
+            </encodings>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows>([federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:base_id:nk] / ([federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:scenario_id:nk] / [federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:epc_category:nk]))</rows>
+        <cols>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[:Measure Names]</cols>
+      </table>
+      <simple-id uuid='{691BF5FF-9ADC-417D-8398-C4776BAD0B85}' />
+    </worksheet>
+  </worksheets>
+  <windows source-height='30'>
+    <window class='worksheet' maximized='true' name='Accessibility Metrics Table'>
+      <cards>
+        <edge name='left'>
+          <strip size='161'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+            <card type='measures' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='bottom'>
+          <strip size='203'>
+            <card type='caption' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:base_id:nk]</field>
+            <field>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:category:nk]</field>
+            <field>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:description:nk]</field>
+            <field>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:epc_category:nk]</field>
+            <field>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:run_set:nk]</field>
+            <field>[federated.0ok1dmo1gjcpiw12b3bb60q7b338].[none:scenario_id:nk]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{57F91EB8-85F4-435C-AC1B-ADB42968FD0C}' />
+    </window>
+  </windows>
+  <thumbnails>
+    <thumbnail height='192' name='Accessibility Metrics Table' width='192'>
+      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
+      RK5CYII=
+    </thumbnail>
+  </thumbnails>
+</workbook>
