@@ -26,7 +26,7 @@ server_to_drive = {
 output_files = {
     '1A_to_1F': ['NPA_Metrics_Goal_1A_to_1F.csv'],
     '2':['NPA_metrics_Goal_2.csv'],
-    '3':['NPA_metrics_Goal_3A_to_3D.csv','NPA_metrics_Goal_3E_3F.csv','NPA_metrics_Goal_3.log']
+    '3':['NPA_metrics_Goal_3A_to_3D.csv','NPA_metrics_Goal_3A_to_3D_debug.csv', 'NPA_metrics_Goal_3E_3F.csv', 'NPA_metrics_Goal_3.log']
 }
 
 if __name__ == '__main__':
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     M_IP_DIR = pathlib.Path("M:\\Application\\Model One\\RTP2025\\IncrementalProgress")
     ACROSS_DIR = pathlib.Path("M:\\Application\\Model One\\RTP2025\\Blueprint\\across_runs_NetworkPerformanceAssessment")
 
-    SCRIPT = pathlib.Path(f"X:\\travel-model-one-master\\utilities\\RTP\\metrics\\NPA_metrics_Goal_{my_args.script_num}.py")
+    SCRIPT = pathlib.Path(f"X:\\travel-model-one-master\\utilities\\RTP\\metrics\\NPA\\NPA_metrics_Goal_{my_args.script_num}.py")
     for model_run_id in run_dirs.keys():
         # temp
         # if int(model_run_id[:4]) > 2025: continue

@@ -39,7 +39,9 @@ import os
 import pathlib
 import pandas as pd
 import geopandas
+import numpy as np
 import logging
+import copy
 
 # Mode definitions
 MODES_TRANSIT = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
@@ -49,6 +51,12 @@ MODES_TAXI_TNC = [19, 20, 21]
 MODES_SOV = [1, 2]
 MODES_HOV = [3, 4, 5, 6]
 MODES_PRIVATE_AUTO = MODES_SOV + MODES_HOV
+# the following is mainly for debugging
+MODES_BUS = [9, 11, 14, 16]
+MODES_FERRY_LIGHT_RAIL = [10, 15]
+MODES_COMMUTER_RAIL = [13, 18] # commuter rail modes
+MODES_HEAVY_RAIL = [12, 17] # heavy rail mod
+
 
 EFFECTIVE_TRANSIT_SERVICE_HOURS = {'ea': 3, 'am': 4, 'md': 5, 'pm': 4, 'ev': 8} # based on the effective service hours of the transit system
 
@@ -78,6 +86,19 @@ def weighted_average_travel_time(df, modes):
     if subset.num_trips.sum() == 0:
         return None
     return (subset.avg_travel_time_in_mins * subset.num_trips).sum()/subset.num_trips.sum()
+
+# number of trips helper
+def number_of_trips(df, modes):
+    """
+    Calculates number of trips with trip_mode given by list modes
+    from a datafram with columns: trip_mode, avg_travel_time_in_mins, num_trips.
+
+    Returns None if no trips, otherwise the avg_travel_time_in_mins weighted by num_trips
+    """
+    subset = df[df.trip_mode.isin(modes)]
+    if subset.num_trips.sum() == 0:
+        return None
+    return subset.num_trips.sum()
 
 def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
     """
@@ -151,6 +172,8 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
     # --------------------------
     # 3B & 3C: Average Travel Time Ratio Processing
     # --------------------------
+    metrics_odper_debug_key = copy.deepcopy(metrics_odper_key) # key: [od_key, period]
+    logger.info(f"{metrics_odper_debug_key=}")
     logger.info("Loading avg OD trips & travel time data")
     od_tt_avg = pd.read_csv(MODEL_DIR/"core_summaries"/"ODTravelTime_byModeTimeperiodIncome.csv")
     od_tt_avg = od_tt_avg[od_tt_avg.avg_travel_time_in_mins > 0]
@@ -177,6 +200,30 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
             metrics_odper_key[(od_key,period)]["weighted_avg_transit_over_auto_travel_time"] = \
                 metrics_odper_key[(od_key,period)]["weighted_avg_transit_travel_time"] / \
                 metrics_odper_key[(od_key,period)]["weighted_avg_auto_travel_time"]
+            
+            # debug: calculate weighted average travel time and number of trips by mode group
+            metrics_odper_debug_key[(od_key,period)]["weighted_avg_travel_time_BUS"] = \
+                weighted_average_travel_time(selected_od, MODES_BUS)
+            metrics_odper_debug_key[(od_key,period)]["num_trips_BUS"] = \
+                number_of_trips(selected_od, MODES_BUS)
+            
+            metrics_odper_debug_key[(od_key,period)]["weighted_avg_travel_time_FERRY_LIGHTRAIL"] = \
+                weighted_average_travel_time(selected_od, MODES_FERRY_LIGHT_RAIL)
+            metrics_odper_debug_key[(od_key,period)]["num_trips_FERRY_LIGHTRAIL"] = \
+                number_of_trips(selected_od, MODES_FERRY_LIGHT_RAIL)
+
+            metrics_odper_debug_key[(od_key,period)]["weighted_avg_travel_time_COMMUTER_RAIL"] = \
+                weighted_average_travel_time(selected_od, MODES_COMMUTER_RAIL)
+            metrics_odper_debug_key[(od_key,period)]["num_trips_COMMUTER_RAIL"] = \
+                number_of_trips(selected_od, MODES_COMMUTER_RAIL)
+
+            metrics_odper_debug_key[(od_key,period)]["weighted_avg_travel_time_HEAVY_RAIL"] = \
+                weighted_average_travel_time(selected_od, MODES_HEAVY_RAIL)
+            metrics_odper_debug_key[(od_key,period)]["num_trips_HEAVY_RAIL"] = \
+                number_of_trips(selected_od, MODES_HEAVY_RAIL)
+
+            metrics_odper_debug_key[(od_key,period)]["weighted_avg_auto_travel_time"] = \
+                weighted_average_travel_time(selected_od, MODES_PRIVATE_AUTO + MODES_TAXI_TNC)
 
     metrics_dict_list = [metrics_odper_key[(od_key,period)] for od_key,period in metrics_odper_key.keys()]
     metrics_df = pd.DataFrame(metrics_dict_list)
@@ -185,6 +232,27 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
     output_file = MODEL_DIR / "metrics" / "NPA_metrics_Goal_3A_to_3D.csv"
     metrics_df.to_csv(output_file, index=False)
     logger.info(f"Wrote {len(metrics_df)} rows to {output_file}")
+
+    # modify and write out debugging data
+    metrics_debug_dict_list = [metrics_odper_debug_key[(od_key,period)] for od_key,period in metrics_odper_debug_key.keys()]
+    metrics_debug_df = pd.DataFrame(metrics_debug_dict_list)
+    metrics_debug_df.drop(columns=['best_transit_travel_time', 'auto_travel_time', 'transit_ratio_midday_over_am'], inplace=True)  # drop TAZ columns
+    logger.info(f"metrics_df:\n{metrics_debug_df}")
+
+    # calculate ratio
+    for colname in ['BUS', 'FERRY_LIGHTRAIL', 'COMMUTER_RAIL', 'HEAVY_RAIL']:
+        metrics_debug_df['weighted_avg_travel_time_{}'.format(colname)].fillna(0, inplace=True)  # fill NaN with 0
+        metrics_debug_df['num_trips_{}'.format(colname)].fillna(0, inplace=True)  # fill NaN with 0
+        metrics_debug_df["weighted_avg_transit_over_auto_travel_time_{}".format(colname)] = \
+                    metrics_debug_df["weighted_avg_travel_time_{}".format(colname)] / metrics_debug_df["weighted_avg_auto_travel_time"]
+    for colname in metrics_debug_df:
+        if colname.startswith("weighted_avg"):
+            metrics_debug_df.loc[metrics_debug_df[colname] == 0, colname] = np.nan
+
+    # write it out
+    output_file = MODEL_DIR / "metrics" / "NPA_metrics_Goal_3A_to_3D_debug.csv"
+    metrics_debug_df.to_csv(output_file, index=False)
+    logger.info(f"Wrote {len(metrics_debug_df)} rows to {output_file}")
 
 def calculate_brt_service_miles(logger, MODEL_DIR):
     """
