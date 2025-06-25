@@ -58,22 +58,29 @@ def process_households():
     logger.info(f"Household processing completed; household_autos_df.head():\n{household_autos_df.head()}")
     return household_autos_df
 
-def tally_access_to_jobs_v3(household_autos_df):
+def tally_access_to_jobs_v3(household_autos_df, access_type):
     """
     Tally accessible jobs by reading time‐skim data, TAZ employment/socioeconomic data, and the household counts. 
     The function updates metrics_dict with person‐and household–weighted accessible jobs.
     This function is modified based on scenarioMetrics.py function tally_access_to_jobs_v2.
 
+    access_type: either 'walkToTransit' (only consider wTrnW) or 'walkDriveToTransit' (either wTrnW or dTrnW)
+
     Returns pandas.DataFrame with columns
-    epc_category, auto_hh_category, wtrn_45_acc_jobs_weighted, total_jobs_weighted, wtrn_45_acc_accessible_job_share
+    epc_category, auto_hh_category, trn_45_acc_jobs_weighted, total_jobs_weighted, trn_45_acc_accessible_job_share
     """
     logger.info("\nTallying accessible jobs (v3)...")
     # Read travel‐time (time‐skim) data
     tt_file = pathlib.Path("database") / "TimeSkimsDatabaseAM.csv"
     logger.info(f"Reading travel time data from: {tt_file}")
-    traveltime_df = pd.read_csv(tt_file)[['orig', 'dest', 'da', 'daToll', 'wTrnW', 'bike', 'walk']]
+    traveltime_df = pd.read_csv(tt_file)[['orig', 'dest', 'da', 'daToll', 'wTrnW', 'dTrnW', 'bike', 'walk']]
     traveltime_df.replace(-999.0, np.nan, inplace=True)
-    traveltime_df['wtrn_45'] = (traveltime_df['wTrnW'] <= 45).astype(int)
+    if access_type == 'walkToTransit':
+        # transit access is defined as within 45 minutes of walking to transit
+        traveltime_df['trn_45'] = (traveltime_df['wTrnW'] <= 45).astype(int)
+    elif access_type == 'walkDriveToTransit':
+        # transit access is defined as within 45 minutes of either walking or driving to transit
+        traveltime_df['trn_45'] = ((traveltime_df['wTrnW'] <= 45) | (traveltime_df['dTrnW'] <= 45)).astype(int)
 
     # Read TAZ employment and socioeconomic data
     taz_file = pathlib.Path("landuse") / "tazData.csv"
@@ -89,7 +96,7 @@ def tally_access_to_jobs_v3(household_autos_df):
 
     # read taz -> county mapping
     taz_county_df = pd.read_csv(
-        pathlib.Path(__file__).parent.parent.parent / "geographies" / "taz-superdistrict-county.csv",
+        pathlib.Path(__file__).parent.parent.parent.parent / "geographies" / "taz-superdistrict-county.csv",
         usecols=['ZONE','COUNTY_NAME']
     )
     taz_county_df.rename(columns={'COUNTY_NAME':'county_name'}, inplace=True)
@@ -100,15 +107,17 @@ def tally_access_to_jobs_v3(household_autos_df):
     # Merge employment counts to time-skims (matching destination TAZ)
     traveltime_df = traveltime_df.merge(taz_df[['ZONE','TOTEMP']], left_on="dest", right_on="ZONE", how="left")
     traveltime_df.drop(columns="ZONE", inplace=True)
-    traveltime_df['wtrn_45*TOTEMP'] = traveltime_df['wtrn_45']*traveltime_df['TOTEMP']  # employment within 45 min
+    traveltime_df['trn_45*TOTEMP'] = traveltime_df['trn_45']*traveltime_df['TOTEMP']  # employment within 45 min
     traveltime_df['wTrnW'] = pd.to_numeric(traveltime_df['wTrnW'])
+    traveltime_df['dTrnW'] = pd.to_numeric(traveltime_df['dTrnW'])
     logger.info(f"traveltime_df.head():\n{traveltime_df.head()}")
 
     # Aggregate accessible jobs to origins
     accessiblejobs_df = traveltime_df.groupby('orig').agg(
         wTrnW_mean         = pd.NamedAgg(column='wTrnW', aggfunc='mean'),
-        wtrn_45_TOTEMP_sum = pd.NamedAgg(column='wtrn_45*TOTEMP', aggfunc='sum')
-    ).rename(columns={'wtrn_45_TOTEMP_sum':'sum(wtrn_45*TOTEMP)'}).reset_index()
+        dTrnW_mean         = pd.NamedAgg(column='dTrnW', aggfunc='mean'),
+        trn_45_TOTEMP_sum = pd.NamedAgg(column='trn_45*TOTEMP', aggfunc='sum')
+    ).rename(columns={'trn_45_TOTEMP_sum':'sum(trn_45*TOTEMP)'}).reset_index()
     logger.info(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
 
     # --------------------------- Merge concerned socioeconomic data ---------------------------
@@ -141,11 +150,14 @@ def tally_access_to_jobs_v3(household_autos_df):
         taz_df[['TAZ1454', 'county_name', 'TOTPOP', 'TOTHH', 'taz_epc_22', 'taz_epc_18', 'zero_car_hh', 'car_light_hh']],
         left_on='orig', right_on='TAZ1454', how='left', validate="one_to_one")
     logger.info(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
-    # columns are now: orig, wTrnW_mean, TOTEMP_sum , wtrn_45_TOTEMP_sum, 
+    # columns are now: orig, wTrnW_mean, dTrnW_mean, TOTEMP_sum , trn_45_TOTEMP_sum, 
     #                  TAZ1454, TOTPOP, TOTHH, taz_epc_22, taz_epc_18, zero_car_hh, car_light_hh
 
     # Save a debug file (optional)
-    debug_out = pathlib.Path("metrics", "accessed_jobs_by_origin_zone_(intermediate_file).csv")
+    if access_type == 'walkToTransit':
+        debug_out = pathlib.Path("metrics", "accessed_jobs_by_origin_zone_walkToTransit(intermediate_file).csv")
+    elif access_type == 'walkDriveToTransit':
+        debug_out = pathlib.Path("metrics", "accessed_jobs_by_origin_zone_walkDriveToTransit(intermediate_file).csv")
     accessiblejobs_df.to_csv(debug_out, index=False)
     logger.info(f"Debug file written to {debug_out}")
     
@@ -153,7 +165,7 @@ def tally_access_to_jobs_v3(household_autos_df):
     # TODO: It seems like they could be done similarly...
     # TODO: And given that this is about job accessibility, maybe EMPRES would make more sense?
     # --------------------------- Compute population‐weighted accessible jobs ---------------------------
-    accessiblejobs_df['sum(wtrn_45*TOTEMP)*TOTPOP'] = accessiblejobs_df['sum(wtrn_45*TOTEMP)'] * accessiblejobs_df['TOTPOP']
+    accessiblejobs_df['sum(trn_45*TOTEMP)*TOTPOP'] = accessiblejobs_df['sum(trn_45*TOTEMP)'] * accessiblejobs_df['TOTPOP']
     logger.info(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
 
     metrics_dict_list = []
@@ -180,23 +192,23 @@ def tally_access_to_jobs_v3(household_autos_df):
             sub_df = accessiblejobs_df[accessiblejobs_df['county_name'] == geography]
             totalpop_subset = taz_df.loc[taz_df['county_name'] == geography, "TOTPOP"].sum()
 
-        # metrics_dict[f"wtrn_45_acc_jobs{suffix}"] = sub_df['wtrn_45'].sum()
-        metrics_dict["wtrn_45_acc_jobs_weighted"] = sub_df['sum(wtrn_45*TOTEMP)*TOTPOP'].sum()
+        # metrics_dict[f"trn_45_acc_jobs{suffix}"] = sub_df['trn_45'].sum()
+        metrics_dict["trn_45_acc_jobs_weighted"] = sub_df['sum(trn_45*TOTEMP)*TOTPOP'].sum()
         metrics_dict["total_jobs_weighted"]       = total_emp * totalpop_subset
-        metrics_dict["wtrn_45_acc_accessible_job_share"]  = \
-            metrics_dict["wtrn_45_acc_jobs_weighted"] / metrics_dict["total_jobs_weighted"]
+        metrics_dict["trn_45_acc_accessible_job_share"]  = \
+            metrics_dict["trn_45_acc_jobs_weighted"] / metrics_dict["total_jobs_weighted"]
 
         metrics_dict_list.append(metrics_dict)
 
         # ratio of EPC / all -- the first one (index=zero) is region-wide
         metrics_dict["acc_jobs_to_all_jobs_ratio"] = \
-            metrics_dict["wtrn_45_acc_accessible_job_share"] / metrics_dict_list[0]["wtrn_45_acc_accessible_job_share"]
+            metrics_dict["trn_45_acc_accessible_job_share"] / metrics_dict_list[0]["trn_45_acc_accessible_job_share"]
 
     metrics_df = pd.DataFrame(metrics_dict_list)
     logger.info(f"metrics_df:\n{metrics_df}")
 
     # --------------------------- Compute household‐weighted accessible jobs ---------------------------
-    accessiblejobs_df['sum(wtrn_45*TOTEMP)*TOTHH'] = accessiblejobs_df['sum(wtrn_45*TOTEMP)'] * accessiblejobs_df['TOTHH']
+    accessiblejobs_df['sum(trn_45*TOTEMP)*TOTHH'] = accessiblejobs_df['sum(trn_45*TOTEMP)'] * accessiblejobs_df['TOTHH']
 
     metrics_dict_list = []
     for auto_hh_category in ["TOTHH","zero_car_hh", "car_light_hh"]:
@@ -205,13 +217,13 @@ def tally_access_to_jobs_v3(household_autos_df):
         metrics_dict['epc_category'] = 'N/A'
         metrics_dict['auto_hh_category'] = auto_hh_category
 
-        wtrn_45_weighted_hh = accessiblejobs_df[auto_hh_category] * accessiblejobs_df['sum(wtrn_45*TOTEMP)']
+        trn_45_weighted_hh = accessiblejobs_df[auto_hh_category] * accessiblejobs_df['sum(trn_45*TOTEMP)']
         TOTEMP_weighted_hh  = accessiblejobs_df[auto_hh_category] * total_emp
             
-        metrics_dict["wtrn_45_acc_jobs_weighted"] = wtrn_45_weighted_hh.sum()
+        metrics_dict["trn_45_acc_jobs_weighted"] = trn_45_weighted_hh.sum()
         metrics_dict["total_jobs_weighted"] = TOTEMP_weighted_hh.sum()
-        metrics_dict["wtrn_45_acc_accessible_job_share"] = \
-            metrics_dict["wtrn_45_acc_jobs_weighted"] / metrics_dict["total_jobs_weighted"]
+        metrics_dict["trn_45_acc_accessible_job_share"] = \
+            metrics_dict["trn_45_acc_jobs_weighted"] / metrics_dict["total_jobs_weighted"]
 
         metrics_dict_list.append(metrics_dict)
 
@@ -219,7 +231,7 @@ def tally_access_to_jobs_v3(household_autos_df):
         # TODO: This is inconsistent with how the script previously did it, as it used the person-weighted denominator
         # TODO: However, I think this is more logical
         metrics_dict["acc_jobs_to_all_jobs_ratio"] = \
-            metrics_dict["wtrn_45_acc_accessible_job_share"] / metrics_dict_list[0]["wtrn_45_acc_accessible_job_share"]
+            metrics_dict["trn_45_acc_accessible_job_share"] / metrics_dict_list[0]["trn_45_acc_accessible_job_share"]
 
 
     metrics_df = pd.concat([metrics_df, pd.DataFrame(metrics_dict_list)])
@@ -255,7 +267,25 @@ if __name__ == '__main__':
     household_autos_df = process_households()
     
     # Compute the job access metrics (accessible jobs)
-    metrics_df = tally_access_to_jobs_v3(household_autos_df)
+    logger.info("Computing job access metrics for walkToTransit access <= 45 minutes")
+    metrics_walkToTransit_df = tally_access_to_jobs_v3(household_autos_df, access_type='walkToTransit')
+    metrics_walkToTransit_df.rename(columns={'trn_45_acc_jobs_weighted': 'walkToTransit_45_acc_jobs_weighted',
+                                            'total_jobs_weighted': 'walkToTransit_total_jobs_weighted',
+                                            'trn_45_acc_accessible_job_share': 'walkToTransit_45_acc_accessible_job_share',
+                                            'acc_jobs_to_all_jobs_ratio': 'walkToTransit_acc_jobs_to_all_jobs_ratio'}, inplace=True)
+    
+    logger.info("Computing job access metrics for walkToTransit or driveToTransit access <= 45 minutes")
+    metrics_walkDriveToTransit_df = tally_access_to_jobs_v3(household_autos_df, access_type='walkDriveToTransit')
+    metrics_walkDriveToTransit_df.rename(columns={'trn_45_acc_jobs_weighted': 'walkDriveToTransit_45_acc_jobs_weighted',
+                                                  'total_jobs_weighted': 'walkDriveToTransit_total_jobs_weighted',
+                                                  'trn_45_acc_accessible_job_share': 'walkDriveToTransit_45_acc_accessible_job_share',
+                                                  'acc_jobs_to_all_jobs_ratio': 'walkDriveToTransit_acc_jobs_to_all_jobs_ratio'}, inplace=True)
+    metrics_df = pd.merge(
+        metrics_walkToTransit_df,
+        metrics_walkDriveToTransit_df,
+        on=['county', 'epc_category', 'auto_hh_category'],
+        how='outer', validate='one_to_one'
+    )
     output_file = pathlib.Path("metrics", "NPA_metrics_Goal_1A_to_1F.csv")
     metrics_df.to_csv(output_file, index=True)
     logger.info(f"Wrote {output_file}")
