@@ -29,6 +29,7 @@ import pathlib
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import logging
 
 
 def process_households():
@@ -42,7 +43,7 @@ def process_households():
     # Extract numbers from filenames and find the highest
     file_numbers = [int(f.stem.split('_')[-1]) for f in household_files if f.stem.split('_')[-1].isdigit()]
     input_file = pathlib.Path(f"main/householdData_{max(file_numbers)}.csv")
-    print(f"Reading household file: {input_file}")
+    logger.info(f"Reading household file: {input_file}")
     df = pd.read_csv(input_file, usecols=['hh_id', 'taz', 'autos', 'workers','sampleRate'])
     
     df['zero_car'] = 0
@@ -54,7 +55,7 @@ def process_households():
         zero_car_hh = pd.NamedAgg(column='zero_car', aggfunc='sum'),
         car_light_hh = pd.NamedAgg(column='car_light', aggfunc='sum'),
     ).reset_index(drop=False)
-    print(f"Household processing completed; household_autos_df.head():\n{household_autos_df.head()}")
+    logger.info(f"Household processing completed; household_autos_df.head():\n{household_autos_df.head()}")
     return household_autos_df
 
 def tally_access_to_jobs_v3(household_autos_df):
@@ -66,24 +67,24 @@ def tally_access_to_jobs_v3(household_autos_df):
     Returns pandas.DataFrame with columns
     epc_category, auto_hh_category, wtrn_45_acc_jobs_weighted, total_jobs_weighted, wtrn_45_acc_accessible_job_share
     """
-    print("\nTallying accessible jobs (v3)...")
+    logger.info("\nTallying accessible jobs (v3)...")
     # Read travel‐time (time‐skim) data
     tt_file = pathlib.Path("database") / "TimeSkimsDatabaseAM.csv"
-    print(f"Reading travel time data from: {tt_file}")
+    logger.info(f"Reading travel time data from: {tt_file}")
     traveltime_df = pd.read_csv(tt_file)[['orig', 'dest', 'da', 'daToll', 'wTrnW', 'bike', 'walk']]
     traveltime_df.replace(-999.0, np.nan, inplace=True)
     traveltime_df['wtrn_45'] = (traveltime_df['wTrnW'] <= 45).astype(int)
 
     # Read TAZ employment and socioeconomic data
     taz_file = pathlib.Path("landuse") / "tazData.csv"
-    print(f"Reading TAZ data from: {taz_file}")
+    logger.info(f"Reading TAZ data from: {taz_file}")
     taz_df = pd.read_csv(taz_file)[['ZONE','TOTHH', 'TOTPOP', 'EMPRES', 'TOTEMP']]
     total_emp = taz_df['TOTEMP'].sum()
     total_pop = taz_df['TOTPOP'].sum()
     total_hh  = taz_df['TOTHH'].sum()
-    print(f"Regional TOTEMP={taz_df['TOTEMP'].sum():,}")
-    print(f"Regional TOTPOP={taz_df['TOTPOP'].sum():,}")
-    print(f"Regional TOTHH={taz_df['TOTHH'].sum():,}")
+    logger.info(f"Regional TOTEMP={taz_df['TOTEMP'].sum():,}")
+    logger.info(f"Regional TOTPOP={taz_df['TOTPOP'].sum():,}")
+    logger.info(f"Regional TOTHH={taz_df['TOTHH'].sum():,}")
     # metrics_dict.update({"total_jobs": total_emp, "total_pop": total_pop, "total_hh": total_hh})
 
     # read taz -> county mapping
@@ -101,28 +102,28 @@ def tally_access_to_jobs_v3(household_autos_df):
     traveltime_df.drop(columns="ZONE", inplace=True)
     traveltime_df['wtrn_45*TOTEMP'] = traveltime_df['wtrn_45']*traveltime_df['TOTEMP']  # employment within 45 min
     traveltime_df['wTrnW'] = pd.to_numeric(traveltime_df['wTrnW'])
-    print(f"traveltime_df.head():\n{traveltime_df.head()}")
+    logger.info(f"traveltime_df.head():\n{traveltime_df.head()}")
 
     # Aggregate accessible jobs to origins
     accessiblejobs_df = traveltime_df.groupby('orig').agg(
         wTrnW_mean         = pd.NamedAgg(column='wTrnW', aggfunc='mean'),
         wtrn_45_TOTEMP_sum = pd.NamedAgg(column='wtrn_45*TOTEMP', aggfunc='sum')
     ).rename(columns={'wtrn_45_TOTEMP_sum':'sum(wtrn_45*TOTEMP)'}).reset_index()
-    print(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
+    logger.info(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
 
     # --------------------------- Merge concerned socioeconomic data ---------------------------
     # Read Equity Priority Communities (EPC) file
     epc_22_df = pd.read_csv(pathlib.Path("INPUT/metrics/taz1454_epcPBA50plus_2024_02_29.csv"), usecols=['TAZ1454','taz_epc'])
     epc_18_df = pd.read_csv(pathlib.Path("INPUT/metrics/taz_coc_crosswalk.csv"))
-    print(f"Read epc_22:\n{epc_22_df.head()}")
-    print(f"Read epc_18_df:\n{epc_18_df.head()}")
+    logger.info(f"Read epc_22:\n{epc_22_df.head()}")
+    logger.info(f"Read epc_18_df:\n{epc_18_df.head()}")
 
     taz_df.rename(columns={'ZONE':'TAZ1454'}, inplace=True)
     taz_df = taz_df.merge(epc_22_df, on="TAZ1454", validate="one_to_one").rename(columns={"taz_epc": "taz_epc_22"})
     taz_df = taz_df.merge(epc_18_df, on="TAZ1454", validate="one_to_one").rename(columns={"taz_coc": "taz_epc_18"})
-    print(f"Found {taz_df['taz_epc_22'].sum()} TAZs in epc_22s")
-    print(f"Found {taz_df['taz_epc_18'].sum()} TAZs in epc_18s")
-    print(f"taz_df.head():\n{taz_df.head()}")
+    logger.info(f"Found {taz_df['taz_epc_22'].sum()} TAZs in epc_22s")
+    logger.info(f"Found {taz_df['taz_epc_18'].sum()} TAZs in epc_18s")
+    logger.info(f"taz_df.head():\n{taz_df.head()}")
 
     taz_df = pd.merge(
         left=taz_df,
@@ -130,7 +131,7 @@ def tally_access_to_jobs_v3(household_autos_df):
         on='TAZ1454',
         validate='one_to_one'
     )
-    print(f"taz_df.head():\n{taz_df.head()}")
+    logger.info(f"taz_df.head():\n{taz_df.head()}")
     # make sure no NaNs
     nan_rows = taz_df[taz_df.isnull().any(axis=1)]
     assert(len(nan_rows)==0)
@@ -139,21 +140,21 @@ def tally_access_to_jobs_v3(household_autos_df):
     accessiblejobs_df = accessiblejobs_df.merge(
         taz_df[['TAZ1454', 'county_name', 'TOTPOP', 'TOTHH', 'taz_epc_22', 'taz_epc_18', 'zero_car_hh', 'car_light_hh']],
         left_on='orig', right_on='TAZ1454', how='left', validate="one_to_one")
-    print(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
+    logger.info(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
     # columns are now: orig, wTrnW_mean, TOTEMP_sum , wtrn_45_TOTEMP_sum, 
     #                  TAZ1454, TOTPOP, TOTHH, taz_epc_22, taz_epc_18, zero_car_hh, car_light_hh
 
     # Save a debug file (optional)
     debug_out = pathlib.Path("metrics", "accessed_jobs_by_origin_zone_(intermediate_file).csv")
     accessiblejobs_df.to_csv(debug_out, index=False)
-    print(f"Debug file written to {debug_out}")
+    logger.info(f"Debug file written to {debug_out}")
     
     # TODO: Why are the weightings done differently for EPCs vs auto ownership categories?
     # TODO: It seems like they could be done similarly...
     # TODO: And given that this is about job accessibility, maybe EMPRES would make more sense?
     # --------------------------- Compute population‐weighted accessible jobs ---------------------------
     accessiblejobs_df['sum(wtrn_45*TOTEMP)*TOTPOP'] = accessiblejobs_df['sum(wtrn_45*TOTEMP)'] * accessiblejobs_df['TOTPOP']
-    print(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
+    logger.info(f"accessiblejobs_df.head():\n{accessiblejobs_df.head()}")
 
     metrics_dict_list = []
     for geography in ["all_taz", "epc_22", "epc_18"] + COUNTIES_LIST:
@@ -192,7 +193,7 @@ def tally_access_to_jobs_v3(household_autos_df):
             metrics_dict["wtrn_45_acc_accessible_job_share"] / metrics_dict_list[0]["wtrn_45_acc_accessible_job_share"]
 
     metrics_df = pd.DataFrame(metrics_dict_list)
-    print(f"metrics_df:\n{metrics_df}")
+    logger.info(f"metrics_df:\n{metrics_df}")
 
     # --------------------------- Compute household‐weighted accessible jobs ---------------------------
     accessiblejobs_df['sum(wtrn_45*TOTEMP)*TOTHH'] = accessiblejobs_df['sum(wtrn_45*TOTEMP)'] * accessiblejobs_df['TOTHH']
@@ -222,9 +223,9 @@ def tally_access_to_jobs_v3(household_autos_df):
 
 
     metrics_df = pd.concat([metrics_df, pd.DataFrame(metrics_dict_list)])
-    print(f"metrics_df:\n{metrics_df}")
+    logger.info(f"metrics_df:\n{metrics_df}")
 
-    print("Tallying accessible jobs completed.")
+    logger.info("Tallying accessible jobs completed.")
     return metrics_df
 
 
@@ -235,6 +236,20 @@ def tally_access_to_jobs_v3(household_autos_df):
 if __name__ == '__main__':
     pd.set_option('display.width', 500)
     pd.set_option('display.precision', 10)
+
+    MODEL_DIR = pathlib.Path(".")
+
+    # Set up logging
+    log_file = MODEL_DIR / "metrics" / 'NPA_metrics_Goal_1A_to_1F.log'
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        filemode='w',
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__file__)
+    logger.info("Script execution started")
+    logger.info(f"Working directory: {os.getcwd()}")
     
     # Process zero-vehicle and car-light households (needed for the job access metrics)
     household_autos_df = process_households()
@@ -243,4 +258,4 @@ if __name__ == '__main__':
     metrics_df = tally_access_to_jobs_v3(household_autos_df)
     output_file = pathlib.Path("metrics", "NPA_metrics_Goal_1A_to_1F.csv")
     metrics_df.to_csv(output_file, index=True)
-    print(f"Wrote {output_file}")
+    logger.info(f"Wrote {output_file}")
