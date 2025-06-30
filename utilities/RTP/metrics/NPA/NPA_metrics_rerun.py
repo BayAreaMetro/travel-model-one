@@ -26,7 +26,7 @@ server_to_drive = {
 output_files = {
     '1A_to_1F': ['NPA_Metrics_Goal_1A_to_1F.csv', 'NPA_metrics_Goal_1A_to_1F.log'],
     '2':['NPA_metrics_Goal_2.csv'],
-    '3':['NPA_metrics_Goal_3A_to_3D.csv','NPA_metrics_Goal_3A_to_3D_debug.csv', 'NPA_metrics_Goal_3E_3F.csv', 'NPA_metrics_Goal_3.log']
+    '3':['NPA_metrics_Goal_3A_to_3D.csv', 'NPA_metrics_Goal_3A_to_3D_debug.csv', 'NPA_metrics_Goal_3E_3F.csv', 'NPA_metrics_Goal_3.log']
 }
 
 if __name__ == '__main__':

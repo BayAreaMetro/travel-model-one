@@ -100,6 +100,33 @@ def number_of_trips(df, modes):
         return None
     return subset.num_trips.sum()
 
+# min/max travel time helper
+def min_max_travel_time(df, modes):
+    """
+    Calculates min / max of TAZ-level avg travel time with trip_mode given by list modes
+    from a datafram with columns: trip_mode, avg_travel_time_in_mins, num_trips.
+
+    Returns None if no trips, otherwise the avg_travel_time_in_mins weighted by num_trips
+    """
+    subset = df[df.trip_mode.isin(modes)]
+    if subset.num_trips.sum() == 0:
+        return None
+    
+    min_max_avg_travel_time_metrics = {}
+ 
+    ixmin = subset['avg_travel_time_in_mins'].idxmin()
+    ixmax = subset['avg_travel_time_in_mins'].idxmax()
+
+    min_max_avg_travel_time_metrics['min_time_orig_taz'] = subset.loc[ixmin]['orig_taz']
+    min_max_avg_travel_time_metrics['min_time_dest_taz'] = subset.loc[ixmin]['dest_taz']
+    min_max_avg_travel_time_metrics['min_avg_time'] = subset.loc[ixmin]['avg_travel_time_in_mins']
+
+    min_max_avg_travel_time_metrics['max_time_orig_taz'] = subset.loc[ixmax]['orig_taz']
+    min_max_avg_travel_time_metrics['max_time_dest_taz'] = subset.loc[ixmax]['dest_taz']
+    min_max_avg_travel_time_metrics['max_avg_time'] = subset.loc[ixmax]['avg_travel_time_in_mins']
+
+    return min_max_avg_travel_time_metrics
+
 def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
     """
     Calculatees and writes the following metrics:
@@ -201,29 +228,27 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
                 metrics_odper_key[(od_key,period)]["weighted_avg_transit_travel_time"] / \
                 metrics_odper_key[(od_key,period)]["weighted_avg_auto_travel_time"]
             
-            # debug: calculate weighted average travel time and number of trips by mode group
-            metrics_odper_debug_key[(od_key,period)]["weighted_avg_travel_time_BUS"] = \
-                weighted_average_travel_time(selected_od, MODES_BUS)
+            # debug: calculate number of trips by mode group, and best/worse transit travel time
+            metrics_odper_debug_key[(od_key,period)]["weighted_avg_transit_travel_time"] = \
+                weighted_average_travel_time(selected_od, MODES_TRANSIT)
+            metrics_odper_debug_key[(od_key,period)]["num_trips_TRANSIT"] = \
+                number_of_trips(selected_od, MODES_TRANSIT)            
             metrics_odper_debug_key[(od_key,period)]["num_trips_BUS"] = \
-                number_of_trips(selected_od, MODES_BUS)
-            
-            metrics_odper_debug_key[(od_key,period)]["weighted_avg_travel_time_FERRY_LIGHTRAIL"] = \
-                weighted_average_travel_time(selected_od, MODES_FERRY_LIGHT_RAIL)
+                number_of_trips(selected_od, MODES_BUS)            
             metrics_odper_debug_key[(od_key,period)]["num_trips_FERRY_LIGHTRAIL"] = \
                 number_of_trips(selected_od, MODES_FERRY_LIGHT_RAIL)
-
-            metrics_odper_debug_key[(od_key,period)]["weighted_avg_travel_time_COMMUTER_RAIL"] = \
-                weighted_average_travel_time(selected_od, MODES_COMMUTER_RAIL)
             metrics_odper_debug_key[(od_key,period)]["num_trips_COMMUTER_RAIL"] = \
                 number_of_trips(selected_od, MODES_COMMUTER_RAIL)
-
-            metrics_odper_debug_key[(od_key,period)]["weighted_avg_travel_time_HEAVY_RAIL"] = \
-                weighted_average_travel_time(selected_od, MODES_HEAVY_RAIL)
             metrics_odper_debug_key[(od_key,period)]["num_trips_HEAVY_RAIL"] = \
                 number_of_trips(selected_od, MODES_HEAVY_RAIL)
-
             metrics_odper_debug_key[(od_key,period)]["weighted_avg_auto_travel_time"] = \
                 weighted_average_travel_time(selected_od, MODES_PRIVATE_AUTO + MODES_TAXI_TNC)
+            metrics_odper_debug_key[(od_key,period)]["num_trips_AUTO"] = \
+                number_of_trips(selected_od, MODES_PRIVATE_AUTO + MODES_TAXI_TNC)
+
+            min_max_average_transit_travel_time = min_max_travel_time(selected_od, MODES_TRANSIT)
+            for key, value in min_max_average_transit_travel_time.items():
+                metrics_odper_debug_key[(od_key,period)][f"{key}_TRANSIT"] = value
 
     metrics_dict_list = [metrics_odper_key[(od_key,period)] for od_key,period in metrics_odper_key.keys()]
     metrics_df = pd.DataFrame(metrics_dict_list)
@@ -236,18 +261,8 @@ def calculate_and_write_travel_time_metrics(logger, MODEL_DIR):
     # modify and write out debugging data
     metrics_debug_dict_list = [metrics_odper_debug_key[(od_key,period)] for od_key,period in metrics_odper_debug_key.keys()]
     metrics_debug_df = pd.DataFrame(metrics_debug_dict_list)
-    metrics_debug_df.drop(columns=['best_transit_travel_time', 'auto_travel_time', 'transit_ratio_midday_over_am'], inplace=True)  # drop TAZ columns
+    metrics_debug_df.drop(columns=['orig_taz', 'dest_taz', 'best_transit_travel_time', 'auto_travel_time', 'transit_ratio_midday_over_am'], inplace=True)  # drop TAZ columns
     logger.info(f"metrics_df:\n{metrics_debug_df}")
-
-    # calculate ratio
-    for colname in ['BUS', 'FERRY_LIGHTRAIL', 'COMMUTER_RAIL', 'HEAVY_RAIL']:
-        metrics_debug_df['weighted_avg_travel_time_{}'.format(colname)].fillna(0, inplace=True)  # fill NaN with 0
-        metrics_debug_df['num_trips_{}'.format(colname)].fillna(0, inplace=True)  # fill NaN with 0
-        metrics_debug_df["weighted_avg_transit_over_auto_travel_time_{}".format(colname)] = \
-                    metrics_debug_df["weighted_avg_travel_time_{}".format(colname)] / metrics_debug_df["weighted_avg_auto_travel_time"]
-    for colname in metrics_debug_df:
-        if colname.startswith("weighted_avg"):
-            metrics_debug_df.loc[metrics_debug_df[colname] == 0, colname] = np.nan
 
     # write it out
     output_file = MODEL_DIR / "metrics" / "NPA_metrics_Goal_3A_to_3D_debug.csv"
