@@ -364,10 +364,10 @@ def calculate_brt_service_miles(logger, MODEL_DIR):
     logger.info(f'trn_data:\n{trn_data}')
     logger.info(f'\n{trn_data.describe()}')
 
-    # Load roadway network BRT treatment data
+    # Load roadway network BRT treatment and HOV data
     loaded_roadway_file = MODEL_DIR/"hwy"/"iter3"/"avgload5period_vehclasses.csv"
     loaded_roadway = pd.read_csv(loaded_roadway_file)
-    loaded_roadway = loaded_roadway[['a','b','ft','lanes','brt']]
+    loaded_roadway = loaded_roadway[['a','b','ft','lanes','brt', 'useEA','useAM', 'useMD', 'usePM', 'useEV']]
     logger.info(f"Read loaded_roadway_file:{loaded_roadway_file}; dataframe=\n{loaded_roadway}")
 
     # Calculate totals and mode‐level BRT share
@@ -389,13 +389,38 @@ def calculate_brt_service_miles(logger, MODEL_DIR):
     trn_data.fillna({'brt':0}, inplace=True)
     trn_data['is_brt'] = trn_data['brt'] > 0
 
+    # Determine use based on time period (useEA, useAM, useMD, usePM, useEV)
+    def useType(row):
+        if row['timeperiod'] == 'ea':
+            return row['useEA']
+        elif row['timeperiod'] == 'am':
+            return row['useAM']
+        elif row['timeperiod'] == 'md':
+            return row['useMD']
+        elif row['timeperiod'] == 'pm':
+            return row['usePM']
+        elif row['timeperiod'] == 'ev':
+            return row['useEV']
+        else:
+            return 0
+
+    trn_data['use'] = trn_data.apply(lambda x: useType(x), axis=1)
+    # make use always a number
+    trn_data.fillna({'use':0}, inplace=True)
+    trn_data['is_hov'] = trn_data['use'] > 1
+    
+
     metrics_dict_list = []
     # by mode or county
     for groupby_col in ['mode','county_name']:
         trn_data_grouped     = trn_data.groupby([groupby_col        ]).agg({'service_miles':'sum'})
         trn_data_grouped_brt = trn_data.groupby([groupby_col,'is_brt']).agg({'service_miles':'sum'})
+        trn_data_grouped_hov = trn_data.groupby([groupby_col, 'is_hov']).agg({'service_miles':'sum'})
+        trn_data_grouped_brt_hov = trn_data.groupby([groupby_col,'is_brt', 'is_hov']).agg({'service_miles':'sum'})
         logger.info(f"trn_data_grouped:\n{trn_data_grouped}")
         logger.info(f"trn_data_grouped_brt:\n{trn_data_grouped_brt}")
+        logger.info(f"trn_data_grouped_hov:\n{trn_data_grouped_hov}")
+        logger.info(f"trn_data_grouped_brt_hov:\n{trn_data_grouped_brt_hov}")
 
         # for county-based metric, leave mode = None
         # for mode-based metric, leave county_name = None
@@ -406,8 +431,16 @@ def calculate_brt_service_miles(logger, MODEL_DIR):
                 metrics = {'county_name':grouped_val}
             metrics['transit_service_miles']     = trn_data_grouped.loc[grouped_val]['service_miles']
             metrics['transit_service_miles_brt'] = 0
+            metrics['transit_service_miles_hov'] = 0
+            # Variable to count service miles that are both brt and hov
+            metrics['transit_service_miles_brt_hov'] = 0
             if (grouped_val, True) in trn_data_grouped_brt.index:
                 metrics['transit_service_miles_brt'] = trn_data_grouped_brt.loc[grouped_val,True]['service_miles']
+            if (grouped_val, True) in trn_data_grouped_hov.index:
+                metrics['transit_service_miles_hov'] = trn_data_grouped_hov.loc[grouped_val,True]['service_miles']
+            if (grouped_val, True, True) in trn_data_grouped_brt_hov.index:
+                metrics['transit_service_miles_brt_hov'] = trn_data_grouped_brt_hov.loc[grouped_val,True,True]['service_miles']
+
 
             metrics_dict_list.append(metrics)
     
@@ -415,10 +448,14 @@ def calculate_brt_service_miles(logger, MODEL_DIR):
     metrics = {'mode':'0', 'county_name':'All Counties'}
     metrics['transit_service_miles'    ] = trn_data.service_miles.sum()
     metrics['transit_service_miles_brt'] = trn_data.loc[trn_data.is_brt, 'service_miles'].sum()
+    metrics['transit_service_miles_hov'] = trn_data.loc[trn_data.is_hov, 'service_miles'].sum()
+    metrics['transit_service_miles_brt_hov'] = trn_data.loc[trn_data.is_brt & trn_data.is_hov,'service_miles'].sum()
     metrics_dict_list.append(metrics)
 
     metrics_df = pd.DataFrame(metrics_dict_list)
     metrics_df['transit_service_miles_brt_pct'] = metrics_df.transit_service_miles_brt / metrics_df.transit_service_miles
+    metrics_df['transit_service_miles_hov_pct'] = metrics_df.transit_service_miles_hov / metrics_df.transit_service_miles
+    metrics_df['transit_service_miles_transit_priority_pct'] = (metrics_df.transit_service_miles_brt + metrics_df.transit_service_miles_hov - metrics_df.transit_service_miles_brt_hov) / metrics_df.transit_service_miles
     logger.info(f"metrics_df:\n{metrics_df}")
     return metrics_df
 
