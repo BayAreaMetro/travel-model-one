@@ -1,6 +1,8 @@
 USAGE = """
 
-Create intersection of Growth Geography and TRAs for PBA50+.
+In PBA50+, we have to create a number of crosswalks between policy geographies (e.g. Growth Geographies, TRAs) and TAZs.
+The crosswalks are usually created via spatial overlay script (\utilities\geographies\create_geography_overlays\TAZ_otherGeographies_overlay_crosswalk.py). This script
+prepares the geographies data for the overlay crosswalk script, including: assigning unique ID, dissolving/intersecting/unioning raw geographies into the desired categories, etc. 
 
 """
 
@@ -34,6 +36,10 @@ TRA_INPUT_FBP_FILE4 = os.path.join(GG_INPUT_FBP_DIR, 'FBP_Jan2025_TRA4_discrete.
 TRA_INPUT_FBP_FILE5 = os.path.join(GG_INPUT_FBP_DIR, 'FBP_Jan2025_TRA5__discrete.shp')
 GGnonPPA_INPUT_FBP_FILE = r'M:\Application\PBA50Plus_Data_Processing\Final_Blueprint_Growth_Geographies\raw_interim_data\FBP_Jan2025_GG_no_PPA\FBP_Jan2025_GG_no_PPA.shp'
 
+# PBA50plusEIR2 - EIR Alternative 2
+TOC_INPUT_DIR = r'M:\Application\PBA50Plus_Data_Processing\EIR2_Geographies'
+TOC_INPUT_FILE = os.path.join(TOC_INPUT_DIR, '2025_5_7_TOC_Qualifying', '2025_5_7_TOC_Qualifying.shp')
+
 # PBA50
 GEOGRAPHIES_PBA50_DIR = r'M:\Data\GIS layers\Blueprint Land Use Strategies\Final Blueprint_DRAFT GROWTH GEOGRAPHIES_09032020'
 GG_INPUT_PBA50_FILE = os.path.join(GEOGRAPHIES_PBA50_DIR, 'Final_Blueprint_DRAFT_GG-Upzoning Area_v1a.shp')
@@ -46,8 +52,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description = USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('rtp_v', type=str, choices=['RTP2021FBP','RTP2025DBP', 'RTP2025FBP'], help='RTP and version of Growth Geographies data')
-    # parser.add_argument('--test', action='store_true', help='If passed, writes output to cwd instead of METRICS_OUTPUT_DIR')
+    parser.add_argument('rtp_v', type=str, choices=['RTP2021FBP','RTP2025DBP', 'RTP2025FBP', 'RTP2025EIR2'], help='RTP and version of Geographies data')
     my_args = parser.parse_args()
 
     # set up logging
@@ -80,9 +85,14 @@ if __name__ == '__main__':
         QAQC_DIR = os.path.join(OUTPUT_M_DIR, 'QAQC')
         GG_TRA_SHAPE_FILE = os.path.join(QAQC_DIR, 'gg_tra_pba50plus_FBP.shp')
         GG_nonPPA_TRA_SHAPE_FILE = os.path.join(QAQC_DIR, 'gg_nonPPA_tra_pba50plus_FBP.shp')
-        
+    elif my_args.rtp_v == 'RTP2025EIR2':
+        OUTPUT_M_DIR = r'M:\Application\PBA50Plus_Data_Processing\EIR2_Geographies'
+        QAQC_DIR = os.path.join(OUTPUT_M_DIR, 'QAQC')
+        GG_nonPPA_TOC_SHAPE_FILE = os.path.join(QAQC_DIR, 'gg_nonPPA_toc_pba50plus_eir2.shp')        
     ## create dissolved or unioned growth geographies based on RTP and growth geographies version
     
+    LOG_FILE = os.path.join(OUTPUT_M_DIR, 'prepare_Geographies_for_overlay_crosswalk_{}_{}.log'.format(my_args.rtp_v, today))
+
     if my_args.rtp_v == 'RTP2021FBP':   # PBA50
 
         # GG
@@ -117,7 +127,7 @@ if __name__ == '__main__':
 
         # write out GG-TRA intersection
         logger.info('write out GG_TRA_pba50 intersection geography to {}'.format(GG_TRA_SHAPE_FILE))
-        gg_tra_pba50_gdf[['gg_50', 'tra_50', 'geometry']].to_file(GG_TRA_SHAPE_FILE)
+        gg_tra_gdf[['gg_50', 'tra_50', 'geometry']].to_file(GG_TRA_SHAPE_FILE)
 
     elif my_args.rtp_v == 'RTP2025DBP': # PBA50+ Draft Blueprint
 
@@ -251,3 +261,33 @@ if __name__ == '__main__':
 
         logger.info('write out GG_nonPPA_TRA intersection geography to {}'.format(GG_nonPPA_TRA_SHAPE_FILE))
         gg_nonPPA_tra_gdf[['gg_50plus', 'tra_50plus', 'geometry']].to_file(GG_nonPPA_TRA_SHAPE_FILE)
+
+    elif my_args.rtp_v == 'RTP2025EIR2': # PBA50+ EIR2
+        # first, read in GG-nonPPA file from Final Blueprint
+        gg_nonPPA_gdf = gpd.read_file(
+            r"M:\Application\PBA50Plus_Data_Processing\Final_Blueprint_Growth_Geographies\QAQC\gg_nonPPA_pba50plusFBP.shp")
+        logging.info('read gg_nonPPA_gdf from {}'.format(
+            r"M:\Application\PBA50Plus_Data_Processing\Final_Blueprint_Growth_Geographies\QAQC\gg_nonPPA_pba50plusFBP.shp"))
+
+        toc_gdf_raw = gpd.read_file(TOC_INPUT_FILE)
+        logging.info('read toc_gdf_raw from {}'.format(TOC_INPUT_FILE))
+
+        toc_gdf_raw['toc_50plus'] = 'toc'
+        logger.info('crs: {}'.format(toc_gdf_raw.crs))
+        toc_gdf_raw_proj = toc_gdf_raw.to_crs(analysis_crs)
+        # dissolve
+        logging.info('dissolve toc categories')
+        toc_gdf_gdf = toc_gdf_raw_proj.dissolve(by='toc_50plus').reset_index()
+        assert toc_gdf_gdf.shape[0] == 1
+        logging.info('write out for QAQC')
+        toc_gdf_gdf.to_file(os.path.join(QAQC_DIR, 'toc_pba50plusEIR2.shp'))
+
+        # intersection of GG_nonPPA and TOC
+        logging.info('create intersection of GG_nonPPA and TOC')
+        logging.info('{} rows left'.format(len(gg_nonPPA_gdf)))
+        logging.info('{} rows right'.format(len(toc_gdf_gdf)))
+        gg_nonPPA_toc_gdf = gpd.overlay(gg_nonPPA_gdf, toc_gdf_gdf, how='intersection')   
+        logging.info('{} rows'.format(len(gg_nonPPA_toc_gdf)))
+        # write out
+        logging.info('write out GG_nonPPA_TOC intersection geography to {}'.format(GG_nonPPA_TOC_SHAPE_FILE))
+        gg_nonPPA_toc_gdf.to_file(GG_nonPPA_TOC_SHAPE_FILE)
