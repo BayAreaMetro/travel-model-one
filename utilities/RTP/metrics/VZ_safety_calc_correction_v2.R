@@ -697,6 +697,8 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
                         taz_epc_18 = if_else(is.na(taz_coc), "Non-EPC_18", taz_epc_18), # new
                         taz_hra = if_else(taz_hra == 1, "HRA", "Non-HRA"), # new
                         taz_hra = if_else(is.na(taz_hra), "Non-HRA", taz_hra), # new
+                        taz_hra_local = if_else(taz_hra=="HRA" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"taz_hra_local","pass"),
+                        taz_hra_local = if_else(is.na(taz_hra_local), "pass", taz_hra_local),
                         taz_epc = if_else(taz_epc_22 == "EPC_22" | taz_epc_18 == "EPC_18", "EPC", "Non-EPC"), # new - union of both EPCs
                         taz_epc = if_else(is.na(taz_epc), "Non-EPC", taz_epc), # new
                         taz_epc_local = if_else(taz_epc=="EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"taz_epc_local","pass"),    #new
@@ -704,6 +706,7 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
                         Non_EPC_local = if_else(taz_epc=="Non-EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"non_epc_local","pass"),#new
                         Non_EPC_local = if_else(is.na(Non_EPC_local), "pass", Non_EPC_local)      
                       )
+  
     
   }
   else {
@@ -764,6 +767,12 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
     model_fatal_inj_epc_hra <- correct_using_observed_factors(model_fatal_inj_epc_hra, model_fatal_inj_base_year)
     print("--------------------------------------")
     print(model_fatal_inj_epc_hra)
+
+    model_fatal_inj_epc_hra_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                  network_group_by_col="taz_hra_local", network_no_project_df)
+    model_fatal_inj_epc_hra_local <- correct_using_observed_factors(model_fatal_inj_epc_hra_local, model_fatal_inj_base_year)
+    print("--------------------------------------")
+    print(model_fatal_inj_epc_hra_local)
   }
 
   model_fatal_inj_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
@@ -789,6 +798,7 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
       mutate(rename(model_fatal_inj_epc_18_non$network_summary_df, key=taz_epc_18), model_run_type=model_run_type, model_run_id=model_run_id),
       mutate(rename(model_fatal_inj_taz_22_non$network_summary_df, key=taz_epc_22), model_run_type=model_run_type, model_run_id=model_run_id),
       mutate(rename(model_fatal_inj_epc_hra$network_summary_df, key=taz_hra), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_epc_hra_local$network_summary_df, key=taz_hra_local), model_run_type=model_run_type, model_run_id=model_run_id),
       mutate(rename(model_fatal_inj_epc_local$network_summary_df, key=taz_epc_local), model_run_type=model_run_type, model_run_id=model_run_id),
       mutate(rename(model_fatal_inj_non_epc_local$network_summary_df, key=Non_EPC_local), model_run_type=model_run_type, model_run_id=model_run_id)
     )  
