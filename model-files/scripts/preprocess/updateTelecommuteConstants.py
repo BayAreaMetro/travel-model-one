@@ -16,7 +16,7 @@ import pandas
 
 
 # input files
-TAZDATA_FILE  = os.path.join('INPUT', 'landuse', 'tazData.csv')
+TAZDATA_FILE  = os.path.join('landuse', 'tazData.csv')
 TOUR_FILE     = os.path.join('main','indivTourData_{}.csv')
 WSLOC_FILE    = os.path.join('main','wsLocResults_{}.csv')
 # todo: add to input if run during model
@@ -26,14 +26,15 @@ PARAMS_FILENAME = os.path.join('INPUT','params.properties')
 
 # input and output; input {}=previous calib iter, output {}=CALIB_ITER
 TELECOMMUTE_CONSTANTS_FILE = os.path.join('main','telecommute_constants_{:02d}.csv')
-
+TELECOMMUTE_CONSTANTS_FILE_FULL = os.path.join('main','telecommute_constants_full_{:02d}.csv')
 TARGET_AUTO_SHARE  = 0.40
 # if max_telecommute_rate +/- this, then leave it alone
 TELECOMMUTE_RATE_THRESHHOLD = 0.005
 
 # todo: make this more intelligent
-CONSTANT_INCREMENT = 0.05
-CONSTANT_DECREMENT = 0.05
+#BCM 2035 Update: We want the precalibrated (?) telecommute constants to carry over through each iteration. So setting the two following constants to 0.
+CONSTANT_INCREMENT = 0 #0.05
+CONSTANT_DECREMENT = 0 #0.05
 
 # see EN7 Telecommuting.xlsx (https://mtcdrive.box.com/s/uw3n8wyervle6r2cgoz1j6k4i5lmv253)
 # for 2015 and before
@@ -69,13 +70,13 @@ if __name__ == '__main__':
         CALIB_ITER = "0"+ITER
 
         UPDATE_CONSTANT = False
-        if (MODEL_DIR.upper().find("FBP") >= 0):
-            if (int(MODEL_YEAR) < 2035) or \
-               (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
-               (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0):
-               UPDATE_CONSTANT = False
-            else:
-               UPDATE_CONSTANT = True
+        # if (MODEL_DIR.upper().find("FBP") >= 0): #BCM Update: BCM's folder naming structure is different from MTC. Removing this line.
+        if (int(MODEL_YEAR) < 2035) or \
+            (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
+            (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0):
+            UPDATE_CONSTANT = False
+        else:
+            UPDATE_CONSTANT = True
 
     print('MODEL_YEAR               = {}'.format(MODEL_YEAR))
     print('MODEL_DIR                = {}'.format(MODEL_DIR))
@@ -281,8 +282,10 @@ if __name__ == '__main__':
         telecommute_df.rename(columns={'telecommuteConstant':'telecommuteConstant_prev'}, inplace=True)
 
         # join with work_mode_SD_df
-        telecommute_df = pandas.merge(left=telecommute_df, right=work_mode_SD_df) 
+        telecommute_df = pandas.merge(left=telecommute_df, right=work_mode_SD_df, how='left')
+        for column in ['auto_share','telecommute_rate','max_telecommute_rate']:
 
+            telecommute_df[column]=telecommute_df[column].fillna(0)
         # THIS IS IT
         # start at previous value
         telecommute_df['telecommuteConstant'] = telecommute_df['telecommuteConstant_prev']
@@ -311,7 +314,10 @@ if __name__ == '__main__':
 
 
     # write it with calib iter
-    telecommute_df.to_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)), header=True, index=False)
+    telecommute_df.sort_values(by=['ZONE'], ascending=True, inplace=True)
+    telecommute_df.to_csv(TELECOMMUTE_CONSTANTS_FILE_FULL.format(int(CALIB_ITER)), header=True, index=False)
+    
+    telecommute_df[['ZONE','SD','COUNTY','CALIB_ITER','telecommuteConstant']].to_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)), header=True, index=False)
     print("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER))))
 
     sys.exit(0)

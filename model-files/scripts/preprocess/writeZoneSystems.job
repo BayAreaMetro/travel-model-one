@@ -1,0 +1,63 @@
+;*****************************************************************************
+;
+; writeZoneSystems.job
+;
+; This cube script reads the highway network, counts TAZs and external stations
+; and writes a MS-DOS batch file with the number of TAZs
+; plus externals. The batch file can then be run to set environment variables 
+; for each to be used in subsequent scripts
+;
+; input: hwy\complete_network_base.net: The MTC highway network base input file. Created from OSM.
+;		 TAZ centroids are numbered upto 900,000 and the externals are numbered between 900,000 and 1,000,000
+; 
+; output: zoneSystem.bat: A DOS batch file setting environment variables as follows:
+;		SET TAZ_COUNT=n
+;		SET TAZ_EXTS_COUNT=n
+;
+; version: TM 1.5 BCM
+; author jmh 10 2022
+;
+;
+;************************************************************************************
+
+
+;taz includes externals
+taz_selector = '(N < 900000)'
+ext_selector = '(N < 1000000) & (N > 900000)'
+
+;build the zone sequences and export to a new network
+RUN PGM=NETWORK
+    NETI = "hwy\complete_network_base.net"
+ 
+    PHASE = NODEMERGE
+        IF (@taz_selector@)
+            _i = _i + 1 
+        ELSEIF (@ext_selector@)
+            _l = _l + 1
+        ENDIF
+    ENDPHASE
+	
+	ZONECOUNT=_i
+	
+	;there are _l external stations
+	ZONES_PLUS_EXT=(_i+_l)
+	
+	LOG VAR=ZONECOUNT
+	LOG VAR=ZONES_PLUS_EXT
+	
+ENDRUN
+
+;
+; Write the following to a batch file
+;  SET TAZ_COUNT= xxxx
+;  SET TAZ_EXTS_COUNT=xxxx
+
+RUN PGM=MATRIX
+
+    ZONES=1
+    FILEO PRINTO[1] = "zoneSystem.bat"
+    PRINT LIST=":: This batch file is created by ctramp/scripts/preprocess/writeZoneSystems.job" PRINTO=1
+    PRINT LIST="SET TAZ_COUNT=" @NETWORK.ZONECOUNT@(L) PRINTO=1
+    PRINT LIST="SET TAZ_EXTS_COUNT=" @NETWORK.ZONES_PLUS_EXT@(L) PRINTO=1
+ 	
+ENDRUN

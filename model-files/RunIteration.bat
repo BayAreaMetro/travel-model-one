@@ -6,7 +6,7 @@
 ::
 :: For complete details, please see http://mtcgis.mtc.ca.gov/foswiki/Main/RunIterationBatch.
 ::
-:: dto (2012 02 15) gde (2009 10 9)
+:: dto (2012 02 15) gde (2009 10 9) jmh (2023 1 20)
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -30,6 +30,7 @@ if %ITER%==0 goto hwyAssign
 :: Create the automobile level-of-service matrices
 runtpp CTRAMP\scripts\skims\HwySkims.job
 if ERRORLEVEL 2 goto done
+echo HighwaySkimming Completed  %DATE% %TIME% >> logs\feedback.rpt 
 
 :: No need to build transit skims here; they were built by the previous assignment
 
@@ -50,22 +51,19 @@ if ERRORLEVEL 2 goto done
 if %ITER%==1 (
   rem run matrix manager, household manager and jppf driver
   cd CTRAMP\runtime
-  call javaOnly_runMain.cmd 
-
-  rem run jppf node
-  cd CTRAMP\runtime
-  call javaOnly_runNode0.cmd
+  call StartHHMgrForNonDist.cmd 
 )
 
 ::  Call the MtcTourBasedModel class
-java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
+java -showversion -Xmx230g -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientLocal.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
 if ERRORLEVEL 2 goto done
-
+echo ABM Completed  %DATE% %TIME% >> logs\feedback.rpt 
 
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 3:  Execute the internal/external and commercial vehicle models
 ::
+:: TODO: Skip IX and AirPax
 :: ------------------------------------------------------------------------------------------------------
 
 :nonres
@@ -82,13 +80,11 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\IxTollChoice.job
 if ERRORLEVEL 2 goto done
 
+
 :: Apply the commercial vehicle generation models
-runtpp CTRAMP\scripts\nonres\TruckTripGeneration.job
+runtpp CTRAMP\scripts\nonres\BCMTrucks.job
 if ERRORLEVEL 2 goto done
 
-:: Apply the commercial vehicle distribution models
-runtpp CTRAMP\scripts\nonres\TruckTripDistribution.job
-if ERRORLEVEL 2 goto done
 
 :: Apply the commercial vehicle diurnal factors
 runtpp CTRAMP\scripts\nonres\TruckTimeOfDay.job
@@ -98,9 +94,15 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\TruckTollChoice.job
 if ERRORLEVEL 2 goto done
 
-:: Apply a transit submode choice model for transit trips to bay area HSR stations
-runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
+::Apply the BCM Airport model
+runtpp CTRAMP\scripts\nonres\BCMAirport.job
 if ERRORLEVEL 2 goto done
+echo NonABM Completed  %DATE% %TIME% >> logs\feedback.rpt 
+
+goto hwyassign
+:: Apply a transit submode choice model for transit trips to bay area HSR stations
+::runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
+::if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -115,17 +117,20 @@ if %ITER% GTR 0 (
 	runtpp CTRAMP\scripts\assign\PrepAssign.job
 	if ERRORLEVEL 2 goto done
 )
+echo PrepAssign Completed  %DATE% %TIME% >> logs\feedback.rpt 
 
 :: Assign the demand matrices to the highway network
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
+echo HighwayAssignment Completed  %DATE% %TIME% >> logs\feedback.rpt 
 
 :trnAssignSkim
 :: copy a local version for easier restarting
 copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
 call trnAssign_iter%ITER%.bat
+SET BASE_SCRIPTS=CTRAMP\scripts
 if ERRORLEVEL 2 goto done
-
+echo TransitBatchFile Completed  %DATE% %TIME% >> logs\feedback.rpt 
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 5:  Prepare the networks for the next iteration
@@ -170,11 +175,11 @@ runtpp CTRAMP\scripts\feedback\MergeNetworks.job
 if ERRORLEVEL 2 goto done                
 
 :: Place a copy of the loaded networks into the root \hwy directory for access by the next iteration
-copy hwy\iter%ITER%\avgLOADEA.net hwy\avgLOADEA.net /Y
-copy hwy\iter%ITER%\avgLOADAM.net hwy\avgLOADAM.net /Y
-copy hwy\iter%ITER%\avgLOADMD.net hwy\avgLOADMD.net /Y
-copy hwy\iter%ITER%\avgLOADPM.net hwy\avgLOADPM.net /Y
-copy hwy\iter%ITER%\avgLOADEV.net hwy\avgLOADEV.net /Y
+copy hwy\iter%ITER%\avgLOADEA.net hwy\avgLOADEA_taz.net /Y
+copy hwy\iter%ITER%\avgLOADAM.net hwy\avgLOADAM_taz.net /Y
+copy hwy\iter%ITER%\avgLOADMD.net hwy\avgLOADMD_taz.net /Y
+copy hwy\iter%ITER%\avgLOADPM.net hwy\avgLOADPM_taz.net /Y
+copy hwy\iter%ITER%\avgLOADEV.net hwy\avgLOADEV_taz.net /Y
 
 :: Delete temporary files
 del hwy\iter%ITER%\x*.net

@@ -145,10 +145,10 @@
 * copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_EV.csv
 
 ; the number of zones is used throughout to size arrays to store data
-token_zones = '1454'
+token_zones = %TAZ_COUNT%
 
-; arrays and sized as zones x zones to store matrix data in a one-dimensional array
-token_zones_by_zones = '2114116'
+; arrays and sized as zones x zones to store matrix data in a one-dimensional array; 6593*6593
+token_zones_by_zones = token_zones*token_zones
 
 ; set the sample share as a TP+ token
 token_sample_share = '%SAMPLESHARE%'
@@ -197,7 +197,7 @@ loop period = 1, 5
    endif
 
    ; do each time of day as a separate process
-   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = '%COMMPATH%'
+   DistributeMultistep processid = 'ctramp', processNum = @period@
 
 
    ; step one: convert individual trip list to an origin/destination list
@@ -853,6 +853,7 @@ loop period = 1, 5
 
       filei mati[1] = main\trips@token_period@_no_zpv.tpp
       filei mati[2] = main\trips@token_period@_zpv.tpp
+	  filei mati[3] = nonres\trntripsAirPax@token_period@.tpp
 
       fileo mato[1] = main\trips@token_period@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                    walk, bike,
@@ -873,12 +874,12 @@ loop period = 1, 5
       mw[ 9] = mi.1.wlk_loc_wlk
       mw[10] = mi.1.wlk_lrf_wlk
       mw[11] = mi.1.wlk_exp_wlk
-      mw[12] = mi.1.wlk_hvy_wlk
+      mw[12] = mi.1.wlk_hvy_wlk	+ mi.3.wlk_hvy_wlk
       mw[13] = mi.1.wlk_com_wlk
       mw[14] = mi.1.drv_loc_wlk
       mw[15] = mi.1.drv_lrf_wlk
       mw[16] = mi.1.drv_exp_wlk
-      mw[17] = mi.1.drv_hvy_wlk
+      mw[17] = mi.1.drv_hvy_wlk	+ mi.3.drv_hvy_wlk
       mw[18] = mi.1.drv_com_wlk
       mw[19] = mi.1.wlk_loc_drv
       mw[20] = mi.1.wlk_lrf_drv
@@ -917,3 +918,16 @@ Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, C
 * del main\jointtripdata_temp_MD.csv
 * del main\jointtripdata_temp_PM.csv
 * del main\jointtripdata_temp_EV.csv
+
+
+* del main\IndivTripsEA.dat
+* del main\IndivTripsAM.dat
+* del main\IndivTripsMD.dat
+* del main\IndivTripsPM.dat
+* del main\IndivTripsEV.dat
+
+* del main\JointTripsEA.dat
+* del main\JointTripsAM.dat
+* del main\JointTripsMD.dat
+* del main\JointTripsPM.dat
+* del main\JointTripsEV.dat

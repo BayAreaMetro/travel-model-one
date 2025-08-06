@@ -40,7 +40,8 @@
 ;
 ; version:  Travel Model One
 ; authors:  lmz (2016 06 22); dto (2010 09 03); gde (2009)
-;
+; version:  Travel Model 1.5+BCM
+; authors:  jmh (02/23/2023)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
@@ -63,7 +64,7 @@ token_debug_filename = 'logs\IxTollChoice'
 loop period = 1,5
 
    ; set a debug origin
-   token_debug_origin = '1474'
+   token_debug_origin = '6601'
      
    ; set a debug destination
    token_debug_destination = '1'
@@ -90,7 +91,7 @@ loop period = 1,5
    endif
   
    ; distribute via cluster
-   DistributeMultistep processid="ctramp",processnum=@period@, commpath='%COMMPATH%'
+   DistributeMultistep processid="ctramp",processnum=@period@
    
    ; loop through each vehicle class 
    loop class = 1,3

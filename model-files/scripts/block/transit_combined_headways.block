@@ -146,6 +146,7 @@ COMBINE MAXDIFF[130] = 10  ; Caltrain -- don't combine baby bullets with slow li
 ; path being found at all as other modes get used instead.  Try to overcome this, but not so
 ; aggressively as to make the model insensitive to frequency improvements
 factor IWAITMAX[130] = 25
+factor IWAITMAX[133] = 25
 
 ; Ferry schedules are also not frequent but people time their arrivals for the schedules
 ; Using an initial maxwait to help compensate

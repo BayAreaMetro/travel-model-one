@@ -1,0 +1,1 @@
+SetUpModel_PBA50.bat  2020 > SetUpModel_PBA50_2020.log 2>&1

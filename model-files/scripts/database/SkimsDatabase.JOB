@@ -61,7 +61,8 @@
 ;
 ; version:  Travel Model One
 ; authors:  dto (2010 12 14)
-;
+; version: Travel Model 1.5+ BiCounty Model
+; author jmh
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
@@ -78,7 +79,7 @@ token_bike_speed = 12.00
 token_max_bike_distance = 75.0
 
 ; only print the data for internal to internal flows
-token_internal_zones = 1454
+token_internal_zones = %TAZ_COUNT%
 
 ; dump time-period-specific databases
 loop period = 1, 5
@@ -111,7 +112,7 @@ loop period = 1, 5
    endif
    
    ; do each time of day as a separate process
-   DistributeMultistep processid = 'ctramp', processNum = period, commpath = '%COMMPATH%'
+   DistributeMultistep processid = 'ctramp', processNum = period
      
    ; total travel time by mode
    run pgm = matrix
@@ -132,7 +133,7 @@ loop period = 1, 5
       filei mati[5] = skims\trnskm@token_period@_wlk_trn_drv.tpp
 
       ; zonal data in DBF format (allows to use header rows)
-      filei zdati[1] = landuse\tazdata.dbf
+      filei zdati[1] = landuse\TAZDATA.dbf
       
       ; block file containing highway parameters (see note above)
       read file = ctramp\scripts\block\hwyparam.block

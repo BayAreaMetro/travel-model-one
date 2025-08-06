@@ -1,0 +1,16 @@
+;maximum pedestrian distance is 3 miles = 3*5280
+max_ped_distance = 15840
+
+;maximum short bike distance is 3 miles = 3*5280
+max_bike_short_distance = 15840
+
+;to effectively set no maximum, use ~300 mile bike distance
+nomax_bike_distance = 1500000
+
+;max_drive_gencost ~= 5 miles @ 40 mph = 11
+;                   = time + (0.6 / vot) * (dist * opcost) 
+;                   = 5 / 40 * 60 + (0.6 / 15.0) * (5 * 17.90)
+max_drive_gencost = 11
+
+;maximum pedestrian tap-tap distance is 1/2 miles = 0.5*5280
+max_tap_ped_distance = 2640

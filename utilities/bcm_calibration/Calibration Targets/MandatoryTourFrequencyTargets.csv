@@ -1,0 +1,21 @@
+"source","estimate","dimension_01_name","dimension_01_value","dimension_02_name","dimension_02_value","estimate_name","estimate_value"
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Driving age student","Mandatory Episode Category","1 school tour","Share of Persons",0.925727678515921
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Driving age student","Mandatory Episode Category","1 work tour","Share of Persons",0.0121663123080558
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Driving age student","Mandatory Episode Category","2 school tour","Share of Persons",0.0198875999353451
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Driving age student","Mandatory Episode Category","2 work tour","Share of Persons",0
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Driving age student","Mandatory Episode Category","Work and school tours","Share of Persons",0.0422184092406779
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Full-time worker","Mandatory Episode Category","1 school tour","Share of Persons",0.00622384111686304
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Full-time worker","Mandatory Episode Category","1 work tour","Share of Persons",0.926315270906245
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Full-time worker","Mandatory Episode Category","2 work tour","Share of Persons",0.0603020380176606
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Full-time worker","Mandatory Episode Category","Work and school tours","Share of Persons",0.0071588499592316
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Non-driving student","Mandatory Episode Category","1 school tour","Share of Persons",0.967195706419597
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Non-driving student","Mandatory Episode Category","2 school tour","Share of Persons",0.0328042935804032
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Part-time worker","Mandatory Episode Category","1 work tour","Share of Persons",0.88806260502346
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Part-time worker","Mandatory Episode Category","2 work tour","Share of Persons",0.11193739497654
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Pre-school","Mandatory Episode Category","1 school tour","Share of Persons",0.987840235406119
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","Pre-school","Mandatory Episode Category","2 school tour","Share of Persons",0.0121597645938812
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","University student","Mandatory Episode Category","1 school tour","Share of Persons",0.618789684525174
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","University student","Mandatory Episode Category","1 work tour","Share of Persons",0.264969156226698
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","University student","Mandatory Episode Category","2 school tour","Share of Persons",0.0563451661948371
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","University student","Mandatory Episode Category","2 work tour","Share of Persons",0.00544890521551905
+"CHTS","Share of persons in mandatory episode category by person type","Person Type","University student","Mandatory Episode Category","Work and school tours","Share of Persons",0.0544470878377724

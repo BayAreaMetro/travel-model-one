@@ -38,7 +38,8 @@
 ;
 ; version:  Travel Model One
 ; authors:  dto (2010 08 10); gde (2009)
-;
+; version:  Travel Model 1.5+ BCM
+; authors:  jmh (2023 01)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
@@ -86,13 +87,13 @@ loop period = 1,5
    endif
    
    ; distribute via cluster
-   DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = '%COMMPATH%'
+   ;DistributeMultistep processid = 'CTRAMP', processNum = @period@
   
    ; step 1: use the assignment routine to compute link speeds with the averaged volume
    run pgm = highway
   
       ; overhead causes time losses with Intrastep distribution -- leave our for now, but leave instructure there for future
-      ; DistributeIntrastep processid = "ctramp", processlist = @token_intrastep_processlist@, commpath = '%COMMPATH%', saveprn = f
+      DistributeIntrastep processid = "ctramp", processlist = 1-%NUMBER_OF_PROCESSORS%, saveprn = f
       
       ; use the networks with the averaged (through big iterations) volumes -- see AverageNetworkVolumes.job
       neti = hwy\iter@token_current_iteration@\xavgload@token_period@.net
@@ -107,7 +108,7 @@ loop period = 1,5
       parameters combine = equi                                 
       
       ; set the assignment parameters -- 1454 internal zones + 21 external zones
-      parameters zones = 1475
+      parameters zones = %TAZ_EXTS_COUNT%
       
       ; set the assignment parameters -- single dummy iteration just to calculate speeds
       parameters maxiters = 1
@@ -122,7 +123,7 @@ loop period = 1,5
       @token_capfac@ 
        
       ; read in the speed/capacity table
-      read file = ctramp\scripts\block\SpeedCapacity_1hour.block 
+;      read file = ctramp\scripts\block\SpeedCapacity_1hour.block 
       
       ; set the working variables
       phase = linkread
@@ -134,10 +135,10 @@ loop period = 1,5
          linkclass = li.FT
          
          ; tollclass determines whether a link is only available to value toll payers
-         lw.tollclass = li.TOLLCLASS
+         lw.tollclass = li.TOLLBOOTH
          
          ; fixed time links (where TSIN = 1) are indifferent to congestion
-         lw.ot = li.OT
+         ;lw.ot = li.OT
          
          ; free-flow speed is used in the volume/delay functions
          lw.ffs = li.FFS
@@ -146,7 +147,15 @@ loop period = 1,5
          lw.fft = (distance / lw.ffs) * 60.0 
          
          ; TSIN is a code, where 1 indicates the link has a fixed time and is immune to demand
-         lw.tsin = li.TSIN
+         ;lw.tsin = li.TSIN
+		 
+		 IF (li.CNTYPE = 'TAZ')
+			lw.tsin = 1
+			lw.ot = li.FFT
+		 ELSE
+			lw.tsin = 0
+			lw.ot = 0
+		 ENDIF
          
          ; link capacity is a function of the number of lanes
          lw.lanes = li.LANES
@@ -156,12 +165,14 @@ loop period = 1,5
          lw.capclass = li.CAPCLASS
 
          ; adding at the recommendation of citilabs
-         C = capacityfor(li.lanes,li.CAPCLASS)*@token_capfac_num@
-
+         ; C = capacityfor(li.lanes,li.CAPCLASS)*@token_capfac_num@
+		 C = li.CAP_TOTFAC
          ; set the input time to OT for fixed time links
          if (lw.tsin = 1)
-            t0 = lw.ot
-         endif        
+				t0 = lw.ot
+			 else
+				t0=li.FFT
+			 endif        
          
       ; the setting of critical speeds and computation of the volume/delay function parameter is in the FreeFlowSpeed.block file  
       read file = ctramp\scripts\block\FreeFlowSpeed.block 
@@ -215,10 +226,10 @@ loop period = 1,5
       
    endrun
   
-   EndDistributeMultistep
+   ;EndDistributeMultistep
   
 endloop ; time period loop
 
-Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
-          printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+;Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+;          printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 

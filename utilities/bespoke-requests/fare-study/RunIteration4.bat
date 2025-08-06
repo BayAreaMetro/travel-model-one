@@ -228,7 +228,7 @@ set COMPLEXMODES_DWELL=
 set COMPLEXMODES_ACCESS= 
 
 :: Step 4.5: Build initial transit files
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHONPATH=%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master;%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master\_static
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 

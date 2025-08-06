@@ -10,3 +10,15 @@ core/projects/**/build
 **/*.pyc
 model-files/model/ModeChoice.xls
 model-files/model/TripModeChoice.xls
+model-files/RunModel.bat.bak
+model-files/runtime/SetPath.bat.bak
+model-files/SetUpModel_PBA50.bat.bak
+model-files/scripts/preprocess/taz_densities.job.bak
+*.bak
+model-files/SetUpModel_PBA50.log
+model-files/SetUpModel_PBA50_2035.log
+model-files/SetUpModel_PBA50_2015.log
+model-files/SetUpModel_PBA50_2050.log
+model-files/createScenario_2050.bat
+model-files/createScenario_2015.bat
+model-files/createScenario_2035.bat

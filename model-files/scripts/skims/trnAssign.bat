@@ -1,5 +1,6 @@
 echo on
-
+SET BASE_SCRIPTS=..\..\CTRAMP\scripts
+SET MODEL_DIR=..\..\
 set ALLTIMEPERIODS=AM MD PM EV EA
 set TRNASSIGNITER=0
 set PREVTRNASSIGNITER=NEG1
@@ -9,9 +10,9 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHON_PATH=%SOFTWARE_DIR%\user_py27
 set TRN_ERRORLEVEL=0
-
+set R_HOME=%SOFTWARE_DIR%\R-4.0.4\bin\x64
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
 IF %ITER% EQU 1 SET PREV_TRN_ITER=0
@@ -77,14 +78,16 @@ IF %ITER% EQU %MAXITERATIONS% (set PHTDIFFCOND=0)
 echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
 :: Prepare the highway network for use by the transit network
-runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
+runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
-
+:: Create list of PNR lots
+runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
+if ERRORLEVEL 2 goto done
 :: Create the transit networks
-runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
+runtpp %BASE_SCRIPTS%\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
@@ -98,24 +101,21 @@ echo START TRNASSIGN            SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\l
 :transitSubAssign
 
 :: Assign the transit trips to the transit network
-runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
+runtpp %BASE_SCRIPTS%\assign\TransitAssign.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
-:: And skim
-runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
+runtpp %BASE_SCRIPTS%\skims\TransitSkims.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
-
 :: RUNNING OUT OF SPACE - delete this from the recycle bin too
 set THISDIR=%cd:X:\=X:\Recycle Bin\%
 IF "%THISDIR:~3,11%"=="Recycle Bin" (
   del /Q "%THISDIR%"
 )
-
 
 set SUBDIR=Subdir%TRNASSIGNITER%
 IF NOT EXIST %SUBDIR% mkdir %SUBDIR%
@@ -128,20 +128,24 @@ IF %KEEP_ASGN_DBFS% EQU 1 (
 
 :routelinkMSA
 :: For the final iteration, MSA our link volumes and use that to check for convergence
-if %ITER% EQU %MAXITERATIONS% (
+::if %ITER% EQU %MAXITERATIONS% (
   echo START   routelinkMSA       SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py EA %TRNASSIGNITER% %VOLDIFFCOND%
 
-)
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py AM %TRNASSIGNITER% %VOLDIFFCOND%
+
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py MD %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py PM %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py EV %TRNASSIGNITER% %VOLDIFFCOND%
+
+::)
+
+"%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\skims\convert_to_dbf.R %MODEL_DIR%\trn\TransitAssignment.iter%ITER%\Subdir%TRNASSIGNITER%\ > create_transitassignment_dbf.log 2>&1
 
 :modifyDwellAccess
 echo START   transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
-
+set PYTHONPATH=%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master;%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master\_static
 :: Initialize with header line
 if %TRNASSIGNITER% EQU 0 (
   echo trnAssignIter,timeperiod,mode,PHT,pctPHTdiff,RMSE_IVTT,RMSE_TOTT,AvgPaths,CurrPaths,CurrBoards,PathsFromBoth,PathsFromIter,PathsFromAvg,PHTCriteriaMet > PHT_total.csv
@@ -152,14 +156,14 @@ python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraD
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-
+if ERRORLEVEL 2 ECHO A_ERRORLEVEL2
 echo DONE    transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
 :: did all of them reach end condition? count files and if there are new ones, copy them
 :: into place so the transit assignment will use them
 set EXISTCOUNT=0
 set /a NEXTTRNASSIGNITER = %TRNASSIGNITER%+1
-
+if ERRORLEVEL 2 ECHO B_ERRORLEVEL2
 FOR %%H in (%ALLTIMEPERIODS%) DO (
   IF EXIST transit%%H_%NEXTTRNASSIGNITER%.lin (
     set /a EXISTCOUNT+=1
@@ -168,7 +172,7 @@ FOR %%H in (%ALLTIMEPERIODS%) DO (
     copy /y transit%%H_%NEXTTRNASSIGNITER%.lin transit%%H.lin
   )
 )
-
+if ERRORLEVEL 2 ECHO C_ERRORLEVEL2
 :: if EA is the only holdout then that's not enough reason to keep iterating
 IF EXIST transitEA_%NEXTTRNASSIGNITER%.lin (
   IF %EXISTCOUNT%==1 (
@@ -179,7 +183,7 @@ IF EXIST transitEA_%NEXTTRNASSIGNITER%.lin (
     copy transitEA_%TRNASSIGNITER%.lin transitEA.lin
   )
 )
-
+if ERRORLEVEL 2 ECHO D_ERRORLEVEL2
 :: cleanup?
 
 :: converged! done
@@ -192,6 +196,7 @@ set /a TRNASSIGNITER+=1
 goto trnassign_loop
 ::============================== END LOOP ==============================
 :donetrnassign
+if ERRORLEVEL 2 ECHO E_ERRORLEVEL2
 :: if we have an error then stop
 if ERRORLEVEL 2 goto donedone
 

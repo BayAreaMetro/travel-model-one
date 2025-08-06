@@ -1,0 +1,61 @@
+"source","estimate","dimension_01_name","dimension_01_value","dimension_02_name","dimension_02_value","estimate_name","estimate_value"
+"CHTS","Tours by tour purpose and person type","Tour Purpose","At-Work","Person Type","Full-time worker","Number of Tours",403361.57628521
+"CHTS","Tours by tour purpose and person type","Tour Purpose","At-Work","Person Type","Part-time worker","Number of Tours",67763.86943407
+"CHTS","Tours by tour purpose and person type","Tour Purpose","At-Work","Person Type","University student","Number of Tours",17224.36499029
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Discretionary","Person Type","Driving age student","Number of Tours",30806.8650335916
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Discretionary","Person Type","Full-time worker","Number of Tours",309690.255217376
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Discretionary","Person Type","Non-driving student","Number of Tours",140766.363346488
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Discretionary","Person Type","Non-working adult","Number of Tours",368368.123698178
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Discretionary","Person Type","Non-working senior","Number of Tours",238285.141808137
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Discretionary","Person Type","Part-time worker","Number of Tours",168057.245542018
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Discretionary","Person Type","Pre-school","Number of Tours",117063.224155213
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Discretionary","Person Type","University student","Number of Tours",81774.0457333351
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Eat Out","Person Type","Driving age student","Number of Tours",2596.07680621925
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Eat Out","Person Type","Full-time worker","Number of Tours",131607.480346827
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Eat Out","Person Type","Non-driving student","Number of Tours",22032.0179429633
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Eat Out","Person Type","Non-working adult","Number of Tours",83307.4580222309
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Eat Out","Person Type","Non-working senior","Number of Tours",73669.7519101066
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Eat Out","Person Type","Part-time worker","Number of Tours",50274.1786096726
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Eat Out","Person Type","Pre-school","Number of Tours",7912.07852706824
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Eat Out","Person Type","University student","Number of Tours",36148.2925847415
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Escorting","Person Type","Driving age student","Number of Tours",8125.3538488502
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Escorting","Person Type","Full-time worker","Number of Tours",245875.095055013
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Escorting","Person Type","Non-driving student","Number of Tours",39418.3614390324
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Escorting","Person Type","Non-working adult","Number of Tours",344986.632697056
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Escorting","Person Type","Non-working senior","Number of Tours",70393.3458493951
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Escorting","Person Type","Part-time worker","Number of Tours",201140.642738369
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Escorting","Person Type","Pre-school","Number of Tours",114558.017524914
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Escorting","Person Type","University student","Number of Tours",73804.9035005793
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Maintenance","Person Type","Driving age student","Number of Tours",9467.49659996489
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Maintenance","Person Type","Full-time worker","Number of Tours",193866.399695594
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Maintenance","Person Type","Non-driving student","Number of Tours",36932.916168713
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Maintenance","Person Type","Non-working adult","Number of Tours",204300.635658015
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Maintenance","Person Type","Non-working senior","Number of Tours",180490.463572862
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Maintenance","Person Type","Part-time worker","Number of Tours",128016.085447914
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Maintenance","Person Type","Pre-school","Number of Tours",34393.9491885996
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Maintenance","Person Type","University student","Number of Tours",50201.2183417995
+"CHTS","Tours by tour purpose and person type","Tour Purpose","School","Person Type","Driving age student","Number of Tours",162510.713736398
+"CHTS","Tours by tour purpose and person type","Tour Purpose","School","Person Type","Non-driving student","Number of Tours",845181.964604998
+"CHTS","Tours by tour purpose and person type","Tour Purpose","School","Person Type","Pre-school","Number of Tours",164072.225338118
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Shopping","Person Type","Driving age student","Number of Tours",5791.980562974
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Shopping","Person Type","Full-time worker","Number of Tours",198516.553722414
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Shopping","Person Type","Non-driving student","Number of Tours",36917.1438229495
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Shopping","Person Type","Non-working adult","Number of Tours",234070.735665997
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Shopping","Person Type","Non-working senior","Number of Tours",203002.264443369
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Shopping","Person Type","Part-time worker","Number of Tours",131576.616382102
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Shopping","Person Type","Pre-school","Number of Tours",43550.337156778
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Shopping","Person Type","University student","Number of Tours",51163.5967678975
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Social/Visit","Person Type","Driving age student","Number of Tours",9142.58995547028
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Social/Visit","Person Type","Full-time worker","Number of Tours",103848.005697022
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Social/Visit","Person Type","Non-driving student","Number of Tours",49292.4734045059
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Social/Visit","Person Type","Non-working adult","Number of Tours",73057.3698154252
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Social/Visit","Person Type","Non-working senior","Number of Tours",53828.1414678115
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Social/Visit","Person Type","Part-time worker","Number of Tours",52522.9737725058
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Social/Visit","Person Type","Pre-school","Number of Tours",53181.7648779011
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Social/Visit","Person Type","University student","Number of Tours",31707.3334247495
+"CHTS","Tours by tour purpose and person type","Tour Purpose","University","Person Type","Full-time worker","Number of Tours",26622.5465296719
+"CHTS","Tours by tour purpose and person type","Tour Purpose","University","Person Type","University student","Number of Tours",243470.050831714
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Work","Person Type","Driving age student","Number of Tours",8748.76961241189
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Work","Person Type","Full-time worker","Number of Tours",2100148.72511535
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Work","Person Type","Part-time worker","Number of Tours",532515.186761735
+"CHTS","Tours by tour purpose and person type","Tour Purpose","Work","Person Type","University student","Number of Tours",102327.606769621

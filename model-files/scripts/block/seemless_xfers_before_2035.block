@@ -1,0 +1,2 @@
+		  ; maximum wait time for shuttles at the Great America Station set to 5 minutes. NODE #2192946 is the Great America Station. The other two nodes are nearby shuttle stops.
+		  factor MAXWAITTIME=5, NODES=2019349, 2192946, 2019349

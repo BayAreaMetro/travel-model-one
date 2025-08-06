@@ -1,0 +1,287 @@
+"source","estimate","dimension_01_name","dimension_01_value","dimension_02_name","dimension_02_value","estimate_name","estimate_value"
+"CHTS","Mean commute length","NA","NA","NA","NA","Mean commute length (miles)",12.7569801715156
+"CHTS","Mean commute length (exclude intrazonal)","NA","NA","NA","NA","Mean commute length (miles)",12.9282666328657
+"CHTS","Mean commute length by person type","Person Type","Driving age student","NA","NA","Mean commute length (miles)",2.87473098271292
+"CHTS","Mean commute length by person type","Person Type","Full-time worker","NA","NA","Mean commute length (miles)",13.493251173629
+"CHTS","Mean commute length by person type","Person Type","Part-time worker","NA","NA","Mean commute length (miles)",11.4260473494044
+"CHTS","Mean commute length by person type","Person Type","University student","NA","NA","Mean commute length (miles)",8.21708461246868
+"CHTS","Mean commute length by person type (exclude intrazonal)","Person Type","Driving age student","NA","NA","Mean commute length (miles)",3.13557139933816
+"CHTS","Mean commute length by person type (exclude intrazonal)","Person Type","Full-time worker","NA","NA","Mean commute length (miles)",13.6314280342907
+"CHTS","Mean commute length by person type (exclude intrazonal)","Person Type","Part-time worker","NA","NA","Mean commute length (miles)",11.6762178472749
+"CHTS","Mean commute length by person type (exclude intrazonal)","Person Type","University student","NA","NA","Mean commute length (miles)",8.37989163403994
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","Alameda","NA","NA","Mean commute length (miles)",13.2949729323391
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","Contra Costa","NA","NA","Mean commute length (miles)",15.2642633327573
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","Marin","NA","NA","Mean commute length (miles)",13.817311556746
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","Napa","NA","NA","Mean commute length (miles)",13.7132524265227
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","San Francisco","NA","NA","Mean commute length (miles)",9.16982063886349
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","San Mateo","NA","NA","Mean commute length (miles)",11.0867466697518
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","Santa Clara","NA","NA","Mean commute length (miles)",12.4203361816105
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","Solano","NA","NA","Mean commute length (miles)",18.3481095829446
+"CHTS","Mean commute length by residency (exclude intrazonal)","Residency","Sonoma","NA","NA","Mean commute length (miles)",15.1585275206339
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[0-1]","NA","NA","Share of Workers",0.0336458669142597
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[1-2]","NA","NA","Share of Workers",0.0690035534634288
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[2-3]","NA","NA","Share of Workers",0.073123716140393
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[3-4]","NA","NA","Share of Workers",0.0736978058294223
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[4-5]","NA","NA","Share of Workers",0.0510544200803207
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[5-6]","NA","NA","Share of Workers",0.0686108255457401
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[6-7]","NA","NA","Share of Workers",0.0419408739479419
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[7-8]","NA","NA","Share of Workers",0.0504841046318653
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[8-9]","NA","NA","Share of Workers",0.0389769382872242
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[9-10]","NA","NA","Share of Workers",0.0401103497585694
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[10-11]","NA","NA","Share of Workers",0.0354849536651019
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[11-12]","NA","NA","Share of Workers",0.0282558565593506
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[12-13]","NA","NA","Share of Workers",0.0352985608094981
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[13-14]","NA","NA","Share of Workers",0.0294432474082679
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[14-15]","NA","NA","Share of Workers",0.0263975273535834
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[15-16]","NA","NA","Share of Workers",0.0219749955361962
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[16-17]","NA","NA","Share of Workers",0.0182502524934133
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[17-18]","NA","NA","Share of Workers",0.0136611241049293
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[18-19]","NA","NA","Share of Workers",0.0195389792411157
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[19-20]","NA","NA","Share of Workers",0.0176117137158877
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[20-21]","NA","NA","Share of Workers",0.0126268262634408
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[21-22]","NA","NA","Share of Workers",0.02234641875965
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[22-23]","NA","NA","Share of Workers",0.0164958917639145
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[23-24]","NA","NA","Share of Workers",0.0135929578806528
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[24-25]","NA","NA","Share of Workers",0.00849052214943919
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[25-26]","NA","NA","Share of Workers",0.00753066830815664
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[26-27]","NA","NA","Share of Workers",0.00989852653075499
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[27-28]","NA","NA","Share of Workers",0.0112629943141937
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[28-29]","NA","NA","Share of Workers",0.00741215754056287
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[29-30]","NA","NA","Share of Workers",0.00748444997767635
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[30-31]","NA","NA","Share of Workers",0.00653229296067856
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[31-32]","NA","NA","Share of Workers",0.00536555167932201
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[32-33]","NA","NA","Share of Workers",0.00502009189620809
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[33-34]","NA","NA","Share of Workers",0.00325173807036505
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[34-35]","NA","NA","Share of Workers",0.00637150247428508
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[35-36]","NA","NA","Share of Workers",0.0041738172511712
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[36-37]","NA","NA","Share of Workers",0.00857188245522706
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[37-38]","NA","NA","Share of Workers",0.0078161049107949
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[38-39]","NA","NA","Share of Workers",0.00200048141080189
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[39-40]","NA","NA","Share of Workers",0.00404242989858785
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[40-41]","NA","NA","Share of Workers",0.00160588779249818
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[41-42]","NA","NA","Share of Workers",0.00495161107927611
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[42-43]","NA","NA","Share of Workers",0.00420289815397931
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[43-44]","NA","NA","Share of Workers",0.00283686196460265
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[44-45]","NA","NA","Share of Workers",0.00246873887810057
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[45-46]","NA","NA","Share of Workers",0.00427465441793384
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[46-47]","NA","NA","Share of Workers",0.0011054434794322
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[47-48]","NA","NA","Share of Workers",0.00192467778567586
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[48-49]","NA","NA","Share of Workers",0.00324139494633852
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[49-50]","NA","NA","Share of Workers",0.00037386541861185
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[50-51]","NA","NA","Share of Workers",0.000606455700453399
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[51-52]","NA","NA","Share of Workers",0.00171343619785461
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[52-53]","NA","NA","Share of Workers",0.0015931645769175
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[53-54]","NA","NA","Share of Workers",0.00155324435563576
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[54-55]","NA","NA","Share of Workers",0.000696431384459103
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[55-56]","NA","NA","Share of Workers",0.000360436130975269
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[56-57]","NA","NA","Share of Workers",0.000629337496652711
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[57-58]","NA","NA","Share of Workers",0.000285167214004668
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[58-59]","NA","NA","Share of Workers",0.0000578007099071151
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[59-60]","NA","NA","Share of Workers",0.000858372782208353
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[60-61]","NA","NA","Share of Workers",0.000465451091021075
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[61-62]","NA","NA","Share of Workers",0.000328310823963228
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[62-63]","NA","NA","Share of Workers",0.00231520814290006
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[63-64]","NA","NA","Share of Workers",0.000121974034746651
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[64-65]","NA","NA","Share of Workers",0.0000424409095404742
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[65-66]","NA","NA","Share of Workers",0.000462643416632483
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[66-67]","NA","NA","Share of Workers",0.000115202164718212
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[67-68]","NA","NA","Share of Workers",0.0000959567954385721
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[68-69]","NA","NA","Share of Workers",0.00022200410309632
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[69-70]","NA","NA","Share of Workers",0.0000877888031431795
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[70-71]","NA","NA","Share of Workers",0.000252570377735091
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[71-72]","NA","NA","Share of Workers",0.000200925692300118
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[72-73]","NA","NA","Share of Workers",0.000128058163758046
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[73-74]","NA","NA","Share of Workers",0.000318194836733075
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[74-75]","NA","NA","Share of Workers",0.00060377234368023
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[75-76]","NA","NA","Share of Workers",0.000102841798559473
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[78-79]","NA","NA","Share of Workers",0.000344448372152035
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[79-80]","NA","NA","Share of Workers",0.0000424409095404742
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[80-81]","NA","NA","Share of Workers",0.0000477887543008632
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[81-82]","NA","NA","Share of Workers",0.0000424409095404742
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[82-83]","NA","NA","Share of Workers",0.000442184687519302
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[86-87]","NA","NA","Share of Workers",0.0000424409095404742
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[87-88]","NA","NA","Share of Workers",0.000296397709398479
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[105-106]","NA","NA","Share of Workers",0.000177546626159527
+"CHTS","Share of commute length by distance bin (exclude intrazonal)","Distance Bin (miles)","[109-110]","NA","NA","Share of Workers",0.00050811517597172
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[0-1]","Share of Workers",0.181980532827052
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[1-2]","Share of Workers",0.41014685737138
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[2-3]","Share of Workers",0.0844308378044478
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[3-4]","Share of Workers",0.108978909714932
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[4-5]","Share of Workers",0.0137463934963959
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[5-6]","Share of Workers",0.115887343548035
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[8-9]","Share of Workers",0.057700993667369
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[10-11]","Share of Workers",0.0115197167831566
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Driving age student","Distance Bin (miles)","[16-17]","Share of Workers",0.0156084147872316
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[0-1]","Share of Workers",0.0338215647980733
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[1-2]","Share of Workers",0.06429744414426
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[2-3]","Share of Workers",0.0679198731880445
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[3-4]","Share of Workers",0.0637430590820409
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[4-5]","Share of Workers",0.04988046563558
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[5-6]","Share of Workers",0.0681529394194295
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[6-7]","Share of Workers",0.0436304255377536
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[7-8]","Share of Workers",0.0489307353272567
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[8-9]","Share of Workers",0.0412964741838735
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[9-10]","Share of Workers",0.0382556247942884
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[10-11]","Share of Workers",0.0298900438961403
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[11-12]","Share of Workers",0.0239673382433279
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[12-13]","Share of Workers",0.0361878476987006
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[13-14]","Share of Workers",0.0301291460318715
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[14-15]","Share of Workers",0.0282220357374673
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[15-16]","Share of Workers",0.0267861458569488
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[16-17]","Share of Workers",0.0211038584413969
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[17-18]","Share of Workers",0.0136778762603515
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[18-19]","Share of Workers",0.0199724328054672
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[19-20]","Share of Workers",0.0176091387396355
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[20-21]","Share of Workers",0.0138716318006171
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[21-22]","Share of Workers",0.0236784528724986
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[22-23]","Share of Workers",0.0199553076499669
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[23-24]","Share of Workers",0.0163840895117882
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[24-25]","Share of Workers",0.010277462442726
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[25-26]","Share of Workers",0.00965889397108721
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[26-27]","Share of Workers",0.00977022317067193
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[27-28]","Share of Workers",0.0138259753900371
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[28-29]","Share of Workers",0.00901142722152828
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[29-30]","Share of Workers",0.00636658604838096
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[30-31]","Share of Workers",0.00656337613217201
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[31-32]","Share of Workers",0.00517598090288085
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[32-33]","Share of Workers",0.00459514543018093
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[33-34]","Share of Workers",0.00401375928261847
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[34-35]","Share of Workers",0.00787760272036464
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[35-36]","Share of Workers",0.00530783417948325
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[36-37]","Share of Workers",0.00665657341536689
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[37-38]","Share of Workers",0.00677873809968154
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[38-39]","Share of Workers",0.00224914278076715
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[39-40]","Share of Workers",0.00397478244122081
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[40-41]","Share of Workers",0.00209469921404141
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[41-42]","Share of Workers",0.00607366036653471
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[42-43]","Share of Workers",0.00294710269815029
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[43-44]","Share of Workers",0.00332605211919527
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[44-45]","Share of Workers",0.00330255034730898
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[45-46]","Share of Workers",0.00372541243817139
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[46-47]","Share of Workers",0.0014788047368291
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[47-48]","Share of Workers",0.00214446944440888
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[48-49]","Share of Workers",0.00374406864659508
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[49-50]","Share of Workers",0.000500137693393218
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[50-51]","Share of Workers",0.00081128486367131
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[51-52]","Share of Workers",0.000941498026661372
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[52-53]","Share of Workers",0.00101536239382444
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[53-54]","Share of Workers",0.00181757156957041
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[54-55]","Share of Workers",0.000790157157200685
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[55-56]","Share of Workers",0.00041817357520745
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[56-57]","Share of Workers",0.000841894939388687
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[57-58]","Share of Workers",0.00038148185294382
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[58-59]","Share of Workers",0.0000773227805790938
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[59-60]","Share of Workers",0.000839490946239916
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[60-61]","Share of Workers",0.000622656237945136
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[61-62]","Share of Workers",0.000122750393297057
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[62-63]","Share of Workers",0.00295613132284379
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[63-64]","Share of Workers",0.000163170513653173
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[64-65]","Share of Workers",0.0000567752392876977
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[65-66]","Share of Workers",0.000618900277317047
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[66-67]","Share of Workers",0.00015411145847616
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[67-68]","Share of Workers",0.000128366005377667
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[68-69]","Share of Workers",0.000296985531474626
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[69-70]","Share of Workers",0.000117439290514765
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[70-71]","Share of Workers",0.000337875502390417
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[71-72]","Share of Workers",0.00026878793086436
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[72-73]","Share of Workers",0.000171309544701737
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[73-74]","Share of Workers",0.000260880405289731
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[74-75]","Share of Workers",0.000643818403435868
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[75-76]","Share of Workers",0.000137576404116009
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[78-79]","Share of Workers",0.000460785100105826
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[79-80]","Share of Workers",0.0000567752392876977
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[80-81]","Share of Workers",0.0000639293075966011
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[81-82]","Share of Workers",0.0000567752392876977
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[82-83]","Share of Workers",0.00059153165460138
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[86-87]","Share of Workers",0.0000567752392876977
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[105-106]","Share of Workers",0.000237512633307668
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Full-time worker","Distance Bin (miles)","[109-110]","Share of Workers",0.000679730029677933
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[0-1]","Share of Workers",0.0602570351988129
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[1-2]","Share of Workers",0.0630897108752867
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[2-3]","Share of Workers",0.0934102949361989
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[3-4]","Share of Workers",0.083283144115901
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[4-5]","Share of Workers",0.0607017998826607
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[5-6]","Share of Workers",0.0723214727969177
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[6-7]","Share of Workers",0.0360779124679502
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[7-8]","Share of Workers",0.0458303406425383
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[8-9]","Share of Workers",0.0362652199523655
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[9-10]","Share of Workers",0.0469490602089845
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[10-11]","Share of Workers",0.0368691634528296
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[11-12]","Share of Workers",0.0451307315083323
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[12-13]","Share of Workers",0.0319449628518401
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[13-14]","Share of Workers",0.0304606891163309
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[14-15]","Share of Workers",0.020940255472614
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[15-16]","Share of Workers",0.00848703772420114
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[16-17]","Share of Workers",0.0114364261042641
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[17-18]","Share of Workers",0.0162383194528382
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[18-19]","Share of Workers",0.0184915522642435
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[19-20]","Share of Workers",0.0169060703511132
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[20-21]","Share of Workers",0.0088023738514922
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[21-22]","Share of Workers",0.0214455882911517
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[22-23]","Share of Workers",0.00746007582149006
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[23-24]","Share of Workers",0.00572395249681028
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[24-25]","Share of Workers",0.00381727291827946
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[25-26]","Share of Workers",0.000839353145746536
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[26-27]","Share of Workers",0.0110472110891604
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[27-28]","Share of Workers",0.00414955354380762
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[28-29]","Share of Workers",0.00319368662113556
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[29-30]","Share of Workers",0.011149335434448
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[30-31]","Share of Workers",0.00728573009160714
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[31-32]","Share of Workers",0.006233639193666
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[32-33]","Share of Workers",0.0074898682375034
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[33-34]","Share of Workers",0.000396876890288841
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[34-35]","Share of Workers",0.00160308380954028
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[35-36]","Share of Workers",0.000973753045427635
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[36-37]","Share of Workers",0.00704091596798952
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[37-38]","Share of Workers",0.012988637456477
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[38-39]","Share of Workers",0.00150822638039205
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[39-40]","Share of Workers",0.00506149309031118
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[41-42]","Share of Workers",0.00194391972241008
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[42-43]","Share of Workers",0.00944966978075001
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[43-44]","Share of Workers",0.00165642572375751
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[45-46]","Share of Workers",0.00703960677388768
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[47-48]","Share of Workers",0.00151976666176907
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[48-49]","Share of Workers",0.00209140057993472
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[51-52]","Share of Workers",0.00477071740076631
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[52-53]","Share of Workers",0.0013134624366533
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[53-54]","Share of Workers",0.000919345683236645
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[54-55]","Share of Workers",0.000499775542593803
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[55-56]","Share of Workers",0.000226055761355203
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[59-60]","Share of Workers",0.00109071812389055
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[61-62]","Share of Workers",0.00111774367700988
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[62-63]","Share of Workers",0.00049815465607549
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[73-74]","Share of Workers",0.000582045397429472
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[74-75]","Share of Workers",0.000578840741977779
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","Part-time worker","Distance Bin (miles)","[87-88]","Share of Workers",0.00140052458355412
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[0-1]","Share of Workers",0.125966835840806
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[1-2]","Share of Workers",0.149123064648066
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[2-3]","Share of Workers",0.0612158086141964
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[3-4]","Share of Workers",0.155825267116401
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[4-5]","Share of Workers",0.0169156837186241
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[5-6]","Share of Workers",0.0442028143634567
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[6-7]","Share of Workers",0.0327528901905037
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[7-8]","Share of Workers",0.0815151368129734
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[8-9]","Share of Workers",0.00448006155896418
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[9-10]","Share of Workers",0.0305556678739477
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[10-11]","Share of Workers",0.102643518879906
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[11-12]","Share of Workers",0.0152747494270722
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[12-13]","Share of Workers",0.0287985196492111
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[13-14]","Share of Workers",0.00919115054044786
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[14-15]","Share of Workers",0.0168378521452088
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[15-16]","Share of Workers",0.00301313139211466
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[18-19]","Share of Workers",0.0134761370662585
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[19-20]","Share of Workers",0.0168641992692607
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[20-21]","Share of Workers",0.00764331807612546
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[21-22]","Share of Workers",0.00208405799090012
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[23-24]","Share of Workers",0.00259703060235174
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[25-26]","Share of Workers",0.00257196747492351
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[26-27]","Share of Workers",0.00498014666911273
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[27-28]","Share of Workers",0.000959842106942265
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[29-30]","Share of Workers",0.00708420042307363
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[30-31]","Share of Workers",0.0016292044723413
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[31-32]","Share of Workers",0.00343133975802287
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[33-34]","Share of Workers",0.00324207040854369
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[34-35]","Share of Workers",0.00278046592640921
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[36-37]","Share of Workers",0.0407937996387241
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[40-41]","Share of Workers",0.00077579785679499
+"CHTS","Share of commute length by person type and distance bin (exclude intrazonal)","Person Type","University student","Distance Bin (miles)","[52-53]","Share of Workers",0.0107742694883155

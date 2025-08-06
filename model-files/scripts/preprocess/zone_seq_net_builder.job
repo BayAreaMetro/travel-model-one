@@ -1,0 +1,82 @@
+; ----------------------------------------------------------------------------------------------------------------
+; zone_seq_net_builder.job
+; 
+; This script builds a sequential zone numbering system required by the CTRAMP models. Because the TAZ (and
+; EXT) network nodes all have "gaps" in them, they can't be used directly for two reasons:
+;
+;   1) CUBE requires sequential (and initial) numbering for zones when performing skims
+;   2) CTRAMP's data structures increase based on the maximum zone number, and limiting this can significantly
+;       decrease memory consumption for models with large zone counts.
+;
+; This script has two steps: the first builds separate zone sequences for TAZs, EXTs, and stores
+; them in a new network (which will be the base network for the subsequent model steps). The second step
+; exports the node numbers (just for the zone nodes) which can then be used by other scripts as a correspondence
+; between the two numbering schemes. Note that the 
+;
+; Update for Bicounty Model: BCM uses a new set of TAZs, without any MAZs. So removing all the MAZ sequencing.
+
+; Inputs:  hwy\complete_network_base.net - the base network
+; Outputs: hwy\complete_network_zone_seq.net - the base network, with the following data columns added to the nodes:
+;              TAZSEQ - the TAZ sequential node numbers
+;              EXTSEQ - the EXT sequential node numbers
+;          hwy\complete_network_base_zone_seq.csv - csv file holding the numbering correspondence, with the following columns (incl header):
+;              N - the original zone number in the network
+;              TAZSEQ - the taz sequence number (0 if not a taz)
+;              EXTSEQ - the ext sequence number (0 if not an ext; start at [maximum taz sequence number]+1)
+;
+; base version:  Travel Model Zed
+; authors:  crf (2013 11)
+;
+; version: TM 1.5 BCM
+; author jmh 10 2022
+; ----------------------------------------------------------------------------------------------------------------
+
+;taz includes externals
+taz_selector = '(N < 900000)'
+ext_selector = '(N < 1000000) & (N > 900000)'
+
+;build the zone sequences and export to a new network
+RUN PGM=NETWORK
+    NETI = "hwy\complete_network_base.net"
+    NETO = "hwy\complete_network_zone_seq.net"
+    
+    PHASE = NODEMERGE
+        IF (@taz_selector@)
+            _i = _i + 1 
+            TAZSEQ = _i
+            EXTSEQ = 0
+        ELSEIF (@ext_selector@)
+            _m = _m + 1 
+            TAZSEQ = 0
+            EXTSEQ = _m + %TAZ_COUNT%
+        ELSE
+            TAZSEQ = 0
+            EXTSEQ = 0
+        ENDIF
+    ENDPHASE
+
+   PHASE = LINKMERGE
+       TAZTAZVOL=0
+   ENDPHASE
+
+    PHASE = SUMMARY
+      IF (_i != %TAZ_COUNT%) ABORT msg="_i != TAZ_COUNT environment variable %TAZ_COUNT%"
+    ENDPHASE
+ENDRUN
+
+;write out taz to node correspondence
+RUN PGM=NETWORK
+    NETI = "hwy\complete_network_zone_seq.net"
+    PRINTO[1] = "hwy\complete_network_zone_seq.csv"
+    PHASE = NODEMERGE
+        IF (N=1) PRINT CSV=T, LIST="N","TAZSEQ","EXTSEQ", PRINTO=1
+
+        IF ((TAZSEQ > 0) | (EXTSEQ > 0))
+            ;keep
+        ELSE
+            DELETE
+        ENDIF
+
+        PRINT CSV=T, LIST=N(L),TAZSEQ(L),EXTSEQ(L), PRINTO=1
+    ENDPHASE
+ENDRUN

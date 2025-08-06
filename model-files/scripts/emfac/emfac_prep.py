@@ -108,9 +108,9 @@ VMT_df = VMT_df.loc[VMT_df[' arbCounty'] != 9999]
 
 # if the cube outputs only have 13 speed bins (i.e. it is an old run without air basins info), use the 9 county list. Otherwise, use the 11 subarea list.
 if numLine_Between+numLine_Within == 260:
-    subareaList = ['Alameda', 'Contra Costa', 'Marin', 'Napa', 'San Francisco', 'San Mateo', 'Santa Clara', 'Solano', 'Sonoma']
+    subareaList = ['Alameda', 'Contra Costa', 'Marin', 'Napa', 'San Francisco', 'San Mateo', 'Santa Clara', 'Solano', 'Sonoma', 'San Joaquin']
 else:
-    subareaList = ['Alameda (SF)', 'Contra Costa (SF)', 'Marin (SF)', 'Napa (SF)', 'San Francisco (SF)', 'San Mateo (SF)', 'Santa Clara (SF)', 'Solano (SF)', 'Solano (SV)', 'Sonoma (NC)', 'Sonoma (SF)']
+    subareaList = ['Alameda (SF)', 'Contra Costa (SF)', 'Marin (SF)', 'Napa (SF)', 'San Francisco (SF)', 'San Mateo (SF)', 'Santa Clara (SF)', 'Solano (SF)', 'Solano (SV)', 'Sonoma (NC)', 'Sonoma (SF)','San Joaquin (SJ)']
 
 dict_of_df = {}
 for subarea in subareaList:

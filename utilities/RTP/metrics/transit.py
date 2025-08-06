@@ -1,5 +1,6 @@
 import csv, optparse, os
 from xlrd import *
+import pandas as pd
 
 USAGE = """
  python transit.py quickboards.xls
@@ -16,8 +17,11 @@ parser = optparse.OptionParser()
 (options,args) = parser.parse_args()
 
 datafile 	= args[0]
+line_name_mode = os.path.join('trn','trnline.csv')
 outputfile 	= os.path.join("metrics","transit_boards_miles.csv")
 
+trnlines=pd.read_csv(line_name_mode)
+line_mode_dict=dict(zip(trnlines['name'], trnlines['mode']))
 print('summarizing transit boardings and passenger miles')
 
 # read data, prepare to write
@@ -39,8 +43,7 @@ while True:
 	if line == '':
 		break
 
-	split_idx = line.find('_')
-	mode = int(line[0:split_idx])
+	mode = line_mode_dict[line]
 	if mode < 80:
 		mode_str = 'loc'
 	elif mode < 100:

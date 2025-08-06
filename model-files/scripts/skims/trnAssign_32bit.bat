@@ -9,11 +9,11 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHONPATH=%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master;%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master\_static
 set TRN_ERRORLEVEL=0
 
 :: 32bit operation -- stop cluster (distributing will make it 64bit) and set PATH
-Cluster "%COMMPATH%\CTRAMP" 1-48 Close Exit
+Cluster "CTRAMP" 1-64 Close Exit
 set "PATH=%RUNTIME%;%JAVA_PATH%/bin;C:\Program Files (x86)\Citilabs\CubeVoyager;%GAWK_PATH%/bin;%PYTHON_PATH%"
 
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
@@ -242,7 +242,7 @@ cd ..
 
 :: end 32bit operation -- reset PATH and start cluster
 set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%
-Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
+Cluster "CTRAMP" 1-64 Starthide Exit
 
 :: pass on errorlevel
 EXIT /B %TRN_ERRORLEVEL%
