@@ -306,7 +306,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     input_file = pathlib.Path("landuse/tazData.csv")
     print("  Reading {}".format(input_file))
     tazdata_df = pandas.read_csv(input_file, sep=",")
-    tazdata_df = tazdata_df[['ZONE','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','TOTPOP','EMPRES','TOTEMP']]
+    tazdata_df = tazdata_df[['ZONE','COUNTY','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','TOTPOP','EMPRES','TOTEMP']]
     total_emp  = tazdata_df['TOTEMP'].sum()
     total_pop  = tazdata_df['TOTPOP'].sum()
 
@@ -380,7 +380,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # join persons to origin
     accessiblejobs_df = pandas.merge(
         left=accessiblejobs_df, 
-        right=tazdata_df[['ZONE','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','taz_epc18','taz_epc22',"taz_hra","U_S_R"]],
+        right=tazdata_df[['ZONE','COUNTY','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','taz_epc18','taz_epc22',"taz_hra","U_S_R"]],
         left_index=True, 
         right_on="ZONE",
         how="left",
@@ -398,7 +398,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     # print(accessiblejobs_df.head())
 
-    for suffix in ["","_epc18","_nonepc18","_epc22","_nonepc22","_hra","_nonhra","_urban","_suburban","_rural"]:
+    for suffix in ["","_epc18","_nonepc18","_epc22","_nonepc22","_hra","_nonhra","_urban","_suburban","_rural",
+                   "_SanFrancisco","_SanMateo","_SantaClara","_Alameda","_ContraCosta","_Solano","_Napa","_Sonoma","_Marin"]:
 
         # restrict to suffix if necessary
         accjob_subset_df = accessiblejobs_df
@@ -430,6 +431,33 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         elif suffix == "_rural":
             accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="rural"]
             totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="rural", "TOTPOP"].sum()
+        elif suffix == "_SanFrancisco":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==1, "TOTPOP"].sum()
+        elif suffix == "_SanMateo":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==2]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==2, "TOTPOP"].sum()
+        elif suffix == "_SantaClara":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==3]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==3, "TOTPOP"].sum()     
+        elif suffix == "_Alameda":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==4]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==4, "TOTPOP"].sum()
+        elif suffix == "_ContraCosta":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==5]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==5, "TOTPOP"].sum()
+        elif suffix == "_Solano":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==6]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==6, "TOTPOP"].sum()
+        elif suffix == "_Napa":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==7]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==7, "TOTPOP"].sum()
+        elif suffix == "_Sonoma":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==8]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==8, "TOTPOP"].sum()
+        elif suffix == "_Marin":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==9]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==9, "TOTPOP"].sum()
 
         if suffix=="":
             print(f"suffix=[{suffix}] accjob_subset_df.columns:{accjob_subset_df.columns} accjob_subset_df head:()\n{accjob_subset_df.head()}")

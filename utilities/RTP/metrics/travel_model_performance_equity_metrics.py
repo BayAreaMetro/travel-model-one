@@ -544,13 +544,22 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_coc') |
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_epc18') |
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_epc22') |
-            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_hra')]
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_hra') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_SanFrancisco') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_SanMateo') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_SantaClara') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Alameda') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_ContraCosta') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Solano') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Napa') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Sonoma') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Marin')
+            ]
 
         # extract mode, time, person_segment
         scenario_metrics_df['mode'] = scenario_metrics_df.metric_name.str.extract(r'^([a-z]+)')
         scenario_metrics_df['time'] = scenario_metrics_df.metric_name.str.extract(r'^[a-z]+[_]([0-9]+)')
-        scenario_metrics_df['person_segment'] = scenario_metrics_df.metric_name.str.extract(r'share[_]([a-z0-9]*)$')
-        scenario_metrics_df.loc[ pd.isna(scenario_metrics_df['person_segment']), 'person_segment' ] = 'all'
+        scenario_metrics_df['person_segment'] = scenario_metrics_df['metric_name'].apply(lambda X: X.split('_share_')[-1] if '_share_' in X else 'all')
         LOGGER.debug("scenario_metrics_df:\n{}".format(scenario_metrics_df))
 
         # value is all job share
