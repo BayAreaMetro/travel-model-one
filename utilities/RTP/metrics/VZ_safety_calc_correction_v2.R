@@ -73,6 +73,7 @@ args = commandArgs(trailingOnly=TRUE)
 if (length(args) != 3) {
   stop("Three arguments are required: PROJECT (NGF, PBA50 or PBA50+), MODEL_RUN_ID_NO_PROjeCT and MODEL_RUN_ID_SCENARIO")
 }
+
 PROJECT                 <- args[1]
 MODEL_RUN_ID_NO_PROjeCT <- args[2]
 MODEL_RUN_ID_SCENARIO   <- args[3]
@@ -119,7 +120,9 @@ if (PROJECT == "PBA50") {
 }
 if (PROJECT == "PBA50+") {
   ##################################### PBA50+ settings #####################################
-  TAZ_EPC_FILE <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_01/taz1454_epcPBA50plus_2024_02_23.csv"
+  TAZ_EPC_FILE_18 <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz_coc_crosswalk.csv"
+  TAZ_EPC_FILE <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_epcPBA50plus_2024_02_29.csv"
+  TAZ_HRA_FILE <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_hraPBA50plus_2025_02_22.csv"
 
   # Scenario Directory on L or M
   PROJECT_SCENARIOS_DIR     <- "M:/Application/Model One/RTP2025/Blueprint"
@@ -154,7 +157,9 @@ sink(file=LOG_FILE, type=c("output","message"))
 
 print(paste("This file is written by travel-model-one/utilities/RTP/metrics/VZ_safety_calc_correction_V2.R"))
 print(paste("                  PROJECT:",PROJECT))
+print(paste("             TAZ_EPC_FILE_18:",TAZ_EPC_FILE_18))
 print(paste("             TAZ_EPC_FILE:",TAZ_EPC_FILE))
+print(paste("             TAZ_HRA_FILE:",TAZ_HRA_FILE))
 print(paste("    PROJECT_SCENARIOS_DIR:",PROJECT_SCENARIOS_DIR))
 print(paste("                BASE_YEAR:",BASE_YEAR))
 print(paste("   MODEL_RUN_ID_BASE_YEAR:",MODEL_RUN_ID_BASE_YEAR))
@@ -252,8 +257,25 @@ print(paste("Read",nrow(TAZ_EPC_LOOKUP_DF), "lines of TAZ_EPC_LOOKUP from",TAZ_E
 if (PROJECT=="PBA50") {
   TAZ_EPC_LOOKUP_DF <- rename(TAZ_EPC_LOOKUP_DF, TAZ1454=taz, taz_epc = in_set)
 }
+
+# Since EPC changed between PBA50 and PBA50+, add in both and create a union of the two for the EPC geography caluclation
+if (PROJECT == "PBA50+"){
+  TAZ_EPC_LOOKUP_DF <- merge(
+    TAZ_EPC_LOOKUP_DF,
+    read.csv(TAZ_EPC_FILE_18),
+    by = "TAZ1454"
+  )
+  # Add HRA to the same LOOKUP_DF
+  TAZ_EPC_LOOKUP_DF <- merge(
+    TAZ_EPC_LOOKUP_DF,
+    read.csv(TAZ_HRA_FILE),
+    by = "TAZ1454",
+  ) 
+}
 print("head(TAZ_EPC_LOOKUP_DF):")
 print(head(TAZ_EPC_LOOKUP_DF))
+
+
 # create a simple list-based class to hold these
 # http://adv-r.had.co.nz/S3.html
 # constructor
@@ -662,18 +684,45 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
 
   # associate each link to EPC vs non-EPC
   # Note: This is assuming a link is in an EPC taz if ANY part of it is within (even a small fraction)
-  link_to_taz_df <- left_join(link_to_taz_df, TAZ_EPC_LOOKUP_DF, by=c("TAZ1454"))
-  link_to_epc_df <- link_to_taz_df %>% group_by(a, b) %>% summarise(taz_epc = max(taz_epc))
-  network_df     <- left_join(network_df, link_to_epc_df, by=c("a","b")) %>%
-                    #left_join(COLLISION_FT, by=c("ft")) %>%
-                    mutate(
-                      taz_epc = if_else(taz_epc==1, "EPC", "Non-EPC"),
-                      taz_epc = if_else(is.na(taz_epc), "Non-EPC", taz_epc),
-                      taz_epc_local = if_else(taz_epc=="EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"taz_epc_local","pass"),    #new
-                      taz_epc_local = if_else(is.na(taz_epc_local), "pass", taz_epc_local),                      #new
-                      Non_EPC_local = if_else(taz_epc=="Non-EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"non_epc_local","pass"),#new
-                      Non_EPC_local = if_else(is.na(Non_EPC_local), "pass", Non_EPC_local)                      #new
-                    ) # convert 1 -> EPC; 0 or Na -> Non-EPC
+  # For PBA50+, we need to include both TAZ_EPC_LOOKUP_DF and TAZ_EPC_LOOKUP_DF_18 and TAZ_HRA_LOOKUP_DF
+  if (PROJECT == "PBA50+"){
+    # For PBA50+, we need to union the two TAZ_EPC_LOOKUP_DF
+    link_to_taz_df <- left_join(link_to_taz_df, TAZ_EPC_LOOKUP_DF, by=c("TAZ1454"))
+    link_to_epc_df <- link_to_taz_df %>% group_by(a, b) %>% summarise(taz_epc = max(taz_epc), taz_coc = max(taz_coc), taz_hra = max(taz_hra)) # new
+    network_df    <- left_join(network_df, link_to_epc_df, by=c("a","b")) %>%
+                      mutate(
+                        taz_epc_22 = if_else(taz_epc==1, "EPC_22", "Non-EPC_22"),
+                        taz_epc_22 = if_else(is.na(taz_epc), "Non-EPC_22", taz_epc_22),
+                        taz_epc_18 = if_else(taz_coc == 1, "EPC_18", "Non-EPC_18"), # new
+                        taz_epc_18 = if_else(is.na(taz_coc), "Non-EPC_18", taz_epc_18), # new
+                        taz_hra = if_else(taz_hra == 1, "HRA", "Non-HRA"), # new
+                        taz_hra = if_else(is.na(taz_hra), "Non-HRA", taz_hra), # new
+                        taz_hra_local = if_else(taz_hra=="HRA" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"taz_hra_local","pass"),
+                        taz_hra_local = if_else(is.na(taz_hra_local), "pass", taz_hra_local),
+                        taz_epc = if_else(taz_epc_22 == "EPC_22" | taz_epc_18 == "EPC_18", "EPC", "Non-EPC"), # new - union of both EPCs
+                        taz_epc = if_else(is.na(taz_epc), "Non-EPC", taz_epc), # new
+                        taz_epc_local = if_else(taz_epc=="EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"taz_epc_local","pass"),    #new
+                        taz_epc_local = if_else(is.na(taz_epc_local), "pass", taz_epc_local),                      #new
+                        Non_EPC_local = if_else(taz_epc=="Non-EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"non_epc_local","pass"),#new
+                        Non_EPC_local = if_else(is.na(Non_EPC_local), "pass", Non_EPC_local)      
+                      )
+  
+    
+  }
+  else {
+    link_to_taz_df <- left_join(link_to_taz_df, TAZ_EPC_LOOKUP_DF, by=c("TAZ1454"))
+    link_to_epc_df <- link_to_taz_df %>% group_by(a, b) %>% summarise(taz_epc = max(taz_epc))
+    network_df     <- left_join(network_df, link_to_epc_df, by=c("a","b")) %>%
+                      #left_join(COLLISION_FT, by=c("ft")) %>%
+                      mutate(
+                        taz_epc = if_else(taz_epc==1, "EPC", "Non-EPC"),
+                        taz_epc = if_else(is.na(taz_epc), "Non-EPC", taz_epc),
+                        taz_epc_local = if_else(taz_epc=="EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"taz_epc_local","pass"),    #new
+                        taz_epc_local = if_else(is.na(taz_epc_local), "pass", taz_epc_local),                      #new
+                        Non_EPC_local = if_else(taz_epc=="Non-EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"non_epc_local","pass"),#new
+                        Non_EPC_local = if_else(is.na(Non_EPC_local), "pass", Non_EPC_local)                      #new
+                      ) # convert 1 -> EPC; 0 or Na -> Non-EPC
+  }
   # print(head(network_df))
   population_forecast <- sum(tazdata_df$TOTPOP)
 
@@ -698,7 +747,34 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
   model_fatal_inj_epc_non <- correct_using_observed_factors(model_fatal_inj_epc_non, model_fatal_inj_base_year)
   print("--------------------------------------")
   print(model_fatal_inj_epc_non)
-  
+
+  if (PROJECT == "PBA50+") {
+    # For PBA50+, we need to calculate for both TAZ_EPC_18 and TAZ_EPC_22 and HRA
+    model_fatal_inj_epc_18_non <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                  network_group_by_col="taz_epc_18", network_no_project_df)
+    model_fatal_inj_epc_18_non <- correct_using_observed_factors(model_fatal_inj_epc_18_non, model_fatal_inj_base_year)
+    print("--------------------------------------")
+    print(model_fatal_inj_epc_18_non)
+
+    model_fatal_inj_taz_22_non <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                  network_group_by_col="taz_epc_22", network_no_project_df)
+    model_fatal_inj_taz_22_non <- correct_using_observed_factors(model_fatal_inj_taz_22_non, model_fatal_inj_base_year)
+    print("--------------------------------------")
+    print(model_fatal_inj_taz_22_non)
+
+    model_fatal_inj_epc_hra <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                  network_group_by_col="taz_hra", network_no_project_df)
+    model_fatal_inj_epc_hra <- correct_using_observed_factors(model_fatal_inj_epc_hra, model_fatal_inj_base_year)
+    print("--------------------------------------")
+    print(model_fatal_inj_epc_hra)
+
+    model_fatal_inj_epc_hra_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                  network_group_by_col="taz_hra_local", network_no_project_df)
+    model_fatal_inj_epc_hra_local <- correct_using_observed_factors(model_fatal_inj_epc_hra_local, model_fatal_inj_base_year)
+    print("--------------------------------------")
+    print(model_fatal_inj_epc_hra_local)
+  }
+
   model_fatal_inj_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
                                                            network_group_by_col="taz_epc_local", network_no_project_df)     
   model_fatal_inj_epc_local <- correct_using_observed_factors(model_fatal_inj_epc_local, model_fatal_inj_base_year)
@@ -713,14 +789,31 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
 
 
   # save the fatalities & injuries results
-  results_df <- rbind(
-    results_df,
-    mutate(model_fatal_inj$network_summary_df, key="all", model_run_type=model_run_type, model_run_id=model_run_id),
-    mutate(rename(model_fatal_inj_fwy_non$network_summary_df, key=fwy_non), model_run_type=model_run_type, model_run_id=model_run_id),
-    mutate(rename(model_fatal_inj_epc_non$network_summary_df, key=taz_epc), model_run_type=model_run_type, model_run_id=model_run_id),
-    mutate(rename(model_fatal_inj_epc_local$network_summary_df, key=taz_epc_local), model_run_type=model_run_type, model_run_id=model_run_id),
-    mutate(rename(model_fatal_inj_non_epc_local$network_summary_df, key=Non_EPC_local), model_run_type=model_run_type, model_run_id=model_run_id)
-  )
+  if (PROJECT == "PBA50+"){
+    results_df <- rbind(
+      results_df,
+      mutate(model_fatal_inj$network_summary_df, key="all", model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_fwy_non$network_summary_df, key=fwy_non), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_epc_non$network_summary_df, key=taz_epc), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_epc_18_non$network_summary_df, key=taz_epc_18), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_taz_22_non$network_summary_df, key=taz_epc_22), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_epc_hra$network_summary_df, key=taz_hra), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_epc_hra_local$network_summary_df, key=taz_hra_local), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_epc_local$network_summary_df, key=taz_epc_local), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_non_epc_local$network_summary_df, key=Non_EPC_local), model_run_type=model_run_type, model_run_id=model_run_id)
+    )  
+  }
+  else {
+    results_df <- rbind(
+      results_df,
+      mutate(model_fatal_inj$network_summary_df, key="all", model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_fwy_non$network_summary_df, key=fwy_non), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_epc_non$network_summary_df, key=taz_epc), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_epc_local$network_summary_df, key=taz_epc_local), model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_non_epc_local$network_summary_df, key=Non_EPC_local), model_run_type=model_run_type, model_run_id=model_run_id)
+    )
+  }
+
 
   # if there's no scenario, we're done
   if (MODEL_RUN_IDS[["NO_PROJECT"]] == MODEL_RUN_IDS[["SCENARIO"]]) {
@@ -739,3 +832,4 @@ sink(file=NULL, type=c("output","message"))
 
 print(paste("Wrote", nrow(results_df), "rows to",OUTPUT_FILE))
 print(paste("Wrote", LOG_FILE))
+
