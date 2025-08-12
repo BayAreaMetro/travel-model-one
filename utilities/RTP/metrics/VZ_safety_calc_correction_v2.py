@@ -13,7 +13,8 @@ This script implements two corrections to the fatalities and injuries as they we
 1) General correction: based on the difference between modeled fatalities/injuries vs observed
 2) Speed correction: based on literature to decrease fatality and injury rates for reduced speeds
 
-Script converted from R to Python
+Script converted from R to Python. The original R script contains more background documentation:
+https://github.com/BayAreaMetro/travel-model-one/blob/147678bcf549b3af9803db5b0547899206dd5304/utilities/RTP/metrics/VZ_safety_calc_correction_v2.R
 """
 
 import pandas as pd
