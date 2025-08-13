@@ -26,6 +26,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = USAGE,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025'], help='Specify RTP')
+    parser.add_argument('analysis', type=str, choices=['CARE','OverBurdened','EPC','HRA'], help='Specify analysis type')
     my_args = parser.parse_args()
 
     # Set base directory
@@ -36,10 +37,18 @@ if __name__ == '__main__':
             BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/OverburdenedCommunities_analysis/PBA50_reproduce"
         EMISSION_RATES_DIR = os.path.join(BASE_DIR, "PBA50_COC_ER_Lookups")
         LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_CARE_EMFAC2021_FEIR")
-    elif my_args.rtp == 'RTP2025':
+    elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'OverBurdened'):
         BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/OverburdenedCommunities_analysis/PBA50plus"
         EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups")
         LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened")
+    elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'EPC'):
+        BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/EPC_HRA_emissions"
+        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups_EMFAC2021")
+        LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_emissions_EPC_HRA")
+    elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'HRA'):
+        BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/EPC_HRA_emissions"
+        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups_EMFAC2021")
+        LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_emissions_EPC_HRA")
     
     ######################################################################
     # Set up logging
@@ -102,17 +111,24 @@ if __name__ == '__main__':
         emission_rates_PM25_nonarea_col = "NC_"
         emission_rates_MSAT_area_col = "C_EO_"
         emission_rates_MSAT_nonarea_col = "NC_EO_"
-    elif my_args.rtp == 'RTP2025':
-        analysis_name = "Overburdened"
+    elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'OverBurdened'):
+        # analysis_name = "Overburdened"
         shp_id = "COUNTY_OBC"
         link_tagging_col = "linkOBC_share"
-
         emission_rates_file_PM25 = 'PM2.5 Non-Exhaust ERs (w E2025).xlsx'
-        emission_rates_file_MSAT = 'MSAT Emission Rates with E2025 (PBA2050+).xlsx'
-        # emission_rates_PM25_area_col = ""
-        # emission_rates_PM25_nonarea_col = ""
-        # emission_rates_MSAT_area_col = ""
-        # emission_rates_MSAT_nonarea_col = ""
+        emission_rates_file_MSAT = 'MSAT Emission Rates with E2025 (PBA2050+).xlsx'   
+    elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'EPC'):
+        analysis_name = "EPC"
+        shp_id = "COUNTY_EPC"
+        link_tagging_col = "linkEPC_share"
+        emission_rates_file_PM25 = '2023-2050-Non-Exhaust ER (EMFAC2021).xlsx'
+        emission_rates_file_MSAT = 'MSAT Emission Rates_E2021.xlsx'
+    elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'HRA'):
+        analysis_name = "HRA"
+        shp_id = "COUNTY_HRA"
+        link_tagging_col = "linkHRA_share"
+        emission_rates_file_PM25 = '2023-2050-Non-Exhaust ER (EMFAC2021).xlsx'
+        emission_rates_file_MSAT = 'MSAT Emission Rates_E2021.xlsx'
 
     # Index and special columns
     index_cols = ["a", "b"]
@@ -153,7 +169,6 @@ if __name__ == '__main__':
         network_df = network_df[index_cols + special_cols + 
                                 [col for col in network_df.columns if col.startswith("cspd")] + 
                                 [col for col in network_df.columns if col.startswith("vol") and col.endswith("tot")]]
-
 
         # Pivot time periods for cspd
         cspd_df = network_df[index_cols + [col for col in network_df.columns if col.startswith("cspd")]]
@@ -288,8 +303,12 @@ if __name__ == '__main__':
         # Write the result
         if my_args.rtp == 'RTP2021':
             output_fullpath = os.path.join(LINK_OUTPUT_DIR, f"links_CARE_{model_dir}_python.csv")
-        elif my_args.rtp == 'RTP2025':
+        elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'OverBurdened'):
             output_fullpath = os.path.join(LINK_OUTPUT_DIR, f"links_OverBurdened_{model_dir}.csv")
+        elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'EPC'):
+            output_fullpath = os.path.join(LINK_OUTPUT_DIR, f"links_EPC_{model_dir}.csv")
+        elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'HRA'):
+            output_fullpath = os.path.join(LINK_OUTPUT_DIR, f"links_HRAnative_{model_dir}.csv")
         
         network_long_emissions_df.to_csv(output_fullpath, float_format='%.7f', index=False)
         LOGGER.info(f"Wrote {len(network_long_emissions_df)} rows and {len(list(network_long_emissions_df))} columns to {output_fullpath}")
