@@ -39,8 +39,8 @@ if __name__ == '__main__':
         LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_CARE_EMFAC2021_FEIR")
     elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'OverBurdened'):
         BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/OverburdenedCommunities_analysis/PBA50plus"
-        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups")
-        LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened")
+        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups - EMFAC21")
+        LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened_EMFAC2021")
     elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'EPC'):
         BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/EPC_HRA_emissions"
         EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups_EMFAC2021")
@@ -112,11 +112,11 @@ if __name__ == '__main__':
         emission_rates_MSAT_area_col = "C_EO_"
         emission_rates_MSAT_nonarea_col = "NC_EO_"
     elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'OverBurdened'):
-        # analysis_name = "Overburdened"
+        analysis_name = "Overburdened"
         shp_id = "COUNTY_OBC"
         link_tagging_col = "linkOBC_share"
-        emission_rates_file_PM25 = 'PM2.5 Non-Exhaust ERs (w E2025).xlsx'
-        emission_rates_file_MSAT = 'MSAT Emission Rates with E2025 (PBA2050+).xlsx'   
+        emission_rates_file_PM25 = '2023-2050-Non-Exhaust ER (EMFAC2021).xlsx'
+        emission_rates_file_MSAT = 'MSAT Emission Rates with E2021 (PBA2050+).xlsx'   
     elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'EPC'):
         analysis_name = "EPC"
         shp_id = "COUNTY_EPC"
