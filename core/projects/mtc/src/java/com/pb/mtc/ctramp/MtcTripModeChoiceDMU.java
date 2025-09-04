@@ -65,6 +65,10 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         return hh.getIncomeInDollars();
     }
 
+    public short getIncomePercentOfPoverty(){
+        return hh.getIncomePercentOfPoverty();
+    }
+
     public float getTourDuration(){
     	float duration = tour.getTourEndHour() - tour.getTourStartHour();
     	return duration; 
@@ -321,7 +325,8 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         methodIndexMap.put("getDestCordon", 44);
         methodIndexMap.put("getDestCordonCost", 45); 
         methodIndexMap.put("getOrigCordon", 46);
-        methodIndexMap.put("getOrigCordonCost", 47); 
+        methodIndexMap.put("getOrigCordonCost", 47);
+        methodIndexMap.put("getHhIncomePctOfPoverty", 48);
     }
     
         
@@ -379,6 +384,7 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
             case 45: return getDestCordonCost();
             case 46: return getOrigCordon();
             case 47: return getOrigCordonCost();
+            case 48: return getIncomePercentOfPoverty();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");

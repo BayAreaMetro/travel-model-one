@@ -122,9 +122,12 @@ if exist metrics\ITHIM (
   copy metrics\ITHIM\*.* extractor\metrics\ITHIM
 )
 
-:: make generating shapefile outputs easier
+:: offmodel
+c:\windows\system32\Robocopy.exe /E offmodel extractor\offmodel
+
+:: loaded network shapefiles
 mkdir extractor\shapefile
-copy X:\travel-model-one-master\utilities\cube-to-shapefile\run_CubeToShapefile.bat extractor\shapefile
+copy shapefile extractor\shapefile
 
 :success
 echo ExtractKeyFiles into extractor for PBAU Complete

@@ -641,7 +641,10 @@ if __name__ == '__main__':
     if args.pems_year or args.truck_year:
         # add lanes match attribute
         table_wide['lanes match'] = 0
+        # lanes match
         table_wide.loc[ table_wide[f'{args.model_year} Modeled lanes'] == table_wide['Average Observed lanes'], 'lanes match'] = 1
+        # don't mark as bad if 'Average Observed lanes' is na; other time periods with lanes match are still worth keeping
+        table_wide.loc[ pandas.isna(table_wide['Average Observed lanes']), 'lanes match'] = 1
     else:
         # no data for caltrans so assume match
         table_wide['lanes match'] = 1
@@ -759,10 +762,23 @@ if __name__ == '__main__':
         AB_station.loc[ AB_station.station.isin(PEMS_BAD_STATION_CROSSWALK), "skip_reason" ] = "known bad crosswalk"
         AB_station.loc[ AB_station.station.isin(PEMS_BAD_STATION_CROSSWALK), "skip"        ] = 1
 
+    # make sure a,b,station are unique in AB_station
+    AB_station.drop_duplicates(keep='first', inplace=True)
+    AB_station_dupes = AB_station.loc[ AB_station.duplicated(subset=['a','b','station'], keep=False) ]
+    logging.debug(f"AB_station duplicates len={len(AB_station_dupes):,}:\n{AB_station_dupes}")
+    # when there are multiple for a,b, station - keep the first
+    AB_station.drop_duplicates(subset=['a','b','station'], keep='first', inplace=True)
+
     # brink skip, skip_reason back to table_wide
     logging.debug(f"AB_station len={len(AB_station)} head=\n{AB_station.head(12)}")
-    table_wide = pandas.merge(left=table_wide, right=AB_station, how="left")
-    logging.debug(f'table_wide length={len(table_wide)} head=\n{table_wide.head()}')
+    logging.debug(f'table_wide before merge with AB_station - length={len(table_wide):,} head=\n{table_wide.head(30)}')
+    table_wide = pandas.merge(
+        left=table_wide, 
+        right=AB_station, 
+        how="left", 
+        on=['a','b','station'],
+        validate='many_to_one')
+    logging.debug(f'table_wide after merge with AB_station - length={len(table_wide):,} head=\n{table_wide.head(30)}')
     logging.debug(f'table_wide for station 400868=\n{table_wide.loc[table_wide.station==400868]}')
 
     # bring the attributes "lanes match", "ft", "county", "skip", "skip_reason" back to non-wide table

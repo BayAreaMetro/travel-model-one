@@ -8,11 +8,13 @@ core/models/**/build
 core/projects/**/build
 **/.svn
 **/*.pyc
+**/__pycache__
 **/*.log
 **/TPPL.PRJ
 **/TPPL.VAR
 **/TPPL*.PRN
 **/*-checkpoint.ipynb
+**/*.twbr
 utilities/NextGenFwys/metrics/*.csv
 utilities/RTP/Emissions/Off Model Calculators/Model Data*.csv
 *.class

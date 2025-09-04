@@ -64,7 +64,9 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
     private static final String HOME_PATTERN         = Definitions.HOME_PATTERN;
     private static final String[] activityNameArray = { MANDATORY_PATTERN, NONMANDATORY_PATTERN, HOME_PATTERN };
 
-    
+    // New for MTC TM1.6.1: WFH model
+    private static final int UEC_WORK_FROM_HOME = 5;
+
     private ModelStructure modelStructure;
     private double[][] fixedCumulativeProportions;
 
@@ -79,6 +81,8 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
     
     // Four separate UECs to compute segments of the utility
     private UtilityExpressionCalculator onePersonUec, twoPeopleUec, threePeopleUec, allMemberInteractionUec;
+    // WorkFromHome ChoiceModel Application
+    private ChoiceModelApplication workFromHomeChoiceModelApp;
     
 
     public HouseholdCoordinatedDailyActivityPatternModel( HashMap<String, String> propertyMap, ModelStructure modelStructure, CtrampDmuFactoryIf dmuFactory ) {
@@ -95,7 +99,7 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
     private void setupCoordinatedDailyActivityPatternModelApplication( HashMap<String, String> propertyMap, CtrampDmuFactoryIf dmuFactory ) {
         
         logger.info( "setting up CDAP choice model." );
-        
+
         // locate the coordinated daily activity pattern choice model UEC
         String projectDirectory = propertyMap.get( CtrampApplication.PROPERTIES_PROJECT_DIRECTORY );
         String cdapUecFile = propertyMap.get( PROPERTIES_UEC_DAILY_ACTIVITY_PATTERN);
@@ -105,7 +109,6 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
         // create the coordinated daily activity pattern choice model DMU object.
         logger.info( "About to create cdapDmuObject" );
         cdapDmuObject = dmuFactory.getCoordinatedDailyActivityPatternDMU();
-        cdapDmuObject.setPropertyFileValues(propertyMap);
         logger.info( "cdapDmuObject = " + cdapDmuObject );
 
         // create the uecs
@@ -113,7 +116,9 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
         twoPeopleUec = new UtilityExpressionCalculator( new File(cdapUecFile), UEC_TWO_PERSON, UEC_DATA_PAGE, propertyMap, (VariableTable)cdapDmuObject );
         threePeopleUec = new UtilityExpressionCalculator( new File(cdapUecFile), UEC_THREE_PERSON, UEC_DATA_PAGE, propertyMap, (VariableTable)cdapDmuObject );
         allMemberInteractionUec = new UtilityExpressionCalculator( new File(cdapUecFile), UEC_ALL_PERSON, UEC_DATA_PAGE, propertyMap, (VariableTable)cdapDmuObject );
-        
+
+        workFromHomeChoiceModelApp = new ChoiceModelApplication(cdapUecFile, UEC_WORK_FROM_HOME, UEC_DATA_PAGE, propertyMap, (Object )cdapDmuObject, cdapLogger);
+
         //get the proportions by person type
         double[][] fixedRelativeProportions = modelStructure.getCdap6PlusProps();
         fixedCumulativeProportions = new double[fixedRelativeProportions.length][];
@@ -311,7 +316,7 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
      * the activity pattern for that person, in order (see Household.reOrderPersonsForCdap method).
      */
     public String getCoordinatedDailyActivityPatternChoice( Household householdObject ){
-        
+
         // set all household level dmu variables
         cdapDmuObject.setHousehold(householdObject);
         
@@ -322,18 +327,59 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
         // reorder persons for large households if need be
         reOrderPersonsForCdap(householdObject);
 
-        // loop through each person for WFH
-        for(int i=0;i<modelHhSize;++i){
-            Person personA = getCdapPerson(i+1);
+        // loop through each person for industry and WFH
+        for(int i=1;i<actualHhSize+1;++i){
+            Person personA = householdObject.getPersons()[i];
             // set the person level dmu variables
             cdapDmuObject.setPersonA(personA);
 
+            // make the simple person industry choice
+            cdapDmuObject.setDmuIndexValues(householdObject.getHhId(),
+                householdObject.getHhTaz(), personA.getPersonWorkLocationZone());
+            cdapDmuObject.setIndustryForPersonA(cdapLogger);
+
+            // if the person doesn't have an industry then don't continue
+            String personIndustry = personA.getPersonIndustry();
             if(householdObject.getDebugChoiceModels()){
-                cdapLogger.info("Household " + householdObject.getHhId() + " Person " + i + " => " + personA.getPersonId());
+                cdapLogger.info("Household " + householdObject.getHhId() + " Person " + i + 
+                    " => " + personA.getPersonId() + "; personIndustry=" + personIndustry);
+            }
+            if ((personIndustry == "nul") || (personIndustry == "N_A") || (personIndustry == "ERR")) {
+                continue;
             }
 
-            // make the simple WFH choice
-            cdapDmuObject.setWorksFromHomeForPersonA(cdapLogger);
+            // compute the wfh utilities
+            workFromHomeChoiceModelApp.computeUtilities( cdapDmuObject, cdapDmuObject.getDmuIndexValues());
+
+            // if the choice model has at least one available alternative, make choice.
+            int chosenAlt;
+            double randomNumber = householdObject.getHhRandom().nextDouble();
+            if (workFromHomeChoiceModelApp.getAvailabilityCount() > 0) {
+                chosenAlt = workFromHomeChoiceModelApp.getChoiceResult(randomNumber);
+            }
+            else {
+                String errorMessage = String.format("Exception caught for HHID=%d, PERSID=%d, no available WFH alternatives to choose from in choiceModelApplication.", 
+                householdObject.getHhId(), personA.getPersonId());
+                logger.error (errorMessage);
+                throw new RuntimeException();
+            }
+
+            // write choice model alternative info to log file
+            if ( householdObject.getDebugChoiceModels() ) {
+                // workFromHomeChoiceModelApp.logDataValues(cdapLogger, householdObject.getHhTaz(), personA.getUsualWorkLocation());
+
+                String header = "Work-From-Home Choice ";
+                String headerInfo = String.format("HHID=%d PERSID=%d personIndustry=%s ", householdObject.getHhId(), personA.getPersonId(), personIndustry);
+                headerInfo += String.format("homeTAZ=%d workTAZ=%d ", householdObject.getHhTaz(), personA.getUsualWorkLocation());
+                workFromHomeChoiceModelApp.logUECResults(cdapLogger, header + headerInfo);
+                workFromHomeChoiceModelApp.logAlternativesInfo(header, headerInfo);
+            }
+            // set it: in the UEC, Alt1 = WFH, Alt2 = Does not WFH
+            if (chosenAlt == 1) {
+                personA.setPersWorksFromHomeCategory(Person.WorkFromHomeStatus.WORKS_FROM_HOME);
+            } else if (chosenAlt == 2) {
+                personA.setPersWorksFromHomeCategory(Person.WorkFromHomeStatus.GOES_TO_WORK);
+            }
         }
 
         // get the logit model we need and clear it of any lingering probilities

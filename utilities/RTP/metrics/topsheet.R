@@ -101,11 +101,11 @@ print(paste("HH_FILE     =", HH_FILE  ))
 print(paste("PERS_FILE   =", PERS_FILE))
 
 input.pop.households <- read.table(file = HH_FILE, header=TRUE, sep=",")
-short_summary$'popsyn tothh'  <- nrow(input.pop.households)
+short_summary$'popsyn tothh'  <- nrow(input.pop.households %>% filter(UNITTYPE==1)) # filter to unitype=hh
 remove(input.pop.households) # it's big
 
 input.pop.persons    <- read.table(file = PERS_FILE, header=TRUE, sep=",")
-input.pop.persons$is_worker <- ifelse(input.pop.persons$ptype==1, 1, 0)
+input.pop.persons$is_worker <- ifelse(input.pop.persons$pemploy %in% c(1,2), 1, 0)
 
 short_summary$'popsyn totpop' <- nrow(input.pop.persons)
 short_summary$'popsyn empres' <- sum(input.pop.persons$is_worker)

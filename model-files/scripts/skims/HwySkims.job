@@ -358,6 +358,9 @@ loop period = 1, 5
    
       ; give each period thread more threads to work with   
       ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = '%COMMPATH%', saveprn = f
+
+      ; block file containing highway parameters
+      read file=ctramp\scripts\block\hwyparam.block
       
       ; drive alone skim
       mati[1] = skims\DA_@token_period@.tpp
@@ -405,7 +408,14 @@ loop period = 1, 5
       mw[4]   = mi.1.TOLLTIMEDA
       mw[5]   = mi.1.TOLLDISTDA
       mw[6]   = mi.1.TOLLBTOLLDA
-      mw[7]   = mi.1.TOLLVTOLLDA
+      ; set minimum toll, except when vtoll is 0 as it indicates no toll path
+      jloop
+        if (mi.1.TOLLVTOLLDA[j]=0) 
+          mw[7][j] = 0
+        else 
+          mw[7][j] = max(mi.1.TOLLVTOLLDA[j], min_vtoll)
+        endif
+      endjloop
       
       ; shared ride 2
       mw[8]   = mi.2.TIMES2
@@ -414,8 +424,15 @@ loop period = 1, 5
       mw[11]  = mi.2.TOLLTIMES2
       mw[12]  = mi.2.TOLLDISTS2
       mw[13]  = mi.2.TOLLBTOLLS2
-      mw[14]  = mi.2.TOLLVTOLLS2
-      
+      ; set minimum toll, except when vtoll is 0 as it indicates no toll path
+      jloop
+        if (mi.2.TOLLVTOLLS2[j]=0) 
+          mw[14][j] = 0
+        else 
+          mw[14][j] = max(mi.2.TOLLVTOLLS2[j], min_vtoll)
+        endif
+      endjloop
+
       ; shared ride 3+
       mw[15]  = mi.3.TIMES3
       mw[16]  = mi.3.DISTS3
@@ -423,7 +440,14 @@ loop period = 1, 5
       mw[18]  = mi.3.TOLLTIMES3
       mw[19]  = mi.3.TOLLDISTS3
       mw[20]  = mi.3.TOLLBTOLLS3
-      mw[21]  = mi.3.TOLLVTOLLS3
+      ; set minimum toll, except when vtoll is 0 as it indicates no toll path
+      jloop
+        if (mi.3.TOLLVTOLLS3[j]=0) 
+          mw[21][j] = 0
+        else 
+          mw[21][j] = max(mi.3.TOLLVTOLLS3[j], min_vtoll)
+        endif
+      endjloop
       
       ; very small trucks
       mw[22]  = mi.4.TIMEVSM
@@ -432,7 +456,14 @@ loop period = 1, 5
       mw[25]  = mi.4.TOLLTIMEVSM
       mw[26]  = mi.4.TOLLDISTVSM
       mw[27]  = mi.4.TOLLBTOLLVSM
-      mw[28]  = mi.4.TOLLVTOLLVSM
+      ; set minimum toll, except when vtoll is 0 as it indicates no toll path
+      jloop
+        if (mi.4.TOLLVTOLLVSM[j]=0) 
+          mw[28][j] = 0
+        else 
+          mw[28][j] = max(mi.4.TOLLVTOLLVSM[j], min_vtoll)
+        endif
+      endjloop
       
       ; small trucks
       mw[29]  = mi.5.TIMESML
@@ -441,7 +472,14 @@ loop period = 1, 5
       mw[32]  = mi.5.TOLLTIMESML
       mw[33]  = mi.5.TOLLDISTSML
       mw[34]  = mi.5.TOLLBTOLLSML
-      mw[35]  = mi.5.TOLLVTOLLSML
+      ; set minimum toll, except when vtoll is 0 as it indicates no toll path
+      jloop 
+        if (mi.5.TOLLVTOLLSML[j]=0) 
+          mw[35][j] = 0
+        else 
+          mw[35][j] = max(mi.5.TOLLVTOLLSML[j], min_vtoll)
+        endif
+      endjloop
       
       ; medium trucks
       mw[36]  = mi.6.TIMEMED
@@ -450,7 +488,14 @@ loop period = 1, 5
       mw[39]  = mi.6.TOLLTIMEMED
       mw[40]  = mi.6.TOLLDISTMED
       mw[41]  = mi.6.TOLLBTOLLMED
-      mw[42]  = mi.6.TOLLVTOLLMED
+      ; set minimum toll, except when vtoll is 0 as it indicates no toll path
+      jloop
+        if (mi.6.TOLLVTOLLMED[j]=0) 
+          mw[42][j] = 0
+        else 
+          mw[42][j] = max(mi.6.TOLLVTOLLMED[j], min_vtoll)
+        endif
+      endjloop
       
       ; large trucks
       mw[43]  = mi.7.TIMELRG
@@ -459,7 +504,14 @@ loop period = 1, 5
       mw[46]  = mi.7.TOLLTIMELRG
       mw[47]  = mi.7.TOLLDISTLRG
       mw[48]  = mi.7.TOLLBTOLLLRG
-      mw[49]  = mi.7.TOLLVTOLLLRG
+      ; set minimum toll, except when vtoll is 0 as it indicates no toll path
+      jloop
+        if (mi.7.TOLLVTOLLLRG[j]=0) 
+          mw[49][j] = 0
+        else 
+          mw[49][j] = max(mi.7.TOLLVTOLLLRG[j], min_vtoll)
+        endif
+      endjloop
       
    endrun
    

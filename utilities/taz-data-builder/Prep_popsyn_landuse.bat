@@ -6,8 +6,8 @@
 :: e.g. 
 :: X:\travel-model-one-master\utilities\taz-data-builder\prep_popsyn_landuse.bat NoProject 20240307 PBA50Plus_NP_InitialRun_v8 2035 M:\urban_modeling\baus\PBA50Plus\PBA50Plus_NP_InitialRun\outputs\PBA50Plus_NP_InitialRun_v8 > prep_popsyn_landuse.log 2>&1
 :: 
-:: the 3 arugments are:
-:: 1. Scenario/Future Name - e.g. NoProject, DBP
+:: the 5 arugments are:
+:: 1. Scenario/Future Name - e.g., NoProject, DBP, FBP, EIR_Alt2
 :: 2. Date of populationsim run - e.g. 20200622
 :: 3. Land use run name - e.g. PBA50Plus_Preservation
 :: 4. Model Year - e.g. 2035
@@ -53,6 +53,9 @@ IF %USERNAME%==lzorn (
 IF %USERNAME%==ftsang (
   set R_HOME=C:\Program Files\R\R-4.1.2\bin
 )
+IF %USERNAME%==ywang (
+  set R_HOME=C:\Program Files\R\R-4.5.1\bin
+)
 IF %USERNAME%==mtcpb (
   set R_HOME=C:\Program Files\R\R-3.5.2\bin
 )
@@ -61,9 +64,10 @@ Set F_OUTPUT=tazData.dbf
 "%R_HOME%\Rscript.exe" X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
 
 :: parking strategy variant
+:: pass scenario argument; Note that this will fail if scenario is not supported
 mkdir parking_strategy
 cd parking_strategy
-python X:\travel-model-one-master\utilities\taz-data-builder\updateParkingCostForParkingStrategy.py ..\tazData.csv tazData_parkingStrategy_v01.csv
+python X:\travel-model-one-master\utilities\taz-data-builder\updateParkingCostForParkingStrategy.py ..\tazData.csv tazData_parkingStrategy_v01.csv %1
 
 set F_INPUT=tazData_parkingStrategy_v01.csv
 set F_OUTPUT=tazData_parkingStrategy_v01.dbf

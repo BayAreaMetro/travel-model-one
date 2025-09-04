@@ -3,9 +3,8 @@ import collections
 import operator
 import os
 import re
-import string
+import pathlib
 import sys
-import csv
 from collections import OrderedDict, defaultdict
 from shutil import copyfile
 
@@ -696,10 +695,10 @@ class RunResults:
             print("Wrote {}".format(debug_filename))
 
             # copy Tableau template into the project folder for mapping
-            cs_tableau_filename = os.path.join(debug_dir, "consumer_surplus_{}.twb".format(config['Foldername - Future']))
-            cs_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
+            cs_tableau_filename = os.path.join(debug_dir, "consumer_surplus.twb")
+            cs_tableau_template=pathlib.Path(__file__).parent / "consumer_surplus.twb"
             copyfile(cs_tableau_template, cs_tableau_filename)
-            print("Copied file to {}".format(cs_tableau_filename))
+            print(f"Copied file {cs_tableau_template} to {cs_tableau_filename}")
 
         return (mandatoryAccessibilities, nonmandatoryAccessibilities,
                 mandatoryAccess,          nonmandatoryAccess)
