@@ -27,6 +27,7 @@ if __name__ == '__main__':
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025'], help='Specify RTP')
     parser.add_argument('analysis', type=str, choices=['CARE','OverBurdened','EPC','HRA'], help='Specify analysis type')
+    parser.add_argument('--emfac_version', type=str, default='EMFAC2021', help='Specify EMFAC version (default: EMFAC2021)')
     my_args = parser.parse_args()
 
     # Set base directory
@@ -39,8 +40,16 @@ if __name__ == '__main__':
         LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_CARE_EMFAC2021_FEIR")
     elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'OverBurdened'):
         BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/OverburdenedCommunities_analysis/PBA50plus"
-        EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups - EMFAC21")
-        LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened_EMFAC2021")
+        if my_args.emfac_version == 'EMFAC2017':
+            EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups - EMFAC17")
+            LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened_EMFAC2017")
+        elif my_args.emfac_version == 'EMFAC2021':
+            EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups - EMFAC21")
+            LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened_EMFAC2021")
+        elif my_args.emfac_version == 'EMFAC2025':
+            EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups - EMFAC25")
+            LINK_OUTPUT_DIR = os.path.join(BASE_DIR, "links_OverBurdened_EMFAC2025")
+
     elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'EPC'):
         BASE_DIR = "M:/Application/PBA50Plus_Data_Processing/EPC_HRA_emissions"
         EMISSION_RATES_DIR = os.path.join(BASE_DIR, "EmissionRates_Lookups_EMFAC2021")
@@ -115,8 +124,17 @@ if __name__ == '__main__':
         analysis_name = "Overburdened"
         shp_id = "COUNTY_OBC"
         link_tagging_col = "linkOBC_share"
-        emission_rates_file_PM25 = '2023-2050-Non-Exhaust ER (EMFAC2021).xlsx'
-        emission_rates_file_MSAT = 'MSAT Emission Rates with E2021 (PBA2050+).xlsx'   
+
+        if my_args.emfac_version == 'EMFAC2017':
+            emission_rates_file_PM25 = '2023-2050-Non-Exhaust ER (EMFAC2017).xlsx'
+            emission_rates_file_MSAT = 'MSAT Emission Rates with CT-E17 (PBA2050+).xlsx'
+        elif my_args.emfac_version == 'EMFAC2021':
+            emission_rates_file_PM25 = '2023-2050-Non-Exhaust ER (EMFAC2021).xlsx'
+            emission_rates_file_MSAT = 'MSAT Emission Rates with E2021 (PBA2050+).xlsx'
+        elif my_args.emfac_version == 'EMFAC2025':
+            emission_rates_file_PM25 = '2023-2050-Non-Exhaust ER (EMFAC2025).xlsx'
+            emission_rates_file_MSAT = 'MSAT Emission Rates with E2025 (PBA2050+).xlsx'
+
     elif (my_args.rtp == 'RTP2025') & (my_args.analysis == 'EPC'):
         analysis_name = "EPC"
         shp_id = "COUNTY_EPC"
