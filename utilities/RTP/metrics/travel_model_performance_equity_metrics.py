@@ -553,7 +553,11 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Solano') |
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Napa') |
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Sonoma') |
-            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Marin')
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_Marin') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_EastBay') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_NorthBay') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_WestBay') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_SouthBay')
             ]
 
         # extract mode, time, person_segment
@@ -575,7 +579,7 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
         job_acc_metrics_df = pd.concat([job_acc_metrics_df, scenario_metrics_df])
 
     # write it
-    output_file = METRICS_OUTPUT_DIR / 'metrics_connected1_jobaccess_withCounty.csv'
+    output_file = METRICS_OUTPUT_DIR / 'metrics_connected1_jobaccess_withCountySubregion.csv'
     job_acc_metrics_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
 
