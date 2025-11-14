@@ -91,7 +91,8 @@ IF %4 GTR 2015 (
   if %4 GEQ 2035 (set PARCEL_YEAR=2035)
   if %4 GEQ 2050 (set PARCEL_YEAR=2050)
   echo PARCEL_YEAR=!PARCEL_YEAR!
-  python x:\travel-model-one-master\utilities\taz-data-builder\tally_household_share_by_taz_subzone.py "%~5\core_summaries\%3_parcel_summary_!PARCEL_YEAR!.csv" landuse\taz_subzone_hhshare_%3_%4.csv
+  :: python x:\travel-model-one-master\utilities\taz-data-builder\tally_household_share_by_taz_subzone.py "%~5\core_summaries\%3_parcel_summary_!PARCEL_YEAR!.csv" landuse\taz_subzone_hhshare_%3_%4.csv
+  python x:\travel-model-one-master\utilities\taz-data-builder\tally_household_share_by_taz_subzone.py "%~5\%3_parcel_data_!PARCEL_YEAR!.csv" landuse\taz_subzone_hhshare_%3_%4.csv
   copy landuse\taz_subzone_hhshare_%3_%4.csv landuse\walkAccessBuffers.float.csv
 )
 
