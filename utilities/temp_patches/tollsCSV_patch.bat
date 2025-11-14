@@ -12,13 +12,15 @@ if "%computername%" == "MODEL3-C" (
 
 rem cd /d "C:\Users\ftsang\Box\Plan Bay Area 2050+\Performance and Equity\Project Performance\Express_lane_networks"
 rem cd /d L:\RTP2025_PPA\Projects\Express_lane_networks
-cd /d L:\Application\Model_One\NextGenFwys_Round2\INPUT_DEVELOPMENT\Networks
+rem cd /d L:\Application\Model_One\NextGenFwys_Round2\INPUT_DEVELOPMENT\Networks
+cd /d "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\"
+
 
 setlocal enabledelayedexpansion
 
 for /d %%f in (
 
-NGF_Networks_NGFround2_P1_11\NGF_R2_R2P1_AllLaneTolling_network_2035
+BlueprintNetworks_v25\net_2035_Blueprint
 
 )    do    (
 

@@ -8,6 +8,7 @@ USAGE = r"""
   And PBA50+ Tasks:
     T5 parking pricing (https://app.asana.com/0/0/1206396214159345/f)
     Update 'TAZ_intersect_GG_TRA.xlsx" for parking strategies (https://app.asana.com/0/1204085012544660/1206586796423943/f)
+    Final Blueprint: https://app.asana.com/0/1204959680579890/1208629862862979
 
   https://github.com/BayAreaMetro/modeling-website/wiki/TazData
 
@@ -17,7 +18,7 @@ import argparse, logging, os, sys
 import numpy, pandas
 
 LOG_FILE                  = "updateParkingCostForParkingStrategy.log"
-TAZ_GG_TRA_FILE           = "M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\parking_strategy\\taz1454_GGnonPPA_TRA_crosswalk.csv"
+TAZ_GG_TRA_FILE           = "M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\parking_strategy\\taz1454_GGnonPPA_TRA_crosswalk_FBP.csv"
 PCT_AREA_THRESHOLD        = 0.20
 BASE_PARKING_MIN_COST     = 25.0 # 2000 cents
 STRATEGY_PARKING_INCREASE = 1.25 # multiplier

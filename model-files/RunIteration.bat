@@ -48,6 +48,14 @@ if ERRORLEVEL 2 goto done
 :core
 
 if %ITER%==1 (
+  rem List unconnected zones in skims\unconnected_zones.csv
+  runtpp CTRAMP\scripts\skims\FindNoAccessZones.job
+  if ERRORLEVEL 2 goto done
+
+  rem Filter out households in those unconnected zones
+  python CTRAMP\scripts\preprocess\filterUnconnectedHouseholds.py popsyn
+  if ERRORLEVEL 1 goto done
+
   rem run matrix manager, household manager and jppf driver
   cd CTRAMP\runtime
   call javaOnly_runMain.cmd

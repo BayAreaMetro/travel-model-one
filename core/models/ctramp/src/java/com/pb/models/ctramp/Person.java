@@ -36,6 +36,18 @@ public class Person implements java.io.Serializable {
     public static final String[] employmentCategoryNameArray = {EMPLOYMENT_CATEGORY_FULL_TIME_WORKER_NAME,
         EMPLOYMENT_CATEGORY_PART_TIME_WORKER_NAME,EMPLOYMENT_CATEGORY_NOT_EMPLOYED_NAME,EMPLOYMENT_CATEGORY_UNDER_AGE_16_NAME};
 
+    // six categories: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
+    public static final String INDUSTRY_CATEGORY_NA                         = "N/A";
+    public static final String INDUSTRY_CATEGORY_AGREMP                     = "AGR";
+    public static final String INDUSTRY_CATEGORY_FPSEMP                     = "FPS";
+    public static final String INDUSTRY_CATEGORY_HEREMP                     = "HER";
+    public static final String INDUSTRY_CATEGORY_MWTEMP                     = "MWT";
+    public static final String INDUSTRY_CATEGORY_OTHEMP                     = "OTH";
+    public static final String INDUSTRY_CATEGORY_RETEMP                     = "RET";
+
+    public static final String[] industryCategoryNameArray = {INDUSTRY_CATEGORY_NA, INDUSTRY_CATEGORY_AGREMP, INDUSTRY_CATEGORY_FPSEMP,
+        INDUSTRY_CATEGORY_HEREMP, INDUSTRY_CATEGORY_MWTEMP, INDUSTRY_CATEGORY_OTHEMP, INDUSTRY_CATEGORY_RETEMP};
+
     public static final String WFH_CATEGORY_NA                              = "N/A";
     public static final String WFH_CATEGORY_GOES_TO_WORK                    = "Goes to work";
     public static final String WFH_WORKS_FROM_HOME                          = "Works from home";
@@ -56,6 +68,7 @@ public class Person implements java.io.Serializable {
     private byte persAge;
     private byte persGender;
     private byte persEmploymentCategory;
+    private byte persIndustryCategory;     // set by CoordinatedDailyActivityPatternModel
     private byte persWfhCategory;          // set by CoordinatedDailyActivityPatternModel
     private byte persStudentCategory;
     private byte personType;
@@ -323,8 +336,12 @@ public class Person implements java.io.Serializable {
         persEmploymentCategory = (byte)category;
     }
 
-    public void setPersWorksFromHomeCategory(int category) {
-        persWfhCategory = (byte)category;
+    public void setPersIndustryCategory(Person.IndustryStatus category) {
+        persIndustryCategory = (byte)category.ordinal();
+    }
+
+    public void setPersWorksFromHomeCategory(Person.WorkFromHomeStatus category) {
+        persWfhCategory = (byte)category.ordinal();
     }
     
     public void setPersStudentCategory( int category ){
@@ -889,6 +906,16 @@ public class Person implements java.io.Serializable {
             return 0;
     }
     /**
+     * Get assumed industry for person.
+     * @return 3-letter code for industry
+     */
+    public String getPersonIndustry() {
+        if (persIndustryCategory == IndustryStatus.nul.ordinal()) return "nul";
+        if (persIndustryCategory == IndustryStatus.NOT_APPLICABLE.ordinal()) return "N_A";
+        if (persIndustryCategory > industryCategoryNameArray.length) return "ERR";
+        return industryCategoryNameArray[persIndustryCategory-1];
+    }
+    /**
      * Determine if person is a student (of any age, independent of person type)
      * @return 1 if student, 0 otherwise
      */
@@ -1290,6 +1317,7 @@ public class Person implements java.io.Serializable {
         Household.logHelper( logger, "persAge: ", persAge, totalChars );
         Household.logHelper( logger, "persGender: ", persGender, totalChars );
         Household.logHelper( logger, "persEmploymentCategory: ", persEmploymentCategory, totalChars );
+        Household.logHelper( logger, "persIndustryCategory: ", persIndustryCategory, totalChars );
         Household.logHelper( logger, "persWfhCategory: ", persWfhCategory, totalChars );
         Household.logHelper( logger, "persStudentCategory: ", persStudentCategory, totalChars );
         Household.logHelper( logger, "personType: ", personType, totalChars );
@@ -1445,6 +1473,7 @@ public class Person implements java.io.Serializable {
         Household.logHelper( logger, "persAge: ", persAge, totalChars );
         Household.logHelper( logger, "persGender: ", persGender, totalChars );
         Household.logHelper( logger, "persEmploymentCategory: ", persEmploymentCategory, totalChars );
+        Household.logHelper( logger, "persIndustryCategory: ", persIndustryCategory, totalChars );
         Household.logHelper( logger, "persWfhCategory: ", persWfhCategory, totalChars );
         Household.logHelper( logger, "persStudentCategory: ", persStudentCategory, totalChars );
         Household.logHelper( logger, "personType: ", personType, totalChars );
@@ -1604,6 +1633,17 @@ public class Person implements java.io.Serializable {
         PART_TIME,
         NOT_EMPLOYED,
         UNDER16
+    }
+
+    public enum IndustryStatus {
+        nul,            // unset
+        NOT_APPLICABLE, // non-worker
+        AGREMP,
+        FPSEMP,
+        HEREMP,
+        MWTEMP,
+        OTHEMP,
+        RETEMP
     }
 
     public enum WorkFromHomeStatus {

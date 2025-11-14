@@ -168,6 +168,7 @@ MODE_NUM_TO_NAME = {
     93 :["VINE Express",                              "Other"      ],
     94 :["SMART Temporary Express",                   "Other"      ],
     95 :["VINE Express",                              "Other"      ],
+    96 :["Tri-Delta - BRT",                           "Other"      ],
     98 :["Regional Express ReX",                      "Other"      ],
     # Ferry
     100:["East Bay Ferries",                          "Other"      ],

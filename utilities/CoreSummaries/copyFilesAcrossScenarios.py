@@ -162,6 +162,9 @@ if __name__ == '__main__':
                     match = re.search(potential_file_to_delete_re, potential_file_to_delete)
                     if match == None: continue
 
+                    # don't delete NTD files
+                    if potential_file_to_delete.endswith("NTD.csv"): continue
+
                     if match.group('run_id').lower() not in directory_copy_list:
                         print(f"    => Deleting {potential_file_to_delete}")
                         os.remove(os.path.join(my_args.dest_dir, potential_file_to_delete))

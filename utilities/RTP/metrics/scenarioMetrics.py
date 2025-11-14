@@ -6,8 +6,9 @@ USAGE = r"""
   Processes model outputs and creates a single csv with scenario metrics, called metrics\scenario_metrics.csv
   
   Other required input files:
-  * INPUT\\metrics\\taz1454_epcPBA50plus_2024_02_23.csv  columns: TAZ1454, taz_epc (0 or 1)
-  * INPUT\\metrics\\taz1454_hraPBA50plus_2024_02_23.csv  columns: TAZ1454, taz_hra (blank, 0 or 1)
+  * INPUT\\metrics\\taz1454_epcPBA50plus_2024_02_29.csv  columns: TAZ1454, taz_epc (0 or 1)
+  * INPUT\\metrics\\taz_coc_crosswalk.csv                columns: TAZ1454, taz_coc (0 or 1)    
+  * INPUT\\metrics\\taz1454_hraPBA50plus_2025_02_22.csv  columns: TAZ1454, taz_hra (blank, 0 or 1)
   * INPUT\\metrics\\taz1454_urban_suburban_rural.csv     columns: TAZ1454, area_type ('urban', 'suburban' or 'rural')
 
   This file will have 3 columns:
@@ -150,14 +151,20 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     # print(accessiblejobs_df.head())
 
     # read Equity Priority Communities
-    input_file = pathlib.Path("INPUT/metrics/taz1454_epcPBA50plus_2024_02_23.csv")
+    input_file_pba50plus = pathlib.Path("INPUT/metrics/taz1454_epcPBA50plus_2024_02_29.csv")
     print(f"  Reading {input_file}")
-    epc_df = pandas.read_csv(input_file, sep=",")
-    tazdata_df = pandas.merge(left=tazdata_df, right=epc_df, left_on="ZONE", right_on="TAZ1454", validate="one_to_one")
-    print("  Read {} TAZs in equity priority communities".format(tazdata_df["taz_epc"].sum()))
+    epc22_df = pandas.read_csv(input_file_pba50plus, sep=",")
+    tazdata_df = pandas.merge(left=tazdata_df, right=epc22_df, left_on="ZONE", right_on="TAZ1454", validate="one_to_one")
+    tazdata_df.rename(columns={"taz_epc":"taz_epc22"}, inplace=True)
+    input_file_pba50 = pathlib.Path("INPUT/metrics/taz_coc_crosswalk.csv")
+    print(f"  Reading {input_file}")
+    epc18_df = pandas.read_csv(input_file_pba50, sep=",")
+    tazdata_df = pandas.merge(left=tazdata_df, right=epc18_df, on="TAZ1454", validate="one_to_one")
+    tazdata_df.rename(columns={"taz_coc":"taz_epc18"}, inplace=True)
+    print("  Read TAZs in equity priority communities:\n {}".format(tazdata_df[["taz_epc22", "taz_epc18"]].sum()))
 
     # read hra
-    input_file = pathlib.Path("INPUT/metrics/taz1454_hraPBA50plus_2024_02_23.csv")
+    input_file = pathlib.Path("INPUT/metrics/taz1454_hraPBA50plus_2025_02_22.csv")
     print(f"  Reading {input_file}")
     hra_df = pandas.read_csv(input_file)
     hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
@@ -180,7 +187,7 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     # join persons to origin
     accessiblejobs_df = pandas.merge(
         left=accessiblejobs_df, 
-        right=tazdata_df[['ZONE','TOTPOP','taz_epc','taz_hra','U_S_R']],
+        right=tazdata_df[['ZONE','TOTPOP','taz_epc18','taz_epc22','taz_hra','U_S_R']],
         left_index=True,
         right_on="ZONE",
         how="left",
@@ -191,17 +198,23 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     accessiblejobs_df[ 'trn_drv_weighted'] = accessiblejobs_df[ 'trn_drv']*accessiblejobs_df['TOTPOP']
     # print(accessiblejobs_df.head())
 
-    for suffix in ["", "_epc","_nonepc","_hra","_nonhra","_urban","_suburban","_rural"]:
+    for suffix in ["","_epc18","_nonepc18","_epc22","_nonepc22","_hra","_nonhra","_urban","_suburban","_rural"]:
 
         # restrict to suffix if necessary
         accjob_subset_df = accessiblejobs_df
         totalpop_subset  = total_pop
-        if suffix == "_epc":
-            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc"]==1]
-            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc"]==1, "TOTPOP"].sum()
-        elif suffix == "_nonepc":
-            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc"]==0]
-            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc"]==0, "TOTPOP"].sum()
+        if suffix == "_epc18":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc18"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc18"]==1, "TOTPOP"].sum()
+        elif suffix == "_nonepc18":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc18"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc18"]==0, "TOTPOP"].sum()
+        elif suffix == "_epc22":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc22"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc22"]==1, "TOTPOP"].sum()
+        elif suffix == "_nonepc22":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc22"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc22"]==0, "TOTPOP"].sum()
         elif suffix == "_hra":
             accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_hra"]==1]
             totalpop_subset  = tazdata_df.loc[tazdata_df["taz_hra"]==1, "TOTPOP"].sum()
@@ -332,13 +345,18 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
                                                    'walk_20':numpy.sum})
     # print(accessiblejobs_df.head())
 
-    # read communities of concern
-    input_file = pathlib.Path("INPUT/metrics/taz1454_epcPBA50plus_2024_02_23.csv")
+    # read Equity Priority Communities
+    input_file_pba50plus = pathlib.Path("INPUT/metrics/taz1454_epcPBA50plus_2024_02_29.csv")
     print(f"  Reading {input_file}")
-    epc_df = pandas.read_csv(input_file, sep=",")
-    # print("epc_df.head():\n{}".format(epc_df.head()))
-    tazdata_df = pandas.merge(left=tazdata_df, right=epc_df, left_on="ZONE", right_on="TAZ1454", validate="one_to_one")
-    print("  Read {} TAZs in equity priority communities".format(tazdata_df["taz_epc"].sum()))
+    epc22_df = pandas.read_csv(input_file_pba50plus, sep=",")
+    tazdata_df = pandas.merge(left=tazdata_df, right=epc22_df, left_on="ZONE", right_on="TAZ1454", validate="one_to_one")
+    tazdata_df.rename(columns={"taz_epc":"taz_epc22"}, inplace=True)
+    input_file_pba50 = pathlib.Path("INPUT/metrics/taz_coc_crosswalk.csv")
+    print(f"  Reading {input_file}")
+    epc18_df = pandas.read_csv(input_file_pba50, sep=",")
+    tazdata_df = pandas.merge(left=tazdata_df, right=epc18_df, on="TAZ1454", validate="one_to_one")
+    tazdata_df.rename(columns={"taz_coc":"taz_epc18"}, inplace=True)
+    print("  Read TAZs in equity priority communities:\n {}".format(tazdata_df[["taz_epc22", "taz_epc18"]].sum()))
 
     # read hra
     input_file = pathlib.Path("INPUT/metrics/taz1454_hraPBA50plus_2024_02_23.csv")
@@ -362,7 +380,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # join persons to origin
     accessiblejobs_df = pandas.merge(
         left=accessiblejobs_df, 
-        right=tazdata_df[['ZONE','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','taz_epc',"taz_hra","U_S_R"]],
+        right=tazdata_df[['ZONE','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','taz_epc18','taz_epc22',"taz_hra","U_S_R"]],
         left_index=True, 
         right_on="ZONE",
         how="left",
@@ -380,17 +398,23 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     # print(accessiblejobs_df.head())
 
-    for suffix in ["", "_epc","_nonepc","_hra","_nonhra","_urban","_suburban","_rural"]:
+    for suffix in ["","_epc18","_nonepc18","_epc22","_nonepc22","_hra","_nonhra","_urban","_suburban","_rural"]:
 
         # restrict to suffix if necessary
         accjob_subset_df = accessiblejobs_df
         totalpop_subset  = total_pop
-        if suffix == "_epc":
-            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc"]==1]
-            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc"]==1, "TOTPOP"].sum()
-        elif suffix == "_nonepc":
-            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc"]==0]
-            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc"]==0, "TOTPOP"].sum()
+        if suffix == "_epc18":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc18"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc18"]==1, "TOTPOP"].sum()
+        elif suffix == "_nonepc18":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc18"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc18"]==0, "TOTPOP"].sum()
+        elif suffix == "_epc22":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc22"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc22"]==1, "TOTPOP"].sum()
+        elif suffix == "_nonepc22":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_epc22"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["taz_epc22"]==0, "TOTPOP"].sum()
         elif suffix == "_hra":
             accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["taz_hra"]==1]
             totalpop_subset  = tazdata_df.loc[tazdata_df["taz_hra"]==1, "TOTPOP"].sum()
