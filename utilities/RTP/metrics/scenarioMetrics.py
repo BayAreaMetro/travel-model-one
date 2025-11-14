@@ -250,6 +250,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     Reads in database\TimeSkimsDatabaseAM.csv and outputs accessible jobs weighted by persons for the following:
     * wTrnW time   <= 45 minutes
+    * dTrnW time   <= 45 minutes
     * da time      <= 30 minutes
     * da toll time <= 30 minutes
     * bike time    <= 20 minutes
@@ -262,6 +263,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     Adds the following keys to the metrics_dict:
     * jobacc2_wtrn_45_acc_jobs_weighted_persons  : accessible by walk-transit-walk (in 45 min) jobs weighted by persons
+    * jobacc2_dtrn_45_acc_jobs_weighted_persons  : accessible by drive-transit-walk (in 45 min) jobs weighted by persons
+    * jobacc2_trn_45_acc_jobs_weighted_persons   : accessible by EITHER walk-transit-walk OR drive-transit-walk (in 45 min) jobs weighted by persons
     * jobacc2_wtrn_30_acc_jobs_weighted_persons  : accessible by walk-transit-walk (in 30 min) jobs weighted by persons
     * jobacc2_da_30_acc_jobs_weighted_persons    : accessible by drive alone       (in 30 min) jobs weighted by persons
     * jobacc2_dat_30_acc_jobs_weighted_persons   : accessible by drive alone toll  (in 30 min) jobs weighted by persons
@@ -271,6 +274,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     * jobacc2_total_jobs_weighted_persons        : total jobs x total persons
 
     * jobacc2_wtrn_45_accessible_job_share       : accessible job share = jobacc2_wtrn_45_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
+    * jobacc2_dtrn_45_accessible_job_share       : accessible job share = jobacc2_dtrn_45_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
+    * jobacc2_trn_45_accessible_job_share        : accessible job share = jobacc2_trn_45_acc_jobs_weighted_persons /jobacc2_total_jobs_weighted_persons
     * jobacc2_wtrn_30_accessible_job_share       : accessible job share = jobacc2_wtrn_30_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
     * jobacc2_da_30_accessible_job_share         : accessible job share = jobacc2_da_30_acc_jobs_weighted_persons  /jobacc2_total_jobs_weighted_persons
     * jobacc2_dat_30_accessible_job_share        : accessible job share = jobacc2_dat_30_acc_jobs_weighted_persons /jobacc2_total_jobs_weighted_persons
@@ -284,18 +289,22 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     input_file = pathlib.Path("database/TimeSkimsDatabaseAM.csv")
     print("  Reading {}".format(input_file))
     traveltime_df = pandas.read_csv(input_file, sep=",")
-    traveltime_df = traveltime_df[['orig','dest','da','daToll','wTrnW','bike','walk']]
+    traveltime_df = traveltime_df[['orig','dest','da','daToll','wTrnW','dTrnW','bike','walk']]
     # -999 is really no-access
     traveltime_df.replace(to_replace=[-999.0], value=[None], inplace=True)
     len_traveltime_df = len(traveltime_df)
 
     traveltime_df['wtrn_45'] = 0
+    traveltime_df['dtrn_45'] = 0
+    traveltime_df['trn_45' ] = 0
     traveltime_df['wtrn_30'] = 0
     traveltime_df['da_30'  ] = 0
     traveltime_df['dat_30' ] = 0
     traveltime_df['bike_20'] = 0
     traveltime_df['walk_20'] = 0
     traveltime_df.loc[ (traveltime_df.wTrnW  <=45) , 'wtrn_45'] = 1
+    traveltime_df.loc[ (traveltime_df.dTrnW  <=45) , 'dtrn_45'] = 1
+    traveltime_df.loc[ (traveltime_df.wTrnW  <=45) | (traveltime_df.dTrnW <=45), 'trn_45' ] = 1
     traveltime_df.loc[ (traveltime_df.wTrnW  <=30) , 'wtrn_30'] = 1
     traveltime_df.loc[ (traveltime_df.da     <=30) , 'da_30'  ] = 1
     traveltime_df.loc[ (traveltime_df.daToll <=30) , 'dat_30' ] = 1
@@ -306,7 +315,17 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     input_file = pathlib.Path("landuse/tazData.csv")
     print("  Reading {}".format(input_file))
     tazdata_df = pandas.read_csv(input_file, sep=",")
-    tazdata_df = tazdata_df[['ZONE','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','TOTPOP','EMPRES','TOTEMP']]
+    tazdata_df = tazdata_df[['ZONE','COUNTY','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','TOTPOP','EMPRES','TOTEMP']]
+    county_subregion_map = {1:'WestBay',
+                            2:'WestBay',
+                            3:'SouthBay',
+                            4:'EastBay',
+                            5:'EastBay',
+                            6:'NorthBay',
+                            7:'NorthBay',
+                            8:'NorthBay',
+                            9:'NorthBay'}
+    tazdata_df['subregion'] = tazdata_df['COUNTY'].map(county_subregion_map)
     total_emp  = tazdata_df['TOTEMP'].sum()
     total_pop  = tazdata_df['TOTPOP'].sum()
 
@@ -316,6 +335,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     traveltime_df.drop('ZONE', axis=1, inplace=True)  # ZONE == dest
     # make these total employment
     traveltime_df.wtrn_45  = traveltime_df.wtrn_45 *traveltime_df.TOTEMP
+    traveltime_df.dtrn_45  = traveltime_df.dtrn_45 *traveltime_df.TOTEMP
+    traveltime_df.trn_45   = traveltime_df.trn_45  *traveltime_df.TOTEMP
     traveltime_df.wtrn_30  = traveltime_df.wtrn_30 *traveltime_df.TOTEMP
     traveltime_df.da_30    = traveltime_df.da_30   *traveltime_df.TOTEMP
     traveltime_df.dat_30   = traveltime_df.dat_30  *traveltime_df.TOTEMP
@@ -323,6 +344,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     traveltime_df.walk_20  = traveltime_df.walk_20 *traveltime_df.TOTEMP
     # make these numeric
     traveltime_df['wTrnW' ] = pandas.to_numeric(traveltime_df['wTrnW' ])
+    traveltime_df['dTrnW' ] = pandas.to_numeric(traveltime_df['dTrnW' ])
     traveltime_df['da'    ] = pandas.to_numeric(traveltime_df['da'    ])
     traveltime_df['daToll'] = pandas.to_numeric(traveltime_df['daToll'])
     traveltime_df['bike'  ] = pandas.to_numeric(traveltime_df['bike'  ])
@@ -332,12 +354,15 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # aggregate to origin
     traveltime_df_grouped = traveltime_df.groupby(['orig'])
     accessiblejobs_df = traveltime_df_grouped.agg({'wTrnW'  :numpy.mean,
+                                                   'dTrnW'  :numpy.mean,
                                                    'da'     :numpy.mean,
                                                    'daToll' :numpy.mean,
                                                    'bike'   :numpy.mean,
                                                    'walk'   :numpy.mean,
                                                    'TOTEMP' :numpy.sum,
                                                    'wtrn_45':numpy.sum,
+                                                   'dtrn_45':numpy.sum,
+                                                   'trn_45' :numpy.sum,
                                                    'wtrn_30':numpy.sum,
                                                    'da_30'  :numpy.sum,
                                                    'dat_30' :numpy.sum,
@@ -359,7 +384,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     print("  Read TAZs in equity priority communities:\n {}".format(tazdata_df[["taz_epc22", "taz_epc18"]].sum()))
 
     # read hra
-    input_file = pathlib.Path("INPUT/metrics/taz1454_hraPBA50plus_2024_02_23.csv")
+    input_file = pathlib.Path("INPUT/metrics/taz1454_hraPBA50plus_2025_02_22.csv")
     print(f"  Reading {input_file}")
     hra_df = pandas.read_csv(input_file)
     hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
@@ -380,7 +405,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # join persons to origin
     accessiblejobs_df = pandas.merge(
         left=accessiblejobs_df, 
-        right=tazdata_df[['ZONE','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','taz_epc18','taz_epc22',"taz_hra","U_S_R"]],
+        right=tazdata_df[['ZONE','COUNTY','subregion','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','taz_epc18','taz_epc22',"taz_hra","U_S_R"]],
         left_index=True, 
         right_on="ZONE",
         how="left",
@@ -389,6 +414,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # population version
     accessiblejobs_df[ 'TOTEMP_weighted'] = accessiblejobs_df[ 'TOTEMP']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df['wtrn_45_weighted'] = accessiblejobs_df['wtrn_45']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df['dtrn_45_weighted'] = accessiblejobs_df['dtrn_45']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df[ 'trn_45_weighted'] = accessiblejobs_df[ 'trn_45']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df['wtrn_30_weighted'] = accessiblejobs_df['wtrn_30']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df[  'da_30_weighted'] = accessiblejobs_df[  'da_30']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df[ 'dat_30_weighted'] = accessiblejobs_df[ 'dat_30']*accessiblejobs_df['TOTPOP']
@@ -398,7 +425,9 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     # print(accessiblejobs_df.head())
 
-    for suffix in ["","_epc18","_nonepc18","_epc22","_nonepc22","_hra","_nonhra","_urban","_suburban","_rural"]:
+    for suffix in ["","_epc18","_nonepc18","_epc22","_nonepc22","_hra","_nonhra","_urban","_suburban","_rural",
+                   "_SanFrancisco","_SanMateo","_SantaClara","_Alameda","_ContraCosta","_Solano","_Napa","_Sonoma","_Marin",
+                   "_WestBay", "_SouthBay", "_EastBay", "_NorthBay"]:
 
         # restrict to suffix if necessary
         accjob_subset_df = accessiblejobs_df
@@ -430,6 +459,45 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         elif suffix == "_rural":
             accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="rural"]
             totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="rural", "TOTPOP"].sum()
+        elif suffix == "_SanFrancisco":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==1, "TOTPOP"].sum()
+        elif suffix == "_SanMateo":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==2]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==2, "TOTPOP"].sum()
+        elif suffix == "_SantaClara":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==3]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==3, "TOTPOP"].sum()     
+        elif suffix == "_Alameda":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==4]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==4, "TOTPOP"].sum()
+        elif suffix == "_ContraCosta":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==5]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==5, "TOTPOP"].sum()
+        elif suffix == "_Solano":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==6]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==6, "TOTPOP"].sum()
+        elif suffix == "_Napa":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==7]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==7, "TOTPOP"].sum()
+        elif suffix == "_Sonoma":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==8]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==8, "TOTPOP"].sum()
+        elif suffix == "_Marin":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["COUNTY"]==9]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["COUNTY"]==9, "TOTPOP"].sum()
+        elif suffix == "_WestBay":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["subregion"]=="WestBay"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["subregion"]=="WestBay", "TOTPOP"].sum()
+        elif suffix == "_SouthBay":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["subregion"]=="SouthBay"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["subregion"]=="SouthBay", "TOTPOP"].sum()
+        elif suffix == "_EastBay":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["subregion"]=="EastBay"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["subregion"]=="EastBay", "TOTPOP"].sum()
+        elif suffix == "_NorthBay":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["subregion"]=="NorthBay"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["subregion"]=="NorthBay", "TOTPOP"].sum()
 
         if suffix=="":
             print(f"suffix=[{suffix}] accjob_subset_df.columns:{accjob_subset_df.columns} accjob_subset_df head:()\n{accjob_subset_df.head()}")
@@ -442,6 +510,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         # denominator = total jobs weighted by persons
         metrics_dict['jobacc2_acc_jobs_weighted_persons%s'          % suffix] = accjob_subset_df[  'TOTEMP_weighted'].sum()
         metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'wtrn_45_weighted'].sum()
+        metrics_dict['jobacc2_dtrn_45_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'dtrn_45_weighted'].sum()
+        metrics_dict['jobacc2_trn_45_acc_jobs_weighted_persons%s'   % suffix] = accjob_subset_df[  'trn_45_weighted'].sum()
         metrics_dict['jobacc2_wtrn_30_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'wtrn_30_weighted'].sum()
         metrics_dict['jobacc2_da_30_acc_jobs_weighted_persons%s'    % suffix] = accjob_subset_df[   'da_30_weighted'].sum()
         metrics_dict['jobacc2_dat_30_acc_jobs_weighted_persons%s'   % suffix] = accjob_subset_df[  'dat_30_weighted'].sum()
@@ -451,6 +521,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         metrics_dict['jobacc2_total_jobs_weighted_persons%s'        % suffix] = total_emp*totalpop_subset
 
         metrics_dict['jobacc2_wtrn_45_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
+        metrics_dict['jobacc2_dtrn_45_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_dtrn_45_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
+        metrics_dict['jobacc2_trn_45_acc_accessible_job_share%s'   % suffix] = float(metrics_dict['jobacc2_trn_45_acc_jobs_weighted_persons%s'  % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
         metrics_dict['jobacc2_wtrn_30_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_wtrn_30_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
         metrics_dict['jobacc2_da_30_acc_accessible_job_share%s'    % suffix] = float(metrics_dict['jobacc2_da_30_acc_jobs_weighted_persons%s'   % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
         metrics_dict['jobacc2_dat_30_acc_accessible_job_share%s'   % suffix] = float(metrics_dict['jobacc2_dat_30_acc_jobs_weighted_persons%s'  % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
@@ -464,6 +536,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # household version
     accessiblejobs_df[ 'TOTEMP_weightedhh'] = accessiblejobs_df[ 'TOTEMP']*accessiblejobs_df['TOTHH']
     accessiblejobs_df['wtrn_45_weightedhh'] = accessiblejobs_df['wtrn_45']*accessiblejobs_df['TOTHH']
+    accessiblejobs_df['dtrn_45_weightedhh'] = accessiblejobs_df['dtrn_45']*accessiblejobs_df['TOTHH']
+    accessiblejobs_df[ 'trn_45_weightedhh'] = accessiblejobs_df[ 'trn_45']*accessiblejobs_df['TOTHH']
     accessiblejobs_df['wtrn_30_weightedhh'] = accessiblejobs_df['wtrn_30']*accessiblejobs_df['TOTHH']
     accessiblejobs_df[  'da_30_weightedhh'] = accessiblejobs_df[  'da_30']*accessiblejobs_df['TOTHH']
     accessiblejobs_df[ 'dat_30_weightedhh'] = accessiblejobs_df[ 'dat_30']*accessiblejobs_df['TOTHH']
@@ -472,6 +546,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     accessiblejobs_df[ 'TOTEMP_weightedhhq1q2'] = accessiblejobs_df[ 'TOTEMP']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
     accessiblejobs_df['wtrn_45_weightedhhq1q2'] = accessiblejobs_df['wtrn_45']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+    accessiblejobs_df['dtrn_45_weightedhhq1q2'] = accessiblejobs_df['dtrn_45']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+    accessiblejobs_df[ 'trn_45_weightedhhq1q2'] = accessiblejobs_df[ 'trn_45']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
     accessiblejobs_df['wtrn_30_weightedhhq1q2'] = accessiblejobs_df['wtrn_30']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
     accessiblejobs_df[  'da_30_weightedhhq1q2'] = accessiblejobs_df[  'da_30']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
     accessiblejobs_df[ 'dat_30_weightedhhq1q2'] = accessiblejobs_df[ 'dat_30']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
@@ -480,6 +556,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     accessiblejobs_df[ 'TOTEMP_weightedhhq3q4'] = accessiblejobs_df[ 'TOTEMP']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
     accessiblejobs_df['wtrn_45_weightedhhq3q4'] = accessiblejobs_df['wtrn_45']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+    accessiblejobs_df['dtrn_45_weightedhhq3q4'] = accessiblejobs_df['dtrn_45']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+    accessiblejobs_df[ 'trn_45_weightedhhq3q4'] = accessiblejobs_df[ 'trn_45']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
     accessiblejobs_df['wtrn_30_weightedhhq3q4'] = accessiblejobs_df['wtrn_30']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
     accessiblejobs_df[  'da_30_weightedhhq3q4'] = accessiblejobs_df[  'da_30']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
     accessiblejobs_df[ 'dat_30_weightedhhq3q4'] = accessiblejobs_df[ 'dat_30']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
@@ -489,6 +567,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     for hhsuffix in ["", "q1q2","q3q4"]:
         metrics_dict['jobacc2_acc_jobs_weighted_hh{}'        .format(hhsuffix)] = accessiblejobs_df[  'TOTEMP_weightedhh{}'.format(hhsuffix)].sum()
         metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accessiblejobs_df[ 'wtrn_45_weightedhh{}'.format(hhsuffix)].sum()
+        metrics_dict['jobacc2_dtrn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accessiblejobs_df[ 'dtrn_45_weightedhh{}'.format(hhsuffix)].sum()
+        metrics_dict['jobacc2_trn_45_acc_jobs_weighted_hh{}' .format(hhsuffix)] = accessiblejobs_df[  'trn_45_weightedhh{}'.format(hhsuffix)].sum()
         metrics_dict['jobacc2_wtrn_30_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accessiblejobs_df[ 'wtrn_30_weightedhh{}'.format(hhsuffix)].sum()
         metrics_dict['jobacc2_da_30_acc_jobs_weighted_hh{}'  .format(hhsuffix)] = accessiblejobs_df[   'da_30_weightedhh{}'.format(hhsuffix)].sum()
         metrics_dict['jobacc2_dat_30_acc_jobs_weighted_hh{}' .format(hhsuffix)] = accessiblejobs_df[  'dat_30_weightedhh{}'.format(hhsuffix)].sum()
@@ -498,6 +578,8 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         metrics_dict['jobacc2_total_jobs_weighted_hh{}'      .format(hhsuffix)] = metrics_dict['jobacc2_acc_jobs_weighted_hh{}'.format(hhsuffix)]
 
         metrics_dict['jobacc2_wtrn_45_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
+        metrics_dict['jobacc2_dtrn_45_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_dtrn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
+        metrics_dict['jobacc2_trn_45_acc_accessible_job_share_hh{}' .format(hhsuffix)] = float(metrics_dict['jobacc2_trn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
         metrics_dict['jobacc2_wtrn_30_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_wtrn_30_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
         metrics_dict['jobacc2_da_30_acc_accessible_job_share_hh{}'  .format(hhsuffix)] = float(metrics_dict['jobacc2_da_30_acc_jobs_weighted_hh{}'  .format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
         metrics_dict['jobacc2_dat_30_acc_accessible_job_share_hh{}' .format(hhsuffix)] = float(metrics_dict['jobacc2_dat_30_acc_jobs_weighted_hh{}' .format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])

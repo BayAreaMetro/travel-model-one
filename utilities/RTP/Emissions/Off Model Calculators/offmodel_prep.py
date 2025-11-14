@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pyreadr
-import os
+import os, glob
 
 USAGE = """
 
@@ -19,10 +19,11 @@ USAGE = """
 
 ######## Bikeshare
 
-def prep_data_for_bikeshare(taz_input_df):
+def prep_data_for_bikeshare(taz_input_df, popsyn_input_df):
     """
     Input:
-    * TAZ land use input
+    * TAZ land use input for employment
+    * popsyn input data for population
 
     Output the following data:
     * total households
@@ -34,15 +35,21 @@ def prep_data_for_bikeshare(taz_input_df):
     bikeshare_taz = taz_input_df[bikeshare_taz_cols].sum()
     bikeshare_taz_df = pd.DataFrame(bikeshare_taz).reset_index()
     bikeshare_taz_df.columns = ['variable', 'value']
+    variable_dict = {'TOTPOP': 'total_population', 'TOTEMP': 'total_employment'}
+    bikeshare_taz_df['variable'] = bikeshare_taz_df['variable'].map(variable_dict)
+
+    # also add popsyn total pop for per capita emission calculation
+    bikeshare_taz_df.loc[-1] = ['total_pop_popsyn', popsyn_input_df.shape[0]]
 
     bikeshare_taz_df.to_csv(os.path.join(OUTPUT_DIR, 'bikeshare.csv'), index=False)
 
 ######## Carshare
 
-def prep_data_for_carshare(taz_input_df):
+def prep_data_for_carshare(taz_input_df, popsyn_input_df):
     """
     Input:
     * TAZ land use input
+    * popsyn input data for population
 
     Output the following data:
     * total population
@@ -71,14 +78,18 @@ def prep_data_for_carshare(taz_input_df):
     carshare_taz_df2.columns = ['variable', 'value']
     carshare_taz_df2.loc[carshare_taz_df2['variable'] == 'TOTPOP', 'variable'] = 'total_population'
 
+    # also add popsyn total pop for per capita emission calculation
+    carshare_taz_df2.loc[-1] = ['total_pop_popsyn', popsyn_input_df.shape[0]]
+
     carshare_taz_df2.to_csv(os.path.join(OUTPUT_DIR, 'carshare.csv'), index=False)
 
 ######## Employer Shuttles
 
-def prep_data_for_employerShuttle(trips_output_df):
+def prep_data_for_employerShuttle(trips_output_df, popsyn_input_df):
     """
     Input:
     * trips output
+    * popsyn input data for population
 
     Output the following data:
     * trip mode share of work trips with distance > 30.0
@@ -97,15 +108,20 @@ def prep_data_for_employerShuttle(trips_output_df):
     simple_mode_share = trips_summary.groupby(['simple_mode'])[['estimated_trips']].sum().apply(lambda x: x/x.sum()).reset_index()
     simple_mode_share.rename({'estimated_trips': 'value'}, axis=1, inplace=True)
     simple_mode_share['variable'] = 'mode_share'
+
+    # also add popsyn total pop for per capita emission calculation
+    simple_mode_share.loc[-1] = ['NA', popsyn_input_df.shape[0], 'total_pop_popsyn']
+    
     simple_mode_share.to_csv(os.path.join(OUTPUT_DIR, 'employerShuttle.csv'), index=False)
 
 ######## Targeted Transportation Alternatives
 
-def prep_data_for_TargetedAlt(taz_input_df, tripdist_output_df):
+def prep_data_for_TargetedAlt(taz_input_df, tripdist_output_df, popsyn_input_df):
     """
     Input:
     * TAZ land use input
     * trip distance by mode and SD output
+    * popsyn input data for population
 
     Output the following data:
     * total households
@@ -143,15 +159,19 @@ def prep_data_for_TargetedAlt(taz_input_df, tripdist_output_df):
     alt_all_summary.loc[alt_all_summary['variable'] == 'TOTHH', 'variable'] = 'total_households'
     alt_all_summary.loc[alt_all_summary['variable'] == 'TOTEMP', 'variable'] = 'total_jobs'
 
+    # also add popsyn total pop for per capita emission calculation
+    alt_all_summary.loc[-1] = ['total_pop_popsyn', popsyn_input_df.shape[0]]
+
     alt_all_summary.to_csv(os.path.join(OUTPUT_DIR, 'targetedTransportationAlternatives.csv'), index=False)
 
-######## Model Data - Bike Infrastructure.csv
+######## Bike Infrastructure.csv
 # Data needed: TAZ input, trips output
-def prep_data_for_bikeInfra(taz_input_df, tripdist_output_df):
+def prep_data_for_bikeInfra(taz_input_df, tripdist_output_df, popsyn_input_df):
     """
     Input:
     * TAZ land use input
     * trip distance by mode and SD output
+    * popsyn input data for population
 
     Output the following data by SD (SD==0 is region-level):
     * total_population
@@ -244,9 +264,20 @@ def prep_data_for_bikeInfra(taz_input_df, tripdist_output_df):
     }
     for i in var_name_dict:
         sd_all_df_long.loc[sd_all_df_long['variable'] == i, 'variable'] = var_name_dict[i]
+
+    # also add popsyn total pop for per capita emission calculation
+    sd_all_df_long.loc[-1] = [0, 'total_pop_popsyn', popsyn_input_df.shape[0]]
     
     sd_all_df_long.to_csv(os.path.join(OUTPUT_DIR, 'bikeInfrastructure.csv'), index=False)
 
+######## Other Calculators
+# The RegionalCharger, VehicleBuyback, and Ebike calculators do not use travel model data, but tot_pop is needed to calculate
+# per capita reduction
+def prep_data_for_totPop_only(popsyn_input_df):
+    tot_pop = pd.DataFrame(columns=['variable', 'value'])
+    tot_pop.loc[-1] = ['total_pop_popsyn', popsyn_input_df.shape[0]]
+
+    tot_pop.to_csv(os.path.join(OUTPUT_DIR, 'totPopOnly.csv'), index=False)
 
 if __name__ == '__main__':
 
@@ -257,6 +288,11 @@ if __name__ == '__main__':
     print('load TAZ land use data')
     tazdata_file = 'INPUT\\landuse\\tazData.csv'
     tazdata_df = pd.read_csv(tazdata_file)
+
+    # popsyn input
+    print('load popsyn persons data')
+    popsyn_persons_file = glob.glob('INPUT\\popsyn\\personFile*.csv')[0]
+    popsyn_persons_df = pd.read_csv(popsyn_persons_file)
 
     # trip output and associated variable
     # Mode look-up table
@@ -317,8 +353,9 @@ if __name__ == '__main__':
     tripdist_df = tripdist_df[['trip_mode', 'mode_name', 'simple_mode', 'tour_purpose', 'orig_sd', 'dest_sd', 'simulated_trips', 'estimated_trips', 'mean_distance']]
 
     # run the functions
-    prep_data_for_bikeshare(tazdata_df)
-    prep_data_for_carshare(tazdata_df)
-    prep_data_for_employerShuttle(trips_df)
-    prep_data_for_TargetedAlt(tazdata_df, tripdist_df)
-    prep_data_for_bikeInfra(tazdata_df, tripdist_df)
+    prep_data_for_bikeshare(tazdata_df, popsyn_persons_df)
+    prep_data_for_carshare(tazdata_df, popsyn_persons_df)
+    prep_data_for_employerShuttle(trips_df, popsyn_persons_df)
+    prep_data_for_TargetedAlt(tazdata_df, tripdist_df, popsyn_persons_df)
+    prep_data_for_bikeInfra(tazdata_df, tripdist_df, popsyn_persons_df)
+    prep_data_for_totPop_only(popsyn_persons_df)

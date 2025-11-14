@@ -20,7 +20,7 @@ setlocal enabledelayedexpansion
 
 for /d %%f in (
 
-BlueprintNetworks_v25\net_2035_Blueprint
+BlueprintNetworks_v34_copy\net_2050_Blueprint
 
 )    do    (
 

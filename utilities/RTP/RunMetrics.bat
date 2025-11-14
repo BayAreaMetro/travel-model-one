@@ -39,7 +39,7 @@ IF defined MODEL_YEAR (echo Using MODEL_YEAR=%MODEL_YEAR%) else (goto error)
 set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
 
 :: Location of the metrics scripts
-set CODE_DIR=.\CTRAMP\scripts\metrics
+set CODE_DIR=%CD%\CTRAMP\scripts\metrics
 :: Location of the model files
 set TARGET_DIR=%CD%
 
@@ -186,12 +186,47 @@ if not exist metrics\transit_crowding.csv (
   call python "%CODE_DIR%\transitcrowding.py" .
 )
 
+if not exist shapefile (
+  mkdir shapefile
+)
+cd shapefile
+if not exist network_trn_links.shp (
+  rem requires geopandas
+  rem Export loaded network to shapefiles
+  rem Input: see command
+  rem Output: shapefile\network_[links|nodes].shp
+  rem         shapefile\network_trn_[links|lines|nodes|route_links].shp
+  call python "%CODE_DIR%\cube_to_shapefile.py" --linefile ..\INPUT\trn\transitLines.lin --loadvol_dir ..\trn --transit_crowding ..\metrics\transit_crowding_complete.csv ..\hwy\iter3\avgload5period.net
+)
+
+if not exist network_links_TAZ.csv (
+  rem requires geopandas
+  rem Input: shapefile\network_links.shp
+  rem        M:\Data\GIS layers\TM1_taz\bayarea_rtaz1454_rev1_WGS84.shp
+  rem Output: shapefile\network_links_TAZ.csv
+  call python "%CODE_DIR%\correspond_link_to_TAZ.py" network_links.shp network_links_TAZ.csv
+)
+cd ..
+
 :topsheet
 if not exist metrics\topsheet.csv (
   rem Short summaries for across many runs
   rem Input: tazdata, popsyn files, avgload5period_vehclasses.csv, core_summaries\VehicleMilesTraveled.csv
   rem Output: metrics\topsheet.csv
   call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\topsheet.R"
+)
+
+rem Network Performance Assessment metrics
+rem Do not crash on these but try to run them
+:NPA_metrics
+if not exist metrics\NPA_Metrics_Goal_1A_to_1F.csv (
+  call python "%CODE_DIR%\NPA_metrics_Goal_1A_to_1F.py"
+)
+if not exist metrics\NPA_Metrics_Goal_2.csv (
+  call python "%CODE_DIR%\NPA_metrics_Goal_2.py"
+)
+if not exist metrics\NPA_metrics_Goal_3A_to_3D.csv (
+  call python "%CODE_DIR%\NPA_metrics_Goal_3.py"
 )
 
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")

@@ -4,6 +4,9 @@
 
 set CODE_DIR=D:\files\GitHub\travel-model-one\utilities\taz-data-csv-to-dbf\
 set R_DIR=C:\Program Files\R\R-3.1.3\bin\x64
+IF %USERNAME%==ywang (
+  set R_DIR=C:\Program Files\R\R-4.5.1\bin
+)
 
 set PATH=%R_DIR%;%PATH%
 

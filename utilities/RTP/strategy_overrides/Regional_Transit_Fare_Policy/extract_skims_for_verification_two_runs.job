@@ -1,0 +1,72 @@
+;
+; Extract relevant transit skims to verify this implementation
+; This version is for two runs.
+;
+
+token_modeldir1 = '%MODEL_DIR1%' ; without regional fare
+token_modeldir2 = '%MODEL_DIR2%' ; with regional fare
+
+RUN PGM=MATRIX
+   FILEI MATI[1]  = "%MODEL_DIR1%\skims\trnskmam_drv_com_wlk.tpp"
+   FILEI MATI[2]  = "%MODEL_DIR1%\skims\trnskmam_drv_hvy_wlk.tpp"
+   FILEI MATI[3]  = "%MODEL_DIR1%\skims\trnskmam_drv_exp_wlk.tpp"
+   FILEI MATI[4]  = "%MODEL_DIR1%\skims\trnskmam_drv_lrf_wlk.tpp"
+   FILEI MATI[5]  = "%MODEL_DIR1%\skims\trnskmam_drv_loc_wlk.tpp"
+   FILEI MATI[6]  = "%MODEL_DIR1%\skims\trnskmam_drv_trn_wlk.tpp"
+
+   FILEI MATI[7]  = "%MODEL_DIR2%\skims\trnskmam_drv_com_wlk.tpp"
+   FILEI MATI[8]  = "%MODEL_DIR2%\skims\trnskmam_drv_hvy_wlk.tpp"
+   FILEI MATI[9]  = "%MODEL_DIR2%\skims\trnskmam_drv_exp_wlk.tpp"
+   FILEI MATI[10] = "%MODEL_DIR2%\skims\trnskmam_drv_lrf_wlk.tpp"
+   FILEI MATI[11] = "%MODEL_DIR2%\skims\trnskmam_drv_loc_wlk.tpp"
+   FILEI MATI[12] = "%MODEL_DIR2%\skims\trnskmam_drv_trn_wlk.tpp"
+
+   FILEO MATO[1] = "trnskimam_regionalfares_noheader.csv", FORMAT=txt, PATTERN=IJM:V, MO=1-31, DELIMITER=',', MAXFIELDS=31
+
+   MW[ 1] = 1
+
+   ; Transit in-vehicle time, time (minutes x 100), ivt
+   MW[ 2] = MI.7.ivt/100.0    ; com
+   MW[ 3] = MI.8.ivt/100.0    ; hvy
+   MW[ 4] = MI.9.ivt/100.0    ; exp
+   MW[ 5] = MI.10.ivt/100.0    ; lrf
+   MW[ 6] = MI.11.ivt/100.0    ; loc
+   MW[ 7] = MI.12.ivt/100.0    ; trn
+
+   ; Local bus distance (modes 10 through 79), distance (miles x 100), distLoc
+   MW[ 8] = MI.7.distLoc/100.0    ; com
+   MW[ 9] = MI.8.distLoc/100.0    ; hvy
+   MW[10] = MI.9.distLoc/100.0    ; exp
+   MW[11] = MI.10.distLoc/100.0    ; lrf
+   MW[12] = MI.11.distLoc/100.0    ; loc
+   MW[13] = MI.12.distLoc/100.0    ; trn
+
+   ; Distance on regional fare modes, distance (miles x 100), distRegFar
+   MW[14] = MI.7.distRegFar/100.0    ; com
+   MW[15] = MI.8.distRegFar/100.0    ; hvy
+   MW[16] = MI.9.distRegFar/100.0    ; exp
+   MW[17] = MI.10.distRegFar/100.0    ; lrf
+   MW[18] = MI.11.distRegFar/100.0    ; loc
+   MW[19] = MI.12.distRegFar/100.0    ; trn
+
+   ; Fare, cents ($2000), fare -- without Regional Transit Fares applied
+   MW[20] = MI.1.fare/100.0    ; com
+   MW[21] = MI.2.fare/100.0    ; hvy
+   MW[22] = MI.3.fare/100.0    ; exp
+   MW[23] = MI.4.fare/100.0    ; lrf
+   MW[24] = MI.5.fare/100.0    ; loc
+   MW[25] = MI.6.fare/100.0    ; trn
+
+   ; Fare, cents ($2000), fare -- with Regional Transit Fares applied
+   MW[26] = MI.7.fare/100.0    ; com
+   MW[27] = MI.8.fare/100.0    ; hvy
+   MW[28] = MI.9.fare/100.0    ; exp
+   MW[29] = MI.10.fare/100.0   ; lrf
+   MW[30] = MI.11.fare/100.0   ; loc
+   MW[31] = MI.12.fare/100.0   ; trn
+ENDRUN
+
+; add header
+*echo orig,dest,one_a,one_b,ivt_com,ivt_hvy,ivt_exp,ivt_lrf,ivt_loc,ivt_trn,distLoc_com,distLoc_hvy,distLoc_exp,distLoc_lrf,distLoc_loc,distLoc_trn,distRegFar_com,distRegFar_hvy,distRegFar_exp,distRegFar_lrf,distRegFar_loc,distRegFar_trn,farOrig_com,farOrig_hvy,farOrig_exp,farOrig_lrf,farOrig_loc,farOrig_trn,farReg_com,farReg_hvy,farReg_exp,farReg_lrf,farReg_loc,farReg_trn> "trnskimam_regionalfares.csv"
+*type "trnskimam_regionalfares_noheader.csv" >> "trnskimam_regionalfares.csv"
+*del "trnskimam_regionalfares_noheader.csv"

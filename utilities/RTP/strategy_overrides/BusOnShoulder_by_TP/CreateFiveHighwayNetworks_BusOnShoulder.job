@@ -217,15 +217,18 @@ loop period = 1, 5
 
     ; allow buses on shoulders during AM and PM peak
     RUN PGM=network
-        NETI[2] = hwy\avgload@token_period@.net
-        LINKI[1]= "hwy\mod_links_BRT.csv", VAR=A,B,_PROJECT(C),_PROJ_BRT_EA,_PROJ_BRT_AM,_PROJ_BRT_MD,_PROJ_BRT_PM,_PROJ_BRT_EV START=(substr(record,1,2)='A,B,')
+        NETI[1] = hwy\avgload@token_period@.net
+        LINKI[2]= "hwy\mod_links_BRT.csv", VAR=A,B,_PROJECT(C),_PROJ_BRT_EA,_PROJ_BRT_AM,_PROJ_BRT_MD,_PROJ_BRT_PM,_PROJ_BRT_EV START=(substr(record,1,2)='A,B,')
         NETO    = hwy\avgload_BRT3@token_period@.net, EXCLUDE=_PROJ_BRT_EA,_PROJ_BRT_AM,_PROJ_BRT_MD,_PROJ_BRT_PM,_PROJ_BRT_EV
+
+        ; do not create new links since they'll be missing most fields
+        MERGE RECORD = FALSE     
 
         PHASE=LINKMERGE
 
-            IF (LI.1._PROJECT == 'US101_BOS'  ||  LI.1._PROJECT == 'BayAreaForward')
-                PROJ = LI.1._PROJECT
-                BRT = LI.1._PROJ_BRT_@token_period@
+            IF (LI.2._PROJECT == 'US101_BOS'  ||  LI.2._PROJECT == 'VINE_Bus_Enhancements')
+                PROJ = LI.2._PROJECT
+                BRT = LI.2._PROJ_BRT_@token_period@
             ENDIF
 
         ENDPHASE

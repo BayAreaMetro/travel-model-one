@@ -20,13 +20,14 @@ mkdir %OFFMOEL_DIR%\offmodel_prep
 mkdir %OFFMOEL_DIR%\offmodel_output
 
 :: Run prep data creation script
-echo %DATE% %TIME% Running offmodel prep script for bikeshare
+echo %DATE% %TIME% Running offmodel prep script for off-model strategies
 python "%OFFMODEL_SCRIPT_DIR%\offmodel_prep.py"
 echo %DATE% %TIME% ...Done
 
 :: Run off model calculation script
-:: to-do
-
+echo %DATE% %TIME% Running offmodel calculators
+python "%OFFMODEL_SCRIPT_DIR%\run_offmodel_calculators.py"
+echo %DATE% %TIME% ...Done
 
 :success
 echo FINISHED OFFMODEL RUN SUCESSFULLY!

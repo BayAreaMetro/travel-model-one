@@ -3,9 +3,6 @@
 #
 # Creates condensed summaries of very high level numbers for viewing across many model runs.
 #
-# See also summarizeAcrossScenariosUnion.bat
-# (https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/CoreSummaries/summarizeAcrossScenariosUnion.bat)
-#
 
 .libPaths(Sys.getenv("R_LIB"))
 
@@ -60,6 +57,7 @@ short_summary$'tazdata totemp' <- sum(tazData$TOTEMP)
 short_summary$'tazdata empres' <- sum(tazData$EMPRES)
 
 if (("GQPOP" %in% names(tazData)) && (sum(tazData$GQPOP) > 0)) {
+  print("Using GQPOP from tazData")
   short_summary$'tazdata gqpop' <- sum(tazData$GQPOP)
 } else {
 
@@ -74,8 +72,14 @@ if (("GQPOP" %in% names(tazData)) && (sum(tazData$GQPOP) > 0)) {
     TAZSUMMARIES_FILE   <- TAZSUMMARIES_FILES[[1]]
 
     print(paste("TAZSUMMARIES_FILE=", TAZSUMMARIES_FILE))
+    print("Using GQPOP and GQ_TOT_POP from TAZSUMMARIES_FILE")
+
     tazSummaries <- read.table(file=TAZSUMMARIES_FILE, header=TRUE, sep=",")
     short_summary$'tazdata gqpop' <- sum(tazSummaries$GQPOP)
+    
+    # 2025-09-30: also include GQ_TOT_POP because it was used in populationsim:
+    # https://app.asana.com/1/11860278793487/project/1204085012544660/task/1210359059828865?focus=true
+    short_summary$'tazsummaries gq_tot_pop' <- sum(tazSummaries$GQ_TOT_POP)
 
     if (short_summary$'tazdata gqpop' == 0) {
       # 2015 taz summaries variant
