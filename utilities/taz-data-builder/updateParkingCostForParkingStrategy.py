@@ -49,7 +49,8 @@ if __name__ == '__main__':
     # parser.add_argument("model_year", help="Model year")
     parser.add_argument("original_tazdata", help="Original tazdata.csv file")
     parser.add_argument("output_tazdata",   help="Output tazdata.csv file with modified parking costs")
-    parser.add_argument("scenario", choices=["FBP","EIR_Alt2"], default="FBP")
+    # parser.add_argument("scenario", choices=["FBP","EIR_Alt2"], default="FBP")
+    parser.add_argument("scenario", default="FBP")
     args = parser.parse_args()
     logging.debug(args)
 
@@ -60,41 +61,44 @@ if __name__ == '__main__':
        TAZ_GG_FILE = TAZ_GG_TOC_FILE
        PCT_WITHIN_STRAT_MULT_COL = "pct_area_within_GGnonPPA_TOC"
     else:
-       raise Exception(f"scenario {args.scenario} not supported")
-
-    # Read the information corresponding TAZs to GG / GG+TRAs or GG+TOCs
-    taz_GG_df = pandas.read_csv(TAZ_GG_FILE)
-    logging.info(f"Read {len(taz_GG_df):,} lines from {TAZ_GG_FILE}\n{taz_GG_df.head()}")
-
+      #  raise Exception(f"scenario {args.scenario} not supported")
+      logging.warning(f"Scenario {args.scenario} not supported, parking cost update will not be applied")
+    
     # Read the tazdata inputs
     tazdata_df = pandas.read_csv(args.original_tazdata)
     tazdata_cols = tazdata_df.columns.values
     logging.info(f"Read { len(tazdata_df):,} lines from {args.original_tazdata}; head:\n{tazdata_df.head()} columns={tazdata_cols}")
+    
+    if args.scenario in ["FBP","EIR_Alt2"]:
 
-    # Join tazdata to taz_GG_TRA to determine which TAZs are affected
-    tazdata_df = pandas.merge(
-        left    =tazdata_df,
-        right   =taz_GG_df,
-        how     ="left",
-        left_on =["ZONE"],
-        right_on=["TAZ1454"],
-        validate='one_to_one')
-    logging.info(f"tazdata_df(len={len(tazdata_df)}).head:\n{tazdata_df.head()}")
+      # Read the information corresponding TAZs to GG / GG+TRAs or GG+TOCs
+      taz_GG_df = pandas.read_csv(TAZ_GG_FILE)
+      logging.info(f"Read {len(taz_GG_df):,} lines from {TAZ_GG_FILE}\n{taz_GG_df.head()}")
 
-    # base or strategy: apply BASE_PARKING_MIN_COST to TAZs in GG (determined by threshold)
-    logging.info(f"Applying minimum parking price of {BASE_PARKING_MIN_COST} to GG")
-    tazdata_df.loc[ (tazdata_df.pct_area_within_GGnonPPA >= PCT_AREA_THRESHOLD)&(tazdata_df[ "PRKCST"]<BASE_PARKING_MIN_COST),  "PRKCST"] = BASE_PARKING_MIN_COST
-    tazdata_df.loc[ (tazdata_df.pct_area_within_GGnonPPA >= PCT_AREA_THRESHOLD)&(tazdata_df["OPRKCST"]<BASE_PARKING_MIN_COST), "OPRKCST"] = BASE_PARKING_MIN_COST
+      # Join tazdata to taz_GG_TRA to determine which TAZs are affected
+      tazdata_df = pandas.merge(
+          left    =tazdata_df,
+          right   =taz_GG_df,
+          how     ="left",
+          left_on =["ZONE"],
+          right_on=["TAZ1454"],
+          validate='one_to_one')
+      logging.info(f"tazdata_df(len={len(tazdata_df)}).head:\n{tazdata_df.head()}")
 
-    # strategy only: apply STRATEGY_PARKING_INCREASE to TAZs in GG+TRA (determined by threshold)
-    logging.info(f"Applying strategy parking increase of {STRATEGY_PARKING_INCREASE} to {PCT_WITHIN_STRAT_MULT_COL}")
-    tazdata_df.loc[ tazdata_df[PCT_WITHIN_STRAT_MULT_COL] >= PCT_AREA_THRESHOLD,  "PRKCST"] = tazdata_df[ "PRKCST"]*STRATEGY_PARKING_INCREASE
-    tazdata_df.loc[ tazdata_df[PCT_WITHIN_STRAT_MULT_COL] >= PCT_AREA_THRESHOLD, "OPRKCST"] = tazdata_df["OPRKCST"]*STRATEGY_PARKING_INCREASE
+      # base or strategy: apply BASE_PARKING_MIN_COST to TAZs in GG (determined by threshold)
+      logging.info(f"Applying minimum parking price of {BASE_PARKING_MIN_COST} to GG")
+      tazdata_df.loc[ (tazdata_df.pct_area_within_GGnonPPA >= PCT_AREA_THRESHOLD)&(tazdata_df[ "PRKCST"]<BASE_PARKING_MIN_COST),  "PRKCST"] = BASE_PARKING_MIN_COST
+      tazdata_df.loc[ (tazdata_df.pct_area_within_GGnonPPA >= PCT_AREA_THRESHOLD)&(tazdata_df["OPRKCST"]<BASE_PARKING_MIN_COST), "OPRKCST"] = BASE_PARKING_MIN_COST
 
-    # output full version for debug
-    debug_file = args.output_tazdata.replace(".csv", ".debug.csv")
-    tazdata_df.to_csv(debug_file, index=False)
-    logging.info("Wrote debug output to {}".format(debug_file))
+      # strategy only: apply STRATEGY_PARKING_INCREASE to TAZs in GG+TRA (determined by threshold)
+      logging.info(f"Applying strategy parking increase of {STRATEGY_PARKING_INCREASE} to {PCT_WITHIN_STRAT_MULT_COL}")
+      tazdata_df.loc[ tazdata_df[PCT_WITHIN_STRAT_MULT_COL] >= PCT_AREA_THRESHOLD,  "PRKCST"] = tazdata_df[ "PRKCST"]*STRATEGY_PARKING_INCREASE
+      tazdata_df.loc[ tazdata_df[PCT_WITHIN_STRAT_MULT_COL] >= PCT_AREA_THRESHOLD, "OPRKCST"] = tazdata_df["OPRKCST"]*STRATEGY_PARKING_INCREASE
+
+      # output full version for debug
+      debug_file = args.output_tazdata.replace(".csv", ".debug.csv")
+      tazdata_df.to_csv(debug_file, index=False)
+      logging.info("Wrote debug output to {}".format(debug_file))
 
     # output file with original tazdata columns
     tazdata_df.to_csv(args.output_tazdata, columns=tazdata_cols, index=False)
