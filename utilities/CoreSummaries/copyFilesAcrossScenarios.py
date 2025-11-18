@@ -29,20 +29,21 @@ COPY_FILES = {
         "scenario_metrics",
         "auto_times",
         "auto_timesbyTimePeriod",
-        "parking_costs_tour",
-        "parking_costs_tour_destTaz",
-        "parking_costs_tour_ptype_destTaz",
-        "parking_costs_trip_destTaz",
-        "parking_costs_trip_distBins",
+        # "parking_costs_tour",
+        # "parking_costs_tour_destTaz",
+        # "parking_costs_tour_ptype_destTaz",
+        # "parking_costs_trip_destTaz",
+        # "parking_costs_trip_distBins",
         "vmt_vht_metrics_by_taz",
-        "trips_cordon_mode_summary",
-        "truck_trips_by_timeperiod",
-        "transit_crowding_complete",
-        "NPA_metrics_Goal_1A_to_1F",
-        "NPA_metrics_Goal_1G_1H",
-        "NPA_metrics_Goal_2",
-        "NPA_metrics_Goal_3A_to_3D",
-        "NPA_metrics_Goal_3E_3F"
+        # "trips_cordon_mode_summary",
+        # "truck_trips_by_timeperiod",
+        # "transit_crowding_complete",
+        # "NPA_metrics_Goal_1A_to_1F",
+        # "NPA_metrics_Goal_1G_1H",
+        # "NPA_metrics_Goal_2",
+        # "NPA_metrics_Goal_3A_to_3D",
+        # "NPA_metrics_Goal_3E_3F",
+        "STIP_congested_VMT_by_TOD"
     ],
     "OUTPUT\\core_summaries":[
         "ActiveTransport",
@@ -67,11 +68,11 @@ COPY_FILES = {
     ],
     "OUTPUT\\shapefile":[
         "network_links",
-        "network_links_withXY",
-        "network_trn_links",
-        "network_trn_links_long", # via shapefile_move_timeperiod_to_rows.py
-        "network_trn_route_links",
-        "network_trn_lines"
+        # "network_links_withXY",
+        # "network_trn_links",
+        # "network_trn_links_long", # via shapefile_move_timeperiod_to_rows.py
+        # "network_trn_route_links",
+        # "network_trn_lines"
     ],
     "OUTPUT\\emfac":[
         "emfac_summary",
@@ -82,7 +83,10 @@ COPY_FILES = {
     ],
     "INPUT\\landuse":[
         "tazData",
-    ]
+    ],
+    # "OUTPUT\\logsums":
+    #     ["subzone_logsums_for_BAUS",
+    # ]
 }
 
 # mapping based on 'run_set' column to location of model runs on M/L
@@ -90,6 +94,7 @@ RUN_SET_MODEL_PATHS = {
     'RTP_2025IP'    :'M:\\Application\\Model One\\RTP2025\\IncrementalProgress',
     'RTP2025'       :'M:\\Application\\Model One\\RTP2025\\Blueprint',
     'RTP_2025Sens'  :'M:\\Application\\Model One\\RTP2025\\SensitivityTests_CARB',
+    'RTP_T12'       :'M:\\Application\\Model One\\RTP2025\\Blueprint',
     'IP'            :'M:\\Application\\Model One\\RTP2021\\IncrementalProgress',
     'RTP2021'       :'M:\\Application\\Model One\\RTP2021\\Blueprint',
     'DraftBlueprint':'M:\\Application\\Model One\\RTP2021\\IncrementalProgress',
@@ -98,7 +103,8 @@ RUN_SET_MODEL_PATHS = {
     'NGF'           :'L:\\Application\\Model_One\\NextGenFwys\\Scenarios',
     'NGF_Round2'    :'L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios',
     'RTP2025_IP'    :'M:\\Application\\Model One\\RTP2025\\IncrementalProgress',
-    'STIP'          :'M:\\Application\\Model One\\STIP2024'
+    'STIP2024'      :'M:\\Application\\Model One\\STIP2024',
+    'STIP2026'      :'M:\\Application\\Model One\\STIP2026',
 }
 
 if __name__ == '__main__':
@@ -108,6 +114,7 @@ if __name__ == '__main__':
     parser.add_argument("--dest_dir", help="Destination directory")
     parser.add_argument("--status_to_copy", help="Status values to copy")
     parser.add_argument("--run_set", help="Run sets to copy", nargs='+')
+    parser.add_argument("--category", help="Category values to copy", nargs='+')
     parser.add_argument("--delete_other_run_files", help="Delete files related to other runs")
     parser.add_argument("--skip_offmodel_workbook_refresh", help="Skip refreshing off-model workbooks?", action="store_true")
     parser.add_argument("--force_emfac_postproc", help="Run emfac_postproc.py for all dirs?", action="store_true")
@@ -156,7 +163,8 @@ if __name__ == '__main__':
     if my_args.run_set:
         directory_copy_df = directory_copy_df.loc[directory_copy_df['run_set'].isin(my_args.run_set)]
         print(f"Filtered to {len(directory_copy_df)} runs with run_set in {my_args.run_set}\{directory_copy_df}")
-
+    if my_args.category:
+        directory_copy_df = directory_copy_df.loc[directory_copy_df['category'].isin(my_args.category)]
 
     directory_copy_list = directory_copy_df['directory'].tolist()
     # lower case these
