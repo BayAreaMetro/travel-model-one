@@ -843,6 +843,8 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
     for tm_runid in model_runs_dict.keys():
         if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        elif model_runs_dict[tm_runid]['run_set'] == 'STIP2026':
+            model_run_dir = TM_RUN_LOCATION_STIP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         
@@ -911,6 +913,8 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
     for tm_runid in model_runs_dict.keys():
         if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        elif model_runs_dict[tm_runid]['run_set'] == 'STIP2026':
+            model_run_dir = TM_RUN_LOCATION_STIP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
 
@@ -984,6 +988,8 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
     for tm_runid in model_runs_dict.keys():
         if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        elif model_runs_dict[tm_runid]['run_set'] == 'STIP2026':
+            model_run_dir = TM_RUN_LOCATION_STIP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
 
@@ -1059,6 +1065,8 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
     for tm_runid in model_runs_dict.keys():
         if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        elif model_runs_dict[tm_runid]['run_set'] == 'STIP2026':
+            model_run_dir = TM_RUN_LOCATION_STIP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         
@@ -1182,7 +1190,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description = USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025'])
+    parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025', 'STIP2026'])
     parser.add_argument('--sequence', type=str, help='If passed, analayzing a run sequence')
     parser.add_argument('--test', action='store_true', help='If passed, writes output to cwd instead of METRICS_OUTPUT_DIR')
     parser.add_argument('--only', required=False, choices=['affordable','connected','diverse','growth','healthy','vibrant'], 
@@ -1227,6 +1235,15 @@ if __name__ == '__main__':
             INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
             BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
             METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
+    elif my_args.rtp == 'STIP2026':
+        TM_RUN_LOCATION_STIP               = pathlib.Path(f"M:/Application/Model One/STIP2026")
+        METRICS_BOX_DIR                  = TM_RUN_LOCATION_STIP / "across_STP_00_union"
+        # METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
+        # INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR / "Intermediate Metrics"
+        # BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
+        METRICS_OUTPUT_DIR               = METRICS_BOX_DIR
+        MODELRUNS_XLSX                     = METRICS_BOX_DIR / "ModelRuns.xlsx"
+
 
     #### Test Mode ################################################################################################################
     # test mode -- write output here
@@ -1263,6 +1280,7 @@ if __name__ == '__main__':
     # we only care about these columns
     MODELRUNS_COLUMNS = ['directory','year','run_set','category','status','Alias']
     if my_args.rtp == 'RTP2025': MODELRUNS_COLUMNS = MODELRUNS_COLUMNS + ['description']
+    if my_args.rtp == 'STIP2026': MODELRUNS_COLUMNS = MODELRUNS_COLUMNS + ['tmversion']
     model_runs_df = model_runs_df[MODELRUNS_COLUMNS]
     if not my_args.sequence:
         # select current runs with Alias
@@ -1285,6 +1303,10 @@ if __name__ == '__main__':
     #### Calculate/pull metrics ###################################################################################################
     # Note: These methods iterate through all the relevant runs and output the metrics results
 
+    if (my_args.rtp == 'STIP2026') & (my_args.only != 'healthy'):
+        LOGGER.info("For STIP2026, only Healthy metrics are implemented. Exiting.")
+        sys.exit()
+
     # Affordable
     if ((my_args.only == None) or (my_args.only == 'affordable')) and not my_args.sequence:
         affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict, my_args.rtp, BOX_METRICS_OUTPUT_DIR)
@@ -1304,7 +1326,11 @@ if __name__ == '__main__':
         extract_Healthy1_safety(model_runs_dict, my_args.rtp)
         extract_Healthy1_PM25(model_runs_dict, my_args.rtp)
         extract_Healthy2_CO2_Emissions(model_runs_dict, my_args.rtp)
-        calculate_Healthy2_commutemodeshare(model_runs_dict, my_args.rtp)
+        if my_args.rtp == 'STP2026':
+            LOGGER.info("For STIP2026, skip commutemodeshare. Exiting.")
+            sys.exit()
+        else:
+            calculate_Healthy2_commutemodeshare(model_runs_dict, my_args.rtp)
 
     # Vibrant
     if (my_args.only == None) or (my_args.only == 'vibrant'):
