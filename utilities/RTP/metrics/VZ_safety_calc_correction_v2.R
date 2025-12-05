@@ -78,9 +78,11 @@ PROJECT                 <- args[1]
 MODEL_RUN_ID_NO_PROjeCT <- args[2]
 MODEL_RUN_ID_SCENARIO   <- args[3]
 FORECAST_YEAR           <- strtoi(substr(MODEL_RUN_ID_SCENARIO, start=1, stop=4))
+TM_VERSION <- sapply(strsplit(MODEL_RUN_ID_SCENARIO, "_"), `[`, 2)
+print(TM_VERSION)
 
 # PROJECT must be one of NGF or PBA50+
-stopifnot(PROJECT %in% list("NGF","PBA50","PBA50+"))
+stopifnot(PROJECT %in% list("NGF","PBA50","PBA50+", "STIP2026"))
 
 if (PROJECT == "NGF") {
   ##################################### NextGen Fwy settings #####################################
@@ -143,9 +145,27 @@ if (PROJECT == "PBA50+") {
       MODEL_RUN_ID_BASE_YEAR)
   }
 }
+
+if (PROJECT == "STIP2026") {
+  TAZ_EPC_FILE_18 <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz_coc_crosswalk.csv"
+  TAZ_EPC_FILE <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_epcPBA50plus_2024_02_29.csv"
+  TAZ_HRA_FILE <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_hraPBA50plus_2025_02_22.csv"
+  PROJECT_SCENARIOS_DIR <- "M:/Application/Model One/STIP2026"
+  BASE_YEAR <- 2015
+
+  if (TM_VERSION == "TM161"){
+    MODEL_FULL_DIR_BASE_YEAR <- "M:/Application/Model One/RTP2025/IncrementalProgress/2015_TM161_IPA_08"
+    MODEL_RUN_ID_BASE_YEAR <- "2015_TM161_IPA_08"
+  }
+  else if (TM_VERSION == "TM152") {
+    MODEL_FULL_DIR_BASE_YEAR <- "M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_17"
+    MODEL_RUN_ID_BASE_YEAR <- "2015_TM152_IPA_17"
+  }
+}
+
 COLLISION_RATES_EXCEL     <- "X:/travel-model-one-master/utilities/RTP/metrics/CollisionLookupFINAL.xlsx"
-OUTPUT_FILE               <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries.csv")
-LOG_FILE                  <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries.log")
+OUTPUT_FILE               <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries_Rversion.csv")
+LOG_FILE                  <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries_Rversion.log")
 
 stopifnot(nchar(MODEL_RUN_ID_NO_PROjeCT)>0)
 stopifnot(nchar(MODEL_RUN_ID_SCENARIO)>0)
@@ -709,7 +729,7 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
   
     
   }
-  else {
+  else if (PROJECT == "PBA50"){
     link_to_taz_df <- left_join(link_to_taz_df, TAZ_EPC_LOOKUP_DF, by=c("TAZ1454"))
     link_to_epc_df <- link_to_taz_df %>% group_by(a, b) %>% summarise(taz_epc = max(taz_epc))
     network_df     <- left_join(network_df, link_to_epc_df, by=c("a","b")) %>%
@@ -742,11 +762,13 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
   print("--------------------------------------")
   print(model_fatal_inj_fwy_non)
 
-  model_fatal_inj_epc_non <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, 
-                                network_group_by_col="taz_epc", network_no_project_df)
-  model_fatal_inj_epc_non <- correct_using_observed_factors(model_fatal_inj_epc_non, model_fatal_inj_base_year)
-  print("--------------------------------------")
-  print(model_fatal_inj_epc_non)
+  if (PROJECT != "STIP2026") {
+    model_fatal_inj_epc_non <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, 
+                                  network_group_by_col="taz_epc", network_no_project_df)
+    model_fatal_inj_epc_non <- correct_using_observed_factors(model_fatal_inj_epc_non, model_fatal_inj_base_year)
+    print("--------------------------------------")
+    print(model_fatal_inj_epc_non)
+  }
 
   if (PROJECT == "PBA50+") {
     # For PBA50+, we need to calculate for both TAZ_EPC_18 and TAZ_EPC_22 and HRA
@@ -774,20 +796,19 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
     print("--------------------------------------")
     print(model_fatal_inj_epc_hra_local)
   }
-
-  model_fatal_inj_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
-                                                           network_group_by_col="taz_epc_local", network_no_project_df)     
-  model_fatal_inj_epc_local <- correct_using_observed_factors(model_fatal_inj_epc_local, model_fatal_inj_base_year)
-  print("--------------------------------------")
-  print(model_fatal_inj_epc_local)
-  # 
-  model_fatal_inj_non_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
-                                                               network_group_by_col="Non_EPC_local", network_no_project_df)     
-  model_fatal_inj_non_epc_local <- correct_using_observed_factors(model_fatal_inj_non_epc_local, model_fatal_inj_base_year)
-  print("--------------------------------------")
-  print(model_fatal_inj_non_epc_local)
-
-
+  if (PROJECT != "STIP2026"){
+    model_fatal_inj_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                                            network_group_by_col="taz_epc_local", network_no_project_df)     
+    model_fatal_inj_epc_local <- correct_using_observed_factors(model_fatal_inj_epc_local, model_fatal_inj_base_year)
+    print("--------------------------------------")
+    print(model_fatal_inj_epc_local)
+    # 
+    model_fatal_inj_non_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                                                network_group_by_col="Non_EPC_local", network_no_project_df)     
+    model_fatal_inj_non_epc_local <- correct_using_observed_factors(model_fatal_inj_non_epc_local, model_fatal_inj_base_year)
+    print("--------------------------------------")
+    print(model_fatal_inj_non_epc_local)
+  }
   # save the fatalities & injuries results
   if (PROJECT == "PBA50+"){
     results_df <- rbind(
@@ -803,7 +824,14 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
       mutate(rename(model_fatal_inj_non_epc_local$network_summary_df, key=Non_EPC_local), model_run_type=model_run_type, model_run_id=model_run_id)
     )  
   }
-  else {
+  else if (PROJECT == "STIP2026"){
+    results_df <- rbind(
+      results_df,
+      mutate(model_fatal_inj$network_summary_df, key="all", model_run_type=model_run_type, model_run_id=model_run_id),
+      mutate(rename(model_fatal_inj_fwy_non$network_summary_df, key=fwy_non), model_run_type=model_run_type, model_run_id=model_run_id)
+      )
+  }
+  else  {
     results_df <- rbind(
       results_df,
       mutate(model_fatal_inj$network_summary_df, key="all", model_run_type=model_run_type, model_run_id=model_run_id),

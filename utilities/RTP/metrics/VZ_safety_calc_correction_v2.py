@@ -3,7 +3,7 @@
 Calculate Safe1 metrics -- fatalities and injuries -- from MTC model outputs
 
 Pass three arguments to the script:
-1) Project (one of NGF, PBA50 or PBA50+)
+1) Project (one of NGF, PBA50, PBA50+, or STIP2026)
 2) MODEL_RUN_ID_NO_PROJECT
 3) MODEL_RUN_ID_SCENARIO
 
@@ -31,16 +31,18 @@ pd.set_option('display.max_rows', 50)
 
 def main():
     if len(sys.argv) != 4:
-        print("Three arguments are required: PROJECT (NGF, PBA50 or PBA50+), MODEL_RUN_ID_NO_PROJECT and MODEL_RUN_ID_SCENARIO")
+        print("Three arguments are required: PROJECT (NGF, PBA50, PBA50+, or STIP2026), MODEL_RUN_ID_NO_PROJECT and MODEL_RUN_ID_SCENARIO")
         sys.exit(1)
 
     PROJECT = sys.argv[1]
     MODEL_RUN_ID_NO_PROJECT = sys.argv[2] 
     MODEL_RUN_ID_SCENARIO = sys.argv[3]
     FORECAST_YEAR = int(MODEL_RUN_ID_SCENARIO[:4])
+    TM_VERSION = MODEL_RUN_ID_SCENARIO.split('_')[1]
+    print(TM_VERSION)
 
     # Validate project
-    if PROJECT not in ["NGF", "PBA50", "PBA50+"]:
+    if PROJECT not in ["NGF", "PBA50", "PBA50+", "STIP2026"]:
         raise ValueError("PROJECT must be one of NGF, PBA50 or PBA50+")
 
     # Project-specific settings
@@ -88,9 +90,23 @@ def main():
                 MODEL_RUN_ID_BASE_YEAR
             )
 
+    elif PROJECT == "STIP2026":
+        # STIP2026 settings
+        TAZ_EPC_FILE_18 = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz_coc_crosswalk.csv"
+        TAZ_EPC_FILE = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_epcPBA50plus_2024_02_29.csv"
+        TAZ_HRA_FILE = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_hraPBA50plus_2025_02_22.csv"
+        PROJECT_SCENARIOS_DIR = "M:/Application/Model One/STIP2026"
+        BASE_YEAR = 2015
+        if TM_VERSION == "TM161":
+            MODEL_FULL_DIR_BASE_YEAR = "M:/Application/Model One/RTP2025/IncrementalProgress/2015_TM161_IPA_08"
+            MODEL_RUN_ID_BASE_YEAR = "2015_TM161_IPA_08"
+        elif TM_VERSION == "TM152":
+            MODEL_FULL_DIR_BASE_YEAR = "M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_17"
+            MODEL_RUN_ID_BASE_YEAR = "2015_TM152_IPA_17"
+
     COLLISION_RATES_EXCEL = "X:/travel-model-one-master/utilities/RTP/metrics/CollisionLookupFINAL.xlsx"
-    OUTPUT_FILE = os.path.join(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries_test.csv")
-    LOG_FILE = os.path.join(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries_test.log")
+    OUTPUT_FILE = os.path.join(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries.csv")
+    LOG_FILE = os.path.join(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries.log")
 
     # Ensure output directory exists
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
@@ -565,8 +581,10 @@ class SafetyCalculator:
             # Load data
             tazdata_df = pd.read_csv(os.path.join(model_full_dir, "INPUT", "landuse", "tazData.csv"))
             network_df = pd.read_csv(os.path.join(model_full_dir, "OUTPUT", "avgload5period.csv"))
-            link_to_taz_df = pd.read_csv(os.path.join(model_full_dir, "OUTPUT", "shapefile", "network_links_TAZ.csv"))
-            link_to_taz_df = link_to_taz_df.rename(columns={'A': 'a', 'B': 'b'})
+            if project in ["PBA50", "PBA50+", "NGF"]:
+                # if PBA50, PBA50+, NGF, analyze EPCs
+                link_to_taz_df = pd.read_csv(os.path.join(model_full_dir, "OUTPUT", "shapefile", "network_links_TAZ.csv"))
+                link_to_taz_df = link_to_taz_df.rename(columns={'A': 'a', 'B': 'b'})
 
             print("network_df columns:")
             print(network_df.columns.tolist())
@@ -629,7 +647,7 @@ class SafetyCalculator:
                     axis=1
                 )
 
-            else:
+            elif project in ["PBA50", "NGF"]:
                 # For NGF and PBA50
                 link_to_taz_df = link_to_taz_df.merge(taz_epc_lookup_df, on='TAZ1454', how='left')
                 link_to_epc_df = link_to_taz_df.groupby(['a', 'b']).agg({'taz_epc': 'max'}).reset_index()
@@ -647,6 +665,9 @@ class SafetyCalculator:
                     lambda row: "non_epc_local" if row['taz_epc'] == "Non-EPC" and row['ft'] in local_ft else "pass",
                     axis=1
                 )
+            elif project == "STIP2026":
+                # no need to analyze EPCs for STIP2026
+                pass
 
             population_forecast = tazdata_df['TOTPOP'].sum()
 
@@ -690,21 +711,28 @@ class SafetyCalculator:
         
         base_groupings = [
             ("all", None),
-            ("fwy_non", "fwy_non"),
-            ("epc", "taz_epc"),
-            ("epc_local", "taz_epc_local"),
-            ("non_epc_local", "Non_EPC_local")
+            ("fwy_non", "fwy_non")
         ]
 
+        if project in ["PBA50", "NGF"]: 
+            additional_groupings = [
+                ("epc", "taz_epc"),
+                ("epc_local", "taz_epc_local"),
+                ("non_epc_local", "Non_EPC_local")
+            ]
+            return base_groupings + additional_groupings
         if project == "PBA50+":
             additional_groupings = [
+                ("epc", "taz_epc"),
+                ("epc_local", "taz_epc_local"),
+                ("non_epc_local", "Non_EPC_local"),
                 ("epc_18", "taz_epc_18"),
                 ("epc_22", "taz_epc_22"),
                 ("hra", "taz_hra"),
                 ("hra_local", "taz_hra_local")
             ]
             return base_groupings + additional_groupings
-        
+
         return base_groupings
 
     def prepare_network_for_speed_corrections(self, network_df):
