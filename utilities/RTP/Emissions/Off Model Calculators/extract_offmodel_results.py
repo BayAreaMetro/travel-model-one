@@ -58,13 +58,63 @@ def get_runs_with_off_model(modelruns_xlsx):
     modelruns_with_off_model_FBP = modelruns_df.loc[modelruns_df['run_offmodel']=='FBP']
     return modelruns_with_off_model_IP, modelruns_with_off_model_FBP
 
+def read_output_data(off_model_wb, run_id, output_tab_name='Output_test'):
+    """
+    Read output data from Excel workbook.
+    Supports vertical format (Output_test/Output tab with Sheet, Variable Name, Value, Location columns).
+    Returns DataFrame in horizontal format for compatibility with existing pipeline.
+
+    Args:
+        off_model_wb: Path to Excel workbook
+        run_id: Model run ID (e.g., '2035_TM160_IPA_16')
+        output_tab_name: Name of output tab to read from (default: 'Output_test')
+
+    Returns:
+        DataFrame with columns: Horizon Run ID, Out_daily_GHG_reduced_{year}, Out_per_capita_GHG_reduced_{year}
+    """
+    year = run_id[:4]
+
+    # Read vertical format from Output tab
+    df = pd.read_excel(off_model_wb, sheet_name=output_tab_name)
+    print("Read first 15 rows from {} tab:\n{}".format(output_tab_name, df.head(15)))
+    print("")
+    # Filter for output variables (those starting with 'Out_')
+    # In the Output_test tab, output variables are identified by their variable name, not by Sheet column
+    output_vars = df[df['Variable Name'].str.startswith('Out_', na=False)].copy()
+
+    # Get year-specific variables
+    year_suffix = f'_{year}'
+    output_vars_year = output_vars[output_vars['Variable Name'].str.endswith(year_suffix)]
+
+    # Create lookup dictionary: variable_name -> value
+    var_lookup = dict(zip(output_vars_year['Variable Name'], output_vars_year['Value']))
+
+    # Extract specific variables
+    daily_ghg_key = f'Out_daily_GHG_reduced_{year}'
+    per_capita_ghg_key = f'Out_per_capita_GHG_reduced_{year}'
+
+    # Reshape to horizontal format (same structure as old Output tab)
+    result_df = pd.DataFrame({
+        'Horizon Run ID': [run_id],
+        f'Out_daily_GHG_reduced_{year}': [var_lookup.get(daily_ghg_key, None)],
+        f'Out_per_capita_GHG_reduced_{year}': [var_lookup.get(per_capita_ghg_key, None)]
+    })
+
+    # Log warnings if variables are missing
+    if daily_ghg_key not in var_lookup:
+        LOGGER.warning(f'Variable {daily_ghg_key} not found in {output_tab_name} tab')
+    if per_capita_ghg_key not in var_lookup:
+        LOGGER.warning(f'Variable {per_capita_ghg_key} not found in {output_tab_name} tab')
+
+    return result_df
+
 def extract_off_model_calculator_result(run_directory, run_id, calculator_name):
     """
     Extract the result from one off-model calculator workbook.
     """
     off_model_output_dir = os.path.join(
         run_directory, 'OUTPUT', 'offmodel', 'offmodel_output')
-    
+
     # for calculator_name in calculator_names:
     off_model_wb = os.path.join(off_model_output_dir, 'PBA50+_OffModel_{}__{}.xlsx'.format(calculator_name, run_id))
 
@@ -73,12 +123,12 @@ def extract_off_model_calculator_result(run_directory, run_id, calculator_name):
         return None
     else:
         refresh_excelworkbook(off_model_wb)
-        off_model_df = pd.read_excel(off_model_wb, sheet_name='Output', skiprows=1)
-        off_model_df = off_model_df[[
-            'Horizon Run ID', 
-            # 'Out_daily_VMT_reduced_{}'.format(run_id[:4]), 
-            'Out_daily_GHG_reduced_{}'.format(run_id[:4]), 
-            'Out_per_capita_GHG_reduced_{}'.format(run_id[:4])]]
+
+        # Read from vertical format Output_test tab (will be renamed to 'Output' after migration)
+        # TODO: Change 'Output_test' to 'Output' after Excel tab is renamed
+        off_model_df = read_output_data(off_model_wb, run_id, output_tab_name='Output_test')
+
+        # Rename columns to match expected format
         off_model_df.rename(
             columns={'Horizon Run ID': 'directory',
                      'Out_daily_GHG_reduced_{}'.format(run_id[:4]): 'daily_ghg_reduction',
