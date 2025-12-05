@@ -20,8 +20,7 @@ class OffModelCalculator:
         masterWbName: string, name of offModelCalculator of interest (e.g. bikeshare)
         dataFileName: string, name of model data file (input).
         verbose: print each method calculations.
-        varsDir: master file with all variable locations in all OffModelCalculators.
-        v: dictionary, all variable names and values for the OffModelCalculator chosen.
+        v: dictionary, all variable names and locations for the OffModelCalculator chosen.
     """
 
     def __init__(self, model_run_id, uid, verbose=False):
@@ -32,7 +31,6 @@ class OffModelCalculator:
         self.dataFileName=""
         # self.masterLogPath=common.get_master_log_path()
         self.verbose=verbose
-        self.varsDir=common.get_vars_directory()
         
     def copy_workbook(self):
         # Start run
@@ -95,17 +93,47 @@ class OffModelCalculator:
         OffModelCalculator.write_sbdata_to_excel(self)
 
     def get_variable_locations(self):
+        """
+        Read variable locations from the Output_test tab in the master workbook.
+        Handles both year-specific variables (e.g., variable_2035) and year-agnostic variables.
+        """
+        # Get year from run ID (first 4 characters)
+        year = self.runs[:4]
 
-        # allVars=pd.read_excel(self.varsDir)
-        allVars=pd.read_csv(self.varsDir)
-        calcVars=allVars.loc[allVars.Workbook.isin([self.masterWbName])]
-        calcVars=calcVars[['Sheet', 'Variable Name', 'Location_{}'.format(self.runs[:4])]]
-        calcVars.rename(columns={'Location_{}'.format(self.runs[:4]): 'Location'}, inplace=True)
-        groups=set(calcVars.Sheet)
-        self.v={}
+        # Read Output_test tab from master workbook
+        allVars = pd.read_excel(self.master_workbook_file, sheet_name='Output_test')
+
+        # Select relevant columns: Sheet, Variable Name, Location
+        allVars = allVars[['Sheet', 'Variable Name', 'Location']].copy()
+
+        # Split variables into two groups:
+        # 1. Variables with year suffix (e.g., variable_2035)
+        # 2. Variables without year suffix (year-agnostic)
+
+        year_suffix = f'_{year}'
+
+        # Get variables WITH year suffix for this specific year
+        vars_with_year = allVars[allVars['Variable Name'].str.endswith(year_suffix)].copy()
+        # Remove year suffix from these variables
+        vars_with_year['Variable Name'] = vars_with_year['Variable Name'].str.replace(year_suffix, '', regex=False)
+
+        # Get variables WITHOUT any year suffix (year-agnostic)
+        # A variable is year-agnostic if it doesn't end with _YYYY pattern
+        vars_without_year = allVars[~allVars['Variable Name'].str.match(r'.*_\d{4}$')].copy()
+
+        # Combine both sets of variables
+        calcVars = pd.concat([vars_with_year, vars_without_year], ignore_index=True)
+
+        # Remove duplicates (keep first occurrence)
+        calcVars = calcVars.drop_duplicates(subset=['Sheet', 'Variable Name'], keep='first')
+
+        # Group by sheet and create dictionary
+        groups = set(calcVars['Sheet'])
+        self.v = {}
         for group in groups:
-            self.v.setdefault(group,dict())
-            self.v[group]=dict(zip(calcVars['Variable Name'],calcVars['Location']))
+            self.v.setdefault(group, dict())
+            group_vars = calcVars[calcVars['Sheet'] == group]
+            self.v[group] = dict(zip(group_vars['Variable Name'], group_vars['Location']))
 
         if self.verbose:
             print("Calculator variables and locations in Excel:")
