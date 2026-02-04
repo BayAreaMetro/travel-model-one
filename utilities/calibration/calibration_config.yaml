@@ -1,65 +1,60 @@
 general:
-  # Base directory paths
-  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM161_IPA_35"
+  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7"
   code_dir: "E:/GitHub/travel-model-one/utilities/calibration"
+  output_dir: ""
   sampleshare: 1.0
-  
-  # Model run parameters (these typically change per run)
   iter: ""
   calib_iter: ""
-  
-  # Excel workbook settings
-  workbook_base_path: "E:/GitHub/travel-model-one/utilities/calibration/workbook_templates"
+  workbook_base_path: "M:/Development/Travel Model One/Calibration/Version 1.7"
 
 data_sources:
-  # Common data file patterns - use {target_dir}, {calib_iter}, {iter} for substitution
-  taz_data: "{target_dir}/INPUT/landuse/tazData.csv"
-  dist_skim: "{target_dir}/OUTPUT/skims/nonmotskm.csv"
+  taz_data: "{target_dir}/2023_TM161_IPA_35/INPUT/landuse/tazData.csv"
+  dist_skim: "{target_dir}/2023_TM161_IPA_35/OUTPUT/skims/nonmotskm.csv"
 
 counties:
-  # County lookup data
-  1: "San Francisco"
-  2: "San Mateo"
-  3: "Santa Clara"
-  4: "Alameda"
-  5: "Contra Costa"
-  6: "Solano"
-  7: "Napa"
-  8: "Sonoma"
-  9: "Marin"
+  1: San Francisco
+  2: San Mateo
+  3: Santa Clara
+  4: Alameda
+  5: Contra Costa
+  6: Solano
+  7: Napa
+  8: Sonoma
+  9: Marin
 
 calibration_01:
-  name: "Usual Work and School Location"
-  workbook_template: "01_UsualWorkAndSchoolLocation"
-  input_file: "{target_dir}/OUTPUT_{calib_iter}/main/wsLocResults_{iter}.csv"
+  name: Usual Work and School Location
+  workbook_template: 01_UsualWorkAndSchoolLocation_2023
+  input_file: "E:/TM1.7 Calibration/BATS/pipeline_mt_20260130/ctramp/MandatoryLocationData.csv"
+  bats_data: true
 
-calibration_02:
-  name: "Automobile Ownership"
-  workbook_template: "02_AutoOwnership"
-  input_file: "{target_dir}/INPUT/popsyn/hhFile.2015.csv"
-  ao_results: "{target_dir}/OUTPUT_{calib_iter}/main/aoResults.csv"
+# calibration_02:
+#   name: Automobile Ownership
+#   workbook_template: 02_AutoOwnership
+#   input_file: "{target_dir}/INPUT/popsyn/hhFile.2015.csv"
+#   ao_results: "{target_dir}/OUTPUT_{calib_iter}/main/aoResults.csv"
 
-calibration_04:
-  name: "Coordinated Daily Activity Pattern"
-  workbook_template: "04_CoordinatedDailyActivityPattern"
-  input_file: "{target_dir}/OUTPUT_{calib_iter}/main/cdapResults.csv"
+# calibration_04:
+#   name: Coordinated Daily Activity Pattern
+#   workbook_template: 04_CoordinatedDailyActivityPattern
+#   input_file: "{target_dir}/OUTPUT_{calib_iter}/main/cdapResults.csv"
 
-calibration_09:
-  name: "Non-Work Destination Choice"
-  workbook_template: "09_NonWorkDestinationChoice"
-  indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
-  joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
+# calibration_09:
+#   name: Non-Work Destination Choice
+#   workbook_template: 09_NonWorkDestinationChoice
+#   indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
+#   joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
 
-calibration_11:
-  name: "Tour Mode Choice"
-  workbook_template: "11_TourModeChoice"
-  indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
-  joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
-  taz_sd_file: "X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv"
+# calibration_11:
+#   name: Tour Mode Choice
+#   workbook_template: 11_TourModeChoice
+#   indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
+#   joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
+#   taz_sd_file: X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv
 
-calibration_15:
-  name: "Trip Mode Choice"
-  workbook_template: "15_TripModeChoice"
-  indiv_trip_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTripData_{iter}.csv"
-  joint_trip_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTripData_{iter}.csv"
-  taz_sd_file: "X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv"
+# calibration_15:
+#   name: Trip Mode Choice
+#   workbook_template: 15_TripModeChoice
+#   indiv_trip_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTripData_{iter}.csv"
+#   joint_trip_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTripData_{iter}.csv"
+#   taz_sd_file: X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv
