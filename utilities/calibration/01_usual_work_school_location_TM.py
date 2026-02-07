@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 import os
@@ -7,6 +6,7 @@ from pathlib import Path
 import logging
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+
 
 # Import the calibration framework
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +21,9 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             # Default to config file in the same directory as this script
             script_dir = os.path.dirname(os.path.abspath(__file__))
             config_file = os.path.join(script_dir, 'calibration_config.yaml')
+
         super().__init__("01", config_file)
+        self.bats_data = self.submodel_config.get("bats_data", False)
     
     def process_data(self) -> dict:
         """Process the usual work and school location data."""
@@ -60,10 +62,6 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         school_dist = dist_skim.rename(columns={'orig': 'HomeTAZ', 'dest': 'SchoolLocation', 'DIST': 'SchoolDist'})
         wsloc_results = wsloc_results.merge(school_dist, on=['HomeTAZ', 'SchoolLocation'], how='left')
         
-        # Save enhanced wsloc_results with distances
-        wsloc_with_dist_file = f"{self.output_dir}/wsloc_results_with_distances.csv"
-        wsloc_results.to_csv(wsloc_with_dist_file, index=False)
-        logging.info(f"Saved wsloc results with distances to {wsloc_with_dist_file}")
 
         logging.info("Merging Home COUNTY data...")
         # Process county summary
@@ -73,7 +71,16 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         wsloc_county_spread = wsloc_county_spread.fillna(0).reset_index()
         logging.info("Merging Work COUNTY data...")
 
-        
+        # Save enhanced wsloc_results with distances
+        if self.bats_data:
+            # Join with PersonData to get weights
+            person_data = pd.read_csv(r"E:\TM1.7 Calibration\BATS\pipeline_mt_20260130\ctramp\PersonData.csv")
+            wsloc_results = wsloc_results.merge(person_data[['hh_id', 'person_id', 'person_weight', 'sampleRate']], left_on = ['HHID', 'PersonID'], right_on = ['hh_id', "person_id"])
+            wsloc_with_dist_file = f"{self.output_dir}/BATS_Summaries/MandatoryLocation_with_Distance.csv"
+        else:
+            wsloc_with_dist_file = f"{self.output_dir}/wsloc_results_with_distances.csv"
+        wsloc_results.to_csv(wsloc_with_dist_file, index=False)
+        logging.info(f"Saved wsloc results with distances to {wsloc_with_dist_file}")
 
         # Process trip length distributions and averages
         logging.info("Processing trip length distributions...")
@@ -101,7 +108,10 @@ class WorkSchoolLocationCalibration(CalibrationBase):
                 trip_dists = trip_dists.rename(columns={'SchoolDist': 'DIST'})
             
             # Calculate trip length frequency distribution
-            trip_tlfd = pd.DataFrame({'distbin': range(1, 151)})
+            if self.bats_data:
+                trip_tlfd = pd.DataFrame({'distbin': range(1, 52)})
+            else:
+                trip_tlfd = pd.DataFrame({'distbin': range(1, 151)})
             
             # Process by county
             for county in lookup_county['county_name']:
@@ -160,18 +170,17 @@ class WorkSchoolLocationCalibration(CalibrationBase):
     
     def generate_outputs(self, results: dict):
         """Generate output files and Excel updates."""
-        bats_data = self.submodel_config.get("bats_data")
         logging.info("Generating output files and Excel updates...")
 
-        if (bats_data):
+        if (self.bats_data):
             trip_types = [('work', 2), ('univ', 15), ('school', 28)]
             for trip_type, col in trip_types:
                 if results[f'trip_tlfd_{trip_type}'] is not None:
 
                     tlfd_file = f"{self.output_dir}/BATS_Summaries/{trip_type}TLFD.csv"
                     results[f'trip_tlfd_{trip_type}'].to_csv(tlfd_file, index = False)
-                    self.write_dataframe_to_sheet(results[f'trip_tlfd_{trip_type}'], start_row= 4,  start_col=col, sheet_name="CHTS TLFD",
-                                                source_row=1, source_col=col, source_text=f"Source: {tlfd_file}")
+                    self.write_dataframe_to_sheet(results[f'trip_tlfd_{trip_type}'].drop(columns = ['Total']), start_row= 4,  start_col=col, sheet_name="CHTS TLFD",
+                                                 source_row=2, source_col=col, source_text=f"Source: {tlfd_file}")
                     
                     logging.info(f"Saving trip length frequency distributions for {trip_type} to {tlfd_file}")     
         
@@ -226,3 +235,5 @@ def main():
 if __name__ == "__main__":
     main()
 
+
+# %%

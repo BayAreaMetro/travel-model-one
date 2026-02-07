@@ -1,4 +1,3 @@
-#%%
 import pandas as pd
 import numpy as np
 import os
@@ -18,31 +17,67 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 
 
-#%%
+
 class CalibrationConfig:
     """Configuration manager for calibration scripts."""
     
     def __init__(self, config_file: str = None, submodel: str = None):
         self.config = {}
+        self.raw_config = {}
         
         # Load config file
         config_file = config_file or 'E:/GitHub/travel-model-one/utilities/calibration/calibration_config.yaml'
         if os.path.exists(config_file):
             with open(config_file, 'r') as f:
-                self.config = yaml.safe_load(f)
+                self.raw_config = yaml.safe_load(f)
+                self.config = self._substitute_parameters(self.raw_config)
+        else:
+            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+    
+    def _substitute_parameters(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively substitute parameters in configuration."""
+        # Get parameters from general section
+        params = config.get('general', {})
+        
+        def substitute_value(value):
+            """Recursively substitute parameters in values."""
+            if isinstance(value, dict):
+                return {k: substitute_value(v) for k, v in value.items()}
+            elif isinstance(value, list):
+                return [substitute_value(item) for item in value]
+            elif isinstance(value, str) and '{' in value:
+                try:
+                    return value.format(**params)
+                except KeyError as e:
+                    print(f"Warning: Missing parameter {e} in string: {value}")
+                    return value
+            else:
+                return value
+        
+        return substitute_value(config)
     
     def get(self, section: str, key: str, fallback: str = None) -> str:
-        """Get configuration value with variable substitution."""
+        """Get configuration value (already substituted)."""
         value = self.config.get(section, {}).get(key, fallback)
-        if isinstance(value, str) and '{' in value:
-            # Perform variable substitution
-            general = self.config.get('general', {})
-            value = value.format(
-                target_dir=general.get('target_dir', ''),
-                calib_iter=general.get('calib_iter', ''),
-                iter=general.get('iter', '')
-            )
         return value
+    
+    def get_path(self, section: str, key: str, fallback: str = None, validate: bool = False) -> str:
+        """Get file path from configuration with optional validation."""
+        path = self.get(section, key, fallback)
+        if validate and path and not os.path.exists(path):
+            print(f"Warning: Path does not exist: {path}")
+        return path
+    
+    def get_all_paths(self, section: str, validate: bool = False) -> Dict[str, str]:
+        """Get all file paths from a configuration section."""
+        section_config = self.config.get(section, {})
+        paths = {}
+        for key, value in section_config.items():
+            if isinstance(value, str) and ('/' in value or '\\' in value or value.endswith('.csv') or value.endswith('.xlsx')):
+                paths[key] = value
+                if validate and not os.path.exists(value):
+                    print(f"Warning: {key} path does not exist: {value}")
+        return paths
     
     def getfloat(self, section: str, key: str, fallback: float = None) -> float:
         """Get configuration value as float."""
@@ -94,7 +129,7 @@ class CalibrationBase(ABC):
         
         # Set up paths
         self.target_dir = self.config.get('general', 'target_dir')
-        self.output_dir = os.path.join(self.target_dir)
+        self.output_dir = f"{self.target_dir}/Output_{self.config.get('general', 'calib_iter')}"
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         
         self.sampleshare = self.config.getfloat('general', 'sampleshare', 1.0)
@@ -168,7 +203,12 @@ class CalibrationBase(ABC):
 
         try:
             sheet = self.calib_workbook.sheets[sheet_name]
-            sheet.range((start_row, start_col)).value = df
+            
+            # Write headers
+            sheet.range((start_row, start_col)).value = df.columns.tolist()
+            
+            # Write data without index
+            sheet.range((start_row + 1, start_col)).value = df.values
 
             if source_row and source_col and source_text:
                 sheet.range((source_row, source_col)).value = source_text
