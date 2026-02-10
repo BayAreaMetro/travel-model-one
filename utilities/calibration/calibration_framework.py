@@ -89,26 +89,24 @@ class CalibrationConfig:
         value = self.config.get(section, {}).get(key, fallback)
         return int(value) if value is not None else fallback
     
-    def get_county_lookup(self) -> pd.DataFrame:
-        """Get county lookup DataFrame."""
+    def get_county_lookup(self) -> dict:
+        """Get county lookup dictionary mapping county ID to county name."""
         if 'counties' not in self.config:
             # Default county lookup
-            return pd.DataFrame({
-                'COUNTY': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-                'county_name': ["San Francisco", "San Mateo", "Santa Clara", "Alameda",
-                               "Contra Costa", "Solano", "Napa", "Sonoma", "Marin"]
-            })
+            return {
+                1: "San Francisco",
+                2: "San Mateo",
+                3: "Santa Clara",
+                4: "Alameda",
+                5: "Contra Costa",
+                6: "Solano",
+                7: "Napa",
+                8: "Sonoma",
+                9: "Marin"
+            }
         
-        counties = []
-        county_names = []
-        for county_id, name in self.config['counties'].items():
-            counties.append(int(county_id))
-            county_names.append(name)
-        
-        return pd.DataFrame({
-            'COUNTY': counties,
-            'county_name': county_names
-        })
+        # Convert config to dictionary
+        return {int(county_id): name for county_id, name in self.config['counties'].items()}
     
     def get_submodel_config(self, submodel: str) -> Dict[str, str]:
         """Get configuration for specific submodel."""
@@ -263,16 +261,36 @@ class CalibrationBase(ABC):
             raise
 
 
-def create_histogram_tlfd(data: pd.Series, bins: range = None, sampleshare: float = 1.0) -> pd.DataFrame:
-    """Create trip length frequency distribution histogram."""
+def create_histogram_tlfd(data: pd.Series, bins: range = None, sampleshare: float = 1.0, 
+                         weights: pd.Series = None) -> pd.DataFrame:
+    """Create trip length frequency distribution histogram.
+    
+    Args:
+        data: Distance values
+        bins: Bin edges for histogram
+        sampleshare: Sample share to scale up counts (used when weights not provided)
+        weights: Individual weights for each observation (for survey data)
+    
+    Returns:
+        DataFrame with distbin and count columns
+    """
     if bins is None:
         bins = range(151)
     
-    hist, bin_edges = np.histogram(data, bins=bins)
-    return pd.DataFrame({
-        'distbin': list(bins)[1:],
-        'count': hist / sampleshare
-    })
+    if weights is not None:
+        # Use weighted histogram
+        hist, bin_edges = np.histogram(data, bins=bins, weights=weights)
+        return pd.DataFrame({
+            'distbin': list(bins)[1:],
+            'count': hist
+        })
+    else:
+        # Use sampleshare scaling
+        hist, bin_edges = np.histogram(data, bins=bins)
+        return pd.DataFrame({
+            'distbin': list(bins)[1:],
+            'count': hist / sampleshare
+        })
 
 # def attach_distance_skim() -> pd.DataFrame:
     
