@@ -10,8 +10,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 
 # Import the calibration framework
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from calibration_framework import CalibrationBase, create_histogram_tlfd
-
+from calibration_framework import CalibrationBase, create_histogram_tlfd, add_county_info
+from calibration_data_models import (
+    CountySummary,
+    TripLengthFrequency,
+    AverageTripLength,
+    validate_dataframe
+)
 
 class WorkSchoolLocationCalibration(CalibrationBase):
     """Calibration processor for usual work and school location."""
@@ -36,22 +41,24 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         dist_skim = pd.read_csv(self.config.get('data_sources', 'dist_skim'), header=0,
                                usecols = ['orig', 'dest', 'DIST'])
         
-        # Get county lookup
-        logging.info("Input data loaded. Processing county lookup...")
-        lookup_county = self.config.get_county_lookup()
-
-        
         # Add Home COUNTY
         logging.info("Merging Home County Data")
-        wsloc_results = wsloc_results.merge(taz_data[['ZONE', 'COUNTY']].rename(columns = {'ZONE': 'HomeTAZ', 'COUNTY': 'HomeCOUNTY'}), on='HomeTAZ', how='left')
-        wsloc_results['HomeCounty_name'] = wsloc_results['HomeCOUNTY'].map(lookup_county)
+        wsloc_results = add_county_info(wsloc_results, taz_data, self.county_lookup,
+                                       taz_col='HomeTAZ',
+                                       county_col_name='HomeCOUNTY',
+                                       county_name_col='HomeCounty_name')
         
         # Add Work and School COUNTY
         logging.info("Merging Work and School County Data")
-        wsloc_results = wsloc_results.merge(taz_data[['ZONE', 'COUNTY']].rename(columns={'ZONE': 'WorkLocation', 'COUNTY': 'WorkCOUNTY'}), on='WorkLocation', how='left')
-        wsloc_results['WorkCounty_name'] = wsloc_results['WorkCOUNTY'].map(lookup_county)
-        wsloc_results = wsloc_results.merge(taz_data[['ZONE', 'COUNTY']].rename(columns={'ZONE': 'SchoolLocation', 'COUNTY': 'SchoolCOUNTY'}), on='SchoolLocation', how='left')
-        wsloc_results['SchoolCounty_name'] = wsloc_results['SchoolCOUNTY'].map(lookup_county)
+        wsloc_results = add_county_info(wsloc_results, taz_data, self.county_lookup,
+                                       taz_col='WorkLocation',
+                                       county_col_name='WorkCOUNTY',
+                                       county_name_col='WorkCounty_name')
+        
+        wsloc_results = add_county_info(wsloc_results, taz_data, self.county_lookup,
+                                       taz_col='SchoolLocation',
+                                       county_col_name='SchoolCOUNTY',
+                                       county_name_col='SchoolCounty_name')
         
         # Attach distances from distance skim
         logging.info("Attaching work distances...")
@@ -127,7 +134,7 @@ class WorkSchoolLocationCalibration(CalibrationBase):
                 trip_tlfd = pd.DataFrame({'distbin': range(1, 151)})
             
             # Process by county
-            for county in lookup_county.values():
+            for county in self.county_lookup.values():
                 county_trip_dists = trip_dists[trip_dists['HomeCounty_name'] == county]
                 
                 if len(county_trip_dists) > 0:
@@ -193,6 +200,8 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         desired_cols = ['county'] + [col for col in ['work', 'univ', 'school'] if col in avg_triplen_spread.columns]
         avg_triplen_spread = avg_triplen_spread[desired_cols]
         
+        # Validate output data
+        #         
         return {
             'county_summary': wsloc_county_spread,
             'trip_tlfd_work': trip_tlfd_results.get('work'),
@@ -201,6 +210,28 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             'avg_trip_lengths': avg_triplen_spread
         }
     
+    def validate_outputs(self, results:dict):
+        """Validate outputs before generating the files and updating excel"""
+        logging.info("Validating output files")
+
+        # Validate county summary
+        if results['county_summary'] is not None:
+            validate_dataframe(results['county_summary'], CountySummary)
+            logging.info("✓ County Summary Validated")
+
+        # Validate trip length frequency distribution
+        expected_rows = 51 if self.bats_data else 150
+        for trip_type in ['work', 'univ', 'school']:
+            df = results[f'trip_tlfd_{trip_type}']
+            if df is not None:
+                validate_dataframe(df, TripLengthFrequency, expected_rows)
+                logging.info(f"✓ {trip_type.capitalize()} TLFD validated")
+        
+        # Validate average trip lengths
+        if results['avg_trip_lengths'] is not None:
+            validate_dataframe(results['avg_trip_lengths'], AverageTripLength, )
+
+
     def generate_outputs(self, results: dict):
         """Generate output files and Excel updates."""
         logging.info("Generating output files and Excel updates...")

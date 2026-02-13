@@ -132,6 +132,9 @@ class CalibrationBase(ABC):
         
         self.sampleshare = self.config.getfloat('general', 'sampleshare', 1.0)
         
+        # Load shared data resources
+        self.county_lookup = self.config.get_county_lookup()
+        
         # Set up Excel workbook
         self._setup_workbook()
         
@@ -246,6 +249,11 @@ class CalibrationBase(ABC):
         pass
     
     @abstractmethod
+    def validate_outputs(self, results):
+        """Validate the process data. Must be implemented by subclasses"""
+        pass
+
+    @abstractmethod
     def generate_outputs(self, results: Dict[str, pd.DataFrame]):
         """Generate output files and Excel updates. Must be implemented by subclasses."""
         pass
@@ -254,11 +262,47 @@ class CalibrationBase(ABC):
         """Execute the complete calibration process."""
         try:
             results = self.process_data()
+            self.validate_outputs(results)
             self.generate_outputs(results)
             self.save_workbook()
         except Exception as e:
             print(f"Error during calibration processing: {e}")
             raise
+
+
+def add_county_info(df: pd.DataFrame, taz_data: pd.DataFrame, 
+                   county_lookup: dict, taz_col: str = 'TAZ',
+                   county_col_name: str = 'COUNTY',
+                   county_name_col: str = 'county_name') -> pd.DataFrame:
+    """
+    Add county information to a DataFrame based on TAZ.
+    
+    Args:
+        df: DataFrame containing TAZ column
+        taz_data: DataFrame with ZONE and COUNTY columns
+        county_lookup: Dictionary mapping county ID to county name
+        taz_col: Name of TAZ column in df
+        county_col_name: Name for output county ID column
+        county_name_col: Name for output county name column
+        
+    Returns:
+        DataFrame with county ID and name columns added
+        
+    Example:
+        df = add_county_info(results, taz_data, county_lookup, taz_col='HomeTAZ')
+    """
+    # Merge with TAZ county data
+    taz_county = taz_data[['ZONE', 'COUNTY']].rename(columns={'ZONE': taz_col})
+    df = df.merge(taz_county, on=taz_col, how='left')
+    
+    # Add county name
+    df[county_name_col] = df['COUNTY'].map(county_lookup)
+    
+    # Rename COUNTY column if specified
+    if county_col_name != 'COUNTY':
+        df = df.rename(columns={'COUNTY': county_col_name})
+    
+    return df
 
 
 def create_histogram_tlfd(data: pd.Series, bins: range = None, sampleshare: float = 1.0, 

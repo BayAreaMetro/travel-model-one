@@ -1,0 +1,13 @@
+name: tm1.7_calibration
+channels:
+  - conda-forge
+  - default
+dependencies:
+  - python = 3.12
+  - pandas
+  - numpy
+  - openpyxl
+  - xlrd
+  - xlwings
+  - pydantic
+  - pyyaml
