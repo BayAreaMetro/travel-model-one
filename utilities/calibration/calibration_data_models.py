@@ -10,25 +10,85 @@ Field Name Standardization Strategy:
 """
 from typing import Optional, Literal
 import pandas as pd
-from enum import StrEnum
+from enum import StrEnum, Enum
 from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationError
+from pydantic_core import core_schema
 
+################################################################
 ### Codebook Definitions for CTRAMP
-class CTRAMPCounty(StrEnum):
-    SAN_FRANCISCO = 'San Francisco'
-    SAN_MATEO = 'San Mateo'
-    SANTA_CLARA = 'Santa Clara'
-    ALAMEDA = 'Alameda'
-    CONTRA_COSTA = 'Contra Costa'
-    SOLANO = 'Solano'
-    NAPA = 'Napa'
-    SONOMA = 'Sonoma'
-    MARIN ='Marin'
+################################################################
+
+class CTRAMPCounty(Enum):
+    SAN_FRANCISCO = (1, 'San Francisco')
+    SAN_MATEO = (2, 'San Mateo')
+    SANTA_CLARA = (3, 'Santa Clara')
+    ALAMEDA = (4, 'Alameda')
+    CONTRA_COSTA = (5, 'Contra Costa')
+    SOLANO = (6, 'Solano')
+    NAPA = (7, 'Napa')
+    SONOMA = (8, 'Sonoma')
+    MARIN = (9, 'Marin')
+
+    @property
+    def id(self):
+        return self.value[0]
+    
+    @property
+    def label(self):
+        return self.value[1]
+    
+    @classmethod
+    def from_value(cls, v):
+        if isinstance(v, cls):
+            return v
+        for member in cls:
+            if v == member.id or v == member.label:
+                return member
+        raise ValueError(f"Invalid county: {v}")
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source, handler):
+        return core_schema.no_info_plain_validator_function(cls.from_value)
+    
+class CTRAMPPersonType(Enum):
+    FULL_TIME_WORKER = (1, "Full-time worker")
+    PART_TIME_WORKER = (2, "Part-time worker")
+    UNIVERSITY_STUDENT = (3, "University student")
+    NON_WORKER = (4, "Nonworker")
+    RETIRED = (5, "Retired")
+    CHILD_NON_DRIVING_AGE = (6, "Child of non-driving age")
+    CHILD_DRIVING_AGE = (7, "Child of driving age")
+    CHILD_UNDER_5 = (8, "Child too young for school")
+
+class CTRAMPPurpose(Enum):
+    """Enumeration for tour purpose."""
+
+    HOME = "Home", "Home"
+    WORK_LOW = "work_low", "Work - Low income"
+    WORK_MED = "work_med", "Work - Medium income"
+    WORK_HIGH = "work_high", "Work - High income"
+    WORK_VERY_HIGH = "work_very high", "Work - Very High income"
+    UNIVERSITY = "university", "University"
+    SCHOOL_HIGH = "school_high", "School - High school"
+    SCHOOL_GRADE = "school_grade", "School - Grade school"
+    ATWORK_BUSINESS = "atwork_business", "At-work - Business"
+    ATWORK_EAT = "atwork_eat", "At-work - Eating"
+    ATWORK_MAINT = "atwork_maint", "At-work - Maintenance"
+    EATOUT = "eatout", "Eating out"
+    ESCORT_KIDS = "escort_kids", "Escort - Kids"
+    ESCORT_NO_KIDS = "escort_no kids", "Escort - No kids"
+    SHOPPING = "shopping", "Shopping"
+    SOCIAL = "social", "Social/recreational"
+    OTHMAINT = "othmaint", "Other maintenance"
+    OTHDISCR = "othdiscr", "Other discretionary"    
 
 
-
+################################################################
 ### Data Model for Output Results
-class CountySummary(BaseModel):
+################################################################
+
+# Usual Work School Location
+class CountyTripSummary(BaseModel):
     """Model for county-to-county summary results."""
     model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
 
@@ -43,7 +103,6 @@ class CountySummary(BaseModel):
     Sonoma: float = Field(ge=0)
     Marin: float = Field(ge=0)
     
-
 class TripLengthFrequency(BaseModel):
     """Model for trip length frequency distribution."""
     model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
@@ -63,7 +122,6 @@ class TripLengthFrequency(BaseModel):
     # Total column - REQUIRED
     Total: float = Field(ge=0, description="Total across all counties")
 
-
 class AverageTripLength(BaseModel):
     """Model for average trip length by county and type."""
     county: CTRAMPCounty | Literal['Total']
@@ -71,16 +129,59 @@ class AverageTripLength(BaseModel):
     univ: float
     school: float
 
-class CalibrationResults(BaseModel):
-    """Model for calibration processing results."""
-    county_summary: Optional[dict] = None
-    trip_tlfd_work: Optional[dict] = None
-    trip_tlfd_univ: Optional[dict] = None
-    trip_tlfd_school: Optional[dict] = None
-    avg_trip_lengths: Optional[dict] = None
+# Auto Ownership 
+class AutoOwnershipModel(BaseModel):
+    ZER0_VEHICLE: float = Field(ge =0, alias = 0) | Literal['NA']
+    ONE_VEHICLE: float = Field(ge =0, alias = 1) | Literal['NA']
+    TWO_VEHICLE: float = Field(ge =0, alias = 2) | Literal['NA']
+    THREE_VEHICLE: float = Field(ge =0, alias = 3) | Literal['NA']
+    FOUR_PLUS_VEHICLE: float = Field(ge =0, alias = 4) | Literal['NA']
+
+class AutoOwnershipCountySummary(AutoOwnershipModel):
+    """Model for auto ownership county summmary"""
+    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
+    COUNTY:CTRAMPCounty
+    county_name: CTRAMPCounty
+
+class AutoOwnershipTAZSummary(AutoOwnershipModel):
+    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
+    TAZ: int = Field(ge = 1, alias = 'taz')
+    source: str
+
+class AutoOwnershipLongSummary(BaseModel):
+    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
+    TAZ: int = Field(ge = 1, alias = 'taz')
+    num_vehicle: int = Field(ge = 0)
+    num_hh: float = Field(ge = 0, description="Number of households")
+    source: str
+
+# CDAP
+class CDAPSummary(BaseModel):
+    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
+    person_type: CTRAMPPersonType
+    home: float = Field(ge=0, alias = 'H') | Literal['NA']
+    mandatory: float = Field(ge=0, alias = 'M') | Literal['NA']
+    non_mandatory: float = Field(ge=0, alias = 'N') | Literal['NA']
+
+# Non-Work Choice Destination 
+class NonMandAvgTripLength(BaseModel):
+    trip_purpose: CTRAMPPurpose = Field(alias='trip_type')
+    avg_trip_length: float = Field(ge=0, alias = 'mean_trip_length')
+
+class NonMandTripLengthFrequency(BaseModel):
+    distbin: int = Field(ge = 1, description = 'Distance bin')
+    escort: float = Field(ge=0, alias=('Escort'))
+    shop: float = Field(ge=0, alias=('Shop'))
+    maintenance: float = Field(ge=0, alias=('Maintenance'))
+    eat_out: float = Field(ge=0, alias=('eatout'))
+    visit: float = Field(ge = 0, alias = ('Visit'))
+    discretionary: float = Field(ge=0)
+    at_work: float = Field(ge=0, alias=('atwork'))
 
 
-# Helper functions for DataFrame validation
+################################################################
+# # Helper functions for DataFrame validation
+################################################################
 def validate_dataframe(
         df: pd.DataFrame, 
         model_class,

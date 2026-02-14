@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from calibration_framework import CalibrationBase, create_histogram_tlfd, add_county_info
 from calibration_data_models import (
-    CountySummary,
+    CountyTripSummary,
     TripLengthFrequency,
     AverageTripLength,
     validate_dataframe
@@ -216,7 +216,7 @@ class WorkSchoolLocationCalibration(CalibrationBase):
 
         # Validate county summary
         if results['county_summary'] is not None:
-            validate_dataframe(results['county_summary'], CountySummary)
+            validate_dataframe(results['county_summary'], CountyTripSummary)
             logging.info("✓ County Summary Validated")
 
         # Validate trip length frequency distribution
