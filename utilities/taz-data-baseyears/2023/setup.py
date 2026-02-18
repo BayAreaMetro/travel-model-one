@@ -13,7 +13,7 @@ WGS84_CRS = "EPSG:4326"
 # ================================
 
 # Local repository directories
-REPO_BASE = Path(__file__).parent.parent.parent.parent.parent  # travel-model-one root
+REPO_BASE = Path(__file__).parent.parent.parent.parent  # travel-model-one root
 
 # ================================
 # Input Data Directories

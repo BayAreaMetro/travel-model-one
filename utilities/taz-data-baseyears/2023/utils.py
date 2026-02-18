@@ -1,8 +1,18 @@
+"""
+Utils for TAZ 2023 enrollment, parking, res dev acre update
+"""
+
 from pathlib import Path
 import os
 import sys
 import pandas as pd
 import geopandas as gpd
+from setup import *
+
+# Load taz shp
+def load_taz_shp():
+    taz = gpd.read_file(TAZ_FILE).to_crs(ANALYSIS_CRS)
+    return taz
 
 
 def spatial_join_to_taz(points_gdf, taz_gdf):

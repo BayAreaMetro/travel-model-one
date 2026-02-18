@@ -13,16 +13,13 @@ Data sources:
     --write: Save spatial output to GeoPackage format
 '''
 
+import sys
+from pathlib import Path
 import pandas as pd
 import geopandas as gpd
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from setup import *
 from utils import *
-
-
-# Load taz shp
-def load_taz_shp():
-    taz = gpd.read_file(TAZ_FILE).to_crs(ANALYSIS_CRS)
-    return taz
 
 
 def load_public_schools():
