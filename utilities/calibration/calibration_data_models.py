@@ -15,20 +15,10 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationEr
 from pydantic_core import core_schema
 
 ################################################################
-### Codebook Definitions for CTRAMP
+###  Class for Labeled Enums
 ################################################################
-
-class CTRAMPCounty(Enum):
-    SAN_FRANCISCO = (1, 'San Francisco')
-    SAN_MATEO = (2, 'San Mateo')
-    SANTA_CLARA = (3, 'Santa Clara')
-    ALAMEDA = (4, 'Alameda')
-    CONTRA_COSTA = (5, 'Contra Costa')
-    SOLANO = (6, 'Solano')
-    NAPA = (7, 'Napa')
-    SONOMA = (8, 'Sonoma')
-    MARIN = (9, 'Marin')
-
+class LabeledEnum(Enum):
+    """Base enum class that auto-validates by id or label"""
     @property
     def id(self):
         return self.value[0]
@@ -49,8 +39,23 @@ class CTRAMPCounty(Enum):
     @classmethod
     def __get_pydantic_core_schema__(cls, source, handler):
         return core_schema.no_info_plain_validator_function(cls.from_value)
-    
-class CTRAMPPersonType(Enum):
+
+################################################################
+### Codebook Definitions for CTRAMP
+################################################################
+
+class CTRAMPCounty(LabeledEnum):
+    SAN_FRANCISCO = (1, 'San Francisco')
+    SAN_MATEO = (2, 'San Mateo')
+    SANTA_CLARA = (3, 'Santa Clara')
+    ALAMEDA = (4, 'Alameda')
+    CONTRA_COSTA = (5, 'Contra Costa')
+    SOLANO = (6, 'Solano')
+    NAPA = (7, 'Napa')
+    SONOMA = (8, 'Sonoma')
+    MARIN = (9, 'Marin')
+
+class CTRAMPPersonType(LabeledEnum):
     FULL_TIME_WORKER = (1, "Full-time worker")
     PART_TIME_WORKER = (2, "Part-time worker")
     UNIVERSITY_STUDENT = (3, "University student")
@@ -60,28 +65,100 @@ class CTRAMPPersonType(Enum):
     CHILD_DRIVING_AGE = (7, "Child of driving age")
     CHILD_UNDER_5 = (8, "Child too young for school")
 
-class CTRAMPPurpose(Enum):
+class CTRAMPSimplePurpose(LabeledEnum):
+    """Enumeration for simple tour purpose"""
+    WORK = 'work'
+    UNIVERSITY = 'university'
+    SCHOOL = 'school'
+    ATWORK = 'atwork'
+    IND_DISC = 'ind_disc'
+    IND_MAINT = 'ind_maint'
+
+class CTRAMPPurpose(LabeledEnum):
     """Enumeration for tour purpose."""
 
-    HOME = "Home", "Home"
-    WORK_LOW = "work_low", "Work - Low income"
-    WORK_MED = "work_med", "Work - Medium income"
-    WORK_HIGH = "work_high", "Work - High income"
-    WORK_VERY_HIGH = "work_very high", "Work - Very High income"
-    UNIVERSITY = "university", "University"
-    SCHOOL_HIGH = "school_high", "School - High school"
-    SCHOOL_GRADE = "school_grade", "School - Grade school"
-    ATWORK_BUSINESS = "atwork_business", "At-work - Business"
-    ATWORK_EAT = "atwork_eat", "At-work - Eating"
-    ATWORK_MAINT = "atwork_maint", "At-work - Maintenance"
-    EATOUT = "eatout", "Eating out"
-    ESCORT_KIDS = "escort_kids", "Escort - Kids"
-    ESCORT_NO_KIDS = "escort_no kids", "Escort - No kids"
-    SHOPPING = "shopping", "Shopping"
-    SOCIAL = "social", "Social/recreational"
-    OTHMAINT = "othmaint", "Other maintenance"
-    OTHDISCR = "othdiscr", "Other discretionary"    
+    HOME = ("Home", "Home")
+    WORK_LOW = ("work_low", "Work - Low income")
+    WORK_MED = ("work_med", "Work - Medium income")
+    WORK_HIGH = ("work_high", "Work - High income")
+    WORK_VERY_HIGH = ("work_very high", "Work - Very High income")
+    UNIVERSITY = ("university", "University")
+    SCHOOL_HIGH = ("school_high", "School - High school")
+    SCHOOL_GRADE = ("school_grade", "School - Grade school")
+    ATWORK_BUSINESS = ("atwork_business", "At-work - Business")
+    ATWORK_EAT = ("atwork_eat", "At-work - Eating")
+    ATWORK_MAINT = ("atwork_maint", "At-work - Maintenance")
+    EATOUT = ("eatout", "Eating out")
+    ESCORT_KIDS = ("escort_kids", "Escort - Kids")
+    ESCORT_NO_KIDS = ("escort_no kids", "Escort - No kids")
+    SHOPPING = ("shopping", "Shopping")
+    SOCIAL = ("social", "Social/recreational")
+    OTHMAINT = ("othmaint", "Other maintenance")
+    OTHDISCR = ("othdiscr", "Other discretionary")
 
+    @property
+    def simple_purpose(self) -> CTRAMPSimplePurpose:
+        """Map detailed purpose to simplified category."""
+        mapping = {
+            self.ATWORK_BUSINESS: CTRAMPSimplePurpose.ATWORK,
+            self.ATWORK_EAT: CTRAMPSimplePurpose.ATWORK,
+            self.ATWORK_MAINT: CTRAMPSimplePurpose.ATWORK,
+            self.EATOUT: CTRAMPSimplePurpose.IND_DISC,
+            self.ESCORT_KIDS: CTRAMPSimplePurpose.IND_MAINT,
+            self.ESCORT_NO_KIDS: CTRAMPSimplePurpose.IND_MAINT,
+            self.OTHDISCR: CTRAMPSimplePurpose.IND_DISC,
+            self.OTHMAINT: CTRAMPSimplePurpose.IND_MAINT,
+            self.SCHOOL_GRADE: CTRAMPSimplePurpose.SCHOOL,
+            self.SCHOOL_HIGH: CTRAMPSimplePurpose.SCHOOL,
+            self.SHOPPING: CTRAMPSimplePurpose.IND_MAINT,
+            self.SOCIAL: CTRAMPSimplePurpose.IND_DISC,
+            self.UNIVERSITY: CTRAMPSimplePurpose.UNIVERSITY,
+            self.WORK_HIGH: CTRAMPSimplePurpose.WORK,
+            self.WORK_LOW: CTRAMPSimplePurpose.WORK,
+            self.WORK_MED: CTRAMPSimplePurpose.WORK,
+            self.WORK_VERY_HIGH: CTRAMPSimplePurpose.WORK,
+        }
+        return mapping.get(self)
+       
+
+class CTRAMPModeType(LabeledEnum):
+    """Enumeration for mode choice"""
+
+    DA = 1, "Drive alone"
+    DA_TOLL = 2, "Drive alone - toll"
+    SR2 = 3, "Shared ride 2"
+    SR2_TOLL = 4, "Shared ride 2 - toll"
+    SR3 = 5, "Shared ride 3+"
+    SR3_TOLL = 6, "Shared ride 3+ - toll"
+    WALK = 7, "Walk"
+    BIKE = 8, "Bike"
+    WLK_LOC_WLK = 9, "Walk to local bus"
+    WLK_LRF_WLK = 10, "Walk to light rail or ferry"
+    WLK_EXP_WLK = 11, "Walk to express bus"
+    WLK_HVY_WLK = 12, "Walk to heavy rail"
+    WLK_COM_WLK = 13, "Walk to commuter rail"
+    DRV_LOC_WLK = 14, "Drive to local bus"
+    DRV_LRF_WLK = 15, "Drive to light rail or ferry"
+    DRV_EXP_WLK = 16, "Drive to express bus"
+    DRV_HVY_WLK = 17, "Drive to heavy rail"
+    DRV_COM_WLK = 18, "Drive to commuter rail"
+    TAXI = 19, "Taxi"
+    TNC = 20, "TNC - single party"
+    TNC2 = 21, "TNC - shared"
+
+class CTRAMPTransitMode(StrEnum):
+   LOCAL = 'Local'
+   EXPRESS = 'Express'
+   HEAVY_RAIL = 'HeavyRail'
+   COMM_RAIL = 'CommRail'
+   WLK_LRT = 'Light Rail - Walk'
+   DRV_LRT = 'Light Rail - Drive'
+   WLK_FERRY = 'Ferry - Walk'
+   DRV_FERRY = 'Ferry - Drive'
+
+class IndivJoint(StrEnum):
+    INDIV= 'indiv'
+    JOINT = 'joint'
 
 ################################################################
 ### Data Model for Output Results
@@ -177,6 +254,38 @@ class NonMandTripLengthFrequency(BaseModel):
     visit: float = Field(ge = 0, alias = ('Visit'))
     discretionary: float = Field(ge=0)
     at_work: float = Field(ge=0, alias=('atwork'))
+
+# Tour Mode Choice
+class TourModeChoiceModel(BaseModel):
+    indiv_joint: IndivJoint
+    tour_purpose: CTRAMPPurpose
+    zero_auto: float = Field(alias = ('Autos=0'))
+    autos_less_than_workers: float = Field(alias = ('Autos<Workers'))
+    autos_greater_than_workers: float = Field(alias = ('Autos>=Workers'))
+
+class TourModeSummary(TourModeChoiceModel):
+    tour_mode: CTRAMPModeType
+
+# TODO: Create Transit Mode Class
+class TourModeTransitSummary(TourModeChoiceModel):
+    tour_mode: CTRAMPTransitMode
+
+# Trip Mode Choice
+class TripModeSummary(BaseModel):
+    indiv_joint: IndivJoint
+    tour_purpose: CTRAMPPurpose	
+    tour_mode: CTRAMPModeType
+    trip_mode: CTRAMPModeType
+    num_trips: float
+
+class TripModeTrnSummary(BaseModel):
+    key: str
+    trn_access_mode: str
+    trn_submode: CTRAMPTransitMode
+    orig_SD_name: str
+    dest_SD_name: str
+    simple_purpose: CTRAMPSimplePurpose
+    num_trips: float
 
 
 ################################################################

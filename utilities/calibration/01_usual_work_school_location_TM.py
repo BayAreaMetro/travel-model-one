@@ -4,9 +4,6 @@ import os
 import sys
 from pathlib import Path
 import logging
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-
 
 # Import the calibration framework
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -33,7 +30,7 @@ class WorkSchoolLocationCalibration(CalibrationBase):
     def process_data(self) -> dict:
         """Process the usual work and school location data."""
         # Load input data
-        logging.info("Loading input data files...")
+        self.logger.info("Loading input data files...")
         taz_data = pd.read_csv(self.config.get('data_sources', 'taz_data'))
         wsloc_results = pd.read_csv(self.submodel_config['input_file'])
         
@@ -42,14 +39,14 @@ class WorkSchoolLocationCalibration(CalibrationBase):
                                usecols = ['orig', 'dest', 'DIST'])
         
         # Add Home COUNTY
-        logging.info("Merging Home County Data")
+        self.logger.info("Merging Home County Data")
         wsloc_results = add_county_info(wsloc_results, taz_data, self.county_lookup,
                                        taz_col='HomeTAZ',
                                        county_col_name='HomeCOUNTY',
                                        county_name_col='HomeCounty_name')
         
         # Add Work and School COUNTY
-        logging.info("Merging Work and School County Data")
+        self.logger.info("Merging Work and School County Data")
         wsloc_results = add_county_info(wsloc_results, taz_data, self.county_lookup,
                                        taz_col='WorkLocation',
                                        county_col_name='WorkCOUNTY',
@@ -61,11 +58,11 @@ class WorkSchoolLocationCalibration(CalibrationBase):
                                        county_name_col='SchoolCounty_name')
         
         # Attach distances from distance skim
-        logging.info("Attaching work distances...")
+        self.logger.info("Attaching work distances...")
         work_dist = dist_skim.rename(columns={'orig': 'HomeTAZ', 'dest': 'WorkLocation', 'DIST': 'WorkDist'})
         wsloc_results = wsloc_results.merge(work_dist, on=['HomeTAZ', 'WorkLocation'], how='left')
         
-        logging.info("Attaching school distances...")
+        self.logger.info("Attaching school distances...")
         school_dist = dist_skim.rename(columns={'orig': 'HomeTAZ', 'dest': 'SchoolLocation', 'DIST': 'SchoolDist'})
         wsloc_results = wsloc_results.merge(school_dist, on=['HomeTAZ', 'SchoolLocation'], how='left')
         
@@ -92,10 +89,10 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         wsloc_county_spread = wsloc_county_spread.fillna(0).reset_index()
 
         wsloc_results.to_csv(wsloc_with_dist_file, index=False)
-        logging.info(f"Saved wsloc results with distances to {wsloc_with_dist_file}")
+        self.logger.info(f"Saved wsloc results with distances to {wsloc_with_dist_file}")
 
         # Process trip length distributions and averages
-        logging.info("Processing trip length distributions...")
+        self.logger.info("Processing trip length distributions...")
         trip_types = ['work', 'univ', 'school']
         trip_tlfd_results = {}
         avg_trip_lengths = []
@@ -212,12 +209,12 @@ class WorkSchoolLocationCalibration(CalibrationBase):
     
     def validate_outputs(self, results:dict):
         """Validate outputs before generating the files and updating excel"""
-        logging.info("Validating output files")
+        self.logger.info("Validating output files")
 
         # Validate county summary
         if results['county_summary'] is not None:
             validate_dataframe(results['county_summary'], CountyTripSummary)
-            logging.info("✓ County Summary Validated")
+            self.logger.info("County Summary Validated")
 
         # Validate trip length frequency distribution
         expected_rows = 51 if self.bats_data else 150
@@ -225,16 +222,16 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             df = results[f'trip_tlfd_{trip_type}']
             if df is not None:
                 validate_dataframe(df, TripLengthFrequency, expected_rows)
-                logging.info(f"✓ {trip_type.capitalize()} TLFD validated")
+                self.logger.info(f"{trip_type.capitalize()} TLFD validated")
         
         # Validate average trip lengths
         if results['avg_trip_lengths'] is not None:
             validate_dataframe(results['avg_trip_lengths'], AverageTripLength, )
-
+            self.logger.info("Average Trip Length Summary Validated")
 
     def generate_outputs(self, results: dict):
         """Generate output files and Excel updates."""
-        logging.info("Generating output files and Excel updates...")
+        self.logger.info("Generating output files and Excel updates...")
 
         if (self.bats_data):
             trip_types = [('work', 2), ('univ', 15), ('school', 28)]
@@ -245,19 +242,19 @@ class WorkSchoolLocationCalibration(CalibrationBase):
                     self.write_dataframe_to_sheet(results[f'trip_tlfd_{trip_type}'], start_row= 4,  start_col=col, sheet_name="CHTS TLFD",
                                                  source_row=2, source_col=col, source_text=f"Source: {tlfd_file}")
                     
-                    logging.info(f"Saving trip length frequency distributions for {trip_type} to {tlfd_file}")     
+                    self.logger.info(f"Saving trip length frequency distributions for {trip_type} to {tlfd_file}")     
         
             # Average trip lengths
             avg_length_file = f"{self.target_dir}/BATS_Summaries/AvgTripLen.csv"
             results['avg_trip_lengths'].to_csv(avg_length_file, index = False)
             self.write_dataframe_to_sheet(results['avg_trip_lengths'], start_row=3, start_col=1, sheet_name="CHTS AvgTripLen",
                                         source_row=1, source_col=1, source_text=f"Source: {avg_length_file}")
-            logging.info(f"Saving average trip lengths to {avg_length_file}")     
+            self.logger.info(f"Saving average trip lengths to {avg_length_file}")     
 
                 
         else: 
             # County summary
-            logging.info("Generating output files and Excel updates...")
+            self.logger.info("Generating output files and Excel updates...")
 
             county_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_county.csv"
 
@@ -266,7 +263,7 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             self.write_dataframe_to_sheet(results['county_summary'], start_row=4, start_col=1,
                                         source_row=1, source_col=1, source_text=f"Source: {county_file}")
 
-            logging.info(f"Saving county summary to {county_file}")            
+            self.logger.info(f"Saving county summary to {county_file}")            
             # Trip length frequency distributions
             trip_types = [('work', 1), ('univ', 14), ('school', 27)]
             for trip_type, col in trip_types:
@@ -276,23 +273,23 @@ class WorkSchoolLocationCalibration(CalibrationBase):
                     results[f'trip_tlfd_{trip_type}'].to_csv(tlfd_file, index = False)
                     self.write_dataframe_to_sheet(results[f'trip_tlfd_{trip_type}'], start_row=19, start_col=col,
                                                 source_row=17, source_col=col, source_text=f"Source: {tlfd_file}")
-                    logging.info(f"Saving trip length frequency distributions for {trip_type} to {tlfd_file}")            
+                    self.logger.info(f"Saving trip length frequency distributions for {trip_type} to {tlfd_file}")            
 
             # Average trip lengths
             avg_length_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_avgtriplen.csv"
             results['avg_trip_lengths'].to_csv(avg_length_file, index = False)
             self.write_dataframe_to_sheet(results['avg_trip_lengths'], start_row=4, start_col=14,
                                         source_row=3, source_col=14, source_text=f"Source: {avg_length_file}")
-            logging.info(f"Saving average trip lengths to {avg_length_file}")            
+            self.logger.info(f"Saving average trip lengths to {avg_length_file}")            
             
 
 
 def main():
     """Main entry point for the usual work and school location calibration."""
-    logging.info("Starting usual work and school location calibration...")
     calibration = WorkSchoolLocationCalibration()
+    calibration.logger.info("Starting usual work and school location calibration...")
     calibration.run()
-    logging.info("Calibration complete.")
+    calibration.logger.info("Calibration complete.")
 
 
 if __name__ == "__main__":

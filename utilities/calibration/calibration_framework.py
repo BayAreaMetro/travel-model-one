@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import logging
 import sys
 import yaml
 import argparse
@@ -49,7 +50,7 @@ class CalibrationConfig:
                 try:
                     return value.format(**params)
                 except KeyError as e:
-                    print(f"Warning: Missing parameter {e} in string: {value}")
+                    self.logger.info(f"Warning: Missing parameter {e} in string: {value}")
                     return value
             else:
                 return value
@@ -65,7 +66,7 @@ class CalibrationConfig:
         """Get file path from configuration with optional validation."""
         path = self.get(section, key, fallback)
         if validate and path and not os.path.exists(path):
-            print(f"Warning: Path does not exist: {path}")
+            self.logger.warning(f"Warning: Path does not exist: {path}")
         return path
     
     def get_all_paths(self, section: str, validate: bool = False) -> Dict[str, str]:
@@ -76,7 +77,7 @@ class CalibrationConfig:
             if isinstance(value, str) and ('/' in value or '\\' in value or value.endswith('.csv') or value.endswith('.xlsx')):
                 paths[key] = value
                 if validate and not os.path.exists(value):
-                    print(f"Warning: {key} path does not exist: {value}")
+                    self.logger.warning(f"Warning: {key} path does not exist: {value}")
         return paths
     
     def getfloat(self, section: str, key: str, fallback: float = None) -> float:
@@ -135,14 +136,62 @@ class CalibrationBase(ABC):
         # Load shared data resources
         self.county_lookup = self.config.get_county_lookup()
         
-        # Set up Excel workbook
-        self._setup_workbook()
-        
+        # Set up logging
+        self._setup_logging()
+       
         # Print configuration
         self._print_config()
     
-    def _setup_workbook(self):
+    def _setup_logging(self):
+        """Set up logging configuration for calibration script"""
+        
+        # Create logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.INFO)
+
+        # Prevent duplicate handlers if called multiple times
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+
+        # Create formatters
+        formatter = logging.Formatter(
+            '%(asctime)s %(levelname)s %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        
+        # Stop messages from bubbling up to the root logger
+        self.logger.propagate = False
+
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
+
+        # File handler (writes to log file)
+        log_file = os.path.join(self.output_dir, 'calibration.log')
+        file_handler = logging.FileHandler(log_file, mode='a')  # 'w' overwrites, 'a' appends
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
+
+        self.logger.info(f"Logging to: {log_file}")
+
+    def _print_config(self):
+        """Print configuration summary."""
+        sep = "=" * 80
+        self.logger.info(f"\n{sep}\nCONFIGURATION SUMMARY\n{sep}")
+        self.logger.info(f"Submodel: {self.submodel} - {self.submodel_config['name']}")
+        self.logger.info(f"TARGET_DIR  = {self.target_dir}")
+        self.logger.info(f"ITER        = {self.config.get('general', 'iter')}")
+        self.logger.info(f"SAMPLESHARE = {self.sampleshare}")
+        self.logger.info(f"CALIB_ITER  = {self.config.get('general', 'calib_iter')}")
+        self.logger.info(f"EXCEL_WORKBOOK = {self.submodel_config.get('workbook_template')}")
+
+    def setup_workbook(self):
         """Set up Excel workbook paths and load template."""
+        sep = "=" * 80
+        self.logger.info(f"\n{sep}\nWORKBOOK SETUP\n{sep}")
         workbook_template = self.submodel_config.get('workbook_template')
         
         # Skip if no template specified
@@ -160,46 +209,21 @@ class CalibrationBase(ABC):
         self.workbook_temp = self.workbook_path.replace('.xlsx', '_temp.xlsx')
         self.workbook_blank = str(Path(self.config.get('general', 'code_dir')) / "workbook_templates" / f"{workbook_template}_blank.xlsx")
         
-        # Load workbook with optimizations for speed
-        # try:
-        #     print(f"Loading Excel workbook from {self.workbook_blank}...")
-        #     self.calib_workbook = load_workbook(
-        #         self.workbook_blank,
-        #         data_only=True,
-        #         keep_links = False
-        #     )
-        #     self.modeldata_sheet = self.calib_workbook['modeldata']
-        #     print(f"Excel workbook loaded successfully")
-        #     print(f"Excel workbook loaded")
-        # except Exception as e:
-        #     print(f"Skipping Excel workbook: {e}")
-        #     self.calib_workbook = None
-        #     self.modeldata_sheet = None
         try: 
-            print(f"Loading Excel workbook from {self.workbook_blank}...")
+            self.logger.info(f"Loading Excel workbook from {self.workbook_blank}...")
             self.calib_workbook = xw.Book(self.workbook_blank)
             self.modeldata_sheet = self.calib_workbook.sheets['modeldata']
         except Exception as e:
-            print(f"Skipping Excel workbook: {e}")
+            self.logger.warning(f"Skipping Excel workbook: {e}")
             self.calib_workbook = None
             self.modeldata_sheet = None
-
-
-    def _print_config(self):
-        """Print configuration summary."""
-        print(f"Submodel: {self.submodel} - {self.submodel_config['name']}")
-        print(f"TARGET_DIR  = {self.target_dir}")
-        print(f"ITER        = {self.config.get('general', 'iter')}")
-        print(f"SAMPLESHARE = {self.sampleshare}")
-        print(f"CALIB_ITER  = {self.config.get('general', 'calib_iter')}")
-        print(f"EXCEL_WORKBOOK = {self.workbook_blank}")
     
 
     def write_dataframe_to_sheet(self, df: pd.DataFrame, start_row: int, start_col: int, sheet_name: str ="modeldata",
                                 source_row: int = None, source_col: int = None, source_text: str = ""):
         """Write DataFrame to Excel sheet with optional source annotation."""
         if not self.calib_workbook:
-            print(f"Warning: Calibration Workbook does not exist")
+            self.logger.warning(f"Warning: Calibration Workbook does not exist")
             return
 
         try:
@@ -213,35 +237,23 @@ class CalibrationBase(ABC):
 
             if source_row and source_col and source_text:
                 sheet.range((source_row, source_col)).value = source_text
-            # with pd.ExcelWriter(self.workbook_blank, engine= 'openpyxl', mode= 'a', if_sheet_exists='overlay') as writer:
-            #     df.to_excel(writer, sheet_name = sheet_name, index = False, startrow=start_row, startcol = start_col)
-
-            # if source_row and source_col and source_text:
-            #     self.calib_workbook[sheet_name].cell(row = source_row, column= source_col).value = source_text
-
-            # for r_idx, row in enumerate(dataframe_to_rows(df, index=False, header=True)):
-            #     for c_idx, value in enumerate(row):
-            #         self.modeldata_sheet.cell(row=start_row + r_idx, column=start_col + c_idx, value=value)
-            
-            # if source_row and source_col and source_text:
-            #     self.modeldata_sheet.cell(row=source_row, column=source_col).value = source_text
                 
         except Exception as e:
-            print(f"Warning: Could not write to Excel sheet: {e}")
+            self.logger.warning(f"Warning: Could not write to Excel sheet: {e}")
     
     def save_workbook(self):
         """Save the Excel workbook."""
-        print(self.calib_workbook)
+        self.logger.info(self.calib_workbook)
         if self.calib_workbook:
             try:
                 self.calib_workbook.save(self.workbook_temp)
-                print(f"Wrote {self.workbook_temp}")
+                self.logger.info(f"Wrote {self.workbook_temp}")
                 self.calib_workbook.close()
             except Exception as e:
-                print(f"Warning: Could not save Excel workbook: {e}")
+                self.logger.info(f"Warning: Could not save Excel workbook: {e}")
                 self.calib_workbook.close()
         else:
-            print("Did not save workbook")
+            self.logger.info("Did not save workbook")
     
     @abstractmethod
     def process_data(self) -> Dict[str, pd.DataFrame]:
@@ -263,10 +275,11 @@ class CalibrationBase(ABC):
         try:
             results = self.process_data()
             self.validate_outputs(results)
+            self.setup_workbook()
             self.generate_outputs(results)
             self.save_workbook()
         except Exception as e:
-            print(f"Error during calibration processing: {e}")
+            self.logger.info(f"Error during calibration processing: {e}")
             raise
 
 
