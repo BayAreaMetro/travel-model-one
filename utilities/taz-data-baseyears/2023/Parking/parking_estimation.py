@@ -7,7 +7,7 @@ without observed data. It implements a hybrid approach:
 Architecture:
 - **Hourly parking (OPRKCST)**: Machine learning classification with model comparison
   - Supports multiple models: Logistic Regression, Random Forest, Gradient Boosting, SVM
-  - Trains on San Francisco, Oakland, San Jose observed meter data (paid vs free)
+  - Trains on San Francisco, Oakland, San Jose, Berkeley observed meter data (paid vs free)
   - Uses stratified 5-fold cross-validation for robust model selection
   - Ensures balanced paid/free parking distribution in each fold
   - Predicts paid/free for other cities with parking capacity
@@ -23,7 +23,7 @@ Key Constraints:
 - Hourly predictions (OPRKCST) only where on_all > 0 (on-street capacity)
 - Long-term predictions (PRKCST) only where off_nres > 0 (off-street capacity)
 - All predictions only in cities (place_name not null)
-- Predictions exclude SF/Oakland/SJ (those use observed data only)
+- Predictions exclude SF/Oakland/SJ/Berkeley (those use observed data only)
 - Minimum commercial_emp_den threshold for paid parking consideration
 
 Workflow:
@@ -122,10 +122,10 @@ def get_observed_cities_from_scraped_data(scraped_file_path):
     
     Returns:
         List[str]: Sorted list of unique city names with observed parking data.
-                  Returns default cities ['San Francisco', 'Oakland', 'San Jose'] if file not found.
+                  Returns default cities ['San Francisco', 'Oakland', 'San Jose', 'Berkeley'] if file not found.
     """
     # Default observed cities (used if scraped data file doesn't exist)
-    default_cities = ['San Francisco', 'Oakland', 'San Jose']
+    default_cities = ['San Francisco', 'Oakland', 'San Jose', 'Berkeley']
     
     if not scraped_file_path.exists():
         print(f"  Note: Scraped parking data file not found: {scraped_file_path}")
@@ -363,14 +363,14 @@ def report_county_density_distributions(taz):
     return df_stats
 
 
-def apply_hourly_parking_model(taz, commercial_density_threshold=1.0, probability_threshold=0.5, model=None, model_name="Logistic Regression"):
+def apply_hourly_parking_model(taz, probability_threshold, commercial_density_threshold=1.0, model=None, model_name="Logistic Regression"):
     """
     Estimate hourly parking costs (OPRKCST) for TAZs without observed data using machine learning classification.
     
     Uses binary classification to predict paid (1) vs free (0) parking, then assigns:
-    - OPRKCST: $2.00 flat rate (typical SF/Oakland hourly rate)
+    - OPRKCST: $2.00 flat rate (typical hourly rate)
     
-    Only predicts for cities OTHER than San Francisco, Oakland, and San Jose
+    Only predicts for cities OTHER than San Francisco, Oakland, San Jose, and Berkeley
     (those cities use observed data only).
     
     Capacity constraints:
@@ -381,8 +381,10 @@ def apply_hourly_parking_model(taz, commercial_density_threshold=1.0, probabilit
     
     Args:
         taz (GeoDataFrame): TAZ zones with density features, observed costs, and capacity
+        probability_threshold (float): REQUIRED. Classification threshold for model predictions.
+                                       Should be determined from cross-validation results (e.g., stratified_kfold_validation)
+                                       to optimize F1 score. Typical optimal values range from 0.45-0.55.
         commercial_density_threshold (float): Minimum commercial_emp_den for paid parking consideration
-        probability_threshold (float): Classification threshold for model predictions
         model: Pre-initialized sklearn model instance (default None)
         model_name (str): Name of the model being used for reporting purposes
     
@@ -392,7 +394,7 @@ def apply_hourly_parking_model(taz, commercial_density_threshold=1.0, probabilit
     print(f"\nEstimating parking costs for TAZs without observed data...")
     print(f"  Model: {model_name}")
     print(f"  Approach: Binary classification + flat rates")
-    print(f"  Excluding from prediction: San Francisco, Oakland, San Jose (observed data only)")
+    print(f"  Excluding from prediction: San Francisco, Oakland, San Jose, Berkeley (observed data only)")
     print(f"  Commercial density threshold: {commercial_density_threshold:.2f} jobs/acre")
     print(f"  Probability threshold: {probability_threshold:.2f}")
     
@@ -408,14 +410,14 @@ def apply_hourly_parking_model(taz, commercial_density_threshold=1.0, probabilit
     taz['OPRKCST_pred'] = np.nan
     
     # Define flat rates
-    HOURLY_FLAT_RATE = 2.00  # $2/hour typical for SF/Oakland
+    HOURLY_FLAT_RATE = 2.00  
     
     # Process only hourly parking (long-term handled by county threshold function)
     for cost_type, capacity_col in [('OPRKCST', 'on_all')]:
         print(f"\n  Processing {cost_type}...")
         
         # Create training mask: has capacity AND has place_name in observed cities
-        # Train on ALL three cities with observed data (including free parking)
+        # Train on ALL four cities with observed data (including free parking)
         has_capacity = taz[capacity_col] > 0
         has_place = taz['place_name'].notna()
         in_observed_cities = taz['place_name'].isin(OBSERVED_CITIES)
@@ -423,7 +425,7 @@ def apply_hourly_parking_model(taz, commercial_density_threshold=1.0, probabilit
         training_mask = has_capacity & has_place & in_observed_cities
         n_training = training_mask.sum()
         
-        print(f"    Training samples (SF/Oakland/SJ): {n_training:,}")
+        print(f"    Training samples (SF/Oakland/SJ/Berkeley): {n_training:,}")
         
         if n_training < 10:
             print(f"    WARNING: Insufficient training data (<10 samples). Skipping {cost_type} estimation.")
@@ -488,7 +490,7 @@ def apply_hourly_parking_model(taz, commercial_density_threshold=1.0, probabilit
             ~has_observed & 
             has_capacity & 
             has_place &
-            ~in_observed_cities &  # Exclude SF, Oakland, San Jose
+            ~in_observed_cities &  # Exclude SF, Oakland, San Jose, Berkeley
             (taz['commercial_emp_den'] >= commercial_density_threshold) &  # Only predict for commercial areas
             ~(taz['AREATYPE'].isin([4, 5]))  # Exclude suburban and rural areas
         )
@@ -552,8 +554,11 @@ def validate_parking_cost_estimation(taz, commercial_density_threshold=1.0, test
     """
     Perform leave-one-city-out cross-validation for hourly parking cost estimation using logistic regression.
     
-    Trains binary classification models on 2 cities and tests on the 3rd to evaluate generalization.
-    Explicitly validates on San Francisco, Oakland, and San Jose (cities with observed data).
+    NOTE: This is an alternative validation method. The default/recommended approach is
+    stratified_kfold_validation() which uses all data more efficiently with balanced folds.
+    
+    Trains binary classification models and tests on held-out city to evaluate generalization.
+    Explicitly validates on San Francisco, Oakland, San Jose, and Berkeley (cities with observed data).
     
     Note: Only validates hourly parking (OPRKCST) since long-term uses county-level thresholds.
     
@@ -592,7 +597,7 @@ def validate_parking_cost_estimation(taz, commercial_density_threshold=1.0, test
         print(f"{'='*80}")
         
         # Count observed data by city (including free parking)
-        # For SF/Oakland/SJ, treat any TAZ with capacity as "observed" (paid or free)
+        # For SF/Oakland/SJ/Berkeley, treat any TAZ with capacity as "observed" (paid or free)
         has_capacity = taz[capacity_col] > 0
         has_place = taz['place_name'].notna()
         in_target_cities = taz['place_name'].isin(TARGET_CITIES)
@@ -759,7 +764,8 @@ def validate_parking_cost_estimation(taz, commercial_density_threshold=1.0, test
     CITY_TO_COUNTY = {
         'San Francisco': 'San Francisco',
         'Oakland': 'Alameda',
-        'San Jose': 'Santa Clara'
+        'San Jose': 'Santa Clara',
+        'Berkeley': 'Alameda'
     }
     
     for cost_type, city_results in results.items():
@@ -880,7 +886,7 @@ def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thre
     print(f"\nTotal eligible TAZs: {n_total:,}")
     print(f"  Paid parking: {n_paid:,} ({n_paid/n_total:.1%})")
     print(f"  Free parking: {n_free:,} ({n_free/n_total:.1%})")
-    print(f"\nNote: Validating on ALL TAZs with on-street capacity in SF/Oakland/San Jose")
+    print(f"\nNote: Validating on ALL TAZs with on-street capacity in SF/Oakland/San Jose/Berkeley")
     print(f"      Commercial density threshold ({commercial_density_threshold:.1f} jobs/acre) used only for predictions")
     
     # Check for class imbalance
@@ -1281,7 +1287,7 @@ def estimate_parking_by_county_threshold(taz, percentile=0.95):
     print(f"  Long-term parking (PRKCST): {percentile*100:.0f}th percentile of commercial_emp_den per county")
     print(f"  Excluding from prediction: {', '.join(observed_cities)} (observed data only)")
     
-    # Suburban discount factor: non-core cities typically have 60-70% of SF/Oakland/SJ costs
+    # Suburban discount factor: non-core cities typically have 60-70% of SF/Oakland/SJ/Berkeley costs
     SUBURBAN_DISCOUNT_FACTOR = 0.65
     
     # Calculate median rate from observed PRKCST data (SF/Oakland/SJ only)
