@@ -839,7 +839,7 @@ def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thre
             'features': get_features_for_model('Logistic Regression')
         },
         'Random Forest': {
-            'model': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10),
+            'model': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10, class_weight='balanced'),
             'features': get_features_for_model('Random Forest')
         },
         'Gradient Boosting': {
@@ -1568,7 +1568,7 @@ def estimate_and_validate_hourly_parking_models(
             # Create model instance
             model_mapping = {
                 'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-                'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10),
+                'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10, class_weight='balanced'),
                 'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=5, learning_rate=0.1),
                 'SVM (RBF)': SVC(kernel='rbf', probability=True, random_state=42, C=1.0)
             }
