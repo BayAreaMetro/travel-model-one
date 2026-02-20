@@ -27,12 +27,16 @@ Key Constraints:
 - Minimum commercial_emp_den threshold for paid parking consideration
 
 Workflow:
-1. add_density_features(): Calculate commercial/downtown employment densities
+1. add_density_features(): Calculate employment densities + AREATYPE one-hot encoding
 2. report_county_density_distributions(): Diagnostic percentile report by county
 3. stratified_kfold_validation(): 5-fold CV with balanced paid/free samples (default)
 4. estimate_and_validate_hourly_parking_models(): Model selection orchestration
 5. apply_hourly_parking_model(): Apply selected model for hourly parking (OPRKCST)
 6. estimate_parking_by_county_threshold(): Threshold-based long-term parking (PRKCST)
+
+Model-Specific Features:
+- Linear models (Logistic Regression, SVM): 4 density features
+- Tree-based models (Random Forest, Gradient Boosting): 4 density + 3 AREATYPE features
 
 Entry Point:
 - main(): Standalone script execution
@@ -57,6 +61,56 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from setup import INTERIM_CACHE_DIR, ANALYSIS_CRS
 from parking_capacity import get_parking_capacity
+
+
+# ============================================================================
+# Feature Configuration for Parking Cost Estimation Models
+# ============================================================================
+
+# Base employment density and population features (used by all models)
+BASE_FEATURES = [
+    'commercial_emp_den',
+    'downtown_emp_den',
+    'pop_den',
+    'edhealthrec_emp_den'
+]
+
+# AREATYPE one-hot encoded features (spatial hierarchy)
+# Captures urban form: CBD, Urban Business, Urban (Regional Core is baseline)
+# Only used by tree-based models to avoid overfitting in linear models
+AREATYPE_FEATURES = [
+    'areatype_cbd',             # AREATYPE = 1 (Central Business District)
+    'areatype_urban_business',  # AREATYPE = 2 (Urban Business)
+    'areatype_urban'            # AREATYPE = 3 (Urban)
+    # AREATYPE = 0 (Regional Core) is baseline - omitted to avoid multicollinearity
+    # AREATYPE = 4 (Suburban) and 5 (Rural) excluded from predictions
+]
+
+# Model-to-feature mapping
+# Linear models (Logistic Regression, SVM): Use BASE_FEATURES only
+# Tree-based models (Random Forest, Gradient Boosting): Use BASE_FEATURES + AREATYPE_FEATURES
+MODEL_FEATURE_SETS = {
+    'Logistic Regression': BASE_FEATURES,
+    'Random Forest': BASE_FEATURES + AREATYPE_FEATURES,
+    'Gradient Boosting': BASE_FEATURES + AREATYPE_FEATURES,
+    'SVM (RBF)': BASE_FEATURES
+}
+
+
+def get_features_for_model(model_name):
+    """
+    Get appropriate feature list for a given model.
+    
+    Tree-based models get AREATYPE features to learn spatial hierarchy,
+    while linear models use density features only to avoid overfitting.
+    
+    Args:
+        model_name (str): Name of the model (e.g., 'Random Forest', 'Logistic Regression')
+    
+    Returns:
+        list: Feature column names for the model
+    """
+    return MODEL_FEATURE_SETS.get(model_name, BASE_FEATURES)
 
 
 def get_observed_cities_from_scraped_data(scraped_file_path):
@@ -102,8 +156,17 @@ def add_density_features(taz):
     # Map TAZ land use employment categories to parking model features
     # RETEMPN: Retail employment → commercial_emp
     # FPSEMPN: Financial and professional services employment → downtown_emp
+    # HEREMPN: Health, education, and recreational employment → edhealthrec_emp
     taz['commercial_emp'] = taz['RETEMPN']
     taz['downtown_emp'] = taz['FPSEMPN']
+    taz['edhealthrec_emp'] = taz['HEREMPN']
+    
+    # One-hot encode AREATYPE (0=Regional Core, 1=CBD, 2=Urban Business, 3=Urban)
+    # Regional Core (0) is baseline - omitted to avoid multicollinearity
+    # AREATYPE 4 (suburban) and 5 (rural) excluded from predictions
+    taz['areatype_cbd'] = (taz['AREATYPE'] == 1).astype(int)
+    taz['areatype_urban_business'] = (taz['AREATYPE'] == 2).astype(int)
+    taz['areatype_urban'] = (taz['AREATYPE'] == 3).astype(int)
     
     # Calculate densities (jobs per acre)
     # Use np.where to avoid division by zero
@@ -116,6 +179,12 @@ def add_density_features(taz):
     taz['downtown_emp_den'] = np.where(
         taz['TOTACRE'] > 0,
         taz['downtown_emp'] / taz['TOTACRE'],
+        0
+    )
+    
+    taz['edhealthrec_emp_den'] = np.where(
+        taz['TOTACRE'] > 0,
+        taz['edhealthrec_emp'] / taz['TOTACRE'],
         0
     )
     
@@ -151,28 +220,53 @@ def add_density_features(taz):
     print(f"    90th percentile: {taz['pop_den'].quantile(0.90):.2f}")
     print(f"    95th percentile: {taz['pop_den'].quantile(0.95):.2f}")
     
-    # Check for multicollinearity among density features
+    print(f"  Health/Education/Recreation employment density (jobs/acre):")
+    print(f"    Mean: {taz['edhealthrec_emp_den'].mean():.2f}")
+    print(f"    Median: {taz['edhealthrec_emp_den'].median():.2f}")
+    print(f"    90th percentile: {taz['edhealthrec_emp_den'].quantile(0.90):.2f}")
+    print(f"    95th percentile: {taz['edhealthrec_emp_den'].quantile(0.95):.2f}")
+    
+    # Report AREATYPE distribution
+    print(f"\n  AREATYPE Distribution:")
+    areatype_counts = taz['AREATYPE'].value_counts().sort_index()
+    areatype_labels = {
+        0: 'Regional Core',
+        1: 'CBD',
+        2: 'Urban Business',
+        3: 'Urban',
+        4: 'Suburban',
+        5: 'Rural'
+    }
+    for areatype in sorted(areatype_counts.index):
+        if areatype in areatype_labels:
+            count = areatype_counts[areatype]
+            pct = 100 * count / len(taz)
+            label = areatype_labels[areatype]
+            print(f"    {areatype} ({label:<20}): {count:>6,} TAZs ({pct:>5.1f}%)")
+    
+    # Check for multicollinearity among all model features
     print(f"\n  Feature Correlation Matrix:")
-    density_features = ['commercial_emp_den', 'downtown_emp_den', 'pop_den']
-    corr_matrix = taz[density_features].corr()
+    all_features = ['commercial_emp_den', 'downtown_emp_den', 'pop_den', 'edhealthrec_emp_den',
+                    'areatype_cbd', 'areatype_urban_business', 'areatype_urban']
+    corr_matrix = taz[all_features].corr()
     
     # Print correlation matrix with formatting
-    print(f"  {'':<20} {'commercial':>12} {'downtown':>12} {'pop':>12}")
-    print(f"  {'-'*68}")
-    for idx, row_name in enumerate(density_features):
-        row_label = row_name.replace('_emp_den', '').replace('_den', '')
-        row_values = [f"{corr_matrix.iloc[idx, j]:>12.3f}" for j in range(len(density_features))]
+    print(f"  {'':<20} {'comm':>7} {'dwtn':>7} {'pop':>7} {'edhlth':>7} {'cbd':>7} {'urb_b':>7} {'urb':>7}")
+    print(f"  {'-'*80}")
+    for idx, row_name in enumerate(all_features):
+        row_label = row_name.replace('_emp_den', '').replace('_den', '').replace('areatype_', '')
+        row_values = [f"{corr_matrix.iloc[idx, j]:>7.2f}" for j in range(len(all_features))]
         print(f"  {row_label:<20} {''.join(row_values)}")
     
     # Highlight high correlations (potential multicollinearity)
     print(f"\n  High Correlations (|r| >= 0.7, excluding diagonal):")
     high_corr_found = False
-    for i in range(len(density_features)):
-        for j in range(i+1, len(density_features)):
+    for i in range(len(all_features)):
+        for j in range(i+1, len(all_features)):
             r = corr_matrix.iloc[i, j]
             if abs(r) >= 0.7:
-                feat1 = density_features[i].replace('_emp_den', '').replace('_den', '')
-                feat2 = density_features[j].replace('_emp_den', '').replace('_den', '')
+                feat1 = all_features[i].replace('_emp_den', '').replace('_den', '').replace('areatype_', '')
+                feat2 = all_features[j].replace('_emp_den', '').replace('_den', '').replace('areatype_', '')
                 print(f"    {feat1} <-> {feat2}: r = {r:.3f}")
                 high_corr_found = True
     
@@ -306,8 +400,9 @@ def apply_hourly_parking_model(taz, commercial_density_threshold=1.0, probabilit
     scraped_file_path = INTERIM_CACHE_DIR / "parking_scrape_location_cost.parquet"
     OBSERVED_CITIES = get_observed_cities_from_scraped_data(scraped_file_path)
     
-    # Feature columns for regression (emp_total_den removed due to multicollinearity with downtown_emp_den)
-    feature_cols = ['commercial_emp_den', 'downtown_emp_den', 'pop_den']
+    # Feature columns for model (model-specific)
+    feature_cols = get_features_for_model(model_name)
+    print(f"  Using {len(feature_cols)} features: {', '.join(feature_cols[:3])}...")
     
     # Initialize predicted cost columns (start with NaN)
     taz['OPRKCST_pred'] = np.nan
@@ -485,8 +580,8 @@ def validate_parking_cost_estimation(taz, commercial_density_threshold=1.0, test
     scraped_file_path = INTERIM_CACHE_DIR / "parking_scrape_location_cost.parquet"
     TARGET_CITIES = get_observed_cities_from_scraped_data(scraped_file_path)
     
-    # Feature columns for regression (emp_total_den removed due to multicollinearity with downtown_emp_den)
-    feature_cols = ['commercial_emp_den', 'downtown_emp_den', 'pop_den']
+    # Feature columns - uses Logistic Regression (no AREATYPE features for linear model)
+    feature_cols = get_features_for_model('Logistic Regression')
     
     results = {}
     
@@ -737,16 +832,25 @@ def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thre
     
     print(f"Testing probability thresholds: {test_thresholds}")
     
-    # Define models to test
+    # Define models to test with model-specific features
     models = {
-        'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10),
-        'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=5, learning_rate=0.1),
-        'SVM (RBF)': SVC(probability=True, random_state=42, kernel='rbf', C=1.0)
+        'Logistic Regression': {
+            'model': LogisticRegression(random_state=42, max_iter=1000),
+            'features': get_features_for_model('Logistic Regression')
+        },
+        'Random Forest': {
+            'model': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10),
+            'features': get_features_for_model('Random Forest')
+        },
+        'Gradient Boosting': {
+            'model': GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=5, learning_rate=0.1),
+            'features': get_features_for_model('Gradient Boosting')
+        },
+        'SVM (RBF)': {
+            'model': SVC(probability=True, random_state=42, kernel='rbf', C=1.0),
+            'features': get_features_for_model('SVM (RBF)')
+        }
     }
-    
-    # Feature columns for regression
-    feature_cols = ['commercial_emp_den', 'downtown_emp_den', 'pop_den']
     
     # Cities with observed data (from scraped parking data)
     scraped_file_path = INTERIM_CACHE_DIR / "parking_scrape_location_cost.parquet"
@@ -761,19 +865,15 @@ def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thre
     
     eligible_mask = has_capacity & has_place & in_target_cities
     
-    # Extract data
+    # Extract eligible TAZs
     taz_eligible = taz[eligible_mask].copy()
-    X = taz_eligible[feature_cols].values
     
     # Convert costs to binary: paid (1) or free (0)
     # Treat NaN and 0 as free parking, > 0 as paid
     y_raw = taz_eligible['OPRKCST'].fillna(0).values
     y = (y_raw > 0).astype(int)
     
-    # Handle NaN values in features
-    X = np.nan_to_num(X, nan=0.0)
-    
-    n_total = len(X)
+    n_total = len(taz_eligible)
     n_paid = y.sum()
     n_free = n_total - n_paid
     
@@ -788,16 +888,25 @@ def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thre
         print(f"\n⚠ ERROR: Cannot perform stratified k-fold validation - only one class present!")
         print(f"         Need both paid and free parking examples for binary classification.")
         return {}
-    print(f"  Free parking: {n_free:,} ({n_free/n_total:.1%})")
     
     # Initialize results
     results = {}
     
     # Test each model
-    for model_name, base_model in models.items():
+    for model_name, model_config in models.items():
         print(f"\n{'='*80}")
         print(f"TESTING: {model_name}")
         print(f"{'='*80}")
+        
+        # Extract model and features for this model type
+        base_model = model_config['model']
+        feature_cols = model_config['features']
+        
+        print(f"Using {len(feature_cols)} features: {', '.join(feature_cols)}")
+        
+        # Extract model-specific features from eligible TAZs
+        X = taz_eligible[feature_cols].values
+        X = np.nan_to_num(X, nan=0.0)  # Handle NaN values
         
         # Initialize cross-validation
         skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
@@ -957,25 +1066,42 @@ def compare_models(taz, commercial_density_threshold=1.0, test_thresholds=None):
     if test_thresholds is None:
         test_thresholds = [0.3, 0.4, 0.5, 0.6, 0.7]
     
-    # Define models to test
+    # Define models to test with model-specific features
     models = {
-        'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10),
-        'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=5, learning_rate=0.1),
-        'SVM (RBF)': SVC(probability=True, random_state=42, kernel='rbf', C=1.0)
+        'Logistic Regression': {
+            'model': LogisticRegression(random_state=42, max_iter=1000),
+            'features': get_features_for_model('Logistic Regression')
+        },
+        'Random Forest': {
+            'model': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10),
+            'features': get_features_for_model('Random Forest')
+        },
+        'Gradient Boosting': {
+            'model': GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=5, learning_rate=0.1),
+            'features': get_features_for_model('Gradient Boosting')
+        },
+        'SVM (RBF)': {
+            'model': SVC(probability=True, random_state=42, kernel='rbf', C=1.0),
+            'features': get_features_for_model('SVM (RBF)')
+        }
     }
     
     # Cities with observed data (from scraped parking data)
     scraped_file_path = INTERIM_CACHE_DIR / "parking_scrape_location_cost.parquet"
     TARGET_CITIES = get_observed_cities_from_scraped_data(scraped_file_path)
-    feature_cols = ['commercial_emp_den', 'downtown_emp_den', 'pop_den']
     
     results = {}
     
-    for model_name, model in models.items():
+    for model_name, model_config in models.items():
         print(f"\n{'='*80}")
         print(f"TESTING: {model_name}")
         print(f"{'='*80}")
+        
+        # Extract model and features for this model type
+        model = model_config['model']
+        feature_cols = model_config['features']
+        
+        print(f"Using {len(feature_cols)} features")
         
         results[model_name] = {}
         
@@ -1419,6 +1545,7 @@ def estimate_and_validate_hourly_parking_models(
     # Run stratified k-fold validation and model comparison
     selected_model = None
     selected_model_name = "Logistic Regression"
+    optimal_threshold = None  # Will be extracted from validation results
     
     if compare_models_flag:
         # Run stratified 5-fold cross-validation
@@ -1434,6 +1561,9 @@ def estimate_and_validate_hourly_parking_models(
             best_model_name = max(model_f1_scores, key=model_f1_scores.get)
             best_f1 = model_f1_scores[best_model_name]
             best_std_f1 = stratified_results[best_model_name]['std_f1']
+            
+            # Extract optimal threshold from validation results
+            optimal_threshold = stratified_results[best_model_name]['avg_threshold']
             
             # Create model instance
             model_mapping = {
@@ -1455,9 +1585,10 @@ def estimate_and_validate_hourly_parking_models(
                 marker = "← SELECTED" if model_name == best_model_name else ""
                 print(f"  {model_name:<25} F1={f1:.4f} ± {std_f1:.4f} {marker}")
             print(f"\nUsing {best_model_name} for hourly parking estimation (F1={best_f1:.4f} ± {best_std_f1:.4f})")
+            print(f"Optimal probability threshold: {optimal_threshold:.2f} (from cross-validation)")
             print("="*80)
     
-    return selected_model, selected_model_name
+    return selected_model, selected_model_name, optimal_threshold
 
 
 def merge_scraped_cost(taz):
@@ -1640,7 +1771,7 @@ def main():
         "--probability-threshold",
         type=float,
         default=0.5,
-        help="Classification probability threshold for hourly parking (default: 0.5)"
+        help="Classification probability threshold (fallback when --no-compare-models is used, default: 0.5)"
     )
     
     args = parser.parse_args()
@@ -1754,17 +1885,27 @@ def main():
     print("HOURLY PARKING ESTIMATION (OPRKCST)")
     print("="*80)
     
-    selected_model, selected_model_name = estimate_and_validate_hourly_parking_models(
+    selected_model, selected_model_name, optimal_threshold = estimate_and_validate_hourly_parking_models(
         taz,
         compare_models_flag=args.compare_models,
         commercial_density_threshold=args.commercial_density_threshold
     )
     
+    # Determine which probability threshold to use
+    if optimal_threshold is not None:
+        threshold_to_use = optimal_threshold
+        threshold_source = f"validated optimal threshold: {threshold_to_use:.2f}"
+    else:
+        threshold_to_use = args.probability_threshold
+        threshold_source = f"argparse default: {threshold_to_use:.2f}"
+    
+    print(f"\nUsing {threshold_source} for production predictions")
+    
     # Step 6: Apply hourly parking model
     taz = apply_hourly_parking_model(
         taz,
         commercial_density_threshold=args.commercial_density_threshold,
-        probability_threshold=args.probability_threshold,
+        probability_threshold=threshold_to_use,
         model=selected_model,
         model_name=selected_model_name
     )
