@@ -2,20 +2,16 @@
 Setlocal EnableDelayedExpansion
 :: run this for all the relevant directories
 ::
-set JOBFILE=C:\Users\lzorn\Documents\travel-model-one-v05\utilities\bespoke-requests\vmt-passengervehicle-ii-ixxi-xx\vmt-passengervehicle-ii-ixxi-xx.job
-set DESTDIR=M:\Application\Model One\RTP2017\Scenarios\Across-Scenarios-ARB
+set JOBFILE=X:\travel-model-one-master\utilities\bespoke-requests\vmt-passengervehicle-ii-ixxi-xx\vmt-passengervehicle-ii-ixxi-xx.job
+set DESTDIR=M:\Application\Model One\RTP2025\Blueprint\across_runs_CARB
 
-call:run_job "B:\Projects\2005_05_003.archived (do not delete)"
-call:run_job "D:\Projects\2010_06_003"
+call:run_job "F:\Projects\2005_TM161_IPA_01"
 
-call:run_job "D:\Projects\2020_06_690"
-call:run_job "I:\Projects\2020_06_694"
+call:run_job "B:\Projects\2023_TM161_IPA_35"
 
-call:run_job "D:\Projects\2035_06_690"
-call:run_job "E:\Projects\2035_06_694"
+call:run_job "B:\Projects\2035_TM161_FBP_Plan_16"
 
-call:run_job "A:\Projects\2040_06_690"
-call:run_job "D:\Projects\2040_06_694"
+call:run_job "I:\Projects\2050_TM161_FBP_Plan_16"
 
 EXIT /B %ERRORLEVEL%
 
