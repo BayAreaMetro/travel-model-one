@@ -42,13 +42,14 @@ def main():
     print(TM_VERSION)
 
     # Validate project
-    if PROJECT not in ["NGF", "PBA50", "PBA50+", "STIP2026"]:
-        raise ValueError("PROJECT must be one of NGF, PBA50 or PBA50+")
+    if PROJECT not in ["NGF", "PBA50", "PBA50+", "STIP2026", "noTransit"]:
+        raise ValueError("PROJECT must be one of NGF, PBA50, PBA50+, STIP2026, or noTransit")
 
     # Project-specific settings
     if PROJECT == "NGF":
         # NextGen Fwy settings
         TAZ_EPC_FILE = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_01/taz1454_epcPBA50plus_2024_02_23.csv"
+        NO_PROJECT_SCENARIO_DIR = "L:/Application/Model_One/NextGenFwys_Round2/Scenarios"
         PROJECT_SCENARIOS_DIR = "L:/Application/Model_One/NextGenFwys_Round2/Scenarios"
         BASE_YEAR = 2015
         MODEL_RUN_ID_BASE_YEAR = "2015_TM152_NGF_05"
@@ -57,6 +58,7 @@ def main():
     elif PROJECT == "PBA50":
         # PBA50 settings
         TAZ_EPC_FILE = "M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/metrics/metrics_FinalBlueprint/CommunitiesOfConcern.csv"
+        NO_PROJECT_SCENARIO_DIR = "M:/Application/Model One/RTP2021/Blueprint"
         PROJECT_SCENARIOS_DIR = "M:/Application/Model One/RTP2021/Blueprint"
         BASE_YEAR = 2015
         MODEL_RUN_ID_BASE_YEAR = "2015_TM152_IPA_17"
@@ -76,19 +78,33 @@ def main():
         TAZ_EPC_FILE_18 = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz_coc_crosswalk.csv"
         TAZ_EPC_FILE = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_epcPBA50plus_2024_02_29.csv"
         TAZ_HRA_FILE = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_hraPBA50plus_2025_02_22.csv"
+        NO_PROJECT_SCENARIO_DIR = "M:/Application/Model One/RTP2025/Blueprint"
         PROJECT_SCENARIOS_DIR = "M:/Application/Model One/RTP2025/Blueprint"
         BASE_YEAR = 2015
         MODEL_RUN_ID_BASE_YEAR = "2015_TM161_IPA_08"
+        MODEL_FULL_DIR_BASE_YEAR = os.path.join(
+            PROJECT_SCENARIOS_DIR.replace("Blueprint", "IncrementalProgress"), MODEL_RUN_ID_BASE_YEAR)
         
-        # IPA runs
+        # IPA runs or noTransit runs
         if "IPA" in MODEL_RUN_ID_SCENARIO:
             PROJECT_SCENARIOS_DIR = PROJECT_SCENARIOS_DIR.replace("Blueprint", "IncrementalProgress")
-            MODEL_FULL_DIR_BASE_YEAR = os.path.join(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_BASE_YEAR)
+        elif "noTransit" in MODEL_RUN_ID_SCENARIO:
+            PROJECT_SCENARIOS_DIR = PROJECT_SCENARIOS_DIR.replace("Blueprint", "noTransit_scenario")
+            NO_PROJECT_SCENARIO_DIR = PROJECT_SCENARIOS_DIR.replace("Blueprint", "IncrementalProgress")
         else:
-            MODEL_FULL_DIR_BASE_YEAR = os.path.join(
-                PROJECT_SCENARIOS_DIR.replace("Blueprint", "IncrementalProgress"),
-                MODEL_RUN_ID_BASE_YEAR
-            )
+            pass
+
+    elif PROJECT == "noTransit":
+        # PBA50+ settings
+        TAZ_EPC_FILE_18 = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz_coc_crosswalk.csv"
+        TAZ_EPC_FILE = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_epcPBA50plus_2024_02_29.csv"
+        TAZ_HRA_FILE = "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02/taz1454_hraPBA50plus_2025_02_22.csv"
+        NO_PROJECT_SCENARIO_DIR = "M:/Application/Model One/RTP2025/IncrementalProgress"
+        PROJECT_SCENARIOS_DIR = "M:/Application/Model One/RTP2025/noTransit_scenario"
+        BASE_YEAR = 2015
+        MODEL_RUN_ID_BASE_YEAR = "2015_TM161_IPA_08"
+        MODEL_FULL_DIR_BASE_YEAR = os.path.join(NO_PROJECT_SCENARIO_DIR, MODEL_RUN_ID_BASE_YEAR)
+      
 
     elif PROJECT == "STIP2026":
         # STIP2026 settings
@@ -103,7 +119,7 @@ def main():
         elif TM_VERSION == "TM152":
             MODEL_FULL_DIR_BASE_YEAR = "M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_17"
             MODEL_RUN_ID_BASE_YEAR = "2015_TM152_IPA_17"
-
+    
     COLLISION_RATES_EXCEL = "X:/travel-model-one-master/utilities/RTP/metrics/CollisionLookupFINAL.xlsx"
     OUTPUT_FILE = os.path.join(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries.csv")
     LOG_FILE = os.path.join(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries.log")
@@ -128,6 +144,7 @@ def main():
         logging.info(f"         TAZ_EPC_FILE_18: {TAZ_EPC_FILE_18}")
         logging.info(f"             TAZ_HRA_FILE: {TAZ_HRA_FILE}")
     logging.info(f"             TAZ_EPC_FILE: {TAZ_EPC_FILE}")
+    logging.info(f"  NO_PROJECT_SCENARIO_DIR: {NO_PROJECT_SCENARIO_DIR}")
     logging.info(f"    PROJECT_SCENARIOS_DIR: {PROJECT_SCENARIOS_DIR}")
     logging.info(f"                BASE_YEAR: {BASE_YEAR}")
     logging.info(f"   MODEL_RUN_ID_BASE_YEAR: {MODEL_RUN_ID_BASE_YEAR}")
@@ -245,6 +262,7 @@ def main():
     # Process scenarios
     logging.info("Processing scenarios...")
     results_df = safety_calc.process_scenarios(
+        NO_PROJECT_SCENARIO_DIR, 
         PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_NO_PROJECT, MODEL_RUN_ID_SCENARIO,
         FORECAST_YEAR, taz_epc_lookup_df, base_year_results, PROJECT
     )
@@ -560,7 +578,7 @@ class SafetyCalculator:
 
         return model_fatal_inj_base_year
 
-    def process_scenarios(self, project_scenarios_dir, model_run_id_no_project, model_run_id_scenario,
+    def process_scenarios(self, no_project_dir, project_scenarios_dir, model_run_id_no_project, model_run_id_scenario,
                          forecast_year, taz_epc_lookup_df, base_year_results, project):
         """Process both no project and scenario runs"""
         
@@ -574,7 +592,10 @@ class SafetyCalculator:
 
         for model_run_type in ["NO_PROJECT", "SCENARIO"]:
             model_run_id = model_run_ids[model_run_type]
-            model_full_dir = os.path.join(project_scenarios_dir, model_run_id)
+            if model_run_type == "NO_PROJECT":
+                model_full_dir = os.path.join(no_project_dir, model_run_id)
+            elif model_run_type == "SCENARIO":
+                model_full_dir = os.path.join(project_scenarios_dir, model_run_id)
             
             logging.info(f"Processing {model_run_type}: {model_run_id}")
 
@@ -665,7 +686,7 @@ class SafetyCalculator:
                     lambda row: "non_epc_local" if row['taz_epc'] == "Non-EPC" and row['ft'] in local_ft else "pass",
                     axis=1
                 )
-            elif project == "STIP2026":
+            elif project in ["STIP2026", "noTransit"]:
                 # no need to analyze EPCs for STIP2026
                 pass
 
