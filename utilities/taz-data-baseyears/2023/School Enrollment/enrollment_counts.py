@@ -66,9 +66,9 @@ def load_private_schools():
 
 def load_colleges():
     """
-    Loads college location and seperate enrollment data, merges them, assigns college types, and derives enrollment vars.
+    Loads college location and separate enrollment data, merges them, and returns COLLFTE/COLLPTE directly from IPEDS FT/PT headcounts.
     Returns:
-        GeoDataFrame: Colleges with enrollment vars by type and geometry.
+        GeoDataFrame: Colleges with COLLFTE, COLLPTE enrollment vars and geometry.
     """
     # Location and enrollment are seperate - start with locations
     colleges = gpd.read_file(ENROLLMENT_RAW_DATA_DIR / "bayarea_postsec_2324.shp").to_crs(ANALYSIS_CRS)
@@ -77,33 +77,16 @@ def load_colleges():
     # Now enrollment
     college_enroll = pd.read_csv(ENROLLMENT_RAW_DATA_DIR / "postsec_enroll_2324.csv")
     college_enroll = college_enroll.rename(columns={
-        "Institutional category (HD2023)": "type", # Shorten long var names
+        "Full-time 12-month unduplicated headcount (DRVEF122024)": "COLLFTE",
+        "Part-time 12-month unduplicated headcount (DRVEF122024)": "COLLPTE",
         "Total 12-month unduplicated headcount (DRVEF122024)": "enrollment",
-        "Control of institution (HD2023)": "control"
     })
     # Merge and make sure we keep only institutions with enrollment (a few administrative office locations make there way in otherwise)
     colleges = colleges.merge(college_enroll, left_on="UNITID", right_on="UnitID", how="inner", validate="1:1")
     colleges = colleges[colleges["enrollment"] > 0]
 
-    # Distinguish college types based on the existing TM2 categories
-    def assign_college_type(row):
-        if row["type"] in [1, 2]: # Baccalaureate and above
-            return "COLLFTE" 
-        # elif row["type"] in [3, 4] and row["control"] == 1: # Associate's/certificates AND public 
-        #     return "comm_coll_enroll"
-        else:
-            return "COLLPTE"
-    colleges["college_type"] = colleges.apply(assign_college_type, axis=1)
-
-    # Spread the college type variable so we have enrollment by COLLFTE, COLLPTE
-    colleges = colleges.pivot_table(
-        index=["UNITID", "geometry"], 
-        columns="college_type", 
-        values="enrollment", 
-        fill_value=0
-    ).reset_index().drop(columns="UNITID")
-
-    colleges = gpd.GeoDataFrame(colleges, geometry="geometry", crs=ANALYSIS_CRS)
+    # Reduce to necessary cols
+    colleges = gpd.GeoDataFrame(colleges[["geometry", "COLLFTE", "COLLPTE"]], geometry="geometry", crs=ANALYSIS_CRS)
 
     print("Sum of COLLFTE:", colleges["COLLFTE"].sum())
     print("Sum of COLLPTE:", colleges["COLLPTE"].sum())
@@ -153,18 +136,29 @@ def get_enrollment_taz(write=False):
     enroll_taz["TAZ1454"] = enroll_taz["TAZ1454"].sort_values()
 
     if write:
-        # Merge with TAZ geometry for spatial output
-        enroll_taz_spatial = enroll_taz.merge(
+        # Select output columns
+        output_cols = ['TAZ1454', 'HSENROLL', 'COLLFTE', 'COLLPTE']
+        
+        # Write CSV output (no geometry)
+        csv_file = "enrollment_taz.csv"
+        enroll_taz[output_cols].to_csv(csv_file, index=False)
+        print(f"\nWrote CSV: {csv_file}")
+        print(f"  Columns: {', '.join(output_cols)}")
+        print(f"  Records: {len(enroll_taz):,}")
+        
+        # Write GeoPackage output (with geometry)
+        enroll_taz_spatial = enroll_taz[output_cols].merge(
             taz[["TAZ1454", "geometry"]], 
             on="TAZ1454", 
             how="left"
         )
         enroll_taz_spatial = gpd.GeoDataFrame(enroll_taz_spatial, geometry="geometry", crs=ANALYSIS_CRS)
         
-        # OUT_FILE = get_output_filename("enrollment_taz", extension="gpkg", spatial=True)
-        OUT_FILE = "enrollment_taz.gpkg"
-        print(f"Writing enrollment TAZ data to: {OUT_FILE}")
-        enroll_taz_spatial.to_file(OUT_FILE, driver="GPKG")
+        gpkg_file = "enrollment_taz.gpkg"
+        enroll_taz_spatial.to_file(gpkg_file, driver="GPKG")
+        print(f"\nWrote GeoPackage: {gpkg_file}")
+        print(f"  Columns: {', '.join(output_cols)} + geometry")
+        print(f"  Records: {len(enroll_taz_spatial):,}")
     
     return enroll_taz
 
