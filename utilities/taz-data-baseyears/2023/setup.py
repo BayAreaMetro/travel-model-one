@@ -55,4 +55,11 @@ BAY_AREA_COUNTIES = [
     "Sonoma"
 ]
 
+# Bureau of Labor Statistics CPI-U (Consumer Price Index - Urban) annual averages
+# Used for inflation adjustment in parking cost estimation
+CPI_VALUES = {
+    2000: 172.2,      # 2000 Avg CPI-U
+    2023: 304.702     # 2023 Avg CPI-U
+}
+
 

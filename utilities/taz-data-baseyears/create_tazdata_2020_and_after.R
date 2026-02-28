@@ -79,9 +79,9 @@ EMPRES_LODES_WEIGHT = 0.5
 # setup paths
 USERPROFILE        <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM             <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
-if (Sys.getenv("USERNAME") %in% c("lzorn")) {
-  BOX_TM           <- file.path("E://Box/Modeling and Surveys")
-}
+# if (Sys.getenv("USERNAME") %in% c("lzorn")) {
+BOX_TM           <- file.path("E://Box/Modeling and Surveys")
+# }
 PBA_TAZ_2015       <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
 TM1                <- file.path(".")
 emp_wage_salary    <- read.csv(file.path(TM1,LODES_YEAR,paste0("lodes_wac_employment_",LODES_YEAR,".csv")),header = T)
@@ -965,17 +965,35 @@ ethnic <- tazdata_census %>%
 write.csv(ethnic,file = file.path(argv$year, "TAZ1454_Ethnicity.csv"),row.names = FALSE)
 print(paste("Wrote",file.path(argv$year,"TAZ1454_Ethnicity.csv")))
 
-# Read in old PBA data sets and select variables for joining to new 2020 dataset
-# Bring in school and parking data from 2015 TAZ data 
-# Add HHLDS variable (same as TOTHH), select new 2015 output
+# Begin patchwork updates - a few carried from 2015 file + select 2023 updates
 
 # Bring in PBA 2050 2015 land use data for county equivalencies and other data needs
 PBA2015 <- read_excel(PBA_TAZ_2015,sheet="census2015") 
-
 PBA2015_joiner <- PBA2015 %>%
-  select(ZONE,SD,TOTACRE,RESACRE,CIACRE,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TOPOLOGY,TERMINAL, ZERO)
+  select(ZONE,SD,AREATYPE,TOPOLOGY,TERMINAL, ZERO)
 
-tazdata_census <- left_join(PBA2015_joiner,tazdata_census, by=c("ZONE"="TAZ1454"))   # Join 2015 topology, parking, enrollment
+# Bring in 2023 parking data
+parking_2023 <- read_csv("2023/Parking/parking_costs_taz.csv")
+
+# Bring in 2023 school enrollment data
+enrollment_2023 <- read_csv("2023/School Enrollment/enrollment_taz.csv")
+
+# Bring in 2025 dev acres data (temporary until BASIS integration)
+dev_acres_2025_file <- file.path(
+  "M:/urban_modeling/baus/PBA50Plus/PBA50Plus_NoProject",
+  "PBA50Plus_NoProject_v38/travel_model_summaries",
+  "PBA50Plus_NoProject_v38_taz1_summary_2025.csv"
+)
+dev_acres_2025 <- read_csv(dev_acres_2025_file) %>%
+  select(ZONE, RESACRE, CIACRE, TOTACRE)
+
+tazdata_census <- left_join(tazdata_census, parking_2023,    by = "TAZ1454", relationship = "one-to-one")
+tazdata_census <- left_join(tazdata_census, enrollment_2023, by = "TAZ1454", relationship = "one-to-one")
+tazdata_census <- left_join(tazdata_census, dev_acres_2025,  by = c("TAZ1454" = "ZONE"), relationship = "one-to-one")
+
+# PBA2015_joiner on left intentionally renames TAZ1454 key to ZONE for downstream output
+tazdata_census <- left_join(PBA2015_joiner, tazdata_census, by = c("ZONE" = "TAZ1454"), relationship = "one-to-one")
+
 
 # Save R version of data for 2020 to later inflate to 2023
 output_file=file.path(argv$year, sprintf("TAZ Land Use File %d.rdata", argv$year))

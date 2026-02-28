@@ -33,6 +33,7 @@ Workflow:
 4. estimate_and_validate_hourly_parking_models(): Model selection orchestration
 5. apply_hourly_parking_model(): Apply selected model for hourly parking (OPRKCST)
 6. estimate_parking_by_county_threshold(): Threshold-based long-term parking (PRKCST)
+7. convert_to_year_2000_cents(): CPI deflation from 2023 dollars to year 2000 cents
 
 Model-Specific Features:
 - Linear models (Logistic Regression, SVM): 4 density features
@@ -59,7 +60,7 @@ from sklearn.model_selection import StratifiedKFold
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from setup import INTERIM_CACHE_DIR, ANALYSIS_CRS
+from setup import INTERIM_CACHE_DIR, ANALYSIS_CRS, CPI_VALUES
 from parking_capacity import get_parking_capacity
 
 
@@ -1942,6 +1943,38 @@ def main():
     
     output_dir = Path(__file__).parent
     
+    # Step 10a: Convert from 2023 dollars to year 2000 cents
+    print("\nConverting parking costs to year 2000 cents...")
+    
+    # Calculate conversion factor: deflate from 2023 to 2000, then convert dollars to cents
+    CONVERSION_FACTOR = (CPI_VALUES[2000] / CPI_VALUES[2023]) * 100
+    
+    print(f"  Source year: 2023 (CPI-U: {CPI_VALUES[2023]:.3f})")
+    print(f"  Target year: 2000 (CPI-U: {CPI_VALUES[2000]:.1f})")
+    print(f"  Conversion factor: {CONVERSION_FACTOR:.4f} (2023 dollars → 2000 cents)")
+    
+    # Store example before conversion for reporting
+    example_taz_idx = taz[taz['OPRKCST'] > 0].index[0] if (taz['OPRKCST'] > 0).sum() > 0 else None
+    if example_taz_idx is not None:
+        before_oprkcst = taz.loc[example_taz_idx, 'OPRKCST']
+        before_prkcst = taz.loc[example_taz_idx, 'PRKCST']
+        example_taz_id = taz.loc[example_taz_idx, 'TAZ1454']
+    
+    # Apply conversion to both parking cost columns
+    taz['OPRKCST'] = taz['OPRKCST'] * CONVERSION_FACTOR
+    taz['PRKCST'] = taz['PRKCST'] * CONVERSION_FACTOR
+    
+    # Report conversion example
+    if example_taz_idx is not None:
+        after_oprkcst = taz.loc[example_taz_idx, 'OPRKCST']
+        after_prkcst = taz.loc[example_taz_idx, 'PRKCST']
+        print(f"\n  Example conversion (TAZ {example_taz_id}):")
+        print(f"    OPRKCST: ${before_oprkcst:.2f} (2023) → {after_oprkcst:.2f} cents (2000)")
+        if before_prkcst > 0:
+            print(f"    PRKCST:  ${before_prkcst:.2f} (2023) → {after_prkcst:.2f} cents (2000)")
+    
+    print(f"\n  Conversion complete. All costs now in year 2000 cents.")
+    
     # Select output columns
     output_cols = ['TAZ1454', 'OPRKCST', 'PRKCST']
     
@@ -1962,23 +1995,27 @@ def main():
     
     # Final summary
     print("\n" + "="*80)
-    print("FINAL SUMMARY")
+    print("FINAL SUMMARY (costs in year 2000 cents)")
     print("="*80)
     
     hourly_paid = (taz['OPRKCST'] > 0).sum()
     longterm_paid = (taz['PRKCST'] > 0).sum()
     
     print(f"\nHourly parking (OPRKCST):")
-    print(f"  TAZs with cost > $0: {hourly_paid:,} ({hourly_paid/len(taz)*100:.1f}%)")
+    print(f"  TAZs with cost > 0: {hourly_paid:,} ({hourly_paid/len(taz)*100:.1f}%)")
     if hourly_paid > 0:
-        print(f"  Mean cost: ${taz.loc[taz['OPRKCST'] > 0, 'OPRKCST'].mean():.2f}")
-        print(f"  Median cost: ${taz.loc[taz['OPRKCST'] > 0, 'OPRKCST'].median():.2f}")
+        mean_oprkcst = taz.loc[taz['OPRKCST'] > 0, 'OPRKCST'].mean()
+        median_oprkcst = taz.loc[taz['OPRKCST'] > 0, 'OPRKCST'].median()
+        print(f"  Mean cost: {mean_oprkcst:.2f} cents (${mean_oprkcst/100:.2f} in year 2000 dollars)")
+        print(f"  Median cost: {median_oprkcst:.2f} cents (${median_oprkcst/100:.2f} in year 2000 dollars)")
     
     print(f"\nLong-term parking (PRKCST):")
-    print(f"  TAZs with cost > $0: {longterm_paid:,} ({longterm_paid/len(taz)*100:.1f}%)")
+    print(f"  TAZs with cost > 0: {longterm_paid:,} ({longterm_paid/len(taz)*100:.1f}%)")
     if longterm_paid > 0:
-        print(f"  Mean cost: ${taz.loc[taz['PRKCST'] > 0, 'PRKCST'].mean():.2f}")
-        print(f"  Median cost: ${taz.loc[taz['PRKCST'] > 0, 'PRKCST'].median():.2f}")
+        mean_prkcst = taz.loc[taz['PRKCST'] > 0, 'PRKCST'].mean()
+        median_prkcst = taz.loc[taz['PRKCST'] > 0, 'PRKCST'].median()
+        print(f"  Mean cost: {mean_prkcst:.2f} cents (${mean_prkcst/100:.2f} in year 2000 dollars)")
+        print(f"  Median cost: {median_prkcst:.2f} cents (${median_prkcst/100:.2f} in year 2000 dollars)")
     
     print("\n" + "="*80)
     print("PARKING COST ESTIMATION COMPLETE")
