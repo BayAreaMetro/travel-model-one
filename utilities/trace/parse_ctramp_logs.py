@@ -2,6 +2,7 @@ USAGE = r"""
   Parses ctramp log and outputs trace information into csv files for debugging
 
   e.g. python parse_ctramp_logs.py base|build event-node0-tourDCMan.log
+       python parse_ctramp_logs.py base|build event-node0-tourDCMan.log --hh_id 12345
 
   Note: python2 won't work because of the regex
   It errors out with:
@@ -2277,7 +2278,7 @@ def read_trip_mode_choice_lines(file_object, type_str, attr_dict, base_or_build,
             if row_alt_dict["variable"] == "Infinity":
                 row_alt_dict["variable"] = numpy.Infinity
             elif row_alt_dict["variable"] == "NaN":
-                row_alt_dict["variable"] = numpy.NaN
+                row_alt_dict["variable"] = numpy.nan
             else:
                 row_alt_dict["variable"] = float(row_alt_dict["variable"])
 
@@ -2310,7 +2311,7 @@ def read_trip_mode_choice_lines(file_object, type_str, attr_dict, base_or_build,
         if row_alt_dict["variable"] == "Infinity":
             row_alt_dict["variable"] = numpy.Infinity
         elif row_alt_dict["variable"] == "NaN":
-            row_alt_dict["variable"] = numpy.NaN
+            row_alt_dict["variable"] = numpy.nan
         else:
             row_alt_dict["variable"] = float(row_alt_dict["variable"])
         # print(row_alt_dict["variable"])
@@ -2462,7 +2463,7 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
             if row_alt_dict["variable"] == "Infinity":
                 row_alt_dict["variable"] = numpy.Infinity
             elif row_alt_dict["variable"] == "NaN":
-                row_alt_dict["variable"] = numpy.NaN
+                row_alt_dict["variable"] = numpy.nan
             else:
                 row_alt_dict["variable"] = float(row_alt_dict["variable"])
 
@@ -2506,7 +2507,7 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
         if row_alt_dict["variable"] == "Infinity":
             row_alt_dict["variable"] = numpy.Infinity
         elif row_alt_dict["variable"] == "NaN":
-            row_alt_dict["variable"] = numpy.NaN
+            row_alt_dict["variable"] = numpy.nan
         else:
             row_alt_dict["variable"] = float(row_alt_dict["variable"])
 
@@ -2623,7 +2624,7 @@ def read_wfh_choice_lines(file_object, attr_dict, base_or_build, log_file):
             if row_alt_dict["variable"] == "Infinity":
                 row_alt_dict["variable"] = numpy.Infinity
             elif row_alt_dict["variable"] == "NaN":
-                row_alt_dict["variable"] = numpy.NaN
+                row_alt_dict["variable"] = numpy.nan
             else:
                 row_alt_dict["variable"] = float(row_alt_dict["variable"])
 
@@ -2654,7 +2655,7 @@ def read_wfh_choice_lines(file_object, attr_dict, base_or_build, log_file):
         if row_alt_dict["variable"] == "Infinity":
             row_alt_dict["variable"] = numpy.Infinity
         elif row_alt_dict["variable"] == "NaN":
-            row_alt_dict["variable"] = numpy.NaN
+            row_alt_dict["variable"] = numpy.nan
         else:
             row_alt_dict["variable"] = float(row_alt_dict["variable"])
         # print(row_alt_dict["variable"])
@@ -2684,6 +2685,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument("base_or_build",  choices=["base","build"], help="For output file name")
     parser.add_argument("log_file",  metavar="event-node0-something.log", help="Log file to parse")
+    parser.add_argument("--hh_id", type=int, default=None, metavar="HHID", help="Only process records for this household ID")
 
     args = parser.parse_args()
 
@@ -2702,7 +2704,7 @@ if __name__ == '__main__':
     log_fo = open(args.log_file, 'r')
     lines_read = 0
     output_dir = None
-    modechoice_df = pandas.DataFrame()
+    modechoice_dfs = []
     trip_mc_od = {}
 
     while True:
@@ -2732,24 +2734,30 @@ if __name__ == '__main__':
             if ('Purpose' not in attrs_dict) and ('purpose' in match.groupdict()):
                 attrs_dict['Purpose'] = match.groupdict()['purpose'].strip()
 
+            if args.hh_id is not None and int(attrs_dict.get('HH', -1)) != args.hh_id:
+                continue
+
             print(f"Found Tour Mode Choice info for type_str={type_str}")
 
             (new_lines_read,df) = read_tour_mode_choice_logsum_lines(log_fo, type_str, attrs_dict, args.base_or_build, args.log_file)
             lines_read += new_lines_read
-            modechoice_df = pandas.concat([modechoice_df, df])
+            modechoice_dfs.append(df)
 
             continue
 
         match = tour_dc_re.match(line)
         if match:
 
-            dctype  = match.group(3)
-            purpose = match.group(4)
-            hh      = match.group(5)
-            persnum = match.group(6)
-            ptype   = match.group(7)
-            tournum = match.group(9)
+            dctype  = match.group(4)
+            purpose = match.group(5)
+            hh      = match.group(6)
+            persnum = match.group(7)
+            ptype   = match.group(8)
+            tournum = match.group(10)
             print("Found {} Destination Choice info for purpose={} hh={} persnum={} ptype={} tournum={}".format(dctype, purpose, hh, persnum, ptype, tournum))
+
+            if args.hh_id is not None and int(hh) != args.hh_id:
+                continue
 
             type_str = "UsualWorkLocChoice"
             if "Non-Mandatory" in dctype:
@@ -2779,12 +2787,15 @@ if __name__ == '__main__':
             # parse the attrs
             attrs_dict = dict(attrs_re.findall(match.group('attrs')))
 
+            if args.hh_id is not None and int(attrs_dict.get('HH', -1)) != args.hh_id:
+                continue
+
             print("Found Trip Mode Choice info type_str={} attributes: {}".format(type_str, attrs_dict))
 
             (new_lines_read,df) = read_trip_mode_choice_lines(log_fo, type_str, attrs_dict, args.base_or_build, args.log_file)
             if new_lines_read > 0:
                 lines_read += new_lines_read
-                modechoice_df = pandas.concat([modechoice_df, df])
+                modechoice_dfs.append(df)
             continue
 
         match = cdap_wfh_re.match(line)
@@ -2794,6 +2805,9 @@ if __name__ == '__main__':
             attrs_dict = dict(attrs_nospc_re.findall(match.group('attrs')))
             print(f"{match.group('attrs')=}")
             print(f"{attrs_dict=}")
+
+            if args.hh_id is not None and int(attrs_dict.get('HH', -1)) != args.hh_id:
+                continue
 
             print("Found WFH Choice info attributes: {}".format(attrs_dict))
 
@@ -2809,6 +2823,7 @@ if __name__ == '__main__':
         # end for line in log file object
     log_fo.close()
 
+    modechoice_df = pandas.concat(modechoice_dfs) if modechoice_dfs else pandas.DataFrame()
     print("modechoice_df length: {}".format(len(modechoice_df)))
     print("output_dir={}".format(output_dir))
     if len(modechoice_df) > 0:
