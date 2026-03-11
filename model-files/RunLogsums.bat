@@ -76,34 +76,21 @@ if not exist logsums\indivTripData_%ITER%.csv (
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 3: Reformat logsums
+:: Step 3: Reformat logsums and Summarize Accessibilities Market
 ::
 :: ------------------------------------------------------------------------------------------------------
 
 set TARGET_DIR=%CD%
+if not exist %TARGET_DIR%\popsyn\hhFile.csv     ( copy %TARGET_DIR%\popsyn\hhFile.*.csv %TARGET_DIR%\popsyn\hhFile.csv )
+if not exist %TARGET_DIR%\popsyn\personFile.csv ( copy %TARGET_DIR%\popsyn\personFile.*.csv %TARGET_DIR%\popsyn\personFile.csv )
+
 if not exist logsums\mandatoryAccessibilities.csv (
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla ".\CTRAMP\scripts\core_summaries\logsumJoiner.R"
-  IF %ERRORLEVEL% GTR 0 goto done
+  python CTRAMP\scripts\core_summaries\summarizeLogsums.py --iter %ITER% --sampleShare %SAMPLESHARE%
 )
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 4:  Accessibilities Markets
-::
-:: ------------------------------------------------------------------------------------------------------
-
-if not exist core_summaries\AccessibilityMarkets.csv (
-  rem Rename these to standard names
-  if not exist %TARGET_DIR%\popsyn\hhFile.csv     ( copy %TARGET_DIR%\popsyn\hhFile.*.csv %TARGET_DIR%\popsyn\hhFile.csv )
-  if not exist %TARGET_DIR%\popsyn\personFile.csv ( copy %TARGET_DIR%\popsyn\personFile.*.csv %TARGET_DIR%\popsyn\personFile.csv )
-
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla ".\CTRAMP\scripts\core_summaries\AccessibilityMarkets.R"
-  IF %ERRORLEVEL% GTR 0 goto done
-)
-
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 5:  Accessibilities (logsums) for Bay Area UrbanSim
+:: Step 4:  Accessibilities (logsums) for Bay Area UrbanSim
 ::
 :: ------------------------------------------------------------------------------------------------------
 
