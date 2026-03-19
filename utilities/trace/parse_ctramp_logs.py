@@ -2807,10 +2807,21 @@ if __name__ == '__main__':
                     continue
 
             print(f"Found Tour Mode Choice info for type_str={type_str}")
-            if args.print_lines: print(line)
+            # only print raw lines when --print_lines is set AND destWalkSubzone == 1
+            do_print_lines = args.print_lines and (attrs_dict.get('destWalkSubzone', attrs_dict.get('DestSubZ', '-1')) == '1')
+            if do_print_lines: print(line)
 
-            (new_lines_read,df) = read_tour_mode_choice_logsum_lines(log_fo, type_str, attrs_dict, args.base_or_build, args.log_file, print_lines=args.print_lines)
+            (new_lines_read,df) = read_tour_mode_choice_logsum_lines(log_fo, type_str, attrs_dict, args.base_or_build, args.log_file, print_lines=do_print_lines)
             lines_read += new_lines_read
+            if do_print_lines:
+                # peek at the 5 lines following the block without consuming them
+                pos = log_fo.tell()
+                for _ in range(5):
+                    peek = log_fo.readline()
+                    if not peek:
+                        break
+                    print(peek.rstrip())
+                log_fo.seek(pos)
             if args.format == "hyper":
                 if type_str not in hyper_table_defs:
                     hyper_table_defs[type_str] = _create_hyper_table(hyper_connection, type_str, df)
