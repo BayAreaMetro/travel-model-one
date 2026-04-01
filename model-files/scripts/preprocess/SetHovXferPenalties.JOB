@@ -43,6 +43,8 @@
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
+TOT_ZONES = %TOTAL_ZONES%
+
 run pgm = hwynet
 
    ; begin with the standard input network
@@ -52,7 +54,7 @@ run pgm = hwynet
    neto = hwy\withHovXferPenalties.net
    
    ; set a generic bridge toll value and only change the bridge-specific values below as needed
-   if (FT=6 && A>1475 && B>1475 && DISTANCE=0)
+   if (FT=6 && A>@TOT_ZONES@ && B>@TOT_ZONES@ && DISTANCE=0)
    
       HovXPen  = 0.5 
       

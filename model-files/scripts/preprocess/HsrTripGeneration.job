@@ -48,9 +48,12 @@ loop tpnum=1,5
   DistributeMultistep processid = 'ctramp', processNum = tpnum, commpath = '%COMMPATH%'
 
   RUN PGM=MATRIX
-    filei mati[1] = 'INPUT\nonres\tripsHsr@time_period@_2040.tpp'
-    filei mati[2] = 'INPUT\nonres\tripsHsr@time_period@_2050.tpp'
-
+  ; JEF COMMENTING OUT THE HSR TRIP TABLES FOR NOW. NEED TO GET THE 2050 INPUT HSR TRIP TABLE FROM MTC
+  ; AND CONVERT 2040 and 2050 MATRICES TO SNABM ZONE SYSTEM
+   
+  ;  filei mati[1] = 'INPUT\nonres\tripsHsr@time_period@_2040.tpp'
+  ;  filei mati[2] = 'INPUT\nonres\tripsHsr@time_period@_2050.tpp'
+    Zones=%TOTAL_ZONES%
     fileo mato[1] = 'nonres\tripsHsr@time_period@_intermediate.tpp', mo=1-10, 
        name=m_da, m_sr2, m_taxi, m_transit, m_walk, b_da, b_sr2, b_taxi, b_transit, b_walk
 
@@ -68,21 +71,23 @@ loop tpnum=1,5
       MW[8] = 0
       MW[9] = 0
       MW[10]= 0
-    else
-      ; (times 100 is to keep more precision)
-      ;        change in trips     change in years
-      MW[1] = 100.0*(MI.2.da_veh   - MI.1.da_veh  )/(2050 - 2040)
-      MW[2] = 100.0*(MI.2.sr2_veh  - MI.1.sr2_veh )/(2050 - 2040)
-      MW[3] = 100.0*(MI.2.taxi_Veh - MI.1.taxi_Veh)/(2050 - 2040)
-      MW[4] = 100.0*(MI.2.transit  - MI.1.transit )/(2050 - 2040)
-      MW[5] = 100.0*(MI.2.walk     - MI.1.walk    )/(2050 - 2040)
 
-      ;              trips         -  m x year
-      MW[6] = 100.0*(MI.1.da_veh   - (MW[1]*0.01*2040))
-      MW[7] = 100.0*(MI.1.sr2_veh  - (MW[2]*0.01*2040))
-      MW[8] = 100.0*(MI.1.taxi_veh - (MW[3]*0.01*2040))
-      MW[9] = 100.0*(MI.1.transit  - (MW[4]*0.01*2040))
-      MW[10]= 100.0*(MI.1.walk     - (MW[5]*0.01*2040))
+; Cube validates all branches at compile time so undefined MI.1/MI.2 cause fatal error.
+;    else
+;      ; (times 100 is to keep more precision)
+;      ;        change in trips     change in years
+;      MW[1] = 100.0*(MI.2.da_veh   - MI.1.da_veh  )/(2050 - 2040)
+;      MW[2] = 100.0*(MI.2.sr2_veh  - MI.1.sr2_veh )/(2050 - 2040)
+;      MW[3] = 100.0*(MI.2.taxi_Veh - MI.1.taxi_Veh)/(2050 - 2040)
+;      MW[4] = 100.0*(MI.2.transit  - MI.1.transit )/(2050 - 2040)
+;      MW[5] = 100.0*(MI.2.walk     - MI.1.walk    )/(2050 - 2040)
+;
+;      ;              trips         -  m x year
+;      MW[6] = 100.0*(MI.1.da_veh   - (MW[1]*0.01*2040))
+;      MW[7] = 100.0*(MI.1.sr2_veh  - (MW[2]*0.01*2040))
+;      MW[8] = 100.0*(MI.1.taxi_veh - (MW[3]*0.01*2040))
+;      MW[9] = 100.0*(MI.1.transit  - (MW[4]*0.01*2040))
+;      MW[10]= 100.0*(MI.1.walk     - (MW[5]*0.01*2040))
     endif
   ENDRUN
 

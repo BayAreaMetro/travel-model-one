@@ -47,15 +47,16 @@ token_model_coefficient_in_vehicle = '-0.0220/0.72'
 token_model_coefficient_cost = '(_kIvtt / VOT) * 0.6'
 
 ; debug
-token_debug_origin      = '14' ; San Francisco HSR TAZ
-token_debug_destination = '971'
+; JEF THESE SHOULD BE MADE PARAMETERS.
+token_debug_origin      = '%SanFra_HSR_TAZ%' ; San Francisco HSR TAZ
+token_debug_destination = '1964'
 token_debug_filename    = 'logs\HsrTransitSubmodeChoice'
 
 ; Bay Area HSR TAZs
-Gilroy_TAZ = 707
-SanJos_TAZ = 538
-Millbr_TAZ = 240
-SanFra_TAZ =  14
+Gilroy_TAZ = %Gilroy_HSR_TAZ%
+SanJos_TAZ = %SanJos_HSR_TAZ%
+Millbr_TAZ = %Millbr_HSR_TAZ%
+SanFra_TAZ = %SanFra_HSR_TAZ%
 
 loop tpnum=1,5
 
@@ -94,7 +95,7 @@ loop tpnum=1,5
            drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
            wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
 
-    ZONES=1454
+    ZONES=%INTERNAL_ZONES%
     PAGEHEIGHT=32767     ; preclude insertion of page headers
 
     ARRAY wlk_to_SanFra=ZONES, wlk_to_Millbr=ZONES, wlk_to_SanJos=ZONES, wlk_to_Gilroy=ZONES

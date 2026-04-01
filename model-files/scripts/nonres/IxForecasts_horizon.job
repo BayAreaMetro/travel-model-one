@@ -31,7 +31,8 @@
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 token_future = '%FUTURE%'
-FIRST_EXT_ZONE = 1455
+FIRST_EXT_ZONE = %FIRST_EXTERNAL_ZONE%
+TOTAL_ZONES = %TOTAL_ZONES%
 
 ; for 2005, just the use 2005 matrix
 IF (%MODEL_YEAR% == 2005)
@@ -62,7 +63,7 @@ run pgm = matrix
    mati = nonres\ixDaily2021.tpp
    
    ; Write out a year-specific matrix
-   mato = nonres\ixDailyx4.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+   mato = nonres\ixDailyx4.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, total
 
    ; Also read the totals from 2021 calculated in previous step
    filei lookupi[1] = nonres\ixDaily2021_totals.dbf
@@ -84,7 +85,7 @@ run pgm = matrix
    IF (I==1)
 
      ; first, figure out desired daily total
-     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,@TOTAL_ZONES@
        prod_total_2021 = totals_2021(1,EXT_ZONE)
        attr_total_2021 = totals_2021(2,EXT_ZONE)
 
@@ -117,6 +118,7 @@ run pgm = matrix
 
      ENDLOOP
 
+     ; JEF THIS NEEDS TO BE FIXED FOR SNABM ZONE SYSTEM
      ; however there are X/X trips between 1461 and 1462
      tot2021_1461_1462 = MATVAL(1,1,1461,1462) + MATVAL(1,2,1461,1462) + MATVAL(1,3,1461,1462)
      tot2021_1462_1461 = MATVAL(1,1,1462,1461) + MATVAL(1,2,1462,1461) + MATVAL(1,3,1462,1461)

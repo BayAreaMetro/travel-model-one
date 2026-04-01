@@ -51,7 +51,7 @@ if __name__ == '__main__':
     print(f"Found {len(unconnected_zones)} unconnected zone(s) in {unconnected_zones_file}")
 
     # exclude external zones
-    unconnected_zones[:] = [x for x in unconnected_zones if x <= 1454]
+    unconnected_zones[:] = [x for x in unconnected_zones if x <= %INTERNAL_ZONES%]
     print(f"Found {len(unconnected_zones)} unconnected zone(s) in {unconnected_zones_file} after excluding external zones")
 
     # notify slack since this could be important
