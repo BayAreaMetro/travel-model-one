@@ -44,6 +44,16 @@ if __name__ == '__main__':
     parser.add_argument('run_mode', choices=['popsyn','logsum'])
     args = parser.parse_args()
 
+    internal_zones_env = os.environ.get("INTERNAL_ZONES", "").strip()
+    if not internal_zones_env:
+        print("ERROR: INTERNAL_ZONES is not set in environment")
+        sys.exit(2)
+    try:
+        internal_zones = int(internal_zones_env)
+    except ValueError:
+        print(f"ERROR: INTERNAL_ZONES must be an integer, got [{internal_zones_env}]")
+        sys.exit(2)
+
     unconnected_zones_file = pathlib.Path("skims") / "unconnected_zones.csv"
     unconnected_zones_df = pandas.read_csv(unconnected_zones_file)
     unconnected_zones = unconnected_zones_df['ZONE'].tolist()
@@ -51,7 +61,7 @@ if __name__ == '__main__':
     print(f"Found {len(unconnected_zones)} unconnected zone(s) in {unconnected_zones_file}")
 
     # exclude external zones
-    unconnected_zones[:] = [x for x in unconnected_zones if x <= %INTERNAL_ZONES%]
+    unconnected_zones[:] = [x for x in unconnected_zones if x <= internal_zones]
     print(f"Found {len(unconnected_zones)} unconnected zone(s) in {unconnected_zones_file} after excluding external zones")
 
     # notify slack since this could be important
