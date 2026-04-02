@@ -1,47 +1,51 @@
 """
 Parking Cost Estimation Module
 
-This module provides statistical modeling for estimating parking costs in TAZ zones
-without observed data. It implements a hybrid approach:
+This module estimates parking costs in TAZs
+without observed data for short-term parking rates.
+It also loads and merges web-scraped data for long-term
+parking rates.  The web scrape script part of tm2py-utils.
 
 Architecture:
 - **Hourly parking (OPRKCST)**: Machine learning classification with model comparison
   - Supports multiple models: Logistic Regression, Random Forest, Gradient Boosting, SVM
   - Trains on San Francisco, Oakland, San Jose, Berkeley observed meter data (paid vs free)
-  - Uses stratified 5-fold cross-validation for robust model selection
+  - Uses stratified 5-fold cross-validation for model selection
   - Ensures balanced paid/free parking distribution in each fold
   - Predicts paid/free for other cities with parking capacity
-  - Assigns flat $2.00/hr rate to predicted paid parking TAZs
-  
-- **Long-term parking (PRKCST)**: County-level density thresholds
-  - Uses commercial employment density percentiles within each county
-  - Percentile is configurable (default: 95th percentile)
-  - Combines daily and monthly parking into single long-term cost
-  - Assigns discounted rates for non-core cities (65% of SF/Oak/SJ observed median)
+  - Assigns flat rate to predicted paid parking TAZs (observed median)
+
+- **Long-term parking (PRKCST)**: Scraped SpotHero data (daily/monthly rates → hourly)
+  - Daily rates converted at price / 8 hours
+  - Monthly rates converted at price / 160 hours (4 weeks × 5 days × 8 hrs)
+  - Spatially joined to TAZ; TAZs without scraped data receive PRKCST = 0
 
 Key Constraints:
 - Hourly predictions (OPRKCST) only where on_all > 0 (on-street capacity)
-- Long-term predictions (PRKCST) only where off_nres > 0 (off-street capacity)
-- All predictions only in cities (place_name not null)
+- All predictions only in incorporated cities (place_name not null)
 - Predictions exclude SF/Oakland/SJ/Berkeley (those use observed data only)
 - Minimum commercial_emp_den threshold for paid parking consideration
+- AREATYPE 4 (suburban) and 5 (rural) always receive OPRKCST = 0
 
 Workflow:
 1. add_density_features(): Calculate employment densities + AREATYPE one-hot encoding
-2. report_county_density_distributions(): Diagnostic percentile report by county
-3. stratified_kfold_validation(): 5-fold CV with balanced paid/free samples (default)
-4. estimate_and_validate_hourly_parking_models(): Model selection orchestration
-5. apply_hourly_parking_model(): Apply selected model for hourly parking (OPRKCST)
-6. estimate_parking_by_county_threshold(): Threshold-based long-term parking (PRKCST)
-7. convert_to_year_2000_cents(): CPI deflation from 2023 dollars to year 2000 cents
+2. stratified_kfold_validation(): 5-fold CV with balanced paid/free samples (always runs)
+3. estimate_and_validate_hourly_parking_models(): Model comparison + selection orchestration
+4. apply_hourly_parking_model(): Apply selected model for hourly parking (OPRKCST)
+5. merge_scraped_cost(): Merge SpotHero scraped data for long-term parking (PRKCST)
+6. CPI deflation from 2023 dollars to year 2000 cents
 
 Model-Specific Features:
 - Linear models (Logistic Regression, SVM): 4 density features
 - Tree-based models (Random Forest, Gradient Boosting): 4 density + 3 AREATYPE features
 
+CLI Overrides (with --force-model):
+- --probability-threshold: override CV-derived threshold for the forced model
+- --max-depth: override tree max_depth for random-forest or gradient-boosting production model
+
 Entry Point:
 - main(): Standalone script execution
-- merge_hourly_cost(): Function called from land_use_pipeline.py orchestration
+
 """
 
 import pandas as pd
@@ -83,7 +87,7 @@ AREATYPE_FEATURES = [
     'areatype_cbd',             # AREATYPE = 1 (Central Business District)
     'areatype_urban_business',  # AREATYPE = 2 (Urban Business)
     'areatype_urban'            # AREATYPE = 3 (Urban)
-    # AREATYPE = 0 (Regional Core) is baseline - omitted to avoid multicollinearity
+    # AREATYPE = 0 (Regional Core) is baseline - omitted bc exclusively in an observed city so carries no signal for generalization in unseen areas
     # AREATYPE = 4 (Suburban) and 5 (Rural) excluded from predictions
 ]
 
@@ -162,9 +166,7 @@ def add_density_features(taz):
     taz['downtown_emp'] = taz['FPSEMPN']
     taz['edhealthrec_emp'] = taz['HEREMPN']
     
-    # One-hot encode AREATYPE (0=Regional Core, 1=CBD, 2=Urban Business, 3=Urban)
-    # Regional Core (0) is baseline - omitted to avoid multicollinearity
-    # AREATYPE 4 (suburban) and 5 (rural) excluded from predictions
+    # One-hot encode AREATYPE (1=CBD, 2=Urban Business, 3=Urban)
     taz['areatype_cbd'] = (taz['AREATYPE'] == 1).astype(int)
     taz['areatype_urban_business'] = (taz['AREATYPE'] == 2).astype(int)
     taz['areatype_urban'] = (taz['AREATYPE'] == 3).astype(int)
@@ -277,91 +279,6 @@ def add_density_features(taz):
     return taz
 
 
-def report_county_density_distributions(taz):
-    """
-    Report commercial employment density distributions by county for TAZs with off-street capacity.
-    
-    Shows percentile thresholds per county to inform long-term parking cost estimation.
-    Only includes TAZs with off_nres > 0, place_name not null, and excludes AREATYPE 4-5.
-    
-    Args:
-        taz (GeoDataFrame): TAZ zones with county_name, commercial_emp_den, and off_nres
-    """
-    print("\n" + "="*80)
-    print("COUNTY-LEVEL COMMERCIAL EMPLOYMENT DENSITY DISTRIBUTIONS")
-    print("="*80)
-    print("For TAZs with off-street parking capacity (off_nres > 0) in cities")
-    print("Excluding AREATYPE 4 (suburban) and 5 (rural)")
-    print()
-    
-    # Filter to TAZs with off-street capacity and in cities, excluding suburban/rural
-    eligible_tazs = taz[
-        (taz['off_nres'] > 0) & 
-        (taz['place_name'].notna()) & 
-        (taz['county_name'].notna()) &
-        ~(taz['AREATYPE'].isin([4, 5]))
-    ].copy()
-    
-    print(f"Total eligible TAZs: {len(eligible_tazs):,}\n")
-    
-    # Cities with observed data (from scraped parking data)
-    scraped_file_path = INTERIM_CACHE_DIR / "parking_scrape_location_cost.parquet"
-    OBSERVED_CITIES = get_observed_cities_from_scraped_data(scraped_file_path)
-    
-    # Calculate percentiles by county
-    county_stats = []
-    
-    for county in sorted(eligible_tazs['county_name'].unique()):
-        county_tazs = eligible_tazs[eligible_tazs['county_name'] == county]
-        
-        # Check if county has observed data cities
-        has_observed = county_tazs['place_name'].isin(OBSERVED_CITIES).any()
-        observed_cities = county_tazs[county_tazs['place_name'].isin(OBSERVED_CITIES)]['place_name'].unique()
-        
-        stats = {
-            'County': county,
-            'N_TAZs': len(county_tazs),
-            'Mean': county_tazs['commercial_emp_den'].mean(),
-            'Median': county_tazs['commercial_emp_den'].median(),
-            'P90': county_tazs['commercial_emp_den'].quantile(0.90),
-            'P95': county_tazs['commercial_emp_den'].quantile(0.95),
-            'P98': county_tazs['commercial_emp_den'].quantile(0.98),
-            'P99': county_tazs['commercial_emp_den'].quantile(0.99),
-            'Has_Observed': 'Yes' if has_observed else 'No',
-            'Observed_Cities': ', '.join(observed_cities) if len(observed_cities) > 0 else 'None'
-        }
-        county_stats.append(stats)
-    
-    # Create DataFrame for nice printing
-    df_stats = pd.DataFrame(county_stats)
-    
-    # Print table
-    print("Commercial Employment Density (jobs/acre) Percentiles by County:")
-    print("─" * 80)
-    print(f"{'County':<20} {'N_TAZs':>8} {'Mean':>8} {'P90':>8} {'P95':>8} {'P98':>8} {'P99':>8} {'Obs':>4}")
-    print("─" * 80)
-    
-    for _, row in df_stats.iterrows():
-        obs_marker = '✓' if row['Has_Observed'] == 'Yes' else ''
-        print(f"{row['County']:<20} {row['N_TAZs']:>8,} {row['Mean']:>8.2f} {row['P90']:>8.2f} "
-              f"{row['P95']:>8.2f} {row['P98']:>8.2f} {row['P99']:>8.2f} {obs_marker:>4}")
-    
-    print("─" * 80)
-    print("\nObserved Data Cities:")
-    for _, row in df_stats[df_stats['Has_Observed'] == 'Yes'].iterrows():
-        print(f"  {row['County']}: {row['Observed_Cities']}")
-    
-    print("\nInterpretation:")
-    print("  - Percentiles shown: P90, P95, P98, P99")
-    print("  - Higher percentiles = stricter criteria for paid parking prediction")
-    print("  - Top percentiles capture high-density commercial/downtown areas")
-    print("  - Counties with ✓ have observed parking cost data for validation")
-    print("\nNote:")
-    print("  - Long-term parking (PRKCST) percentile threshold is configurable")
-    print("  - Default: P95 for long-term parking")
-    print("="*80)
-    
-    return df_stats
 
 
 def apply_hourly_parking_model(taz, probability_threshold, commercial_density_threshold=1.0, model=None, model_name="Logistic Regression"):
@@ -556,266 +473,6 @@ def apply_hourly_parking_model(taz, probability_threshold, commercial_density_th
     taz = taz.drop(columns=['OPRKCST_pred'])
     
     return taz
-
-
-def validate_parking_cost_estimation(taz, commercial_density_threshold=1.0, test_thresholds=None):
-    """
-    Perform leave-one-city-out cross-validation for hourly parking cost estimation using logistic regression.
-    
-    NOTE: This is an alternative validation method. The default/recommended approach is
-    stratified_kfold_validation() which uses all data more efficiently with balanced folds.
-    
-    Trains binary classification models and tests on held-out city to evaluate generalization.
-    Explicitly validates on San Francisco, Oakland, San Jose, and Berkeley (cities with observed data).
-    
-    Note: Only validates hourly parking (OPRKCST) since long-term uses county-level thresholds.
-    
-    Args:
-        taz (GeoDataFrame): TAZ zones with density features, observed costs, and capacity
-        commercial_density_threshold (float): Minimum commercial_emp_den for paid parking
-        test_thresholds (list): List of probability thresholds to test
-    
-    Returns:
-        dict: Validation metrics for each cost type, threshold, and held-out city
-    """
-    print("\n" + "="*80)
-    print("LEAVE-ONE-CITY-OUT CROSS-VALIDATION (Logistic Regression)")
-    print("="*80)
-    print("Validating hourly parking only (long-term uses county thresholds)")
-    
-    # Default thresholds to test
-    if test_thresholds is None:
-        test_thresholds = [0.3, 0.4, 0.5, 0.6, 0.7]
-    
-    print(f"Testing probability thresholds: {test_thresholds}")
-    
-    # Cities with observed parking cost data (from scraped parking data)
-    scraped_file_path = INTERIM_CACHE_DIR / "parking_scrape_location_cost.parquet"
-    TARGET_CITIES = get_observed_cities_from_scraped_data(scraped_file_path)
-    
-    # Feature columns - uses Logistic Regression (no AREATYPE features for linear model)
-    feature_cols = get_features_for_model('Logistic Regression')
-    
-    results = {}
-    
-    # Only validate hourly parking (OPRKCST) - long-term uses thresholds
-    for cost_type, capacity_col in [('OPRKCST', 'on_all')]:
-        print(f"\n{'='*80}")
-        print(f"Validating {cost_type.upper()}")
-        print(f"{'='*80}")
-        
-        # Count observed data by city (including free parking)
-        # For SF/Oakland/SJ/Berkeley, treat any TAZ with capacity as "observed" (paid or free)
-        has_capacity = taz[capacity_col] > 0
-        has_place = taz['place_name'].notna()
-        in_target_cities = taz['place_name'].isin(TARGET_CITIES)
-        
-        # "Observed" = has capacity in target cities (we know it's either paid or free)
-        has_observed = has_capacity & has_place & in_target_cities
-        
-        # Count by city
-        city_counts = taz[has_observed]['place_name'].value_counts()
-        
-        # Filter to target cities with sufficient data (at least 10 observations)
-        cities_to_test = [city for city in TARGET_CITIES if city in city_counts.index and city_counts[city] >= 10]
-        
-        if len(cities_to_test) < 2:
-            print(f"  Insufficient target cities with observed {cost_type} (need >= 2 of {TARGET_CITIES}). Skipping validation.")
-            continue
-        
-        print(f"  Validating on cities: {', '.join(cities_to_test)}")
-        print(f"  Observations per city: {dict(city_counts[cities_to_test])}")
-        
-        results[cost_type] = {}
-        
-        # Leave-one-city-out cross-validation
-        for held_out_city in cities_to_test:
-            # Determine training cities (all target cities except held-out)
-            training_cities = [city for city in cities_to_test if city != held_out_city]
-            
-            print(f"\n  {'─'*70}")
-            print(f"  TRAINING ON: {', '.join(training_cities)}")
-            print(f"  TESTING ON:  {held_out_city}")
-            print(f"  {'─'*70}")
-            
-            # For training cities: all TAZs with capacity are "observed" (ground truth)
-            # Paid = cost > 0, Free = cost <= 0 or NaN (but has capacity)
-            train_mask = (
-                has_capacity & has_place & 
-                (taz['place_name'].isin(training_cities))
-            )
-            
-            # For test city: all observed data (do NOT apply density threshold)
-            # NOTE: commercial_density_threshold is a prediction filter, not a validation filter
-            test_mask = (
-                has_capacity & has_place & 
-                (taz['place_name'] == held_out_city)
-            )
-            
-            n_train = train_mask.sum()
-            n_test = test_mask.sum()
-            
-            print(f"    Training samples (other cities): {n_train:,}")
-            print(f"    Test samples ({held_out_city}): {n_test:,}")
-            
-            if n_train < 10 or n_test < 5:
-                print(f"    Insufficient data for validation. Skipping.")
-                continue
-            
-            # Extract training data
-            X_train = taz.loc[train_mask, feature_cols].values
-            y_train_raw = taz.loc[train_mask, cost_type].values
-            
-            # Handle NaN values in features (fill with 0 for density columns)
-            X_train = np.nan_to_num(X_train, nan=0.0)
-            
-            # Convert to binary: paid (1) or free (0)
-            # Treat NaN and 0 as free parking, > 0 as paid
-            y_train_binary = (pd.Series(y_train_raw).fillna(0) > 0).astype(int).values
-            
-            # Debug: show distribution of paid vs free
-            n_train_paid = y_train_binary.sum()
-            n_train_free = len(y_train_binary) - n_train_paid
-            print(f"    Training data: {n_train_paid:,} paid, {n_train_free:,} free")
-            
-            # Check for variation
-            if y_train_binary.sum() == 0 or y_train_binary.sum() == len(y_train_binary):
-                print(f"    WARNING: No variation in paid/free parking. Skipping.")
-                continue
-            
-            # Extract test data
-            X_test = taz.loc[test_mask, feature_cols].values
-            y_test_raw = taz.loc[test_mask, cost_type].values
-            y_test_binary = (pd.Series(y_test_raw).fillna(0) > 0).astype(int).values
-            
-            # Handle NaN values in test features
-            X_test = np.nan_to_num(X_test, nan=0.0)
-            
-            # Standardize features
-            scaler = StandardScaler()
-            X_train_scaled = scaler.fit_transform(X_train)
-            X_test_scaled = scaler.transform(X_test)
-            
-            # Train logistic regression model
-            model = LogisticRegression(random_state=42, max_iter=1000)
-            model.fit(X_train_scaled, y_train_binary)
-            
-            # Predict probabilities once
-            y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
-            
-            # Test multiple thresholds
-            threshold_results = {}
-            for threshold in test_thresholds:
-                y_pred_binary = (y_pred_proba >= threshold).astype(int)
-                
-                # Calculate classification metrics
-                accuracy = accuracy_score(y_test_binary, y_pred_binary)
-                
-                # Handle case where there are no positive predictions
-                if y_pred_binary.sum() == 0:
-                    precision = 0.0
-                    recall = 0.0
-                    f1 = 0.0
-                else:
-                    precision = precision_score(y_test_binary, y_pred_binary, zero_division=0)
-                    recall = recall_score(y_test_binary, y_pred_binary, zero_division=0)
-                    f1 = f1_score(y_test_binary, y_pred_binary, zero_division=0)
-                
-                # Count predictions
-                n_actual_paid = y_test_binary.sum()
-                n_actual_free = len(y_test_binary) - n_actual_paid
-                n_predicted_paid = y_pred_binary.sum()
-                n_predicted_free = len(y_pred_binary) - n_predicted_paid
-                
-                # Store results for this threshold
-                threshold_results[threshold] = {
-                    'accuracy': accuracy,
-                    'precision': precision,
-                    'recall': recall,
-                    'f1': f1,
-                    'n_predicted_paid': n_predicted_paid,
-                    'n_predicted_free': n_predicted_free,
-                }
-            
-            # Store results for all thresholds
-            results[cost_type][held_out_city] = {
-                'n_train': n_train,
-                'n_test': n_test,
-                'n_actual_paid': y_test_binary.sum(),
-                'n_actual_free': len(y_test_binary) - y_test_binary.sum(),
-                'thresholds': threshold_results,
-            }
-            
-            # Print metrics for each threshold
-            print(f"    Classification Metrics by Threshold:")
-            print(f"    {'Threshold':>10} {'Accuracy':>10} {'Precision':>10} {'Recall':>10} {'F1':>8} {'Pred Paid':>10}")
-            print(f"    {'-'*68}")
-            for threshold in test_thresholds:
-                tr = threshold_results[threshold]
-                print(f"    {threshold:>10.2f} {tr['accuracy']:>10.1%} {tr['precision']:>10.1%} {tr['recall']:>10.1%} {tr['f1']:>8.3f} {tr['n_predicted_paid']:>10,}")
-            
-            # Highlight best threshold by F1 score
-            if threshold_results:
-                best_threshold = max(threshold_results.keys(), key=lambda t: threshold_results[t]['f1'])
-                print(f"    {'-'*68}")
-                print(f"    Best threshold by F1: {best_threshold:.2f} (F1={threshold_results[best_threshold]['f1']:.3f})")
-            else:
-                print(f"    {'-'*68}")
-                print(f"    No valid threshold results computed")
-    
-    # Print summary
-    print(f"\n{'='*80}")
-    print("VALIDATION SUMMARY")
-    print(f"{'='*80}")
-    
-    # Map cities to counties
-    CITY_TO_COUNTY = {
-        'San Francisco': 'San Francisco',
-        'Oakland': 'Alameda',
-        'San Jose': 'Santa Clara',
-        'Berkeley': 'Alameda'
-    }
-    
-    for cost_type, city_results in results.items():
-        if not city_results:
-            continue
-        
-        print(f"\n{cost_type.upper()}:")
-        
-        # Calculate average metrics across cities for each threshold
-        print(f"\n  Average Metrics Across Cities:")
-        print(f"  {'Threshold':>10} {'Accuracy':>10} {'Precision':>10} {'Recall':>10} {'F1':>8}")
-        print(f"  {'-'*58}")
-        
-        for threshold in test_thresholds:
-            avg_accuracy = np.mean([r['thresholds'][threshold]['accuracy'] for r in city_results.values()])
-            avg_precision = np.mean([r['thresholds'][threshold]['precision'] for r in city_results.values()])
-            avg_recall = np.mean([r['thresholds'][threshold]['recall'] for r in city_results.values()])
-            avg_f1 = np.mean([r['thresholds'][threshold]['f1'] for r in city_results.values()])
-            
-            print(f"  {threshold:>10.2f} {avg_accuracy:>10.1%} {avg_precision:>10.1%} {avg_recall:>10.1%} {avg_f1:>8.3f}")
-        
-        # Find best threshold by average F1
-        best_threshold = max(test_thresholds, key=lambda t: np.mean([r['thresholds'][t]['f1'] for r in city_results.values()]))
-        best_f1 = np.mean([r['thresholds'][best_threshold]['f1'] for r in city_results.values()])
-        print(f"  {'-'*58}")
-        print(f"  ✓ RECOMMENDED THRESHOLD: {best_threshold:.2f} (avg F1={best_f1:.3f})")
-        print(f"  {'-'*58}")
-        
-        # County-level breakdown for best threshold
-        print(f"\n  City-Level Performance (Threshold={best_threshold:.2f}):")
-        print(f"  {'─'*76}")
-        print(f"  {'County':<20} {'City':<15} {'Accuracy':>10} {'Precision':>10} {'Recall':>10}")
-        print(f"  {'─'*76}")
-        
-        for city, metrics in city_results.items():
-            county = CITY_TO_COUNTY.get(city, 'Unknown')
-            tr = metrics['thresholds'][best_threshold]
-            print(f"  {county:<20} {city:<15} {tr['accuracy']:>9.1%} {tr['precision']:>9.1%} {tr['recall']:>9.1%}")
-        
-        print(f"  {'─'*76}")
-    
-    return results
 
 
 def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thresholds=None, n_splits=5):
@@ -1052,580 +709,124 @@ def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thre
             improvement = ((best_f1 - baseline_f1) / baseline_f1) * 100
             print(f"  Improvement over Logistic Regression: {improvement:+.1f}%")
     
-    print(f"\nNote: Stratified k-fold uses all data efficiently and avoids city-specific biases.")
-    print(f"Results are more stable than leave-one-city-out with small sample sizes.")
     
     return results
-
-
-def compare_models(taz, commercial_density_threshold=1.0, test_thresholds=None):
-    """
-    Compare multiple model types using leave-one-city-out cross-validation.
-    
-    Tests Logistic Regression, Random Forest, Gradient Boosting, and SVM to find
-    the best-performing model for parking cost classification.
-    
-    Args:
-        taz (GeoDataFrame): TAZ zones with density features, observed costs, and capacity
-        commercial_density_threshold (float): Minimum commercial_emp_den for paid parking
-        test_thresholds (list): List of probability thresholds to test
-    
-    Returns:
-        dict: Performance metrics for each model and city combination
-    """
-    print("\n" + "="*80)
-    print("MODEL COMPARISON - LEAVE-ONE-CITY-OUT CROSS-VALIDATION")
-    print("="*80)
-    
-    if test_thresholds is None:
-        test_thresholds = [0.3, 0.4, 0.5, 0.6, 0.7]
-    
-    # Define models to test with model-specific features
-    models = {
-        'Logistic Regression': {
-            'model': LogisticRegression(random_state=42, max_iter=1000),
-            'features': get_features_for_model('Logistic Regression')
-        },
-        'Random Forest': {
-            'model': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10),
-            'features': get_features_for_model('Random Forest')
-        },
-        'Gradient Boosting': {
-            'model': GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=5, learning_rate=0.1),
-            'features': get_features_for_model('Gradient Boosting')
-        },
-        'SVM (RBF)': {
-            'model': SVC(probability=True, random_state=42, kernel='rbf', C=1.0),
-            'features': get_features_for_model('SVM (RBF)')
-        }
-    }
-    
-    # Cities with observed data (from scraped parking data)
-    scraped_file_path = INTERIM_CACHE_DIR / "parking_scrape_location_cost.parquet"
-    TARGET_CITIES = get_observed_cities_from_scraped_data(scraped_file_path)
-    
-    results = {}
-    
-    for model_name, model_config in models.items():
-        print(f"\n{'='*80}")
-        print(f"TESTING: {model_name}")
-        print(f"{'='*80}")
-        
-        # Extract model and features for this model type
-        model = model_config['model']
-        feature_cols = model_config['features']
-        
-        print(f"Using {len(feature_cols)} features")
-        
-        results[model_name] = {}
-        
-        # Leave-one-city-out cross-validation
-        for held_out_city in TARGET_CITIES:
-            training_cities = [c for c in TARGET_CITIES if c != held_out_city]
-            
-            print(f"\n  Training on {', '.join(training_cities)} → Testing on {held_out_city}")
-            
-            # Prepare data
-            has_capacity = taz['on_all'] > 0
-            has_place = taz['place_name'].notna()
-            
-            train_mask = has_capacity & has_place & taz['place_name'].isin(training_cities)
-            # NOTE: Do NOT apply commercial_density_threshold - validate on ALL observed data
-            # The threshold is only used at prediction time for new TAZs
-            test_mask = (
-                has_capacity & has_place & 
-                (taz['place_name'] == held_out_city)
-            )
-            
-            n_train = train_mask.sum()
-            n_test = test_mask.sum()
-            
-            if n_train < 10 or n_test < 5:
-                print(f"    Insufficient data. Skipping.")
-                continue
-            
-            # Extract and prepare data
-            X_train = taz.loc[train_mask, feature_cols].values
-            y_train = (pd.Series(taz.loc[train_mask, 'OPRKCST'].values).fillna(0) > 0).astype(int).values
-            
-            X_test = taz.loc[test_mask, feature_cols].values
-            y_test = (pd.Series(taz.loc[test_mask, 'OPRKCST'].values).fillna(0) > 0).astype(int).values
-            
-            # Handle NaN values in features (fill with 0 for density columns)
-            X_train = np.nan_to_num(X_train, nan=0.0)
-            X_test = np.nan_to_num(X_test, nan=0.0)
-            
-            # Check for variation
-            if y_train.sum() == 0 or y_train.sum() == len(y_train):
-                print(f"    No variation in training data. Skipping.")
-                continue
-            
-            # Standardize
-            scaler = StandardScaler()
-            X_train_scaled = scaler.fit_transform(X_train)
-            X_test_scaled = scaler.transform(X_test)
-            
-            # Train model
-            print(f"    Training {model_name}...")
-            model.fit(X_train_scaled, y_train)
-            
-            # Get probabilities
-            y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
-            
-            # Test all thresholds and find best
-            best_f1 = -1  # Start with -1 to ensure first threshold is captured
-            best_threshold = 0.5
-            best_metrics = {}
-            
-            for threshold in test_thresholds:
-                y_pred = (y_pred_proba >= threshold).astype(int)
-                
-                accuracy = accuracy_score(y_test, y_pred)
-                
-                if y_pred.sum() == 0:
-                    precision = 0.0
-                    recall = 0.0
-                    f1 = 0.0
-                else:
-                    precision = precision_score(y_test, y_pred, zero_division=0)
-                    recall = recall_score(y_test, y_pred, zero_division=0)
-                    f1 = f1_score(y_test, y_pred, zero_division=0)
-                
-                # Store metrics for this threshold
-                current_metrics = {
-                    'accuracy': accuracy,
-                    'precision': precision,
-                    'recall': recall,
-                    'f1': f1,
-                    'threshold': threshold
-                }
-                
-                # Update best if this is better, or if it's the first threshold tested
-                if f1 > best_f1 or best_f1 < 0:
-                    best_f1 = f1
-                    best_threshold = threshold
-                    best_metrics = current_metrics
-            
-            results[model_name][held_out_city] = {
-                'best_f1': best_f1,
-                'best_threshold': best_threshold,
-                'best_metrics': best_metrics,
-                'n_train': n_train,
-                'n_test': n_test
-            }
-            
-            print(f"    Best F1: {best_f1:.3f} at threshold {best_threshold:.2f}")
-            if best_metrics:
-                print(f"    Accuracy: {best_metrics['accuracy']:.1%}, Precision: {best_metrics['precision']:.1%}, Recall: {best_metrics['recall']:.1%}")
-            else:
-                print(f"    No valid metrics computed")
-    
-    # Summary comparison
-    print(f"\n{'='*80}")
-    print("MODEL COMPARISON SUMMARY")
-    print(f"{'='*80}\n")
-    
-    print(f"{'Model':<25} {'Avg F1':>10} {'Avg Threshold':>15} {'SF F1':>8} {'Oak F1':>8} {'SJ F1':>8}")
-    print(f"{'-'*85}")
-    
-    model_scores = []
-    
-    for model_name in models.keys():
-        if results[model_name]:
-            avg_f1 = np.mean([r['best_f1'] for r in results[model_name].values()])
-            avg_threshold = np.mean([r['best_threshold'] for r in results[model_name].values()])
-            
-            # City-specific F1s
-            sf_f1 = results[model_name].get('San Francisco', {}).get('best_f1', 0)
-            oak_f1 = results[model_name].get('Oakland', {}).get('best_f1', 0)
-            sj_f1 = results[model_name].get('San Jose', {}).get('best_f1', 0)
-            
-            print(f"{model_name:<25} {avg_f1:>10.3f} {avg_threshold:>15.2f} {sf_f1:>8.3f} {oak_f1:>8.3f} {sj_f1:>8.3f}")
-            
-            model_scores.append((model_name, avg_f1))
-    
-    print(f"{'-'*85}")
-    
-    # Winner
-    if model_scores:
-        best_model, best_f1 = max(model_scores, key=lambda x: x[1])
-        print(f"\n✓ BEST MODEL: {best_model} (Average F1={best_f1:.3f})")
-        
-        # Show recommended threshold for winner
-        best_threshold = np.mean([r['best_threshold'] for r in results[best_model].values()])
-        print(f"  Recommended threshold: {best_threshold:.2f}")
-        
-        # Compare to baseline (Logistic Regression)
-        if 'Logistic Regression' in results and best_model != 'Logistic Regression':
-            baseline_f1 = np.mean([r['best_f1'] for r in results['Logistic Regression'].values()])
-            improvement = ((best_f1 - baseline_f1) / baseline_f1) * 100
-            print(f"  Improvement over Logistic Regression: {improvement:+.1f}%")
-    
-    return results
-
-
-def estimate_parking_by_county_threshold(taz, percentile=0.95):
-    """
-    Estimate long-term parking costs using county-level density thresholds.
-    
-    Applies county-specific commercial employment density percentiles to identify
-    high-density areas likely to have paid parking. Only predicts for cities OTHER
-    than those with observed data (San Francisco, Oakland, San Jose).
-    Excludes AREATYPE 4 (suburban) and 5 (rural) from predictions.
-    
-    Args:
-        taz (GeoDataFrame): TAZ zones with county_name, commercial_emp_den, and off_nres
-        percentile (float): Percentile threshold for long-term parking (default 0.95)
-    
-    Returns:
-        GeoDataFrame: TAZ with PRKCST filled in
-    """
-    # Cities with observed parking data (from scraped parking data)
-    scraped_file_path = INTERIM_CACHE_DIR / "parking_scrape_location_cost.parquet"
-    observed_cities = get_observed_cities_from_scraped_data(scraped_file_path)
-    
-    # Initialize PRKCST if it doesn't exist (should be populated by merge_scraped_cost)
-    if 'PRKCST' not in taz.columns:
-        taz['PRKCST'] = 0.0
-    else:
-        # Fill NaN values with 0 for TAZs without scraped data
-        taz['PRKCST'] = taz['PRKCST'].fillna(0)
-    
-    print(f"\nEstimating long-term parking costs using county-level thresholds...")
-    print(f"  Long-term parking (PRKCST): {percentile*100:.0f}th percentile of commercial_emp_den per county")
-    print(f"  Excluding from prediction: {', '.join(observed_cities)} (observed data only)")
-    
-    # Suburban discount factor: non-core cities typically have 60-70% of SF/Oakland/SJ/Berkeley costs
-    SUBURBAN_DISCOUNT_FACTOR = 0.65
-    
-    # Calculate median rate from observed PRKCST data (SF/Oakland/SJ only)
-    observed_longterm_median = taz[taz['PRKCST'] > 0]['PRKCST'].median()
-    
-    # Apply discount for suburban/non-core cities
-    longterm_flat_rate = observed_longterm_median * SUBURBAN_DISCOUNT_FACTOR
-    
-    print(f"  Observed median long-term cost: ${observed_longterm_median:.2f}")
-    print(f"  Suburban discount factor: {SUBURBAN_DISCOUNT_FACTOR:.0%}")
-    print(f"  Predicted long-term rate for other cities: ${longterm_flat_rate:.2f}")
-    
-    # Initialize prediction column
-    taz['PRKCST_pred'] = np.nan
-    
-    # Calculate county-level thresholds
-    print(f"\n  County-Level Thresholds:")
-    print(f"  {'─'*50}")
-    print(f"  {'County':<20} {'N_TAZs':>8} {'LongTerm_P{int(percentile*100)}':>18}")
-    print(f"  {'─'*50}")
-    
-    county_thresholds = {}
-    
-    for county in sorted(taz[taz['county_name'].notna()]['county_name'].unique()):
-        # Get TAZs in county with off-street capacity and in cities (excluding observed cities and suburban/rural)
-        county_tazs = taz[
-            (taz['county_name'] == county) & 
-            (taz['off_nres'] > 0) & 
-            (taz['place_name'].notna()) &
-            ~(taz['place_name'].isin(observed_cities)) &
-            ~(taz['AREATYPE'].isin([4, 5]))
-        ]
-        
-        if len(county_tazs) == 0:
-            continue
-        
-        # Calculate threshold
-        longterm_threshold = county_tazs['commercial_emp_den'].quantile(percentile)
-        
-        county_thresholds[county] = longterm_threshold
-        
-        print(f"  {county:<20} {len(county_tazs):>8,} {longterm_threshold:>18.2f}")
-    
-    print(f"  {'─'*50}")
-    
-    # Apply thresholds by county
-    total_longterm_predicted = 0
-    
-    for county, threshold in county_thresholds.items():
-        # Long-term parking prediction mask
-        # Check for NaN, None, or <= 0 (no observed cost)
-        longterm_mask = (
-            (taz['county_name'] == county) &
-            (taz['off_nres'] > 0) &
-            (taz['place_name'].notna()) &
-            ~(taz['place_name'].isin(observed_cities)) &
-            ((taz['PRKCST'].isna()) | (taz['PRKCST'] <= 0)) &
-            (taz['commercial_emp_den'] >= threshold) &
-            ~(taz['AREATYPE'].isin([4, 5]))  # Exclude suburban and rural areas
-        )
-        
-        # Apply flat rate
-        taz.loc[longterm_mask, 'PRKCST_pred'] = longterm_flat_rate
-        
-        n_longterm = longterm_mask.sum()
-        total_longterm_predicted += n_longterm
-        
-        if n_longterm > 0:
-            print(f"  {county}: Predicted {n_longterm:,} long-term paid parking TAZs")
-    
-    # Fill in predictions ONLY for non-observed cities
-    # Capture which TAZs have observed costs before filling
-    had_observed_prkcst = taz['PRKCST'].notna() & (taz['PRKCST'] > 0)
-    # Create mask for TAZs that are NOT in observed cities
-    not_observed = ~(taz['place_name'].isin(observed_cities))
-    
-    # For non-observed cities: fill NaN with predictions
-    taz.loc[not_observed, 'PRKCST'] = taz.loc[not_observed, 'PRKCST'].fillna(taz.loc[not_observed, 'PRKCST_pred'])
-    
-    # Fill remaining NaN with 0 (free parking) for ALL TAZs
-    taz['PRKCST'] = taz['PRKCST'].fillna(0)
-    
-    # Drop intermediate column
-    taz = taz.drop(columns=['PRKCST_pred'])
-    
-    # Final cleanup: Ensure AREATYPE 4 (suburban) and 5 (rural) have zero parking costs
-    suburban_rural_mask = taz['AREATYPE'].isin([4, 5])
-    n_zeroed = suburban_rural_mask.sum()
-    if n_zeroed > 0:
-        taz.loc[suburban_rural_mask, 'PRKCST'] = 0
-        print(f"\n  Enforced zero PRKCST for {n_zeroed:,} suburban/rural TAZs (AREATYPE 4-5)")
-
-    # Assign provenance labels
-    taz.loc[had_observed_prkcst, 'PRKCST_TYPE'] = 'observed'
-    taz.loc[~had_observed_prkcst & (taz['PRKCST'] > 0), 'PRKCST_TYPE'] = 'predicted'
-    taz.loc[taz['PRKCST'] == 0, 'PRKCST_TYPE'] = ''
-
-    # Report final statistics
-    print(f"\n  Summary:")
-    print(f"    Total predicted long-term paid parking: {total_longterm_predicted:,} TAZs at ${longterm_flat_rate:.2f}")
-    
-    final_longterm = (taz['PRKCST'] > 0).sum()
-    
-    print(f"\n  Final PRKCST: {final_longterm:,} TAZs with cost > $0 (mean=${taz.loc[taz['PRKCST'] > 0, 'PRKCST'].mean():.2f})")
-    
-    return taz
-
-
-def backfill_downtown_longterm_costs(taz):
-    """
-    Backfill missing long-term parking costs for downtown TAZs with capacity in core cities.
-    
-    For TAZs in San Francisco, Oakland, San Jose, and Berkeley with:
-    - AREATYPE = 0 or 1 (regional core or central business district)
-    - off_nres > 0 (off-street parking capacity exists)
-    - PRKCST == 0 or NaN (no observed or predicted cost)
-    
-    Assign city-specific median long-term cost from observed downtown parking data.
-    
-    This ensures that TAZs with long-term parking capacity in regional cores and CBDs
-    of core cities have associated costs, even when direct observations are missing.
-    
-    Must run AFTER:
-    - merge_capacity() (off_nres exists)
-    - merge_estimated_costs() (PRKCST has observed + predicted values or 0)
-    
-    Args:
-        taz (GeoDataFrame): TAZ zones with place_name, AREATYPE, off_nres, and PRKCST
-    
-    Returns:
-        GeoDataFrame: TAZ with backfilled PRKCST for eligible downtown TAZs
-    """
-    print(f"\n{'='*80}")
-    print(f"BACKFILLING DOWNTOWN LONG-TERM PARKING COSTS")
-    print(f"{'='*80}")
-    print(f"For core city downtowns (AREATYPE 0-1) with parking capacity but missing costs\n")
-    
-    # Define core cities for backfill
-    CORE_CITIES = ['San Francisco', 'Oakland', 'San Jose', 'Berkeley']
-    
-    total_backfilled = 0
-    
-    for city in CORE_CITIES:
-        # Calculate city-specific median from observed data (PRKCST > 0)
-        city_observed_mask = (taz['place_name'] == city) & (taz['PRKCST'] > 0)
-        observed_costs = taz.loc[city_observed_mask, 'PRKCST']
-        
-        if len(observed_costs) == 0:
-            print(f"  {city}: No observed long-term parking costs - skipping backfill")
-            continue
-        
-        city_median = observed_costs.median()
-        
-        # Identify eligible TAZs for backfill:
-        # - In this city
-        # - In regional core or CBD (AREATYPE 0 or 1)
-        # - Have off-street parking capacity (off_nres > 0)
-        # - Missing long-term cost (PRKCST null or <= 0)
-        
-        eligible_mask = (
-            (taz['place_name'] == city) &
-            (taz['AREATYPE'].isin([0, 1])) &
-            (taz['off_nres'] > 0) &
-            ((taz['PRKCST'].isna()) | (taz['PRKCST'] <= 0))
-        )
-        
-        n_eligible = eligible_mask.sum()
-        
-        if n_eligible > 0:
-            # Apply city median to eligible TAZs
-            taz.loc[eligible_mask, 'PRKCST'] = city_median
-            taz.loc[eligible_mask, 'PRKCST_TYPE'] = 'predicted'
-            total_backfilled += n_eligible
-            print(f"  {city}: Backfilled {n_eligible:,} downtown TAZs with ${city_median:.2f} (median from {len(observed_costs):,} observed)")
-        else:
-            print(f"  {city}: No eligible TAZs for backfill (median=${city_median:.2f} from {len(observed_costs):,} observed)")
-    
-    print(f"\n  Total downtown TAZs backfilled: {total_backfilled:,}")
-    
-    # Final cleanup: Ensure AREATYPE 4 (suburban) and 5 (rural) have zero parking costs
-    suburban_rural_mask = taz['AREATYPE'].isin([4, 5])
-    n_zeroed_costs = (taz.loc[suburban_rural_mask, 'PRKCST'] > 0).sum()
-    if n_zeroed_costs > 0:
-        taz.loc[suburban_rural_mask, 'PRKCST'] = 0
-        print(f"\n  Enforced zero PRKCST for {n_zeroed_costs:,} suburban/rural TAZs (AREATYPE 4-5)")
-    
-    if total_backfilled > 0:
-        final_longterm = (taz['PRKCST'] > 0).sum()
-        print(f"\n  Final PRKCST: {final_longterm:,} TAZs with cost > $0 (mean=${taz.loc[taz['PRKCST'] > 0, 'PRKCST'].mean():.2f})")
-    
-    print(f"{'='*80}\n")
-    
-    return taz
-
-
-def update_longterm_stalls_with_predicted_costs(taz):
-    """
-    Report long-term parking costs and capacity.
-    
-    This function reports TAZs with long-term parking costs (PRKCST > 0)
-    and their associated off-street non-residential parking capacity.
-    
-    Note: pstallsoth and pstallssam columns are no longer created.
-    Use off_nres directly for off-street non-residential capacity.
-    
-    Args:
-        taz (GeoDataFrame): TAZ with off_nres capacity and final PRKCST
-    
-    Returns:
-        GeoDataFrame: TAZ unchanged (reporting only)
-    """
-    print(f"\n{'='*70}")
-    print(f"Long-Term Parking Cost Summary")
-    print(f"{'='*70}\n")
-    
-    # Report long-term parking costs based on final PRKCST (observed + predicted)
-    if 'PRKCST' in taz.columns and 'off_nres' in taz.columns:
-        has_longterm_cost = taz['PRKCST'].fillna(0) > 0
-        tazs_with_longterm = has_longterm_cost.sum()
-        total_tazs = len(taz)
-        
-        print(f"  TAZs with long-term parking costs: {tazs_with_longterm:,}/{total_tazs:,}")
-        
-        if tazs_with_longterm > 0:
-            total_capacity = taz.loc[has_longterm_cost, 'off_nres'].sum()
-            avg_cost = taz.loc[has_longterm_cost, 'PRKCST'].mean()
-            print(f"  Total off-street capacity (off_nres): {total_capacity:,.0f} stalls")
-            print(f"  Average long-term cost: ${avg_cost:.2f}")
-    else:
-        print(f"  ⚠ Warning: PRKCST or off_nres column not found, skipping report")
-    
-    print(f"{'='*70}\n")
-    
-    return taz
 
 
 def estimate_and_validate_hourly_parking_models(
     taz,
-    compare_models_flag=True,
     commercial_density_threshold=1.0,
-    force_model=None
+    force_model=None,
+    max_depth=None,
 ):
     """
     Run stratified k-fold validation and model comparison for hourly parking cost estimation.
-    
-    Uses 5-fold cross-validation with stratified sampling to ensure balanced paid/free
-    parking in each fold. This provides robust model performance estimates and selects
-    the best-performing model for production use.
-    
+
+    CV always runs across all four model types (LR, RF, GB, SVM) to compare performance
+    and derive the optimal probability threshold for each model.
+
+    When force_model is set, the specified model is used for production regardless of CV F1
+    score, but its CV-derived threshold is still used by default (overridable via
+    --probability-threshold in main). When max_depth is set, the production model instance
+    for random-forest or gradient-boosting is rebuilt with the overridden depth; CV always
+    runs with default depths (RF=10, GB=5) for fair cross-model comparison.
+
     Args:
         taz (GeoDataFrame): TAZ zones with employment, capacity, observed costs, place_name, and county_name
-        compare_models_flag (bool): If True, compare multiple model types (LR, RF, GB, SVM)
         commercial_density_threshold (float): Minimum commercial_emp_den for paid parking
-    
+        force_model (str or None): If set, select this model regardless of CV F1. CV still runs
+                                   to derive thresholds. One of: 'logistic', 'random-forest',
+                                   'gradient-boosting', 'svm'.
+        max_depth (int or None): Override tree max_depth for the production model when force_model
+                                 is 'random-forest' or 'gradient-boosting'. CV runs with default
+                                 depths. Ignored for other models.
+
     Returns:
-        tuple: (selected_model, selected_model_name) where selected_model is a trained model instance and selected_model_name is the name of the selected model
+        tuple: (selected_model, selected_model_name, optimal_threshold)
+               selected_model: unfitted sklearn model instance ready for production training
+               selected_model_name: display name (e.g. 'Random Forest')
+               optimal_threshold: CV-derived avg probability threshold for the selected model;
+                                  always non-None since CV always runs
     """
     print("\n" + "="*80)
     print("HOURLY PARKING MODEL ESTIMATION")
     print("="*80)
-    
-    print(f"\nNote: Hourly parking estimation uses observed data from San Francisco, Oakland, San Jose only\n")
-    
+
+
     # Add density features (needed for validation/model training)
     taz = add_density_features(taz)
-    
-    # Report county distributions
-    county_stats = report_county_density_distributions(taz)
-    
-    # Run stratified k-fold validation and model comparison
-    selected_model = None
-    selected_model_name = "Logistic Regression"
-    optimal_threshold = None  # Will be extracted from validation results
-    
-    if compare_models_flag:
-        # Run stratified 5-fold cross-validation
-        stratified_results = stratified_kfold_validation(
-            taz, commercial_density_threshold, n_splits=5
-        )
-        
-        if stratified_results:
-            # Calculate mean F1 score for each model
-            model_f1_scores = {name: result['avg_f1'] for name, result in stratified_results.items()}
-            
-            # Find best model
-            best_model_name = max(model_f1_scores, key=model_f1_scores.get)
-            best_f1 = model_f1_scores[best_model_name]
-            best_std_f1 = stratified_results[best_model_name]['std_f1']
-            
-            # Extract optimal threshold from validation results
-            optimal_threshold = stratified_results[best_model_name]['avg_threshold']
-            
-            # Create model instance
-            model_mapping = {
-                'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-                'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10, class_weight='balanced'),
-                'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=5, learning_rate=0.1),
-                'SVM (RBF)': SVC(kernel='rbf', probability=True, random_state=42, C=1.0)
-            }
-            
-            selected_model = model_mapping.get(best_model_name)
-            selected_model_name = best_model_name
-            
-            print("\n" + "="*80)
-            print("MODEL SELECTION FOR PRODUCTION")
-            print("="*80)
-            print(f"\nComparing {len(model_f1_scores)} models:")
-            for model_name, f1 in sorted(model_f1_scores.items(), key=lambda x: x[1], reverse=True):
-                std_f1 = stratified_results[model_name]['std_f1']
-                marker = "← SELECTED" if model_name == best_model_name else ""
-                print(f"  {model_name:<25} F1={f1:.4f} ± {std_f1:.4f} {marker}")
-            print(f"\nUsing {best_model_name} for hourly parking estimation (F1={best_f1:.4f} ± {best_std_f1:.4f})")
-            print(f"Optimal probability threshold: {optimal_threshold:.2f} (from cross-validation)")
-            print("="*80)
 
-            # Override model selection if --force-model is set
-            _force_name_map = {
-                'logistic':           'Logistic Regression',
-                'random-forest':      'Random Forest',
-                'gradient-boosting':  'Gradient Boosting',
-                'svm':                'SVM (RBF)',
-            }
-            if force_model and _force_name_map.get(force_model) != best_model_name:
-                forced_name = _force_name_map[force_model]
-                print(f"\n⚠ --force-model: overriding {best_model_name} → {forced_name}")
-                selected_model = model_mapping[forced_name]
-                selected_model_name = forced_name
-                optimal_threshold = stratified_results[forced_name]['avg_threshold']
-                print(f"  Using {forced_name} threshold: {optimal_threshold:.2f}")
-    
+    _force_name_map = {
+        'logistic':           'Logistic Regression',
+        'random-forest':      'Random Forest',
+        'gradient-boosting':  'Gradient Boosting',
+        'svm':                'SVM (RBF)',
+    }
+
+    # CV default depths (used for fair cross-model comparison regardless of --max-depth)
+    _rf_default_depth = 10
+    _gb_default_depth = 5
+
+    # Run stratified 5-fold cross-validation across all models
+    stratified_results = stratified_kfold_validation(
+        taz, commercial_density_threshold, n_splits=5
+    )
+
+    # Model instances at default depths (used for CV comparison and as production default)
+    model_mapping = {
+        'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000, class_weight='balanced'),
+        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42, max_depth=_rf_default_depth, class_weight='balanced'),
+        'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=_gb_default_depth, learning_rate=0.1),
+        'SVM (RBF)': SVC(kernel='rbf', probability=True, random_state=42, C=1.0, class_weight='balanced'),
+    }
+
+    # Calculate mean F1 score for each model
+    model_f1_scores = {name: result['avg_f1'] for name, result in stratified_results.items()}
+
+    # Find best model by F1
+    best_model_name = max(model_f1_scores, key=model_f1_scores.get)
+    best_f1 = model_f1_scores[best_model_name]
+    best_std_f1 = stratified_results[best_model_name]['std_f1']
+
+    print("\n" + "="*80)
+    print("MODEL SELECTION FOR PRODUCTION")
+    print("="*80)
+    print(f"\nComparing {len(model_f1_scores)} models:")
+    for model_name, f1 in sorted(model_f1_scores.items(), key=lambda x: x[1], reverse=True):
+        std_f1 = stratified_results[model_name]['std_f1']
+        marker = "← BEST F1" if model_name == best_model_name else ""
+        print(f"  {model_name:<25} F1={f1:.4f} ± {std_f1:.4f} {marker}")
+    print("="*80)
+
+    # Select model: forced or best-F1
+    if force_model:
+        forced_name = _force_name_map[force_model]
+        selected_model_name = forced_name
+        optimal_threshold = stratified_results[forced_name]['avg_threshold']
+        forced_f1 = model_f1_scores[forced_name]
+        forced_std_f1 = stratified_results[forced_name]['std_f1']
+        print(f"\n⚠ --force-model: {forced_name} selected (CV best was {best_model_name}, F1={best_f1:.4f})")
+        print(f"  {forced_name} CV F1={forced_f1:.4f} ± {forced_std_f1:.4f}, CV threshold={optimal_threshold:.2f}")
+
+        # Apply max_depth override to production model if applicable
+        if max_depth is not None and force_model in ('random-forest', 'gradient-boosting'):
+            cv_default = _rf_default_depth if force_model == 'random-forest' else _gb_default_depth
+            print(f"  max_depth: {cv_default} (CV default) → {max_depth} (--max-depth override)")
+            if force_model == 'random-forest':
+                selected_model = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=max_depth, class_weight='balanced')
+            else:
+                selected_model = GradientBoostingClassifier(n_estimators=100, random_state=42, max_depth=max_depth, learning_rate=0.1)
+        else:
+            selected_model = model_mapping[forced_name]
+    else:
+        selected_model_name = best_model_name
+        selected_model = model_mapping[best_model_name]
+        optimal_threshold = stratified_results[best_model_name]['avg_threshold']
+        print(f"\n✓ Selected: {best_model_name} (F1={best_f1:.4f} ± {best_std_f1:.4f})")
+        print(f"  CV optimal threshold: {optimal_threshold:.2f}")
+
+    print("="*80)
+
     return selected_model, selected_model_name, optimal_threshold
 
 
@@ -1636,7 +837,7 @@ def merge_scraped_cost(taz):
     Converts daily and monthly parking rates to hourly equivalents using
     consistent commuter assumptions:
     - Daily: price / 8 hours (typical workday)
-    - Monthly: price / 176 hours (22 workdays × 8 hours)
+    - Monthly: price / 160 hours (4 weeks × 5 days × 8 hours)
     
     Creates PRKCST column with average hourly rate per TAZ.
     
@@ -1670,14 +871,14 @@ def merge_scraped_cost(taz):
     
     # Convert to hourly rates (consistent commuter assumption)
     # Daily: 8-hour workday
-    # Monthly: 22 workdays × 8 hours = 176 hours
+    # Monthly: 4 weeks × 5 days × 8 hours = 160 hours
     if len(daily) > 0:
         daily['price_per_hour'] = daily['price_value'] / 8.0
         print(f"  Converting daily rates: price / 8 hours")
     
     if len(monthly) > 0:
-        monthly['price_per_hour'] = monthly['price_value'] / 176.0
-        print(f"  Converting monthly rates: price / 176 hours (22 days × 8 hrs)")
+        monthly['price_per_hour'] = monthly['price_value'] / 160.0
+        print(f"  Converting monthly rates: price / 160 hours (4 weeks × 5 days × 8 hrs)")
     
     # Combine daily and monthly hourly rates
     hourly_rates = []
@@ -1721,48 +922,6 @@ def merge_scraped_cost(taz):
     return taz
 
 
-# def update_parkarea_with_predicted_costs(taz):
-#     """
-#     Update parkarea classification to include predicted parking costs.
-    
-#     parkarea codes:
-#     - 1: Downtown core (from Local Moran's I analysis)
-#     - 2: Within 1/4 mile of downtown core
-#     - 3: Paid parking (predicted or observed outside downtown)
-#     - 4: Free parking / no parking cost
-    
-#     Args:
-#         taz (GeoDataFrame): TAZ with parkarea, OPRKCST, and PRKCST
-    
-#     Returns:
-#         GeoDataFrame: TAZ with updated parkarea classifications
-#     """
-#     # Start with parkarea already assigned by merge_parking_area (0, 1, or 2)
-#     # parkarea=1 already set for downtown cores
-#     # parkarea=2 already set for TAZs within 1/4 mile of downtown
-    
-#    # Set parkarea=3 for non-downtown TAZs with any parking cost (observed or predicted)
-#     has_parking_cost = (
-#         (taz['OPRKCST'].notnull() & (taz['OPRKCST'] > 0)) |
-#         (taz['PRKCST'].notnull() & (taz['PRKCST'] > 0))
-#     )
-    
-#     # Only reassign parkarea if not already 1 or 2
-#     taz.loc[has_parking_cost & (taz['parkarea'] == 0), 'parkarea'] = 3
-    
-#     # Set parkarea=4 for free parking (no cost areas)
-#     # All remaining parkarea=0 (no paid parking) assigned to parkarea=4
-#     taz.loc[taz['parkarea'] == 0, 'parkarea'] = 4
-    
-#     # Report final distribution
-#     print(f"\n  Final parkarea distribution:")
-#     for code in sorted(taz['parkarea'].unique()):
-#         count = (taz['parkarea'] == code).sum()
-#         print(f"    parkarea={int(code)}: {count:,} TAZs")
-    
-#     return taz
-
-
 class _Tee:
     """Mirror stdout to a log file for the duration of the script."""
     def __init__(self, log_path):
@@ -1786,32 +945,27 @@ class _Tee:
 def main():
     """
     Execute parking cost estimation as a standalone script.
-    
+
     Loads TAZ shapefile, land use data, parking capacity, and observed costs,
     then runs the full estimation workflow to produce hourly (OPRKCST) and
     long-term (PRKCST) parking costs.
-    
-    By default, runs stratified 5-fold cross-validation and compares multiple
-    ML models (Logistic Regression, Random Forest, Gradient Boosting, SVM).
-    
+
+    OPRKCST: ML classification (stratified 5-fold CV, multi-model comparison).
+    PRKCST:  Scraped SpotHero daily/monthly rates spatially joined to TAZ.
+
     Outputs:
-        - parking_costs_taz.csv: TAZ1454, OPRKCST, PRKCST columns
-        - parking_costs_taz.gpkg: Same columns + geometry
-    
+        - parking_costs_taz.csv:  TAZ1454, OPRKCST, PRKCST
+        - parking_costs_taz.gpkg: same columns + OPRKCST_TYPE, PRKCST_TYPE + geometry
+        - parking_costs_taz_log.txt: full stdout log
+
     Usage:
-        python parking_estimation.py [--no-compare-models] 
-                                     [--commercial-density-threshold 1.0]
-                                     [--percentile 0.95]
-                                     [--probability-threshold 0.5]
+        python parking_estimation.py [--commercial-density-threshold 0.5]
+                                     [--force-model {logistic,random-forest,gradient-boosting,svm}]
+                                     [--probability-threshold THRESHOLD]
+                                     [--max-depth DEPTH]
     """
     parser = argparse.ArgumentParser(
         description="Estimate parking costs for TAZ zones"
-    )
-    parser.add_argument(
-        "--no-compare-models",
-        action="store_false",
-        dest="compare_models",
-        help="Skip model comparison (runs by default, compares LR, RF, GB, SVM using stratified 5-fold CV)"
     )
     parser.add_argument(
         "--commercial-density-threshold",
@@ -1820,23 +974,26 @@ def main():
         help="Minimum commercial employment density (jobs/acre) for paid parking (default: 0.5)"
     )
     parser.add_argument(
-        "--percentile",
-        type=float,
-        default=0.95,
-        help="Percentile threshold for long-term parking estimation (default: 0.95)"
+        "--force-model",
+        choices=["logistic", "random-forest", "gradient-boosting", "svm"],
+        default=None,
+        help="Select this model regardless of CV F1 score. CV still runs across all models "
+             "to derive the optimal threshold for the forced model."
     )
     parser.add_argument(
         "--probability-threshold",
         type=float,
-        default=0.5,
-        help="Classification probability threshold (fallback when --no-compare-models is used, default: 0.5)"
+        default=None,
+        help="Override the CV-derived probability threshold (only meaningful with --force-model). "
+             "Default: use CV optimal threshold for the selected model."
     )
     parser.add_argument(
-        "--force-model",
-        choices=["logistic", "random-forest", "gradient-boosting", "svm"],
+        "--max-depth",
+        type=int,
         default=None,
-        help="Force use of a specific model regardless of F1 score: "
-             "logistic, random-forest, gradient-boosting, or svm"
+        help="Override tree max_depth for the production model when --force-model is "
+             "random-forest (CV default 10) or gradient-boosting (CV default 5). "
+             "CV always runs with default depths for fair comparison. Ignored for other models."
     )
     
     args = parser.parse_args()
@@ -1853,10 +1010,13 @@ def main():
     print("="*80)
     print(f"\nParameters:")
     print(f"  Commercial density threshold: {args.commercial_density_threshold:.2f} jobs/acre")
-    print(f"  Long-term percentile: {args.percentile:.0%}")
-    print(f"  Hourly probability threshold: {args.probability_threshold:.2f}")
-    print(f"  Compare models: {args.compare_models}")
-    print(f"  Validation method: Stratified 5-Fold Cross-Validation")
+    print(f"  Validation method: Stratified 5-Fold Cross-Validation (always runs)")
+    if args.force_model:
+        print(f"  Force model: {args.force_model}")
+    if args.probability_threshold is not None:
+        print(f"  Probability threshold override: {args.probability_threshold:.2f}")
+    if args.max_depth is not None:
+        print(f"  Max depth override: {args.max_depth}")
     print()
     
     # Import utilities from parent directory
@@ -1885,6 +1045,8 @@ def main():
     print("\nLoading land use data...")
     land_use = pd.read_csv(LU_FILE_2023)
     print(f"  Loaded {len(land_use):,} land use records")
+
+
     
     # Rename ZONE to TAZ1454 for merge
     # Preserve existing parking costs with _2015 suffix to distinguish from newly calculated values
@@ -1897,6 +1059,9 @@ def main():
     
     # Merge land use to TAZ
     taz = taz.merge(land_use, on='TAZ1454', how='left')
+
+    
+
     print(f"  Merged land use data to TAZ")
     if 'OPRKCST_2015' in taz.columns:
         print(f"    Preserved OPRKCST_2015 (original land use values)")
@@ -1963,19 +1128,20 @@ def main():
     
     selected_model, selected_model_name, optimal_threshold = estimate_and_validate_hourly_parking_models(
         taz,
-        compare_models_flag=args.compare_models,
         commercial_density_threshold=args.commercial_density_threshold,
-        force_model=args.force_model
+        force_model=args.force_model,
+        max_depth=args.max_depth,
     )
-    
+
     # Determine which probability threshold to use
-    if optimal_threshold is not None:
-        threshold_to_use = optimal_threshold
-        threshold_source = f"validated optimal threshold: {threshold_to_use:.2f}"
-    else:
+    # --probability-threshold overrides CV optimal (only meaningful with --force-model)
+    if args.probability_threshold is not None:
         threshold_to_use = args.probability_threshold
-        threshold_source = f"argparse default: {threshold_to_use:.2f}"
-    
+        threshold_source = f"--probability-threshold override: {threshold_to_use:.2f}"
+    else:
+        threshold_to_use = optimal_threshold
+        threshold_source = f"CV optimal: {threshold_to_use:.2f}"
+
     print(f"\nUsing {threshold_source} for production predictions")
     
     # Step 6: Apply hourly parking model
@@ -1990,21 +1156,6 @@ def main():
     # Step 6.5: Merge scraped long-term parking costs (daily/monthly → hourly)
     taz = merge_scraped_cost(taz)
     
-    # Step 7: Estimate long-term parking costs
-    # print("\n" + "="*80)
-    # print("LONG-TERM PARKING ESTIMATION (PRKCST)")
-    # print("="*80)
-    
-    # taz = estimate_parking_by_county_threshold(
-    #     taz,
-    #     percentile=args.percentile
-    # )
-    
-    # # Step 8: Backfill downtown long-term costs
-    # taz = backfill_downtown_longterm_costs(taz)
-    
-    # # Step 9: Report final statistics
-    # taz = update_longterm_stalls_with_predicted_costs(taz)
     taz["PRKCST"] = taz["PRKCST"].fillna(0)
     
     # Step 10: Output results
