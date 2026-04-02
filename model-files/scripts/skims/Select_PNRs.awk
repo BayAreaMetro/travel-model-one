@@ -88,7 +88,7 @@ BEGIN{
 	# now we sort them to know what to keep
 	for (mode=1;mode<=9;++mode){
 	if (mode==2 || mode==7) {
-		for (taz=1;taz<=%TOTAL_ZONES%;++taz){
+		for (taz=1;taz<=TOTAL_ZONES;++taz){
 		
 			# make a set of the travel times just for this taz
 			delete tazDist

@@ -273,12 +273,12 @@ loop period = 1, 5
    endrun
    
    ; step 5: select two best park and ride locations for each mode and create the support links that are used in skimming/assignment  
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=walk          -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_walk.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=express_bus   -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_express_bus.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=light_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_light_rail.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=ferry         -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_ferry.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=heavy_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_heavy_rail.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=commuter_rail -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_commuter_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=%TOTAL_ZONES% -v type=walk          -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_walk.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=%TOTAL_ZONES% -v type=express_bus   -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_express_bus.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=%TOTAL_ZONES% -v type=light_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_light_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=%TOTAL_ZONES% -v type=ferry         -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_ferry.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=%TOTAL_ZONES% -v type=heavy_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_heavy_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=%TOTAL_ZONES% -v type=commuter_rail -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_commuter_rail.dat
    
    ; step 6: create KNR access links for local bus from walk access links
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" @token_period@_transit_suplinks_walk.dat > @token_period@_bus_acclinks_KNR.dat
