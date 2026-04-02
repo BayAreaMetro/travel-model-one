@@ -453,8 +453,8 @@ def apply_hourly_parking_model(taz, probability_threshold, commercial_density_th
         paid_costs = paid_costs[paid_costs > 0].values
         
         if cost_type == 'OPRKCST':
-            flat_rate = HOURLY_FLAT_RATE
-            print(f"    Using hourly flat rate: ${flat_rate:.2f}")
+            flat_rate = np.median(paid_costs)
+            print(f"    Using median of observed {cost_type}: ${flat_rate:.2f}")
         else:
             flat_rate = np.median(paid_costs)
             print(f"    Using median of observed {cost_type}: ${flat_rate:.2f}")
@@ -525,6 +525,8 @@ def apply_hourly_parking_model(taz, probability_threshold, commercial_density_th
             print(f"    Predicted free parking: {n_predictions - n_predicted_paid:,} TAZs")
     
     # Fill in observed costs with predictions where missing
+    # Capture which TAZs have observed costs before filling
+    had_observed_oprkcst = taz['OPRKCST'].notna()
     # Fill NaN with predictions
     taz['OPRKCST'] = taz['OPRKCST'].fillna(taz['OPRKCST_pred'])
     
@@ -537,7 +539,12 @@ def apply_hourly_parking_model(taz, probability_threshold, commercial_density_th
     if n_zeroed > 0:
         taz.loc[suburban_rural_mask, 'OPRKCST'] = 0
         print(f"\n  Enforced zero OPRKCST for {n_zeroed:,} suburban/rural TAZs (AREATYPE 4-5)")
-    
+
+    # Assign provenance labels
+    taz.loc[had_observed_oprkcst & (taz['OPRKCST'] > 0), 'OPRKCST_TYPE'] = 'observed'
+    taz.loc[~had_observed_oprkcst & (taz['OPRKCST'] > 0), 'OPRKCST_TYPE'] = 'predicted'
+    taz.loc[taz['OPRKCST'] == 0, 'OPRKCST_TYPE'] = ''
+
     # Report final statistics
     nonzero_count = (taz['OPRKCST'] > 0).sum()
     if nonzero_count > 0:
@@ -842,7 +849,7 @@ def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thre
     # Define models to test with model-specific features
     models = {
         'Logistic Regression': {
-            'model': LogisticRegression(random_state=42, max_iter=1000),
+            'model': LogisticRegression(random_state=42, max_iter=1000, class_weight='balanced'),
             'features': get_features_for_model('Logistic Regression')
         },
         'Random Forest': {
@@ -854,7 +861,7 @@ def stratified_kfold_validation(taz, commercial_density_threshold=1.0, test_thre
             'features': get_features_for_model('Gradient Boosting')
         },
         'SVM (RBF)': {
-            'model': SVC(probability=True, random_state=42, kernel='rbf', C=1.0),
+            'model': SVC(probability=True, random_state=42, kernel='rbf', C=1.0, class_weight='balanced'),
             'features': get_features_for_model('SVM (RBF)')
         }
     }
@@ -1360,6 +1367,8 @@ def estimate_parking_by_county_threshold(taz, percentile=0.95):
             print(f"  {county}: Predicted {n_longterm:,} long-term paid parking TAZs")
     
     # Fill in predictions ONLY for non-observed cities
+    # Capture which TAZs have observed costs before filling
+    had_observed_prkcst = taz['PRKCST'].notna() & (taz['PRKCST'] > 0)
     # Create mask for TAZs that are NOT in observed cities
     not_observed = ~(taz['place_name'].isin(observed_cities))
     
@@ -1378,7 +1387,12 @@ def estimate_parking_by_county_threshold(taz, percentile=0.95):
     if n_zeroed > 0:
         taz.loc[suburban_rural_mask, 'PRKCST'] = 0
         print(f"\n  Enforced zero PRKCST for {n_zeroed:,} suburban/rural TAZs (AREATYPE 4-5)")
-    
+
+    # Assign provenance labels
+    taz.loc[had_observed_prkcst, 'PRKCST_TYPE'] = 'observed'
+    taz.loc[~had_observed_prkcst & (taz['PRKCST'] > 0), 'PRKCST_TYPE'] = 'predicted'
+    taz.loc[taz['PRKCST'] == 0, 'PRKCST_TYPE'] = ''
+
     # Report final statistics
     print(f"\n  Summary:")
     print(f"    Total predicted long-term paid parking: {total_longterm_predicted:,} TAZs at ${longterm_flat_rate:.2f}")
@@ -1453,6 +1467,7 @@ def backfill_downtown_longterm_costs(taz):
         if n_eligible > 0:
             # Apply city median to eligible TAZs
             taz.loc[eligible_mask, 'PRKCST'] = city_median
+            taz.loc[eligible_mask, 'PRKCST_TYPE'] = 'predicted'
             total_backfilled += n_eligible
             print(f"  {city}: Backfilled {n_eligible:,} downtown TAZs with ${city_median:.2f} (median from {len(observed_costs):,} observed)")
         else:
@@ -1520,7 +1535,8 @@ def update_longterm_stalls_with_predicted_costs(taz):
 def estimate_and_validate_hourly_parking_models(
     taz,
     compare_models_flag=True,
-    commercial_density_threshold=1.0
+    commercial_density_threshold=1.0,
+    force_model=None
 ):
     """
     Run stratified k-fold validation and model comparison for hourly parking cost estimation.
@@ -1594,6 +1610,21 @@ def estimate_and_validate_hourly_parking_models(
             print(f"\nUsing {best_model_name} for hourly parking estimation (F1={best_f1:.4f} ± {best_std_f1:.4f})")
             print(f"Optimal probability threshold: {optimal_threshold:.2f} (from cross-validation)")
             print("="*80)
+
+            # Override model selection if --force-model is set
+            _force_name_map = {
+                'logistic':           'Logistic Regression',
+                'random-forest':      'Random Forest',
+                'gradient-boosting':  'Gradient Boosting',
+                'svm':                'SVM (RBF)',
+            }
+            if force_model and _force_name_map.get(force_model) != best_model_name:
+                forced_name = _force_name_map[force_model]
+                print(f"\n⚠ --force-model: overriding {best_model_name} → {forced_name}")
+                selected_model = model_mapping[forced_name]
+                selected_model_name = forced_name
+                optimal_threshold = stratified_results[forced_name]['avg_threshold']
+                print(f"  Using {forced_name} threshold: {optimal_threshold:.2f}")
     
     return selected_model, selected_model_name, optimal_threshold
 
@@ -1732,6 +1763,26 @@ def merge_scraped_cost(taz):
 #     return taz
 
 
+class _Tee:
+    """Mirror stdout to a log file for the duration of the script."""
+    def __init__(self, log_path):
+        self._stdout = sys.stdout
+        self._log = open(log_path, "w", encoding="utf-8")
+        sys.stdout = self
+
+    def write(self, data):
+        self._stdout.write(data)
+        self._log.write(data)
+
+    def flush(self):
+        self._stdout.flush()
+        self._log.flush()
+
+    def close(self):
+        sys.stdout = self._stdout
+        self._log.close()
+
+
 def main():
     """
     Execute parking cost estimation as a standalone script.
@@ -1780,9 +1831,23 @@ def main():
         default=0.5,
         help="Classification probability threshold (fallback when --no-compare-models is used, default: 0.5)"
     )
+    parser.add_argument(
+        "--force-model",
+        choices=["logistic", "random-forest", "gradient-boosting", "svm"],
+        default=None,
+        help="Force use of a specific model regardless of F1 score: "
+             "logistic, random-forest, gradient-boosting, or svm"
+    )
     
     args = parser.parse_args()
-    
+
+    import atexit
+    output_dir = Path(__file__).parent
+    log_file = output_dir / "parking_costs_taz_log.txt"
+    tee = _Tee(log_file)
+    atexit.register(tee.close)
+    print(f"Logging to: {log_file}")
+
     print("="*80)
     print("PARKING COST ESTIMATION")
     print("="*80)
@@ -1886,7 +1951,11 @@ def main():
     taz = taz.merge(observed, on='TAZ1454', how='left')
     observed_count = taz['OPRKCST'].notna().sum()
     print(f"  Loaded observed costs for {observed_count:,} TAZ zones")
-    
+
+    # Initialize provenance type columns (populated during estimation steps)
+    taz['OPRKCST_TYPE'] = ''
+    taz['PRKCST_TYPE'] = ''
+
     # Step 5: Run hourly parking model estimation and validation
     print("\n" + "="*80)
     print("HOURLY PARKING ESTIMATION (OPRKCST)")
@@ -1895,7 +1964,8 @@ def main():
     selected_model, selected_model_name, optimal_threshold = estimate_and_validate_hourly_parking_models(
         taz,
         compare_models_flag=args.compare_models,
-        commercial_density_threshold=args.commercial_density_threshold
+        commercial_density_threshold=args.commercial_density_threshold,
+        force_model=args.force_model
     )
     
     # Determine which probability threshold to use
@@ -1921,27 +1991,26 @@ def main():
     taz = merge_scraped_cost(taz)
     
     # Step 7: Estimate long-term parking costs
-    print("\n" + "="*80)
-    print("LONG-TERM PARKING ESTIMATION (PRKCST)")
-    print("="*80)
+    # print("\n" + "="*80)
+    # print("LONG-TERM PARKING ESTIMATION (PRKCST)")
+    # print("="*80)
     
-    taz = estimate_parking_by_county_threshold(
-        taz,
-        percentile=args.percentile
-    )
+    # taz = estimate_parking_by_county_threshold(
+    #     taz,
+    #     percentile=args.percentile
+    # )
     
-    # Step 8: Backfill downtown long-term costs
-    taz = backfill_downtown_longterm_costs(taz)
+    # # Step 8: Backfill downtown long-term costs
+    # taz = backfill_downtown_longterm_costs(taz)
     
-    # Step 9: Report final statistics
-    taz = update_longterm_stalls_with_predicted_costs(taz)
+    # # Step 9: Report final statistics
+    # taz = update_longterm_stalls_with_predicted_costs(taz)
+    taz["PRKCST"] = taz["PRKCST"].fillna(0)
     
     # Step 10: Output results
     print("\n" + "="*80)
     print("WRITING OUTPUT FILES")
     print("="*80)
-    
-    output_dir = Path(__file__).parent
     
     # Step 10a: Convert from 2023 dollars to year 2000 cents
     print("\nConverting parking costs to year 2000 cents...")
@@ -1987,10 +2056,11 @@ def main():
     
     # GeoPackage output (with geometry)
     gpkg_file = output_dir / "parking_costs_taz.gpkg"
-    taz_output = taz[output_cols + ['geometry']].copy()
+    gpkg_type_cols = ['OPRKCST_TYPE', 'PRKCST_TYPE']
+    taz_output = taz[output_cols + gpkg_type_cols + ['geometry']].copy()
     taz_output.to_file(gpkg_file, driver='GPKG')
     print(f"\nWrote GeoPackage: {gpkg_file}")
-    print(f"  Columns: {', '.join(output_cols)} + geometry")
+    print(f"  Columns: {', '.join(output_cols + gpkg_type_cols)} + geometry")
     print(f"  Records: {len(taz_output):,}")
     
     # Final summary
