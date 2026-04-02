@@ -199,7 +199,7 @@ def get_parking_capacity(write=False):
     # Load data
     print(f"Loading input data...")
     parking_capacity = gpd.read_file(
-        PARKING_RAW_DATA_DIR / "2123-Dataset" / "parking_density_Employee_Capita" / "parking_density_Employee_Capita.shp"
+        PARKING_RAW_DATA_DIR / "2123-Dataset" / "parking_density_Employee_Capita" / "parking_density_Employee_Capita.shp", engine="fiona"
     ).to_crs(ANALYSIS_CRS)
     parking_capacity = parking_capacity[["blkgrpid", "on_all", "off_nres", "geometry"]]
     
