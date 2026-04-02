@@ -20,16 +20,16 @@ The only prerequisite is the SpotHero scrape, which must be run beforehand.  It 
 
 ## parking_capacity.py
 
-Allocates block-group-level parking supply counts to TAZ level.
+Allocates block-group-level parking stall counts to TAZ level.
 
 **Sources:**  
-[Bay Area Parking Census (capacity)](https://www.spur.org/publications/spur-report/2022-02-28/bay-area-parking-census), `parking_density_Employee_Capita.shp`,  
+[Bay Area Parking Census](https://www.spur.org/publications/spur-report/2022-02-28/bay-area-parking-census), `parking_density_Employee_Capita.shp`,  
 Citation:
 Mikhail Chester, Alysha Helmrich, and Rui Li. "San Francisco Bay Area Parking Census [Dataset]" Mineta Transportation Institute Publications (2022). doi: https://doi.org/10.31979/mti.2022.2123.ds
 
 **Method:**
 - Spatial allocation from block groups to TAZ
-- `off_nres` (off-street non-residential stalls): employment-weighted allocation across; falls back to area-weighted where block group employment = 0
+- `off_nres` (off-street non-residential stalls): employment-weighted allocation, falls back to area-weighted where block group employment = 0
 - `on_all` (on-street, all stall types): area-weighted allocation
 
 
@@ -57,14 +57,14 @@ Loads city-published parking meters/rates and spatially assigns them to TAZ as o
 
 ## parking_estimation.py
 Main entry point. Produces `parking_costs_taz.csv` and `parking_costs_taz.gpkg`.
-### PRKCST (long-term)
+### PRKCST (long-term, off-street)
 Scraped SpotHero daily/monthly rates (produced by `parking_scrape.py` in [tm2py-utils](https://github.com/BayAreaMetro/tm2py-utils/blob/main/tm2py_utils/inputs/land_use/parking_scrape.py)).  Pre-generated data loaded and merged here.
 
 
 
-### OPRKCST (hourly)
+### OPRKCST (short-term, on-street)
 
-Binary ML classification (paid vs. free) trained on the four observed cities above, applied to all other incorporated cities with on-street capacity. Paid TAZs are assigned the observed median hourly rate.
+Binary ML classification (paid vs. free) trained on the four observed cities above, applied to all other incorporated cities with on-street capacity. Paid TAZs are assigned the observed median hourly rate (this is an area-weighted value based on TAZ-to-parking area intersection).
 
 By default (no arguments), the script:
 - Runs stratified 5-fold cross-validation across all four candidate models: Logistic Regression, Random Forest, Gradient Boosting, SVM (RBF)
