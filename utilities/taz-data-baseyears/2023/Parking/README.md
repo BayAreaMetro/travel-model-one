@@ -1,4 +1,4 @@
-# Parking Cost Estimation
+# Parking Inputs
 
 Produces two parking cost fields for all 1,454 Bay Area TAZs, expressed in **year 2000 cents**:
 
