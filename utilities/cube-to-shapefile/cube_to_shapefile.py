@@ -208,7 +208,7 @@ def runCubeScript(workingdir, script_filename, script_env):
     # run it
     logger = logging.getLogger()
     logger.debug(f"script_env={script_env}")
-    RUNTPP_EXE = RUNTPP_PATH / 'runtpp.exe'
+    RUNTPP_EXE = RUNTPP_PATH / 'voyagercli.exe'
     proc = subprocess.Popen(f'\"{RUNTPP_EXE}\" \"{script_filename}\"', 
                             cwd=workingdir, env=script_env,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
