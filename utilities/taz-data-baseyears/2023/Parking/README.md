@@ -39,7 +39,8 @@ Mikhail Chester, Alysha Helmrich, and Rui Li. "San Francisco Bay Area Parking Ce
 
 Loads city-published parking meters/rates and spatially assigns them to TAZ as observed OPRKCST.  These are used to train the model in parking estimation step.
 
-**Method:** Area-weighted assignment with a 5% minimum TAZ coverage threshold.
+**Method:** Area-weighted assignment with a 5% minimum TAZ coverage threshold.  There’s potential for capacity weighting but that may just be burying the area weighting down another level because it requires harmonizing three ways (TAZ x meter area x block group).
+
 
 **Sources:**
 
