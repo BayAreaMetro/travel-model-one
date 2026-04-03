@@ -89,7 +89,7 @@ import pandas as pd
 import shapely.geometry
 import pyproj
 
-RUNTPP_PATH     = pathlib.Path("C:\\Program Files (x86)\\Citilabs\\CubeVoyager")
+RUNTPP_PATH     = pathlib.Path("C:\Program Files\Bentley\OpenPaths\CUBE 25.01.01\Voyager")
 LOG_FILE        = "cube_to_shapefile.log"
 
 # shapefiles
