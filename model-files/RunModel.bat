@@ -204,19 +204,19 @@ python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
 IF ERRORLEVEL 1 goto done
 
 :: Set the prices in the roadway network
-voyagercli CTRAMP\scripts\preprocess\SetTolls.job
+voyagercli CTRAMP\scripts\preprocess\SetTolls.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Set a penalty to dummy links connecting HOV/HOT lanes and general purpose lanes
-voyagercli CTRAMP\scripts\preprocess\SetHovXferPenalties.job
+voyagercli CTRAMP\scripts\preprocess\SetHovXferPenalties.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Create time-of-day-specific 
-voyagercli CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
+voyagercli CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Create HSR trip tables to/from Bay Area stations
-voyagercli CTRAMP\scripts\preprocess\HsrTripGeneration.job
+voyagercli CTRAMP\scripts\preprocess\HsrTripGeneration.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
@@ -228,11 +228,11 @@ if ERRORLEVEL 2 goto done
 : Non-Motorized Skims
 
 :: Translate the roadway network into a non-motorized network
-voyagercli CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job
+voyagercli CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Build the skim tables
-voyagercli CTRAMP\scripts\skims\NonMotorizedSkims.job
+voyagercli CTRAMP\scripts\skims\NonMotorizedSkims.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Step 4.5: Build initial transit files
@@ -347,7 +347,7 @@ C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 
 : database
 
-voyagercli CTRAMP\scripts\database\SkimsDatabase.job
+voyagercli CTRAMP\scripts\database\SkimsDatabase.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 
@@ -361,7 +361,7 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
   rem Export network to csv version (with vehicle class volumn columns intact)
   rem Input : hwy\iter%ITER%\avgload5period.net
   rem Output: hwy\iter%ITER%\avgload5period_vehclasses.csv
-  voyagercli "CTRAMP\scripts\metrics\net2csv_avgload5period.job"
+  voyagercli "CTRAMP\scripts\metrics\net2csv_avgload5period.job" -S %MODEL_DIR%
   IF ERRORLEVEL 2 goto error
 )
 

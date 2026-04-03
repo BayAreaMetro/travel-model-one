@@ -28,14 +28,14 @@ if %ITER%==0 goto hwyAssign
 :skims
 
 :: Create the automobile level-of-service matrices
-voyagercli CTRAMP\scripts\skims\HwySkims.job
+voyagercli CTRAMP\scripts\skims\HwySkims.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: No need to build transit skims here; they were built by the previous assignment
 
 
 :: Create accessibility measures for use by the automobile ownership sub-model
-voyagercli CTRAMP\scripts\skims\Accessibility.job
+voyagercli CTRAMP\scripts\skims\Accessibility.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 
@@ -49,7 +49,7 @@ if ERRORLEVEL 2 goto done
 
 if %ITER%==1 (
   rem List unconnected zones in skims\unconnected_zones.csv
-  voyagercli CTRAMP\scripts\skims\FindNoAccessZones.job
+  voyagercli CTRAMP\scripts\skims\FindNoAccessZones.job -S %MODEL_DIR%
   if ERRORLEVEL 2 goto done
 
   rem Filter out households in those unconnected zones
@@ -87,39 +87,39 @@ if ERRORLEVEL 1 goto done
 :nonres
 
 :: Create production/attraction tables based on growth assumptions
-voyagercli CTRAMP\scripts\nonres\IxForecasts_horizon.job
+voyagercli CTRAMP\scripts\nonres\IxForecasts_horizon.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Apply diurnal factors to the fixed internal/external demand matrices
-voyagercli CTRAMP\scripts\nonres\IxTimeOfDay.job
+voyagercli CTRAMP\scripts\nonres\IxTimeOfDay.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Apply a value toll choice model for the interna/external demand
-voyagercli CTRAMP\scripts\nonres\IxTollChoice.job
+voyagercli CTRAMP\scripts\nonres\IxTollChoice.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Apply the commercial vehicle generation models
-voyagercli CTRAMP\scripts\nonres\TruckTripGeneration.job
+voyagercli CTRAMP\scripts\nonres\TruckTripGeneration.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Apply the commercial vehicle distribution models
-voyagercli CTRAMP\scripts\nonres\TruckTripDistribution.job
+voyagercli CTRAMP\scripts\nonres\TruckTripDistribution.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Apply the commercial vehicle diurnal factors
-voyagercli CTRAMP\scripts\nonres\TruckTimeOfDay.job
+voyagercli CTRAMP\scripts\nonres\TruckTimeOfDay.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Apply a value toll choice model for eligibile commercial demand
-voyagercli CTRAMP\scripts\nonres\TruckTollChoice.job
+voyagercli CTRAMP\scripts\nonres\TruckTollChoice.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Apply a transit submode choice model for transit trips to bay area HSR stations
-voyagercli CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
+voyagercli CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Move air passenger trips from the free path to the tolled path, if the free path does not exist
-voyagercli CTRAMP\scripts\nonres\MoveAirPaxTrips_IfNoFreePath.job
+voyagercli CTRAMP\scripts\nonres\MoveAirPaxTrips_IfNoFreePath.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
@@ -132,12 +132,12 @@ if ERRORLEVEL 2 goto done
 
 :: If demand models were executed, translate the trip lists to demand matrices
 if %ITER% GTR 0 (
-	voyagercli CTRAMP\scripts\assign\PrepAssign.job
+	voyagercli CTRAMP\scripts\assign\PrepAssign.job -S %MODEL_DIR%
 	if ERRORLEVEL 2 goto done
 )
 
 :: Assign the demand matrices to the highway network
-voyagercli CTRAMP\scripts\assign\HwyAssign.job
+voyagercli CTRAMP\scripts\assign\HwyAssign.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :trnAssignSkim
@@ -165,13 +165,13 @@ move hwy\LOADPM.net hwy\iter%ITER%\LOADPM.net
 move hwy\LOADEV.net hwy\iter%ITER%\LOADEV.net
 
 :: Give the default TP+ variables more intuitive names
-voyagercli CTRAMP\scripts\feedback\RenameAssignmentVariables.job
+voyagercli CTRAMP\scripts\feedback\RenameAssignmentVariables.job -S %MODEL_DIR%
 
 :: Average the demand for this and the previous iteration and compute a speed estimate for each link
 IF %ITER% GTR 1 (
-	voyagercli CTRAMP\scripts\feedback\AverageNetworkVolumes.job
+	voyagercli CTRAMP\scripts\feedback\AverageNetworkVolumes.job -S %MODEL_DIR%
 	if ERRORLEVEL 2 goto done
-	voyagercli CTRAMP\scripts\feedback\CalculateSpeeds.job
+	voyagercli CTRAMP\scripts\feedback\CalculateSpeeds.job -S %MODEL_DIR%
 	if ERRORLEVEL 2 goto done
 ) ELSE (
 	copy hwy\iter%ITER%\LOADEA_renamed.net hwy\iter%ITER%\avgLOADEA.net /Y
@@ -182,11 +182,11 @@ IF %ITER% GTR 1 (
 )
 
 :: Compute network statistics to measure convergence
-voyagercli CTRAMP\scripts\feedback\TestNetworkConvergence.job
+voyagercli CTRAMP\scripts\feedback\TestNetworkConvergence.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Combine the time-of-day-specific networks into a single network
-voyagercli CTRAMP\scripts\feedback\MergeNetworks.job
+voyagercli CTRAMP\scripts\feedback\MergeNetworks.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
 :: Place a copy of the loaded networks into the root \hwy directory for access by the next iteration
