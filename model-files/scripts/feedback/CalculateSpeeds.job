@@ -86,7 +86,7 @@ loop period = 1,5
    endif
    
    ; distribute via cluster
-   DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = '%COMMPATH%'
+   DistributeMultistep Alias = 'CTRAMP@period@'
   
    ; step 1: use the assignment routine to compute link speeds with the averaged volume
    run pgm = highway
@@ -219,6 +219,6 @@ loop period = 1,5
   
 endloop ; time period loop
 
-Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+BARRIER IDLIST = CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5, 
           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 

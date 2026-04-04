@@ -197,8 +197,7 @@ loop period = 1, 5
    endif
 
    ; do each time of day as a separate process
-   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = '%COMMPATH%'
-
+   DistributeMultistep Alias = @period@
 
    ; step one: convert individual trip list to an origin/destination list
    run pgm = matrix
@@ -900,7 +899,7 @@ loop period = 1, 5
 endloop ; time period loop
 
 
-Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
+BARRIER IDLIST=1,2,3,4,5,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 
