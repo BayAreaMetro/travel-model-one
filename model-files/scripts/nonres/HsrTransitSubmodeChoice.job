@@ -377,7 +377,7 @@ loop tpnum=1,5
 endloop
 
 Barrier IDLIST=CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5,
-           printfiles=merge, deldistribfiles=t, CheckReturnCode=t
+           printfiles=merge, CheckReturnCode=t
 
 * copy @token_debug_filename@.EA.debug+@token_debug_filename@.AM.debug+@token_debug_filename@.MD.debug+@token_debug_filename@.PM.debug+@token_debug_filename@.EV.debug @token_debug_filename@.debug
 * del @token_debug_filename@.EA.debug @token_debug_filename@.AM.debug @token_debug_filename@.MD.debug @token_debug_filename@.PM.debug @token_debug_filename@.EV.debug

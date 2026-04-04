@@ -344,5 +344,4 @@ loop period = 1, 5
 
 endloop ; time period loop
 
-BARRIER IDLIST='1','2','3','4','5',
-          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
+BARRIER IDLIST='1','2','3','4','5', PrintFiles = merge, CheckReturnCode = t

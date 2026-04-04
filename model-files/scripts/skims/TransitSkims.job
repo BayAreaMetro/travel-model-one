@@ -615,7 +615,7 @@ endloop ; time period loop
 BARRIER IDLIST = ctramp1,  ctramp2,  ctramp3,  ctramp4,  ctramp5,
                    ctramp6,  ctramp7,  ctramp8,  ctramp9,  ctramp10,
                    ctramp11, ctramp12, ctramp13, ctramp14, ctramp15, 
-          printfiles = save, DelDistribFiles = t, CheckReturnCode = t
+          printfiles = save, CheckReturnCode = t
                    
 
 ; combine all the debug output

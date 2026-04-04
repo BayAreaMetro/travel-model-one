@@ -264,7 +264,7 @@ loop period = 1,5
 endloop ; period loop
 
 BARRIER IDLIST = CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5,
-           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+           printfiles = merge, CheckReturnCode = t
 
 * copy @token_debug_filename@.VSM.EA.debug+@token_debug_filename@.SML.EA.debug+@token_debug_filename@.MED.EA.debug+@token_debug_filename@.LRG.EA.debug @token_debug_filename@.EA.debug
 * copy @token_debug_filename@.VSM.AM.debug+@token_debug_filename@.SML.AM.debug+@token_debug_filename@.MED.AM.debug+@token_debug_filename@.LRG.AM.debug @token_debug_filename@.AM.debug
