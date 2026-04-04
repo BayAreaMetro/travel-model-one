@@ -900,7 +900,7 @@ endloop ; time period loop
 
 
 BARRIER IDLIST=1,2,3,4,5,
-           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+           printfiles = merge, CheckReturnCode = t
 
 
 ; delete the time-period-specific copies of the individual trip data used in this scrip
