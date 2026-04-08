@@ -27,7 +27,7 @@ set R_HOME=C:\Program Files\R\R-4.2.1
 set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
 
 :: The location of the RUNTPP executable from Citilabs
-set TPP_PATH=C:\Program Files\Bentley\OpenPaths\CUBE 25.01.01\Voyager;C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
+set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
 
 :: The location of the MTC.JAR file
 set RUNTIME=CTRAMP/runtime
