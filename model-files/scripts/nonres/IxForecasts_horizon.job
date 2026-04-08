@@ -32,7 +32,7 @@
 ; ----------------------------------------------------------------------------------------------------------------
 token_future = '%FUTURE%'
 FIRST_EXT_ZONE = %FIRST_EXTERNAL_ZONE%
-TOTAL_ZONES = %TOTAL_ZONES%
+TOT_ZONES = %TOTAL_ZONES%
 
 ; for 2005, just the use 2005 matrix
 IF (%MODEL_YEAR% == 2005)
@@ -85,7 +85,7 @@ run pgm = matrix
    IF (I==1)
 
      ; first, figure out desired daily total
-     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,@TOTAL_ZONES@
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,@TOT_ZONES@
        prod_total_2021 = totals_2021(1,EXT_ZONE)
        attr_total_2021 = totals_2021(2,EXT_ZONE)
 

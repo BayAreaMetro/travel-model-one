@@ -45,6 +45,8 @@
 ; set the current iteration DOS token as a TP+ token
 token_current_iteration = '%ITER%'
 
+INT_ZONES = %INTERNAL_ZONES%
+
 ; do, more or less, the same assignment procedure for each time period
 loop period = 1,5
   
@@ -107,7 +109,7 @@ loop period = 1,5
       parameters combine = equi                                 
       
       ; set the assignment parameters -- 2340 internal zones + 36 external zones
-      parameters zones = %INTERNAL_ZONES%
+      parameters zones = @INT_ZONES@
       
       ; set the assignment parameters -- single dummy iteration just to calculate speeds
       parameters maxiters = 1

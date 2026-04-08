@@ -27,7 +27,7 @@
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 model_year = %MODEL_YEAR%
-
+TOT_ZONES=%TOTAL_ZONES%
 ; check if HSR_Interregional_Disable is configured
 READ FILE="CTRAMP\scripts\block\trnParam.block"
 
@@ -53,7 +53,7 @@ loop tpnum=1,5
    
   ;  filei mati[1] = 'INPUT\nonres\tripsHsr@time_period@_2040.tpp'
   ;  filei mati[2] = 'INPUT\nonres\tripsHsr@time_period@_2050.tpp'
-    Zones=%TOTAL_ZONES%
+    zones = @TOT_ZONES@
     fileo mato[1] = 'nonres\tripsHsr@time_period@_intermediate.tpp', mo=1-10, 
        name=m_da, m_sr2, m_taxi, m_transit, m_walk, b_da, b_sr2, b_taxi, b_transit, b_walk
 

@@ -46,6 +46,8 @@ token_model_coefficient_in_vehicle = '-0.0220/0.72'
 ; set the cost coefficient, which is a function of the value of time in the highway parameter block
 token_model_coefficient_cost = '(_kIvtt / VOT) * 0.6'
 
+INT_ZONES=%INTERNAL_ZONES%
+
 ; debug
 ; JEF THESE SHOULD BE MADE PARAMETERS.
 token_debug_origin      = '%SanFra_HSR_TAZ%' ; San Francisco HSR TAZ
@@ -95,7 +97,7 @@ loop tpnum=1,5
            drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
            wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
 
-    ZONES=%INTERNAL_ZONES%
+    ZONES=@INT_ZONES@
     PAGEHEIGHT=32767     ; preclude insertion of page headers
 
     ARRAY wlk_to_SanFra=ZONES, wlk_to_Millbr=ZONES, wlk_to_SanJos=ZONES, wlk_to_Gilroy=ZONES
