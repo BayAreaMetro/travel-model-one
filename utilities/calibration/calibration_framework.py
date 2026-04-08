@@ -17,6 +17,8 @@ except ImportError:
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 
+from calibration_data_models import CTRAMPCounty
+
 
 
 class CalibrationConfig:
@@ -27,7 +29,7 @@ class CalibrationConfig:
         self.raw_config = {}
         
         # Load config file
-        config_file = config_file or 'E:/GitHub/travel-model-one/utilities/calibration/calibration_config.yaml'
+        config_file = config_file or str(Path(__file__).parent / 'calibration_config.yaml')
         if os.path.exists(config_file):
             with open(config_file, 'r') as f:
                 self.raw_config = yaml.safe_load(f)
@@ -92,22 +94,8 @@ class CalibrationConfig:
     
     def get_county_lookup(self) -> dict:
         """Get county lookup dictionary mapping county ID to county name."""
-        if 'counties' not in self.config:
-            # Default county lookup
-            return {
-                1: "San Francisco",
-                2: "San Mateo",
-                3: "Santa Clara",
-                4: "Alameda",
-                5: "Contra Costa",
-                6: "Solano",
-                7: "Napa",
-                8: "Sonoma",
-                9: "Marin"
-            }
-        
-        # Convert config to dictionary
-        return {int(county_id): name for county_id, name in self.config['counties'].items()}
+        # Use canonical county labels from shared CTRAMP codebook.
+        return {county.id: county.label for county in CTRAMPCounty}
     
     def get_submodel_config(self, submodel: str) -> Dict[str, str]:
         """Get configuration for specific submodel."""
@@ -122,22 +110,31 @@ class CalibrationBase(ABC):
     """Base class for calibration processing."""
     
     def __init__(self, submodel: str, config_file: str = None):
+        # Set up logging
+        self._setup_logging()
+
         self.config = CalibrationConfig(config_file, submodel)
         self.submodel = submodel
         self.submodel_config = self.config.get_submodel_config(submodel)
         
+        # Set up parameters
+        self.calib_iter = self.config.get('general', 'calib_iter')
+        if self.calib_iter == 0:
+            self.logging.info("Full Model Run")
+            self.iter = 3
+            self.sampleshare = 0.5
+        else:
+            self.logging.info('Calibration Core Run Only')
+            self.iter = 1
+            self.sampleshare = 0.2
+
         # Set up paths
         self.target_dir = self.config.get('general', 'target_dir')
-        self.output_dir = f"{self.target_dir}/Output_{self.config.get('general', 'calib_iter')}"
+        self.output_dir = f"{self.target_dir}/Output_{self.calib_iter}"
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
-        
-        self.sampleshare = self.config.getfloat('general', 'sampleshare', 1.0)
         
         # Load shared data resources
         self.county_lookup = self.config.get_county_lookup()
-        
-        # Set up logging
-        self._setup_logging()
        
         # Print configuration
         self._print_config()
@@ -183,9 +180,9 @@ class CalibrationBase(ABC):
         self.logger.info(f"\n{sep}\nCONFIGURATION SUMMARY\n{sep}")
         self.logger.info(f"Submodel: {self.submodel} - {self.submodel_config['name']}")
         self.logger.info(f"TARGET_DIR  = {self.target_dir}")
-        self.logger.info(f"ITER        = {self.config.get('general', 'iter')}")
+        self.logger.info(f"ITER        = {self.iter}")
         self.logger.info(f"SAMPLESHARE = {self.sampleshare}")
-        self.logger.info(f"CALIB_ITER  = {self.config.get('general', 'calib_iter')}")
+        self.logger.info(f"CALIB_ITER  = {self.calib_iter}")
         self.logger.info(f"EXCEL_WORKBOOK = {self.submodel_config.get('workbook_template')}")
 
     def setup_workbook(self):

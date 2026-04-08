@@ -2,31 +2,19 @@ general:
   target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7"
   code_dir: "E:/GitHub/travel-model-one/utilities/calibration"
   output_dir: ""
-  sampleshare: 1.0
-  iter: ""
-  calib_iter: ""
+  calib_iter: "00"
   workbook_base_path: "M:/Development/Travel Model One/Calibration/Version 1.7"
 
 data_sources:
   taz_data: "{target_dir}/2023_TM161_IPA_35/INPUT/landuse/tazData.csv"
   dist_skim: "{target_dir}/2023_TM161_IPA_35/OUTPUT/skims/nonmotskm.csv"
 
-counties:
-  1: San Francisco
-  2: San Mateo
-  3: Santa Clara
-  4: Alameda
-  5: Contra Costa
-  6: Solano
-  7: Napa
-  8: Sonoma
-  9: Marin
-
 calibration_01:
   name: Usual Work and School Location
   workbook_template: 01_UsualWorkAndSchoolLocation_2023
-  input_file: "E:/TM1.7 Calibration/BATS/pipeline_mt_20260130/ctramp/MandatoryLocationData.csv"
-  bats_data: true
+  input_file: "{target_dir}/OUTPUT_{calib_iter}/main/wsloc3.csv"
+  bats_data: false
+  bats_person_data: ""  # path to PersonData.csv with person_weight column for BATS survey mode
 
 # calibration_02:
 #   name: Automobile Ownership
