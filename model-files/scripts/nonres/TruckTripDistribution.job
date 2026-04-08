@@ -53,7 +53,7 @@ token_number_of_internal_zones = 1454
 run pgm = matrix
 
    ; distribute via cluster
-   DistributeIntrastep MAXPROCESSES = 2, saveprn = f
+   DistributeIntrastep processid = 'CTRAMP', processlist = 1-2, commpath = '%COMMPATH%', saveprn = f
 
    read file = ctramp\scripts\block\hwyParam.block
 

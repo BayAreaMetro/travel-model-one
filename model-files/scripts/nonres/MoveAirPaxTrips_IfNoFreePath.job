@@ -24,7 +24,7 @@ loop period = 1,5
     token_period = 'EV'
   endif
 
-  DistributeMultistep Alias = 'ctramp@period@'
+  DistributeMultistep processid = 'ctramp', processNum = period, commpath = '%COMMPATH%'
     RUN PGM=MATRIX
      ; Read air passenger travel demand - vehicle trips
      FILEI MATI[1] = "nonres\tripsAirPax@token_period@_notolltrips.tpp"
@@ -62,5 +62,5 @@ loop period = 1,5
 EndDistributeMultistep
 endloop
 
-BARRIER IDLIST=CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5,
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t

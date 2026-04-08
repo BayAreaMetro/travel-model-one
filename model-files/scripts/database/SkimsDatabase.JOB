@@ -111,7 +111,7 @@ loop period = 1, 5
    endif
    
    ; do each time of day as a separate process
-   DistributeMultistep Alias = 'CTRAMP@period@'
+   DistributeMultistep processid = 'ctramp', processNum = period, commpath = '%COMMPATH%'
      
    ; total travel time by mode
    run pgm = matrix
@@ -339,7 +339,7 @@ loop period = 1, 5
 
 endloop ; token_period
 
-BARRIER IDLIST = CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5, 
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
            
 ; combine and delete the debug files
