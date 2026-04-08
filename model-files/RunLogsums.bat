@@ -42,7 +42,7 @@ python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
 if ERRORLEVEL 1 goto done
 
 :: List unconnected zones in skims\unconnected_zones.csv
-voyagercli CTRAMP\scripts\skims\FindNoAccessZones.job -S %MODEL_DIR%
+voyagercli CTRAMP\scripts\skims\FindNoAccessZones.job
 if ERRORLEVEL 2 goto done
 
 :: Filter out households in those unconnected zones
