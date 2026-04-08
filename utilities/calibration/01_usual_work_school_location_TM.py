@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 import os
@@ -19,11 +20,6 @@ class WorkSchoolLocationCalibration(CalibrationBase):
     """Calibration processor for usual work and school location."""
     
     def __init__(self, config_file: str = None):
-        if config_file is None:
-            # Default to config file in the same directory as this script
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            config_file = os.path.join(script_dir, 'calibration_config.yaml')
-
         super().__init__("01", config_file)
         self.bats_data = self.submodel_config.get("bats_data", False)
     
@@ -44,19 +40,19 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         
         # Add Home COUNTY
         self.logger.info("Merging Home County Data")
-        wsloc_results = add_county_info(wsloc_results, taz_data, 
+        wsloc_results = add_county_info(wsloc_results, taz_data, self.county_lookup,
                                        taz_col='HomeTAZ',
                                        county_col_name='HomeCOUNTY',
                                        county_name_col='HomeCounty_name')
         
         # Add Work and School COUNTY
         self.logger.info("Merging Work and School County Data")
-        wsloc_results = add_county_info(wsloc_results, taz_data,
+        wsloc_results = add_county_info(wsloc_results, taz_data, self.county_lookup,
                                        taz_col='WorkLocation',
                                        county_col_name='WorkCOUNTY',
                                        county_name_col='WorkCounty_name')
         
-        wsloc_results = add_county_info(wsloc_results, taz_data, 
+        wsloc_results = add_county_info(wsloc_results, taz_data, self.county_lookup,
                                        taz_col='SchoolLocation',
                                        county_col_name='SchoolCOUNTY',
                                        county_name_col='SchoolCounty_name')
@@ -74,7 +70,7 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         # Save enhanced wsloc_results with distances
         if self.bats_data:
             # Join with PersonData to get weights BEFORE processing
-            person_data = pd.read_csv(r"E:\TM1.7 Calibration\BATS\pipeline_mt_20260130\ctramp\PersonData.csv")
+            person_data = pd.read_csv(self.submodel_config['bats_person_data'])
             wsloc_results = wsloc_results.merge(person_data[['hh_id', 'person_id', 'person_weight', 'sampleRate']], left_on = ['HHID', 'PersonID'], right_on = ['hh_id', "person_id"])
             wsloc_results.fillna({'person_weight':0}, inplace = True)
 
@@ -289,7 +285,11 @@ class WorkSchoolLocationCalibration(CalibrationBase):
 
 def main():
     """Main entry point for the usual work and school location calibration."""
-    calibration = WorkSchoolLocationCalibration()
+    parser = argparse.ArgumentParser(description="Usual work and school location calibration")
+    parser.add_argument("--config", default=None, help="Path to calibration_config.yaml (default: same directory as this script)")
+    args = parser.parse_args()
+
+    calibration = WorkSchoolLocationCalibration(config_file=args.config)
     calibration.logger.info("Starting usual work and school location calibration...")
     calibration.run()
     calibration.logger.info("Calibration complete.")
