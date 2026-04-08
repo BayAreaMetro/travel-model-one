@@ -63,4 +63,4 @@ EndDistributeMultistep
 endloop
 
 BARRIER IDLIST=CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5,
-           printfiles = merge, CheckReturnCode = t
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t

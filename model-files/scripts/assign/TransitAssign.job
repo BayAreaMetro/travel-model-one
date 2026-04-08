@@ -424,6 +424,6 @@ loop period = 1, 5
    	              ctramp13, 
    	              ctramp14, 
    	              ctramp15,                
-           printfiles = save, CheckReturnCode = t
+           printfiles = save, DelDistribFiles = t, CheckReturnCode = t
 
 endloop ; time of day  

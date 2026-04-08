@@ -570,7 +570,7 @@ loop period = 1, 5
 endloop ; token_period
 
 BARRIER IDLIST = CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5, 
-           printfiles = merge, CheckReturnCode = t
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
            
 ; combine and delete the debug files
 * copy @token_debug_filename@.EA.debug+@token_debug_filename@.AM.debug+@token_debug_filename@.MD.debug+@token_debug_filename@.PM.debug+@token_debug_filename@.EV.debug @token_debug_filename@.debug

@@ -263,7 +263,7 @@ loop period = 1,5
 endloop ; time-of-day
                   
 BARRIER Idlist = CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5, 
-           printfiles = merge, CheckReturnCode = t
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
            
 ; combine the debug output
 * copy @token_debug_filename@.DA.EA.debug+@token_debug_filename@.S2.EA.debug+@token_debug_filename@.S3.EA.debug @token_debug_filename@.EA.debug
