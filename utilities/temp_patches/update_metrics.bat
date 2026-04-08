@@ -12,6 +12,6 @@ copy /Y \\tsclient\X\travel-model-one-master\utilities\RTP\RunMetrics.bat .
 del metrics\*
 del hwy\iter%ITER%\avgload5period_vehclasses.csv
 
-voyagercli CTRAMP\scripts\metrics\temp_create_av.job
+runtpp CTRAMP\scripts\metrics\temp_create_av.job
 
 RunMetrics.bat

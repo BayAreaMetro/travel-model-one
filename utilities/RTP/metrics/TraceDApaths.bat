@@ -48,4 +48,4 @@ Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 set ORIGIN=1187,1223,558,967,946,721,1376,1187,1266,967
 set DESTINATION=17,434,555,24,981,733,358
-voyagercli E:\Model3D-Share\Projects\2050_TM161_FBP_Plan_16_trace\CTRAMP\scripts\assign\HwyAssign_trace.job
+runtpp E:\Model3D-Share\Projects\2050_TM161_FBP_Plan_16_trace\CTRAMP\scripts\assign\HwyAssign_trace.job

@@ -24,7 +24,7 @@ USAGE = """
   Outputs a similar Cube file, freeflow_out.net, which has the additional field added
   to each link.  The new field(s) is given by cube_fieldname1 (cube_fieldname2, ...)
  
-  The location of Cube's voyagercli.exe should be in your path.
+  The location of Cube's runtpp.exe should be in your path.
   
 """
 
@@ -68,7 +68,7 @@ def runCubeScript(tempdir, script_filename):
     Returns the return code.
     """
     # run it
-    proc = subprocess.Popen("voyagercli %s" % script_filename, cwd=tempdir, 
+    proc = subprocess.Popen("runtpp %s" % script_filename, cwd=tempdir, 
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout:
         line = line.strip('\r\n')
@@ -79,7 +79,7 @@ def runCubeScript(tempdir, script_filename):
     retcode = proc.wait()
     if retcode == 2:
         raise Exception("Failed to run Cube script %s" % (script_filename))
-    logger.info("Received %d from 'voyagercli %s'" % (retcode, script_filename))
+    logger.info("Received %d from 'runtpp %s'" % (retcode, script_filename))
     
 def readCubeNetwork(filename):
     """

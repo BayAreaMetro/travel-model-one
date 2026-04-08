@@ -103,7 +103,7 @@ if not exist main\tripsAM_no_zpv_allinc.tpp (
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp
-  voyagercli "%CODE_DIR%\prepAssignIncome.job"
+  runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
 )
 
@@ -118,7 +118,7 @@ if not exist metrics\transit_times_by_mode_income.csv (
   rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
   rem Output: metrics\transit_times_by_acc_mode_egr.csv,
   rem         metrics\transit_times_by_mode_income.csv
-  voyagercli "%CODE_DIR%\sumTransitTimes.job"
+  runtpp "%CODE_DIR%\sumTransitTimes.job"
   if ERRORLEVEL 2 goto error
 )
 
@@ -132,7 +132,7 @@ if not exist metrics\auto_times.csv (
   rem         skims\COM_HWYSKIM(EA|AM|MD|PM|EV).tpp
   rem         CTRAMP\scripts\block\hwyParam.block
   rem Output: metrics\auto_times.csv
-  voyagercli "%CODE_DIR%\sumAutoTimes.job"
+  runtpp "%CODE_DIR%\sumAutoTimes.job"
   if ERRORLEVEL 2 goto error
 )
 
@@ -143,7 +143,7 @@ if not exist metrics\nonmot_times.csv (
   rem         trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp
   rem         skims\nonmotskm.tpp
   rem Output: metrics\nonmot_times.csv
-  voyagercli "%CODE_DIR%\sumNonmotTimes.job"
+  runtpp "%CODE_DIR%\sumNonmotTimes.job"
   if ERRORLEVEL 2 goto error
 )
 

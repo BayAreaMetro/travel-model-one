@@ -177,19 +177,19 @@ python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
 IF ERRORLEVEL 1 goto done
 
 :: Set the prices in the roadway network
-voyagercli CTRAMP\scripts\preprocess\SetTolls.job
+runtpp CTRAMP\scripts\preprocess\SetTolls.job
 if ERRORLEVEL 2 goto done
 
 :: Set a penalty to dummy links connecting HOV/HOT lanes and general purpose lanes
-voyagercli CTRAMP\scripts\preprocess\SetHovXferPenalties.job
+runtpp CTRAMP\scripts\preprocess\SetHovXferPenalties.job
 if ERRORLEVEL 2 goto done
 
 :: Create time-of-day-specific 
-voyagercli CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
+runtpp CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
 if ERRORLEVEL 2 goto done
 
 :: Create HSR trip tables to/from Bay Area stations
-voyagercli CTRAMP\scripts\preprocess\HsrTripGeneration.job
+runtpp CTRAMP\scripts\preprocess\HsrTripGeneration.job
 if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
@@ -201,11 +201,11 @@ if ERRORLEVEL 2 goto done
 : Non-Motorized Skims
 
 :: Translate the roadway network into a non-motorized network
-voyagercli CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job
+runtpp CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job
 if ERRORLEVEL 2 goto done
 
 :: Build the skim tables
-voyagercli CTRAMP\scripts\skims\NonMotorizedSkims.job
+runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
 :: Step 4.5: Build initial transit files
@@ -288,7 +288,7 @@ if ERRORLEVEL 2 goto done
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 
 :: If demand models were executed, translate the trip lists to demand matrices
-voyagercli CTRAMP\scripts\assign\PrepAssign.job
+runtpp CTRAMP\scripts\assign\PrepAssign.job
 if ERRORLEVEL 2 goto done
 
 :: this is the first time so run it as iter0

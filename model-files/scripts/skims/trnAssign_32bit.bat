@@ -81,14 +81,14 @@ IF %ITER% EQU %MAXITERATIONS% (set PHTDIFFCOND=0)
 echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
 :: Prepare the highway network for use by the transit network
-voyagercli ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
+runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
 
 :: Create the transit networks
-voyagercli ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
+runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
@@ -102,13 +102,13 @@ echo START TRNASSIGN            SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\l
 :transitSubAssign
 
 :: Assign the transit trips to the transit network
-voyagercli ..\..\CTRAMP\scripts\assign\TransitAssign.job
+runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
 :: And skim
-voyagercli ..\..\CTRAMP\scripts\skims\TransitSkims.job
+runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone

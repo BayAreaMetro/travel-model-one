@@ -35,13 +35,13 @@ set TABLE=DISTDA
 
 set SKIMFILE=HWYSKM%TIMEPERIOD%
 if not exist %SKIMFILE%_%TABLE%.csv (
-  voyagercli "%CODE_DIR%\extract_skim_table.job"
+  runtpp "%CODE_DIR%\extract_skim_table.job"
   IF ERRORLEVEL 2 goto done
 )
 
 set TABLE=TIMEDA
 if not exist %SKIMFILE%_%TABLE%.csv (
-  voyagercli "%CODE_DIR%\extract_skim_table.job"
+  runtpp "%CODE_DIR%\extract_skim_table.job"
   IF ERRORLEVEL 2 goto done
 )
 
@@ -50,7 +50,7 @@ set COMMPATH=C:\Users\lzorn\Documents\scratch\COMMPATH
 Cluster "%COMMPATH%\CTRAMP" 1-15 Starthide Exit
 
 if not exist trnskmam_wlk_loc_wlk.csv (
-  voyagercli "%CODE_DIR%\extract_trnskim_tables.job"
+  runtpp "%CODE_DIR%\extract_trnskim_tables.job"
   IF ERRORLEVEL 2 goto done
 )
 

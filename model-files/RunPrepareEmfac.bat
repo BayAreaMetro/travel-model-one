@@ -64,7 +64,7 @@ if not exist %EMFAC_DIR%\emfac_prep\CreateSpeedBinsBetweenZones_sums.csv (
 :: output: emfac\emfac_prep\CreateSpeedBinsWithinZones_sums.csv
 ::         emfac\emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv
 if not exist %EMFAC_DIR%\emfac_prep\CreateSpeedBinsWithinZones_sums.csv (
-  call voyagercli %EMFAC_SCRIPT_DIR%\CreateSpeedBinsWithinZones.job
+  call runtpp %EMFAC_SCRIPT_DIR%\CreateSpeedBinsWithinZones.job
 
   rem if we want to run emfac without freight, use the "no truck" file
   if %2==NoFreight rename %EMFAC_DIR%\emfac_prep\CreateSpeedBinsWithinZones_sums.csv %EMFAC_DIR%\emfac_prep\CreateSpWithinZones_NotUsed.csv

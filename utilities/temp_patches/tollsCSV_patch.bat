@@ -31,7 +31,7 @@ mkdir shapefile
 set NET_INFILE=hwy\freeflow.net
 set NODE_OUTFILE=shapefile\network_nodes.shp
 set LINK_OUTFILE=shapefile\network_links.shp
-voyagercli X:\travel-model-one-master\utilities\cube-to-shapefile\export_network.job
+runtpp X:\travel-model-one-master\utilities\cube-to-shapefile\export_network.job
 
 set WORKING_DIR=%CD%
 set SCENARIO=%%f

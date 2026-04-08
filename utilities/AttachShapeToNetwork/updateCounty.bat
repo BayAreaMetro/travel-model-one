@@ -23,7 +23,7 @@ for %%H in (%MODEL_DIRS%) DO (
   )
 
   if not exist !MODEL_DIR!\OUTPUT\avgload5period_wcounty.csv (
-    voyagercli "%CODE_DIR%\utilities\AttachShapeToNetwork\net2csv.job"
+    runtpp "%CODE_DIR%\utilities\AttachShapeToNetwork\net2csv.job"
     if ERRORLEVEL 2 goto done
   )
 )

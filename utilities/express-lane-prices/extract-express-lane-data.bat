@@ -6,6 +6,6 @@
 
 set CODE_DIR=D:\files\GitHub\travel-model-one\utilities\express-lane-prices
 
-call voyagercli %CODE_DIR%\extract-express-lane-data.job
+call runtpp %CODE_DIR%\extract-express-lane-data.job
 
 rem end: extract-express-lane-data.bat

@@ -16,7 +16,7 @@
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-:: The location of the voyagercli executable from Citilabs
+:: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager
 
 :: Add these variables to the PATH environment variable, moving the current path to the back
@@ -56,15 +56,15 @@ copy INPUT\warmstart\nonres\ nonres\
 :: ------------------------------------------------------------------------------------------------------
 
 :: Set the prices in the roadway network
-voyagercli CTRAMP\scripts\preprocess\SetTolls.job
+runtpp CTRAMP\scripts\preprocess\SetTolls.job
 if ERRORLEVEL 2 goto done
 
 :: Set a penalty to dummy links connecting HOV/HOT lanes and general purpose lanes
-voyagercli CTRAMP\scripts\preprocess\SetHovXferPenalties.job
+runtpp CTRAMP\scripts\preprocess\SetHovXferPenalties.job
 if ERRORLEVEL 2 goto done
 
 :: Create time-of-day-specific 
-voyagercli CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
+runtpp CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
 if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
