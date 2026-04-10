@@ -208,11 +208,11 @@ class AverageTripLength(BaseModel):
 
 # Auto Ownership 
 class AutoOwnershipModel(BaseModel):
-    ZER0_VEHICLE: float = Field(ge =0, alias = 0) | Literal['NA']
-    ONE_VEHICLE: float = Field(ge =0, alias = 1) | Literal['NA']
-    TWO_VEHICLE: float = Field(ge =0, alias = 2) | Literal['NA']
-    THREE_VEHICLE: float = Field(ge =0, alias = 3) | Literal['NA']
-    FOUR_PLUS_VEHICLE: float = Field(ge =0, alias = 4) | Literal['NA']
+    ZER0_VEHICLE: float = Field(ge =0, alias = "0") | Literal['NA']
+    ONE_VEHICLE: float = Field(ge =0, alias = "1") | Literal['NA']
+    TWO_VEHICLE: float = Field(ge =0, alias = "2") | Literal['NA']
+    THREE_VEHICLE: float = Field(ge =0, alias = "3") | Literal['NA']
+    FOUR_PLUS_VEHICLE: float = Field(ge =0, alias = "4") | Literal['NA']
 
 class AutoOwnershipCountySummary(AutoOwnershipModel):
     """Model for auto ownership county summmary"""
@@ -228,7 +228,7 @@ class AutoOwnershipTAZSummary(AutoOwnershipModel):
 class AutoOwnershipLongSummary(BaseModel):
     model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
     TAZ: int = Field(ge = 1, alias = 'taz')
-    num_vehicle: int = Field(ge = 0)
+    num_vehicles: float = Field(ge = 0)
     num_hh: float = Field(ge = 0, description="Number of households")
     source: str
 
