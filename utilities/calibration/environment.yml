@@ -8,6 +8,7 @@ dependencies:
   - numpy
   - openpyxl
   - xlrd
+  - xlutils
   - xlwings
   - pydantic
   - pyyaml

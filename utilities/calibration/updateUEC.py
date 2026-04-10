@@ -3,21 +3,21 @@ Script to update UEC (Utility Expression Calculator) files from calibration work
 Converts calibration data from Excel workbooks and updates UEC model files.
 """
 
-import os
 import sys
 import argparse
 from pathlib import Path
-import openpyxl
 from openpyxl import load_workbook
+import xlrd
+from xlrd import open_workbook
+from xlutils.copy import copy as xl_copy
 import shutil
 
 
 # Configuration --------------------------------
-CALIB_DIR = "M:/Development/Travel Model One/Calibration/Version 1.7"
+CALIB_DIR = Path("M:/Development/Travel Model One/Calibration/Version 1.7")
 
-## Setting this to Local
-UEC_DIR = "E:/Github/travel-model-one/model-files/model"
-BOX_DIR = "E:/Box/Modeling and Surveys/Development/Travel Model 1.7/Calibration/workbooks_TM1.7"
+UEC_DIR = Path("X:/travel-model-one-tm1.7_calibration/model-files/model")
+BOX_DIR = Path("E:/Box/Modeling and Surveys/Development/Travel Model 1.7/Calibration/workbooks_TM1.7")
 
 
 def parse_arguments():
@@ -26,7 +26,7 @@ def parse_arguments():
         description='Update UEC files from calibration workbooks'
     )
     parser.add_argument('submodel', type=str, 
-                        choices = ['DestinationChoice', 'AutomobileOwnership', 
+                        choices = ['UsualWorkSchool','NonworkDestinationChoice', 'AutomobileOwnership', 
                                    'TourModeChoice', 'TripModeChoice', 'CoordinationDailyActivityPattern'  ],
                        help='Submodel name (e.g., DestinationChoice, AutomobileOwnership)')
     parser.add_argument('version', type=str,
@@ -36,15 +36,14 @@ def parse_arguments():
     return args.submodel, args.version
 
 
-def get_config(submodel):
+def get_config(submodel, version):
     """Get configuration based on submodel type."""
     
-    if submodel == "DestinationChoice":
+    if submodel == "UsualWorkSchool":
         # Note: includes UsualWorkAndSchoolLocation AND NonWorkDestinationChoice
         # so the workbook numbers need to be in sync
-        uec_src_workbook = os.path.join(UEC_DIR, "TM1.0 version", "DestinationChoice_TM1.xls")
-        calib_workbook = os.path.join(CALIB_DIR, "01 Usual Work and School Location", 
-                                      "01_UsualWorkAndSchoolLocation.xlsx")
+        uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "DestinationChoice_TM1.6.1.xls"
+        calib_workbook = CALIB_DIR / "01 Usual Work and School Location" / f"01_UsualWorkAndSchoolLocation_2023_{version}.xlsx"
         
         # sheet, column, startRow, endRow
         copy_src = {
@@ -63,10 +62,15 @@ def get_config(submodel):
             "gradeschool": [("GradeSchool", 7, 12, 16)]
         }
         
-        calib_workbook2 = os.path.join(CALIB_DIR, "09 Non-Work Destination Choice", 
-                                       "09_NonWorkDestinationChoice.xlsx")
+        config = [
+            (calib_workbook, copy_src, copy_dst),
+        ]
+
+    elif submodel == 'NonworkDestinationChoice':
+        uec_src_workbook = UEC_DIR / "TM1.0 version" / "DestinationChoice_TM1.xls"
+        calib_workbook = CALIB_DIR / "09 Non-Work Destination Choice" / f"09_NonWorkDestinationChoice_{version}.xlsx"
         # sheet, column, startRow, endRow
-        copy_src2 = {
+        copy_src = {
             "escort1":   ("calibration",  5,  4,  8),
             "escort2":   ("calibration",  5,  4,  8),
             "shopping":  ("calibration", 17,  4,  8),
@@ -77,7 +81,7 @@ def get_config(submodel):
             "atwork":    ("calibration", 77,  4,  8)
         }
         
-        copy_dst2 = {
+        copy_dst = {
             "escort1":   [("EscortKids",   7, 12, 16)],
             "escort2":   [("EscortNoKids", 7, 12, 16)],
             "shopping":  [("Shopping",     7, 12, 16)],
@@ -87,16 +91,15 @@ def get_config(submodel):
             "discr":     [("OthDiscr",     7, 12, 16)],
             "atwork":    [("WorkBased",    7, 12, 16)]
         }
-        
+
         config = [
-            (calib_workbook, copy_src, copy_dst),
-            (calib_workbook2, copy_src2, copy_dst2)
+            (calib_workbook, copy_src, copy_dst)
         ]
         
+        
     elif submodel == "AutomobileOwnership":
-        calib_workbook = os.path.join(CALIB_DIR, "02 Automobile Ownership", 
-                                     "02_AutoOwnership.xlsx")
-        uec_src_workbook = os.path.join(UEC_DIR, "TM1.0 version", "AutoOwnership_TM1.xls")
+        calib_workbook = CALIB_DIR / "02 Automobile Ownership" / f"02_AutoOwnership_{version}.xlsx"
+        uec_src_workbook = UEC_DIR / "TM1.0 version" / "AutoOwnership_TM1.xls"
         
         # sheet, column, startRow, endRow
         copy_src = {
@@ -152,9 +155,8 @@ def get_config(submodel):
         config = [(calib_workbook, copy_src, copy_dst)]
         
     elif submodel == "TourModeChoice":
-        calib_workbook = os.path.join(CALIB_DIR, "11 Tour Mode Choice", 
-                                     "11_TourModeChoice.xlsx")
-        uec_src_workbook = os.path.join(UEC_DIR, "TM1.5.1 version", "ModeChoice_TM1.5.1.xls")
+        calib_workbook = CALIB_DIR / "11 Tour Mode Choice" / f"11_TourModeChoice_{version}.xlsx"
+        uec_src_workbook = UEC_DIR / "TM1.5.1 version" / "ModeChoice_TM1.5.1.xls"
         
         # sheet, column, startRow, endRow
         copy_src = {
@@ -208,9 +210,8 @@ def get_config(submodel):
         config = [(calib_workbook, copy_src, copy_dst)]
         
     elif submodel == "TripModeChoice":
-        calib_workbook = os.path.join(CALIB_DIR, "15 Trip Mode Choice", 
-                                     "15_TripModeChoice.xlsx")
-        uec_src_workbook = os.path.join(UEC_DIR, "TM1.5.1 version", "TripModeChoice_TM1.5.1.xls")
+        calib_workbook = CALIB_DIR / "15 Trip Mode Choice" / f"15_TripModeChoice_{version}.xlsx"
+        uec_src_workbook = UEC_DIR / "TM1.5.1 version" / "TripModeChoice_TM1.5.1.xls"
         
         # sheet, column, startRow, endRow
         copy_src = {
@@ -248,7 +249,7 @@ def get_config(submodel):
 
 
 def read_column_data(worksheet, column, start_row, end_row):
-    """Read data from a specific column range in a worksheet."""
+    """Read data from a specific column range in a Calibration Worksheet."""
     data = []
     for row in range(start_row, end_row + 1):
         cell_value = worksheet.cell(row=row, column=column).value
@@ -259,9 +260,10 @@ def read_column_data(worksheet, column, start_row, end_row):
 
 
 def write_column_data(worksheet, data, column, start_row):
-    """Write data to a specific column starting at start_row."""
+    """Write data to a specific column starting at start_row in UEC Workbook."""
     for i, value in enumerate(data):
-        worksheet.cell(row=start_row + i, column=column, value=value)
+        # xlwt uses 0-based (row, col) indexes.
+        worksheet.write(start_row + i - 1, column - 1, value)
 
 
 def main():
@@ -269,34 +271,39 @@ def main():
     submodel, version = parse_arguments()
     
     print(f"SUBMODEL = {submodel}")
-    print(f"VERSION  = {version}")
+    print(f"ITERATION  = {version}")
     
     # Get configuration
-    uec_src_workbook, config = get_config(submodel)
+    uec_src_workbook, config = get_config(submodel, version)
     
     print(f"UEC_SRC_WORKBOOK = {uec_src_workbook}")
     
     # Determine destination workbook name
-    uec_dst_workbook = uec_src_workbook.replace("TM1.0 version/", "")
-    uec_dst_workbook = uec_dst_workbook.replace("TM1.5.1 version/", "")
-    uec_dst_workbook = uec_dst_workbook.replace("_TM1.5.1", "")
-    uec_dst_workbook = uec_dst_workbook.replace("_TM1", "")
+    uec_dst_workbook = Path(str(uec_src_workbook)
+                            .replace("TM1.0 version\\", "")
+                            .replace("TM1.5.1 version\\", "")
+                            .replace("TM1.6.1 version\\", "")
+                            .replace("_TM1.6.1", "")
+                            .replace("_TM1.5.1", "")
+                            .replace("_TM1", ""))
+
     
     print(f"UEC_DST_WORKBOOK = {uec_dst_workbook}")
     
-    # Load the UEC workbook
-    uec_workbook = load_workbook(uec_src_workbook)
+    # Load xls workbook (read) then create a writable copy.
+    uec_read_workbook = open_workbook(uec_src_workbook, formatting_info=True)
+    uec_workbook = xl_copy(uec_read_workbook)
+    sheet_index_by_name = {
+        name: idx for idx, name in enumerate(uec_read_workbook.sheet_names())
+    }
     
     # Process each configuration set
     for calib_workbook, copy_src, copy_dst in config:
-        # Update version in filename
-        calib_workbook = calib_workbook.replace(".xlsx", f"_{version}.xlsx")
-        
         print("-----------------------------------------------")
         print(f"CALIB_WORKBOOK   = {calib_workbook}")
         
         # Load calibration workbook
-        calib_workbook_obj = load_workbook(calib_workbook)
+        calib_workbook_obj = load_workbook(calib_workbook, data_only=True)
         
         # Process each copy operation
         for name in copy_src.keys():
@@ -317,28 +324,28 @@ def main():
                 print(f"Copying to {uec_sheetname} @ "
                       f"({uec_start_row},{uec_column}) - ({uec_end_row},{uec_column})")
                 
-                uec_sheet = uec_workbook[uec_sheetname]
+                read_sheet = uec_read_workbook.sheet_by_name(uec_sheetname)
+                write_sheet = uec_workbook.get_sheet(sheet_index_by_name[uec_sheetname])
                 
                 # Get value after last cell (if any) to preserve it
                 uec_suffix_row = uec_end_row + 1
-                cell_after_last_val = uec_sheet.cell(row=uec_suffix_row, column=uec_column).value
+                cell_after_last_val = read_sheet.cell_value(uec_suffix_row - 1, uec_column - 1)
                 
-                if cell_after_last_val is None:
+                if cell_after_last_val in (None, ""):
                     print("Cell after last is null")
                 else:
                     print(f"Cell after last: {cell_after_last_val}")
                 
                 # Write the data
-                write_column_data(uec_sheet, data, uec_column, uec_start_row)
+                write_column_data(write_sheet, data, uec_column, uec_start_row)
                 
                 # Restore the cell after last if it had a value
-                if cell_after_last_val is not None:
-                    uec_sheet.cell(row=uec_suffix_row, column=uec_column, value=cell_after_last_val)
+                if cell_after_last_val not in (None, ""):
+                    write_sheet.write(uec_suffix_row - 1, uec_column - 1, cell_after_last_val)
         
         # Copy calibration workbook to Box directory (without version suffix)
-        # QUESTION: Do we still need to copy calibration workbook to Box directory?
-        calib_workbook_no_vers = os.path.basename(calib_workbook).replace(f"_{version}.xlsx", ".xlsx")
-        box_dest = os.path.join(BOX_DIR, calib_workbook_no_vers)
+        calib_workbook_no_vers = calib_workbook.name.replace(f"_{version}.xlsx", ".xlsx")
+        box_dest = BOX_DIR / calib_workbook_no_vers
         print(f"Copying {calib_workbook} to {box_dest}")
         shutil.copy2(calib_workbook, box_dest)
     
