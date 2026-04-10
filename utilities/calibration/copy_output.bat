@@ -1,23 +1,21 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=\\MODEL2-B\Model2B-Share\Projects\2015_TM152_IPA_17
-set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.2\2015_TM152_IPA_17
-set CODE_DIR=X:\travel-model-one-calib1.5.2\utilities\calibration
+set MODEL_DIR=\\MODEL3-B\Model3B-Share\Projects\2023_TM170_IPA_00_calib_01
+set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.7\2023_TM170_IPA_00_Cube6
+set CODE_DIR=E:\Github\travel-model-one\utilities\calibration
 rem start at 00 when INPUT or skims are updated
-set CALIB_ITER=00
+set CALIB_ITER=01
 
 echo CALIB_ITER=%CALIB_ITER%
 
 mkdir "%TARGET_DIR%"
-cd "%TARGET_DIR%"
+cd /d "%TARGET_DIR%"
 
 if "%CALIB_ITER%"=="00" (
   echo Exporting skims
   set ITER=3
-  set SAMPLESHARE=0.5
 ) else (
   set ITER=1
-  set SAMPLESHARE=0.2
   goto do_calib_iter
 )
 
@@ -41,8 +39,14 @@ if not exist %SKIMFILE%_%TABLE%.csv (
   IF ERRORLEVEL 2 goto done
 )
 
+if not exist nonmotskm.csv (
+  runtpp "%CODE_DIR%\extract_nonmotskim_tables.job"
+  IF ERRORLEVEL 2 goto done
+
+)
+
 :: all transit skims
-set COMMPATH=C:\Users\lzorn\Documents\scratch\COMMPATH
+set COMMPATH=\\MODEL3-B\\Model3B-Share\COMMPATH
 Cluster "%COMMPATH%\CTRAMP" 1-15 Starthide Exit
 
 if not exist trnskmam_wlk_loc_wlk.csv (
@@ -68,11 +72,11 @@ copy %MODEL_DIR%\main\indivTripData_%ITER%.csv OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\jointTripData_%ITER%.csv OUTPUT_%CALIB_ITER%\main
 
 mkdir OUTPUT_%CALIB_ITER%\calibration
-Rscript --vanilla "%CODE_DIR%\01_usual_work_school_location_TM.R"
-Rscript --vanilla "%CODE_DIR%\02_auto_ownership_TM.R"
-Rscript --vanilla "%CODE_DIR%\04_daily_activity_pattern_TM.R"
-Rscript --vanilla "%CODE_DIR%\09_nonwork_destination_choice_TM.R"
-Rscript --vanilla "%CODE_DIR%\11_tour_mode_choice_TM.R"
-Rscript --vanilla "%CODE_DIR%\15_trip_mode_choice_TM.R"
+python "%CODE_DIR%\01_usual_work_school_location_TM.py"
+@REM Rscript --vanilla "%CODE_DIR%\02_auto_ownership_TM.R"
+@REM Rscript --vanilla "%CODE_DIR%\04_daily_activity_pattern_TM.R"
+@REM Rscript --vanilla "%CODE_DIR%\09_nonwork_destination_choice_TM.R"
+@REM Rscript --vanilla "%CODE_DIR%\11_tour_mode_choice_TM.R"
+@REM Rscript --vanilla "%CODE_DIR%\15_trip_mode_choice_TM.R"
 
 :done

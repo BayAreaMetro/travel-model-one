@@ -33,9 +33,31 @@ class CalibrationConfig:
         if os.path.exists(config_file):
             with open(config_file, 'r') as f:
                 self.raw_config = yaml.safe_load(f)
+                self._apply_env_overrides()
                 self.config = self._substitute_parameters(self.raw_config)
+
         else:
             raise FileNotFoundError(f"Configuration file not found: {config_file}")
+
+    def _apply_env_overrides(self):
+        """Override selected general config values from batch environment variables."""
+        general = self.raw_config.setdefault('general', {})
+        env_to_key = {
+            'TARGET_DIR': 'target_dir',
+            'CODE_DIR': 'code_dir',
+            'CALIB_ITER': 'calib_iter',
+            'ITER': 'iter',
+            'MODEL_DIR': 'model_dir',
+            'WORKBOOK_BASE_PATH': 'workbook_base_path',
+        }
+
+        for env_name, config_key in env_to_key.items():
+            env_val = os.getenv(env_name)
+            if env_val:
+                if config_key.endswith('_dir') or config_key.endswith('_path'):
+                    general[config_key] = Path(env_val).as_posix()
+                else:
+                    general[config_key] = env_val
     
     def _substitute_parameters(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Recursively substitute parameters in configuration."""
@@ -110,29 +132,27 @@ class CalibrationBase(ABC):
     """Base class for calibration processing."""
     
     def __init__(self, submodel: str, config_file: str = None):
-        # Set up logging
-        self._setup_logging()
-
         self.config = CalibrationConfig(config_file, submodel)
         self.submodel = submodel
         self.submodel_config = self.config.get_submodel_config(submodel)
         
         # Set up parameters
         self.calib_iter = self.config.get('general', 'calib_iter')
-        if self.calib_iter == 0:
-            self.logging.info("Full Model Run")
+        if self.calib_iter == "00":
             self.iter = 3
             self.sampleshare = 0.5
         else:
-            self.logging.info('Calibration Core Run Only')
             self.iter = 1
             self.sampleshare = 0.2
 
         # Set up paths
         self.target_dir = self.config.get('general', 'target_dir')
-        self.output_dir = f"{self.target_dir}/Output_{self.calib_iter}"
+        self.output_dir = f"{self.target_dir}/Output_{self.calib_iter}/calibration"
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         
+        # Set up logging
+        self._setup_logging()
+
         # Load shared data resources
         self.county_lookup = self.config.get_county_lookup()
        
@@ -204,6 +224,7 @@ class CalibrationBase(ABC):
         
         self.workbook_path = f"{workbook_base}/{self.submodel} {submodel_name}/{workbook_template}.xlsx"
         self.workbook_temp = self.workbook_path.replace('.xlsx', '_temp.xlsx')
+        self.workbook_iter = self.workbook_path.replace('.xlsx', f'_{self.calib_iter}.xlsx')
         self.workbook_blank = str(Path(self.config.get('general', 'code_dir')) / "workbook_templates" / f"{workbook_template}_blank.xlsx")
         
         try: 
@@ -240,10 +261,13 @@ class CalibrationBase(ABC):
     
     def save_workbook(self):
         """Save the Excel workbook."""
-        self.logger.info(self.calib_workbook)
+        self.logger.info("Saving calibration workbook to:")
+        self.logger.info(f"Temp Workbook: {self.workbook_temp}")
+        self.logger.info(f"Iteration Workbook: {self.workbook_iter}")
         if self.calib_workbook:
             try:
                 self.calib_workbook.save(self.workbook_temp)
+                self.calib_workbook.save(self.workbook_iter)
                 self.logger.info(f"Wrote {self.workbook_temp}")
                 self.calib_workbook.close()
             except Exception as e:
