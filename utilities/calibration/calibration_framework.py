@@ -227,6 +227,10 @@ class CalibrationBase(ABC):
         self.workbook_iter = self.workbook_path.replace('.xlsx', f'_{self.calib_iter}.xlsx')
         self.workbook_blank = str(Path(self.config.get('general', 'code_dir')) / "workbook_templates" / f"{workbook_template}_blank.xlsx")
         
+        workbook_dir = Path(self.workbook_path).parent
+        workbook_dir.mkdir(parents=True, exist_ok = True)
+        self.logger.info(f"Workbook Output Directory: {workbook_dir}")
+
         try: 
             self.logger.info(f"Loading Excel workbook from {self.workbook_blank}...")
             self.calib_workbook = xw.Book(self.workbook_blank)

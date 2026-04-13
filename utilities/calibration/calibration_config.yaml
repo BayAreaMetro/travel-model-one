@@ -22,10 +22,12 @@ calibration_02:
   input_file: "{target_dir}/INPUT/popsyn/hhFile.2023_v12.csv"
   ao_results: "{target_dir}/OUTPUT_{calib_iter}/main/aoResults.csv"
 
-# calibration_04:
-#   name: Coordinated Daily Activity Pattern
-#   workbook_template: 04_CoordinatedDailyActivityPattern
-#   input_file: "{target_dir}/OUTPUT_{calib_iter}/main/cdapResults.csv"
+calibration_04:
+  name: Coordinated Daily Activity Pattern
+  workbook_template: 04_CoordinatedDailyActivityPattern_2023
+  #input_file: "{target_dir}/OUTPUT_{calib_iter}/main/cdapResults.csv"
+  input_file: "E:/TM1.7 Calibration/BATS/pipeline_mt_20260410/ctramp/PersonData.csv"
+  bats_data: true
 
 # calibration_09:
 #   name: Non-Work Destination Choice

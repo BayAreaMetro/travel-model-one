@@ -65,6 +65,13 @@ class CTRAMPPersonType(LabeledEnum):
     CHILD_DRIVING_AGE = (7, "Child of driving age")
     CHILD_UNDER_5 = (8, "Child too young for school")
 
+class CTRAMPActivityPattern(LabeledEnum):
+    """Enumeration for activity pattern."""
+    MANDATORY = "M", "Mandatory"
+    NON_MANDATORY = "N", "Non-mandatory"
+    HOME = "H", "Home"
+
+
 class CTRAMPSimplePurpose(LabeledEnum):
     """Enumeration for simple tour purpose"""
     WORK = 'work'
@@ -239,6 +246,13 @@ class CDAPSummary(BaseModel):
     home: float = Field(ge=0, alias = 'H') | Literal['NA']
     mandatory: float = Field(ge=0, alias = 'M') | Literal['NA']
     non_mandatory: float = Field(ge=0, alias = 'N') | Literal['NA']
+
+class CDAPSummaryBATS(BaseModel):
+    model_config = ConfigDict(validate_by_name = True, validate_by_alias= True)
+    person_type: CTRAMPPersonType = Field(alias = 'PersonType')
+    activity_pattern: CTRAMPActivityPattern = Field(alias = 'DAP')
+    num_pers: float
+
 
 # Non-Work Choice Destination 
 class NonMandAvgTripLength(BaseModel):
