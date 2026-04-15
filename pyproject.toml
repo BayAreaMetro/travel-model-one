@@ -1,0 +1,16 @@
+[project]
+name = "travel-model-one"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "activitysim==1.5.1",
+    "aequilibrae>=1.6.2",
+    "populationsim==0.10.0",
+    "travel-diary-survey-tools",
+    "zstandard>=0.25.0",
+]
+
+[tool.uv.sources]
+travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }

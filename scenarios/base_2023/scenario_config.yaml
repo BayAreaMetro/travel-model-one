@@ -1,0 +1,34 @@
+# Base 2023 scenario — data configuration for TM1a
+
+urbansim:
+  # TBD
+
+populationsim:
+  # --- Raw Census PUMS (statewide California; filtered to Bay Area at runtime) ---
+  pums:
+    household: "M:/Data/Census/PUMS/PUMS 2023/csv_hca/psam_h06.csv"
+    person: "M:/Data/Census/PUMS/PUMS 2023/csv_pca/psam_p06.csv"
+
+  # --- Control totals ---
+  # From travel-model-one/utilities/taz-data-baseyears/2023/
+  controls:
+    taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
+    county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
+    region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
+
+  # --- Working / output directories ---
+  working_dir: ".cache/popsim"
+  output_dir: ".cache/data"
+
+activitysim:
+  # land_use_file: path to land_use.csv produced by UrbanSim.
+  # TODO: replace with UrbanSim output path once wired up.
+  land_use_file: "E:/GitHub/activitysim-application/projects/prototype_mtc_extended/activitysim-prototype-mtc-1.3.2/data_full/land_use.csv"
+  # skims_file: path to skims.omx.
+  # TODO: replace with AequilibraE output once wired up; run scripts/cube_to_omx.py for initial conversion.
+  skims_file: "E:/GitHub/activitysim-application/projects/prototype_mtc_extended/activitysim-prototype-mtc-1.3.2/data_full/skims.omx"
+  data_dir: ".cache/data"
+  output_dir: ".cache/asim"
+
+aequilibrae:
+  # TBD
