@@ -81,9 +81,9 @@ ignored by the pipeline.
 Two DBF sets, all at the TAZ level, each file containing 1454 rows
 (one per TAZ):
 
-- `Output/<file>.dbf` - non-transit vehicle trips. 90 numeric columns named
+- `output/<file>.dbf` - non-transit vehicle trips. 90 numeric columns named
   `<TOD>_<ACCESS>_<SUBMODE>` (e.g. `AM_PK_DA`), plus `ORIG` and `DEST`.
-- `Output_Transit/TR_<file>.dbf` - transit person trips. 5 numeric columns
+- `output/TR_<file>.dbf` - transit person trips. 5 numeric columns
   `EA_TR, AM_TR, MD_TR, PM_TR, EV_TR`, plus `ORIG` and `DEST`.
 
 ## How the pipeline works
@@ -103,13 +103,3 @@ Two DBF sets, all at the TAZ level, each file containing 1454 rows
    and by the base-file `TARGET` to get transit person trips.
 7. Write each table as a dBASE-III DBF (10-character field names, 2 decimals).
 
-## Notes on the R -> Python port
-
-- The R shapefile join is replaced by a CSV lookup (`taz-superdistrict-county.csv`).
-  `SD` in the CSV corresponds to `DISTRICT` throughout the parameter file.
-- Column-name cleaning follows the same convention as R's `janitor::clean_names`
-  followed by uppercase (spaces and punctuation become underscores).
-- DBF output is written by a small in-repo writer (`dbf_writer.py`) that
-  matches `foreign::write.dbf` for the numeric fields used here.
-- Share values are accepted as fractions (0.05) or percentages (5), just like
-  the R script's `to_share`.
