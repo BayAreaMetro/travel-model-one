@@ -33,6 +33,10 @@ core/third-party/jppf-2.4/client/.project
 core/third-party/sqlitejdbc/.project
 
 
+# dev .working/ files not to be committed
+.working/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -153,6 +157,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Scratch
+scratch/
 
 # Spyder project settings
 .spyderproject

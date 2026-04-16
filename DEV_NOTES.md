@@ -1,5 +1,7 @@
 # Repo Layout Notes
 
+This is where I keep notes for myself and others about the proposed repo layout, and the rationale behind it. This is a living document, and will likely change as I go. But for now, this is the general direction I'm thinking about.
+
 ## Existing
 
 ```text
@@ -41,40 +43,62 @@ That should make the repo easier to reason about and highlight eventual file del
 
 ## CTRAMP → ActivitySim migration plan
 
-### Step 0: Cube ↔ OMX bridge (`src/tm1/matrices.py`)
-- Bidirectional TPP ↔ OMX converter
-- Skims: TPP→OMX so ActivitySim can read Cube highway skims
-- Trips: OMX→TPP so Cube assignment can read ActivitySim demand
-- Transitional; deprecate once a Python-native assignment tool is validated (AequilibraE is a candidate, needs evaluation)
+No Cube on the development machine. The plan is designed around that constraint:
+use frozen reference skims, validate ActivitySim against CTRAMP outputs, and
+only bring in assignment (AequilibraE) once demand modeling is proven equivalent.
 
-### Step 1: Python orchestrator (`src/tm1/run_model.py`)
-- Replaces RunModel.bat / RunIteration.bat
-- Calls `runtpp` via subprocess for Cube jobs (skims, assignment, nonres)
-- Calls ActivitySim in-process where CTRAMP Java used to be
-- Iteration params (sample rate, seed, weights) are Python variables
-- Start minimal: preprocess → skims → demand → assignment loop
+### Reference model run
 
-### Step 2: Validation
-- Run both pipelines on same inputs, compare trip matrices by mode/period
-- Hard part: `.properties` → ActivitySim config mapping (~30 params)
-- `scenario_config.yaml` becomes single source of truth for scenario params
+The last CTRAMP model run, used as the benchmark for validation:
 
-### Step 3: Post-processing pythonification
-- Replace EMFAC, metrics, logsums, core summaries batch/R/Cube scripts
-- Integrate with `travel-diary-survey-tools` for validation and calibration analyses
+```
+\\MODEL3-C\Model3C-Share\Projects\2023_TM161_IPA_35_testrun
+```
+
+### Step 0: Pure-Python TPP reader (`src/tm1/tpp.py`)
+- Pure-Python reader for Cube Voyager TPP binary matrices — no DLLs, no Cube.
+- Decodes all 6 block types (0x00, 0x40, 0x80, 0xC0, 0xC8, 0xE8).
+- Validated bit-exact against Cube CSV dumps (17,700 checks, 0 errors).
+- Portable golden test suite: 7 TPP/CSV pairs in `tests/data/golden/`.
+- **STATUS: DONE.** Reader is complete, optimized, committed.
+
+### Step 0.5: Build `skims.omx` from reference TPPs (`scripts/build_omx_skims.py`)
+- Read ~96 TPP files from reference run via `read_tpp()`
+- Rename Cube table names → ActivitySim skim keys (mapping in `docs/skim_conversion_mapping.md`)
+- Write single `skims.omx` with 1-based zone mapping
+- One-time conversion — output goes into the scenario data directory
+- **STATUS: NOT STARTED.**
+
+### Step 1: Validate ActivitySim against CTRAMP (frozen skims, no assignment)
+- Wire `skims.omx` into ActivitySim configs (`network_los.yaml` already expects it)
+- Map CTRAMP `.properties` → ActivitySim settings/configs (~30 params)
+- Run ActivitySim single-shot (no feedback loop — frozen skims, no assignment)
+- Compare ActivitySim outputs to CTRAMP reference using existing summarizers
+- Iterate on UECs until ActivitySim results are comparable to CTRAMP
+- This is the hard, iterative part — the UECs have diverged
+- **STATUS: NOT STARTED.** Blocked on Step 0.5.
+
+### Step 2: Pythonify summarizers (OMX-native)
+- Rewrite core summaries / validation scripts in Python reading OMX directly
+- Drop Cube dependency from post-processing entirely
+- Integrate with `travel-diary-survey-tools` for calibration analyses
+
+### Step 3: Drop in AequilibraE for assignment (proposed?)
+- Replace Cube highway assignment with AequilibraE (Python-native)
+- Close the feedback loop: skims → ActivitySim → assignment → new skims
+- Full iteration now runs without Cube on any machine
 
 ### Step 4: Wire in PopulationSim and land use
 - PopulationSim produces synthetic population from census PUMS + control totals
 - Land use inputs (UrbanSim or static) feed both PopulationSim and ActivitySim
 - End-to-end: land use → PopulationSim → ActivitySim → assignment
 
-### What dies
+### What dies (eventually)
 - RunModel.bat, RunIteration.bat, RuntimeConfiguration.py
 - JPPF/Java startup, PrepAssign.job, core/ Java code
-
-### What stays (as subprocess calls)
 - All `.job` files (Cube skims, assignment, nonres, preprocessing)
-- `transitDwellAccess.py` (Wrangler dependency)
+- Anything not in `base-model/`, `scenarios/`, `scripts/`, or `src/`
+
 
 ### CLI design
 - Installed via pyproject.toml → `tm1` command

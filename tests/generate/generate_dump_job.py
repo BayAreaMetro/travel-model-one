@@ -1,0 +1,252 @@
+"""Generate a fully-expanded dump_skims_to_csv.job with no @token@ syntax.
+
+The output .job file can be run directly in the Cube GUI (Application Manager)
+or with runtpp, with zero user input required.
+
+Usage:
+    python scripts/generate_dump_job.py <skims_dir>
+
+Example:
+    python scripts/generate_dump_job.py "E:\\Model3C-Share\\Projects\\2023_TM161_IPA_35_testrun\\skims"
+
+Writes: scripts/dump_skims_to_csv.job  (overwrites)
+"""
+
+import sys
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Constants (must match TransitSkims.job / build_omx_skims.py)
+# ---------------------------------------------------------------------------
+
+TIME_PERIODS = ["EA", "AM", "MD", "PM", "EV"]
+
+HWYSKIM_TABLES = [
+    "TIMEDA", "DISTDA", "BTOLLDA",
+    "TOLLTIMEDA", "TOLLDISTDA", "TOLLBTOLLDA", "TOLLVTOLLDA",
+    "TIMES2", "DISTS2", "BTOLLS2",
+    "TOLLTIMES2", "TOLLDISTS2", "TOLLBTOLLS2", "TOLLVTOLLS2",
+    "TIMES3", "DISTS3", "BTOLLS3",
+    "TOLLTIMES3", "TOLLDISTS3", "TOLLBTOLLS3", "TOLLVTOLLS3",
+]
+
+TRANSIT_TABLES = [
+    "ivt", "iwait", "xwait", "wait", "wacc", "waux", "wegr",
+    "dtime", "ddist", "fare", "boards",
+    "ivtLOC", "ivtLRF", "ivtEXP", "ivtHVY", "ivtCOM", "ivtFerry",
+    "ivtMUNILoc", "ivtMUNIMet",
+    "distLOC", "distLRF", "distEXP", "distHVY", "distCOM", "distFerry",
+    "firstMode",
+]
+
+NONMOT_TABLES = ["DISTWALK", "DISTBIKE", "DIST"]
+
+TRANSIT_COMBOS = [
+    (acc, mode, egr)
+    for acc, egr in [("wlk", "wlk"), ("drv", "wlk"), ("wlk", "drv")]
+    for mode in ["com", "hvy", "exp", "lrf", "loc"]
+]
+
+
+# ---------------------------------------------------------------------------
+# Generators
+# ---------------------------------------------------------------------------
+
+def _mw_lines(tables: list[str], indent: str = "    ") -> str:
+    """Generate MW[n] = MI.1.name lines."""
+    lines = []
+    for i, name in enumerate(tables, 1):
+        pad = " " if i < 10 else ""
+        lines.append(f"{indent}MW[{i}]{pad} = MI.1.{name}")
+    return "\n".join(lines)
+
+
+def _header_line(tables: list[str]) -> str:
+    """CSV header: I,J,col1,col2,..."""
+    return "I,J," + ",".join(tables)
+
+
+def _sparsity_check(n: int, indent: str = "      ") -> str:
+    """Generate the IF (MW[1] != 0 || MW[2] != 0 || ...) condition."""
+    parts = []
+    for i in range(1, n + 1):
+        pad = " " if i < 10 else ""
+        parts.append(f"MW[{i}]{pad} != 0")
+    # Format: groups of 4 per line
+    lines = []
+    for start in range(0, len(parts), 4):
+        chunk = parts[start:start + 4]
+        lines.append(" || ".join(chunk))
+    joined = f" ||\n{indent}    ".join(lines)
+    return f"{indent}IF ({joined})"
+
+
+def _print_line(n: int, indent: str = "        ") -> str:
+    """Generate PRINT LIST=I(5), ..., MW[n](15.6f) lines."""
+    parts = [f'{indent}PRINT LIST=I(5), ",", J(5), ","']
+    for i in range(1, n + 1):
+        pad = " " if i < 10 else ""
+        comma = "," if i < n else ""
+        trail = f', ","' if i < n else ""
+        parts.append(f"{indent}  MW[{i}](15.6f){trail}")
+    parts.append(f"{indent}  PRINTO=1")
+    return ",\n".join(parts)
+
+
+def _hwy_block(skims_dir: str, period: str) -> str:
+    n = len(HWYSKIM_TABLES)
+    return f"""\
+; --- HWYSKM{period}.tpp ---
+RUN PGM=MATRIX
+    FILEI MATI[1] = "{skims_dir}\\HWYSKM{period}.tpp"
+    FILEO PRINTO[1] = "{skims_dir}\\csv_dump\\HWYSKM{period}.csv"
+
+{_mw_lines(HWYSKIM_TABLES)}
+
+    IF (I == 1)
+      PRINT LIST="{_header_line(HWYSKIM_TABLES)}", PRINTO=1
+    ENDIF
+
+    JLOOP
+{_sparsity_check(n)}
+{_print_line(n)}
+      ENDIF
+    ENDJLOOP
+
+ENDRUN
+"""
+
+
+def _transit_block(skims_dir: str, period: str, acc: str, mode: str, egr: str) -> str:
+    per = period.lower()
+    fname = f"trnskm{per}_{acc}_{mode}_{egr}"
+    n = len(TRANSIT_TABLES)
+    return f"""\
+; --- {fname}.tpp ---
+RUN PGM=MATRIX
+    FILEI MATI[1] = "{skims_dir}\\{fname}.tpp"
+    FILEO PRINTO[1] = "{skims_dir}\\csv_dump\\{fname}.csv"
+
+{_mw_lines(TRANSIT_TABLES)}
+
+    IF (I == 1)
+      PRINT LIST="{_header_line(TRANSIT_TABLES)}", PRINTO=1
+    ENDIF
+
+    JLOOP
+{_sparsity_check(n)}
+{_print_line(n)}
+      ENDIF
+    ENDJLOOP
+
+ENDRUN
+"""
+
+
+def _nonmot_block(skims_dir: str) -> str:
+    n = len(NONMOT_TABLES)
+    return f"""\
+; --- nonmotskm.tpp ---
+RUN PGM=MATRIX
+    FILEI MATI[1] = "{skims_dir}\\nonmotskm.tpp"
+    FILEO PRINTO[1] = "{skims_dir}\\csv_dump\\nonmotskm.csv"
+
+{_mw_lines(NONMOT_TABLES)}
+
+    IF (I == 1)
+      PRINT LIST="{_header_line(NONMOT_TABLES)}", PRINTO=1
+    ENDIF
+
+    JLOOP
+{_sparsity_check(n)}
+{_print_line(n)}
+      ENDIF
+    ENDJLOOP
+
+ENDRUN
+"""
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def generate(skims_dir: str) -> str:
+    parts = []
+
+    parts.append(f"""\
+; dump_skims_to_csv.job  (auto-generated by generate_dump_job.py)
+;
+; Dump ALL TM1 TPP skim files to CSV for downstream OMX conversion.
+; No user input required — run directly in Cube GUI or with runtpp.
+;
+; Reads:  81 TPP files from: {skims_dir}
+; Writes: 81 CSV files into: {skims_dir}\\csv_dump\\
+;
+; Each CSV has a header row, then sparse I,J,val1,...,valN rows.
+; Rows where ALL values are zero are skipped.
+;
+; IMPORTANT: Create the csv_dump folder before running:
+;   mkdir "{skims_dir}\\csv_dump"
+
+; =========================================================================
+; PART 1: HIGHWAY SKIMS  (5 files x 21 tables = 105 tables)
+; =========================================================================
+""")
+
+    for period in TIME_PERIODS:
+        parts.append(_hwy_block(skims_dir, period))
+
+    parts.append("""\
+; =========================================================================
+; PART 2: TRANSIT SKIMS  (75 files x 26 tables)
+; =========================================================================
+""")
+
+    for period in TIME_PERIODS:
+        for acc, mode, egr in TRANSIT_COMBOS:
+            parts.append(_transit_block(skims_dir, period, acc, mode, egr))
+
+    parts.append("""\
+; =========================================================================
+; PART 3: NON-MOTORIZED SKIMS  (1 file x 3 tables)
+; =========================================================================
+""")
+
+    parts.append(_nonmot_block(skims_dir))
+
+    parts.append("""\
+; =========================================================================
+; DONE — expect 81 CSV files in csv_dump\\
+; =========================================================================
+""")
+
+    return "\n".join(parts)
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python scripts/generate_dump_job.py <skims_dir>")
+        print('Example: python scripts/generate_dump_job.py "E:\\Model3C-Share\\Projects\\2023_TM161_IPA_35_testrun\\skims"')
+        sys.exit(1)
+
+    skims_dir = sys.argv[1].rstrip("\\")
+    output = Path(__file__).resolve().parent / "dump_skims_to_csv.job"
+
+    text = generate(skims_dir)
+    output.write_text(text, encoding="utf-8")
+
+    # Count RUN PGM blocks
+    n_blocks = text.count("RUN PGM=MATRIX")
+    print(f"Generated {output.name} with {n_blocks} RUN PGM=MATRIX blocks")
+    print(f"  Highway:      {len(TIME_PERIODS)} files")
+    print(f"  Transit:      {len(TIME_PERIODS) * len(TRANSIT_COMBOS)} files")
+    print(f"  Non-motorized: 1 file")
+    print(f"  Total:        {n_blocks} CSV files")
+    print(f"\nOutput: {output}")
+    print(f"\nBefore running, create the output folder:")
+    print(f'  mkdir "{skims_dir}\\csv_dump"')
+
+
+if __name__ == "__main__":
+    main()

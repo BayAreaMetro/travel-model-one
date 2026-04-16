@@ -7,10 +7,30 @@ requires-python = ">=3.11,<3.12"
 dependencies = [
     "activitysim==1.5.1",
     "aequilibrae>=1.6.2",
+    "polars>=1.39.3",
     "populationsim==0.10.0",
+    "python-dotenv>=1.0",
     "travel-diary-survey-tools",
     "zstandard>=0.25.0",
 ]
 
 [tool.uv.sources]
 travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-coverage>=0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tm1"]
+artifacts = ["src/tm1/cubeless/vendor/**/*.dll"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:anyio"
