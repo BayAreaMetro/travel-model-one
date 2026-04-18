@@ -36,11 +36,24 @@ def seed_for_file(stem: str) -> int:
     return int(hashlib.md5(stem.encode()).hexdigest()[:8], 16)
 
 
+# Per-file extra rows that exercise specific block types / code paths.
+# These rows MUST appear in the golden TPPs so the unit tests cover
+# the bugs found during exhaustive validation.
+EXTRA_ROWS: dict[str, list[int]] = {
+    # row 749: TOLLVTOLLS2 has zone_field=20 → 0xC8 dense short-lo + big RLE
+    "HWYSKMMD": [749],
+    # rows 811, 1101: ddist uses type 0x40 (hi-byte-only sparse)
+    "trnskmam_drv_com_wlk": [811, 1101],
+}
+
+
 def sample_rows(stem: str) -> sorted:
     rng = random.Random(seed_for_file(stem))
-    candidates = [r for r in range(1, ZONES + 1) if r not in FIXED_ROWS]
+    extras = set(EXTRA_ROWS.get(stem, []))
+    base = set(FIXED_ROWS) | extras
+    candidates = [r for r in range(1, ZONES + 1) if r not in base]
     randoms = rng.sample(candidates, min(N_RANDOM, len(candidates)))
-    return sorted(set(FIXED_ROWS) | set(randoms))
+    return sorted(base | set(randoms))
 
 
 # Representative files covering all block types:
@@ -75,7 +88,9 @@ FILES = [
     # (stem, input_name, table_list, n_tables_guaranteed)
     ("HWYSKMEA", "HWYSKMEA.tpp", HIGHWAY_TABLES, 21),
     ("HWYSKMAM", "HWYSKMAM.tpp", HIGHWAY_TABLES, 21),
+    ("HWYSKMMD", "HWYSKMMD.tpp", HIGHWAY_TABLES, 21),  # exercises 0xC8 dense short-lo + big RLE
     ("HWYSKMPM", "HWYSKMPM.tpp", HIGHWAY_TABLES, 21),
+    ("trnskmam_drv_com_wlk", "trnskmam_drv_com_wlk.tpp", TRANSIT_TABLES, 26),  # exercises 0x40 hi-byte-only
     ("trnskmam_wlk_com_wlk", "trnskmam_wlk_com_wlk.tpp", TRANSIT_TABLES, 26),
     ("trnskmam_drv_hvy_wlk", "trnskmam_drv_hvy_wlk.tpp", TRANSIT_TABLES, 26),
     ("trnskmpm_wlk_loc_drv", "trnskmpm_wlk_loc_drv.tpp", TRANSIT_TABLES, 26),

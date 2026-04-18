@@ -64,8 +64,10 @@ def _decode_blocks(
 
     Encoding rules (read *count* byte then *mode* byte):
 
+    * ``mode & 0x80``: RLE — one fill byte follows, repeated
+      ``count | ((mode & 0x7F) << 8)`` times.  When ``mode == 0x80`` the
+      upper bits are zero so the repeat count equals *count* (≤ 255).
     * ``mode == 0x00``: literal — *count* raw data bytes follow.
-    * ``mode == 0x80``: RLE — one fill byte follows, repeated *count* times.
     * ``allow_shorthand and count < 0x80``: shorthand RLE — *mode* itself is
       the fill value, repeated *count* times.
     * Otherwise: varint literal — ``big_count = (count | mode<<8) & 0x7FFF``
@@ -85,10 +87,11 @@ def _decode_blocks(
         count = raw[pos]
         mode = raw[pos + 1]
 
-        if mode == 0x80:
+        if mode & 0x80:
             if pos + 2 >= raw_len:
                 break
-            n = count if count <= remaining else remaining
+            big_count = count | ((mode & 0x7F) << 8)
+            n = big_count if big_count <= remaining else remaining
             out[filled : filled + n] = _fill[raw[pos + 2]][:n]
             filled += n
             remaining -= n
@@ -362,8 +365,14 @@ def read_tpp(path: str | Path) -> dict:
                 # All-zero row — already initialised to zero
                 pass
 
-            elif type_byte in (0x40, 0x80):
-                # Sparse 1-byte: single section (lo only), values 0–255
+            elif type_byte == 0x40:
+                # Sparse 1-byte: hi only, values are multiples of 256
+                body = block_data[3:]
+                hi_arr, _ = _decode_sparse(body, zones)
+                matrices[tbl_name][row_idx] = hi_arr.astype(np.float64) * 256.0
+
+            elif type_byte == 0x80:
+                # Sparse 1-byte: lo only, values 0–255
                 body = block_data[3:]
                 lo_arr, _ = _decode_sparse(body, zones)
                 matrices[tbl_name][row_idx] = lo_arr.astype(np.float64)
@@ -392,34 +401,55 @@ def read_tpp(path: str | Path) -> dict:
                     ]
                     matrices[tbl_name][row_idx] = stored / divisors
                 else:
-                    # Dense mode: raw lo + compressed hi + compressed prec
-                    lo_bytes = block_data[5 : 5 + zones]
-                    hi_raw = block_data[5 + zones :]
-                    hi_arr, hi_consumed = _decode_blocks(
-                        hi_raw, max_values=zones, allow_shorthand=False
-                    )
-                    prec_arr, _ = _decode_blocks(
-                        hi_raw[hi_consumed:],
-                        max_values=zones,
-                        allow_shorthand=True,
-                    )
-                    # Inline assembly to avoid intermediate arrays
-                    dest = matrices[tbl_name][row_idx]
-                    # hi * 256 + lo
-                    n_hi = len(hi_arr)
-                    dest[:n_hi] = hi_arr
-                    dest[n_hi:] = 0.0
-                    dest *= 256.0
-                    dest += np.frombuffer(lo_bytes, dtype=np.uint8)
-                    # divide by precision
-                    n_pr = len(prec_arr)
-                    if n_pr >= zones:
-                        np.divide(dest, _DIVISOR_LUT[prec_arr], out=dest)
+                    # Dense mode.  Layout:
+                    #   n_raw raw lo bytes  (zones 0 .. n_raw-1)
+                    #   compressed lo cont  (zones n_raw .. zones-1)
+                    #   compressed hi       (all zones)
+                    #   compressed prec     (all zones)
+                    n_raw = zone_field & 0x7FFF
+                    if n_raw == 0:
+                        n_raw = zones
+
+                    # --- lo section ---
+                    lo_bytes = block_data[5 : 5 + n_raw]
+                    rest = block_data[5 + n_raw :]
+                    n_cont = zones - n_raw
+                    if n_cont > 0:
+                        lo_cont, lo_c = _decode_blocks(
+                            rest, max_values=n_cont, allow_shorthand=False
+                        )
+                        rest = rest[lo_c:]
                     else:
-                        prec = np.empty(zones, dtype=np.uint8)
-                        prec[:n_pr] = prec_arr
-                        prec[n_pr:] = 0x20
-                        np.divide(dest, _DIVISOR_LUT[prec], out=dest)
+                        lo_cont = np.empty(0, dtype=np.uint8)
+
+                    # --- hi section (all zones) ---
+                    hi_arr, hi_c = _decode_blocks(
+                        rest, max_values=zones, allow_shorthand=False
+                    )
+                    rest = rest[hi_c:]
+
+                    # --- prec section (all zones) ---
+                    prec_arr, _ = _decode_blocks(
+                        rest, max_values=zones, allow_shorthand=True
+                    )
+
+                    # Assemble: hi * 256 + lo, then divide by precision
+                    dest = matrices[tbl_name][row_idx]
+                    n_hi = len(hi_arr)
+                    dest[:n_hi] = hi_arr[:n_hi].astype(np.float64) * 256.0
+
+                    lo_raw = np.frombuffer(lo_bytes, dtype=np.uint8)
+                    dest[: len(lo_raw)] += lo_raw
+                    if len(lo_cont) > 0:
+                        dest[n_raw : n_raw + len(lo_cont)] += lo_cont
+
+                    n_pr = len(prec_arr)
+                    n_eff = min(n_hi, n_pr, zones)
+                    np.divide(
+                        dest[:n_eff],
+                        _DIVISOR_LUT[prec_arr[:n_eff]],
+                        out=dest[:n_eff],
+                    )
 
             elif type_byte == 0xE8:
                 zone_field = struct.unpack_from("<H", block_data, 3)[0]
@@ -446,13 +476,40 @@ def read_tpp(path: str | Path) -> dict:
                         stored.astype(np.float64) / divisors
                     )
                 else:
-                    # Dense mode: raw lo + compressed mid + sparse hi + prec
-                    lo_bytes = block_data[5 : 5 + zones]
-                    tail = block_data[5 + zones :]
+                    # Dense mode.  Layout (same continuation pattern as 0xC8):
+                    #   n_raw raw lo bytes  (zones 0 .. n_raw-1)
+                    #   compressed lo cont  (zones n_raw .. zones-1)
+                    #   compressed mid      (all zones)
+                    #   sparse hi           (all zones)
+                    #   sparse prec         (all zones)
+                    n_raw = zone_field & 0x7FFF
+                    if n_raw == 0:
+                        n_raw = zones
+
+                    # --- lo section ---
+                    lo_bytes = block_data[5 : 5 + n_raw]
+                    rest = block_data[5 + n_raw :]
+                    n_cont = zones - n_raw
+                    if n_cont > 0:
+                        lo_cont, lo_c = _decode_blocks(
+                            rest, max_values=n_cont, allow_shorthand=False
+                        )
+                        rest = rest[lo_c:]
+                        # Build full lo array
+                        full_lo = np.zeros(zones, dtype=np.uint8)
+                        raw_lo = np.frombuffer(lo_bytes, dtype=np.uint8)
+                        full_lo[: len(raw_lo)] = raw_lo
+                        full_lo[n_raw : n_raw + len(lo_cont)] = lo_cont
+                        lo_bytes = bytes(full_lo)
+                    # else: lo_bytes already covers all zones
+
+                    # --- mid section (all zones) ---
                     mid_values, mid_consumed = _decode_blocks(
-                        tail, max_values=zones, allow_shorthand=False
+                        rest, max_values=zones, allow_shorthand=False
                     )
-                    sparse_tail = tail[mid_consumed:]
+                    sparse_tail = rest[mid_consumed:]
+
+                    # --- hi / prec sections (sparse, all zones) ---
                     hi_arr, hi_consumed = _decode_sparse(
                         sparse_tail, zones
                     )
