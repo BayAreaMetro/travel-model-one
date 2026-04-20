@@ -247,5 +247,5 @@ def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format="%(message)s")
     SKIMS_DIR = Path(r"\\MODEL3-C\Model3C-Share\Projects\2023_TM161_IPA_35_testrun\skims")
-    OUTPUT = Path(r"E:\tm1a_test\skims\skims.omx")
+    OUTPUT = Path(r"E:\tm1a_test\data\skims.omx")
     build_omx(SKIMS_DIR, OUTPUT)

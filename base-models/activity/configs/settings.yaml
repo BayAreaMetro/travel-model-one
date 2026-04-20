@@ -23,9 +23,10 @@ input_table_list:
     rename_columns:
       HHID: household_id  # household_id is the required index column
       PERSONS: hhsize
-      workers: num_workers
+      hworkers: num_workers
       VEHICL: auto_ownership
       TAZ: home_zone_id
+      HINC: income
     recode_columns:
       home_zone_id: land_use.zone_id
     keep_columns:
@@ -58,8 +59,9 @@ input_table_list:
     filename: land_use.csv
     index_col: zone_id
     rename_columns:
-      TAZ: zone_id  # person_id is the required index column
+      ZONE: zone_id
       COUNTY: county_id
+      AREATYPE: area_type
     recode_columns:
       zone_id: zero-based
     keep_columns:

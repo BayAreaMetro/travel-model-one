@@ -21,14 +21,18 @@ populationsim:
   output_dir: ".cache/data"
 
 activitysim:
-  # land_use_file: path to land_use.csv produced by UrbanSim.
-  # TODO: replace with UrbanSim output path once wired up.
-  land_use_file: "E:/GitHub/activitysim-application/projects/prototype_mtc_extended/activitysim-prototype-mtc-1.3.2/data_full/land_use.csv"
-  # skims_file: path to skims.omx.
-  # TODO: replace with AequilibraE output once wired up; run scripts/cube_to_omx.py for initial conversion.
-  skims_file: "E:/GitHub/activitysim-application/projects/prototype_mtc_extended/activitysim-prototype-mtc-1.3.2/data_full/skims.omx"
-  data_dir: ".cache/data"
-  output_dir: ".cache/asim"
+  data_dir: "E:/tm1a_test/data"
+  output_dir: "E:/tm1a_test/output"
+  configs:
+    - "base-models/activity/configs"
+
+# Sources used by scripts/setup_scenario.py to assemble data_dir
+data_sources:
+  reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
+  land_use: "{reference_run}/landuse/tazData.csv"
+  households: "{reference_run}/popsyn/hhFile.csv"
+  persons: "{reference_run}/popsyn/personFile.csv"
+  skims: "E:/tm1a_test/data/skims.omx"
 
 aequilibrae:
   # TBD
