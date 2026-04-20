@@ -1,9 +1,8 @@
 """Pure-Python reader for Cube Voyager TPP (TranPlan Plus) matrix files.
 
 Reverse-engineered from Cube Voyager 6.5.1 x64 TPP output.
-Validated bit-exact against Cube ground truth on highway, transit,
-and non-motorized skim files (dense, sparse, mixed-mode wide-dense,
-and all-zero blocks).
+Validated bit-exact against Cube's own CSV dumps across 81 skim files
+(1,109,300,726 cells, 0 mismatches).
 
 Usage::
 
@@ -14,8 +13,134 @@ Usage::
     # result['tables'] -> ['TIMEDA', 'DISTDA', ...]
     # result['data']   -> {'TIMEDA': ndarray(1475, 1475), ...}
 
-The file is bulk-read into memory and parsed via buffer offsets
-(no per-block I/O), with numpy vectorisation for value assembly.
+TPP File Format
+===============
+
+A TPP file stores square origin-destination matrices (zones x zones).
+Multiple named tables share the same zone system.
+
+File layout::
+
+    +---------------------------------------------+
+    |  Header records (variable-length, ASCII)     |
+    |    PAR record  -> zone count, parameters     |
+    |    MVR record  -> table names + precision     |
+    |    ROW record  -> sentinel ending the header  |
+    +---------------------------------------------+
+    |  Data blocks (one per row per table)          |
+    |    5-byte envelope: row(u16) tbl(u8) len(u16) |
+    |    payload: type byte + compressed data       |
+    +---------------------------------------------+
+
+Block Types
+-----------
+
+Each data block carries one row of one table.  The **type byte**
+(3rd byte of the payload) selects the encoding:
+
+``0x00`` -- **Zero row**
+    No data; row is all zeros.  (Most common for sparse transit skims.)
+
+``0x40`` -- **Sparse hi-byte-only**
+    Values are multiples of 256.  One sparse section encodes the hi byte;
+    the effective value is ``hi * 256``.  Used when all non-zero values in
+    a row happen to be exact multiples of 256 (e.g. long drive-to-transit
+    distances).
+
+``0x80`` -- **Sparse lo-byte-only**
+    Values fit in 0-255.  One sparse section encodes the lo byte directly.
+
+``0xC0`` -- **Sparse 2-byte (lo + hi)**
+    Integer values up to 65535.  Two sparse sections: lo bytes then hi bytes.
+    Value = ``hi * 256 + lo``.
+
+``0xC8`` -- **Dense/sparse 2-byte + precision**
+    Floating-point values.  The ``zone_field`` (u16 at offset 3) selects:
+
+    - **Sparse mode** (``zone_field & 0x8000``): three sparse sections
+      (lo, hi, precision).  Value = ``(hi * 256 + lo) / divisor(prec)``.
+    - **Dense mode** (``zone_field < zones``): raw + compressed lo bytes,
+      compressed hi bytes, compressed precision bytes.  See
+      `Dense Block Layout`_ below.
+
+``0xE8`` -- **Dense/sparse 3-byte + precision (wide)**
+    Large floating-point values needing a third (mid) byte.
+
+    - **Sparse mode** (``zone_field & 0x8000``): four sparse sections
+      (lo, mid, hi, precision).
+      Value = ``(hi * 65536 + mid * 256 + lo) / divisor(prec)``.
+    - **Dense mode**: raw + compressed lo, compressed mid, sparse hi,
+      sparse precision.
+
+Dense Block Layout
+------------------
+
+For 0xC8 dense mode, the payload after the type byte is::
+
+    zone_field (u16)     -> n_raw = zone_field & 0x7FFF (0 means zones)
+    lo_raw[n_raw]        -> raw lo bytes for zones 0 .. n_raw-1
+    lo_cont[zones-n_raw] -> compressed lo bytes for remaining zones
+    hi[zones]            -> compressed hi bytes for all zones
+    prec[zones]          -> compressed precision bytes for all zones
+
+When ``n_raw == zones``, the lo-continuation section is absent.  When
+``n_raw < zones``, the continuation section uses the block codec
+(RLE + literal) to encode the remaining lo bytes.  This "short-lo"
+pattern appears in highway midday skims where the first *n_raw* zones
+have raw data and the rest are compressed.
+
+0xE8 dense mode is identical except a compressed **mid** section sits
+between lo and hi, and the hi/prec sections use the sparse codec.
+
+Compression Codecs
+------------------
+
+TPP uses two byte-stream compression codecs:
+
+**Block codec** (used for dense lo, hi, mid, prec sections):
+    Each instruction is 2 or 3 bytes: ``count_byte``, ``mode_byte``,
+    and optionally a fill byte.
+
+    - ``mode & 0x80``: **RLE** -- repeat the next byte
+      ``count | ((mode & 0x7F) << 8)`` times.  This allows runs up to
+      32767 (not just 255).
+    - ``mode == 0x00``: **Literal** -- copy *count* raw bytes.
+    - Precision sections also support **shorthand RLE** where
+      ``count < 0x80``: the mode byte itself is the fill value,
+      repeated *count* times.
+    - Otherwise: **varint literal** --
+      ``big_count = (count | mode << 8) & 0x7FFF`` raw bytes follow.
+
+**Sparse codec** (used for sparse lo, hi, mid, prec sections):
+    Similar 2-byte header with ``count_byte`` and ``mode_byte``:
+
+    - ``mode == 0x00``: literal -- *count* raw bytes follow.
+    - ``mode & 0x80``: RLE -- ``(count | mode << 8) & 0x7FFF`` repeats
+      of the next byte.
+    - Otherwise: varint literal -- ``(count | mode << 8) & 0x7FFF``
+      raw bytes.
+
+Precision Encoding
+------------------
+
+The precision byte's upper nibble selects a decimal divisor::
+
+    0x00 -> /1          0x10 -> /10         0x20 -> /100 (default)
+    0x30 -> /1000       0x40 -> /10000      ...
+
+The stored integer ``(hi * 256 + lo)`` is divided by this to recover
+the floating-point value.  Most skim tables use ``0x20`` (/100),
+giving centimal precision (e.g. time in minutes, distance in miles).
+
+Implementation Notes
+--------------------
+
+- The file is bulk-read into memory; blocks are parsed via buffer offsets
+  with no per-block I/O.
+- Value assembly uses numpy vectorisation: lo/hi/prec arrays are decoded
+  into uint8/uint16 arrays, then combined in bulk ``float64`` arithmetic.
+- Pre-built fill tables (``_FILL``) and a precision lookup table
+  (``_DIVISOR_LUT``) avoid per-element branching.
 """
 import struct
 from pathlib import Path
@@ -60,21 +185,40 @@ def _decode_blocks(
     max_values: int,
     allow_shorthand: bool = False,
 ) -> tuple[np.ndarray, int]:
-    """Decode a compressed byte stream used in dense TPP blocks.
+    """Decode a compressed byte stream using the **block codec**.
 
-    Encoding rules (read *count* byte then *mode* byte):
+    Used for the lo-continuation, hi, mid, and precision byte lanes in
+    dense (0xC8 / 0xE8) blocks.
 
-    * ``mode & 0x80``: RLE — one fill byte follows, repeated
-      ``count | ((mode & 0x7F) << 8)`` times.  When ``mode == 0x80`` the
-      upper bits are zero so the repeat count equals *count* (≤ 255).
-    * ``mode == 0x00``: literal — *count* raw data bytes follow.
-    * ``allow_shorthand and count < 0x80``: shorthand RLE — *mode* itself is
-      the fill value, repeated *count* times.
-    * Otherwise: varint literal — ``big_count = (count | mode<<8) & 0x7FFF``
-      raw bytes follow.  (This handles *count* == 0 naturally: ``0 | mode<<8``
-      gives a count of ``mode * 256``.)
+    Each instruction is a 2-byte header (count, mode) optionally followed
+    by data bytes:
 
-    Returns ``(uint8_array, bytes_consumed)``.
+    * ``mode & 0x80`` -- **RLE**: one fill byte follows, repeated
+      ``count | ((mode & 0x7F) << 8)`` times.  The 7 upper bits of mode
+      extend the count beyond 255, allowing runs up to 32767.
+    * ``mode == 0x00`` -- **Literal**: copy the next *count* raw bytes
+      verbatim.
+    * ``allow_shorthand and count < 0x80`` -- **Shorthand RLE**: *mode*
+      itself is the fill value, repeated *count* times.  (Used only for
+      the precision lane, where the fill value is a precision code like
+      ``0x20``.)
+    * Otherwise -- **Varint literal**: ``big_count = (count | mode<<8) & 0x7FFF``
+      raw bytes follow.  Handles large literal spans exceeding 255 bytes.
+
+    Parameters
+    ----------
+    raw : bytes
+        The compressed byte stream.
+    max_values : int
+        Maximum number of output bytes to decode (typically *zones* or
+        *zones - n_raw*).
+    allow_shorthand : bool
+        Enable shorthand RLE (precision lane only).
+
+    Returns
+    -------
+    tuple[np.ndarray, int]
+        ``(uint8_array, bytes_consumed)``.
     """
     out = bytearray(max_values)
     pos = 0
@@ -123,17 +267,35 @@ def _decode_blocks(
 
 
 def _decode_sparse(raw: bytes, zones: int) -> tuple[np.ndarray, int]:
-    """Decode one sparse section (lo, hi, mid, or prec bytes).
+    """Decode one sparse section using the **sparse codec**.
 
-    Encoding rules (read *count_byte* then *mode* byte):
+    Used for byte lanes in sparse blocks (0x40, 0x80, 0xC0, 0xC8-sparse,
+    0xE8-sparse) and for the hi/prec lanes in 0xE8 dense blocks.
 
-    * ``mode == 0x00``: literal — *count_byte* raw data bytes follow.
-    * ``mode & 0x80``: RLE — count is ``(count_byte | mode<<8) & 0x7FFF``,
-      one fill byte follows, repeated *count* times.
-    * Otherwise: varint literal — count is ``(count_byte | mode<<8) & 0x7FFF``,
-      that many raw data bytes follow.
+    Each instruction is a 2-byte header (count_byte, mode) followed by
+    data bytes:
 
-    Returns ``(uint16_array, bytes_consumed)``.
+    * ``mode == 0x00`` -- **Literal**: copy the next *count_byte* raw bytes.
+    * ``mode & 0x80`` -- **RLE**: count = ``(count_byte | mode<<8) & 0x7FFF``,
+      repeat the next byte *count* times.
+    * Otherwise -- **Varint literal**: count =
+      ``(count_byte | mode<<8) & 0x7FFF``, copy that many raw bytes.
+
+    The sparse codec always emits exactly *zones* output bytes (one per
+    column), with implicit zeros for any trailing columns not covered.
+
+    Parameters
+    ----------
+    raw : bytes
+        The compressed byte stream for this section.
+    zones : int
+        Number of output values (columns) to decode.
+
+    Returns
+    -------
+    tuple[np.ndarray, int]
+        ``(uint16_array, bytes_consumed)`` -- decoded values (promoted to
+        uint16 for safe arithmetic) and number of input bytes consumed.
     """
     out = bytearray(zones)
     col = 0
@@ -192,7 +354,10 @@ def _assemble_dense_row(
     prec_values: np.ndarray,
     zones: int,
 ) -> np.ndarray:
-    """Combine lo, hi, and precision into a float64 row (vectorised)."""
+    """Combine lo, hi, and precision into a float64 row (vectorised).
+
+    Used for 0xC8 dense blocks.  Value = ``(hi * 256 + lo) / divisor(prec)``.
+    """
     lo = np.frombuffer(lo_bytes, dtype=np.uint8).astype(np.float64)
 
     hi = np.zeros(zones, dtype=np.float64)
@@ -217,7 +382,10 @@ def _assemble_wide_dense_row(
 ) -> np.ndarray:
         """Combine lo, mid, hi, and precision for 3-byte dense rows.
 
-        Block type ``0xE8`` uses a mixed layout:
+        Used for 0xE8 dense blocks.
+        Value = ``(hi * 65536 + mid * 256 + lo) / divisor(prec)``.
+
+        The byte lanes use a mixed layout:
             - lo byte lane is raw
             - mid byte lane uses the dense block codec
             - hi and precision byte lanes use the sparse codec
@@ -245,7 +413,10 @@ def _assemble_sparse_row(
     lo_arr: np.ndarray,
     hi_arr: np.ndarray,
 ) -> np.ndarray:
-    """Combine sparse lo/hi into a float64 row (vectorised, no precision)."""
+    """Combine sparse lo/hi into a float64 row (no precision divisor).
+
+    Used for 0xC0 blocks. Value = ``hi * 256 + lo``.
+    """
     return hi_arr.astype(np.float64) * 256.0 + lo_arr.astype(np.float64)
 
 
@@ -255,6 +426,13 @@ def _assemble_sparse_row(
 
 def _parse_header(fh) -> tuple[int, list[str], list[int]]:
     """Parse TPP header records.
+
+    The header is a sequence of length-prefixed ASCII records:
+
+    - **PAR** record: ``PAR Zones=N ...`` -- zone count and other parameters.
+    - **MVR** record: NUL-separated table names, each optionally followed by
+      ``=N`` specifying decimal places (default 2 = divisor 100).
+    - **ROW** record: sentinel marking the start of data blocks.
 
     Returns ``(zones, table_names, mspecs)`` where *mspecs* is the
     per-table precision spec list (currently unused but preserved for
@@ -307,6 +485,12 @@ def _parse_header(fh) -> tuple[int, list[str], list[int]]:
 def read_tpp(path: str | Path) -> dict:
     """Read a Cube Voyager TPP matrix file.
 
+    Parses the header to discover zone count and table names, then
+    iterates over data blocks.  Each block is a 5-byte envelope
+    (row, table index, payload length) followed by a type-byte-tagged
+    payload decoded according to the block type (see module docstring
+    for the full format specification).
+
     Parameters
     ----------
     path : str or Path
@@ -315,9 +499,9 @@ def read_tpp(path: str | Path) -> dict:
     Returns
     -------
     dict
-        ``zones``  — int, number of zones.
-        ``tables`` — list[str], table names in file order.
-        ``data``   — dict mapping table name → ``float64`` array of
+        ``zones``  -- int, number of zones.
+        ``tables`` -- list[str], table names in file order.
+        ``data``   -- dict mapping table name to ``float64`` array of
         shape ``(zones, zones)``.
     """
     path = Path(path)
