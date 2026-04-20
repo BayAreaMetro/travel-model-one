@@ -22,6 +22,7 @@ USAGE = r"""
 
 import argparse, re, os, shutil, pathlib, sys
 import numpy, pandas
+import tableauhyperapi
 
 NUM_TAZ      = 1454
 NUM_SUBZONES = 3
@@ -78,7 +79,7 @@ MC_TOTAL_UTILITY_RE     = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, MC_TOTA
 WFH_TOTAL_UTILITY_RE_TXT = "(Alt Utility)" + TOTAL_UTIL_RE_TXT*NUM_WFH_ALT
 WFH_TOTAL_UTILITY_RE     = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, WFH_TOTAL_UTILITY_RE_TXT))
 
-def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or_build, log_file):
+def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or_build, log_file, print_lines=False):
     """
     Read tour mode choice logsum utilities from the file_object
     """
@@ -1576,7 +1577,7 @@ def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or
     elif attr_dict['Purpose'].startswith('university'):
         print("Parsing for university")
         ROW_NAMES = UNIVERSITY_ROW_NAMES
-    elif type_str == "NonMandLocChoice":
+    elif type_str == "NonMandLocChoice_tourmc":
         ROW_NAMES = SHOPPING_ROW_NAMES
     else:
         print("read_tour_mode_choice_logsum_lines() doesn't handle purpose {}".format(attr_dict['Purpose']))
@@ -1586,13 +1587,26 @@ def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or
     # read 5 lines that we don't care about
     for lines_read in range(1,6):
         line = file_object.readline().strip()
+        if print_lines: print(line)
         # print("{}   {}".format(lines_read, line[:30]))
+
+    # normalise inconsistent key names to canonical output column names
+    # (must happen before row_alt_dicts loop so all rows get the same keys)
+    if 'destTaz' in attr_dict:
+        attr_dict['Dest TAZ'] = attr_dict.pop('destTaz')
+    elif 'Dest' in attr_dict:
+        attr_dict['Dest TAZ'] = attr_dict.pop('Dest')
+    if 'destWalkSubzone' in attr_dict:
+        attr_dict['Dest Walk Subzone'] = attr_dict.pop('destWalkSubzone')
+    elif 'DestSubZ' in attr_dict:
+        attr_dict['Dest Walk Subzone'] = attr_dict.pop('DestSubZ')
 
     row_alt_dicts = []
 
     # read utiltities
     for utils_read in range(1,len(ROW_NAMES)+1):
         line     = file_object.readline().strip()
+        if print_lines: print(line)
         # print("parsing line: [{}]".format(line))
         match    = MC_UTILITY_RE.match(line)
         row_num   = int(match.group(3)) # row number
@@ -1623,22 +1637,16 @@ def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or
 
     # read 1 more lines that we don't care about, the dashes
     line     = file_object.readline().strip()
+    if print_lines: print(line)
     assert("----------------------------" in line)
     lines_read += 1
 
     # total utility
     line     = file_object.readline().strip()
+    if print_lines: print(line)
     match    = MC_TOTAL_UTILITY_RE.match(line)
 
-    # handle inconsistent keys
-    if ('destTaz' in attr_dict) and ('Dest' not in attr_dict): 
-        attr_dict['Dest'] = attr_dict['destTaz']
-        del attr_dict['destTaz']
-    if ('destWalkSubzone' in attr_dict) and ('DestSubZest' not in attr_dict): 
-        attr_dict['DestSubZ'] = attr_dict['destWalkSubzone']
-        del attr_dict['destWalkSubzone']
-
-    if attr_dict['Dest'] == "1" and attr_dict['DestSubZ'] == "0":
+    if attr_dict['Dest TAZ'] == "1" and attr_dict['Dest Walk Subzone'] == "0":
         print(match.groups())
 
     full_idx = 4 # TOTAL_UTIL_RE_TXT
@@ -1669,7 +1677,7 @@ def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or
     # drop alternative specific constants
     # df = df.loc[ (df["row num"] < 396)|(df["row num"] > 463)]
 
-    if attr_dict['Dest'] == "1" and attr_dict['DestSubZ'] == "0":
+    if attr_dict['Dest TAZ'] == "1" and attr_dict['Dest Walk Subzone'] == "0":
         print("head: \n{}".format(df.head(NUM_MC_ALT)))
         print("tail: \n{}".format(df.tail(NUM_MC_ALT)))
 
@@ -2277,7 +2285,7 @@ def read_trip_mode_choice_lines(file_object, type_str, attr_dict, base_or_build,
             if row_alt_dict["variable"] == "Infinity":
                 row_alt_dict["variable"] = numpy.Infinity
             elif row_alt_dict["variable"] == "NaN":
-                row_alt_dict["variable"] = numpy.NaN
+                row_alt_dict["variable"] = numpy.nan
             else:
                 row_alt_dict["variable"] = float(row_alt_dict["variable"])
 
@@ -2310,7 +2318,7 @@ def read_trip_mode_choice_lines(file_object, type_str, attr_dict, base_or_build,
         if row_alt_dict["variable"] == "Infinity":
             row_alt_dict["variable"] = numpy.Infinity
         elif row_alt_dict["variable"] == "NaN":
-            row_alt_dict["variable"] = numpy.NaN
+            row_alt_dict["variable"] = numpy.nan
         else:
             row_alt_dict["variable"] = float(row_alt_dict["variable"])
         # print(row_alt_dict["variable"])
@@ -2334,11 +2342,15 @@ def read_trip_mode_choice_lines(file_object, type_str, attr_dict, base_or_build,
 def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, ptype, tournum, base_or_build, log_file):
     """
     Read the destination choice utilities from the file_object
-    Saves as destchoice_[type_str]_hh[hh]_pers[persnum]/[base_or_build]_dc_utilities.csv
-    Also copies log file into that directory as backup
+    Previously: Saves as destchoice_[type_str]_hh[hh]_pers[persnum]/[base_or_build]_dc_utilities.csv
+    Saves as destchoice_[type_str]_hh[hh]_pers[persnum]_dc_utilities.csv
+    Also copies log file into that directory as backup (commented out)
     """
-    output_dir      = "destchoice_{}_hh{}_pers{}".format(type_str, hh, persnum)
-    output_filename = "{}_dc_utilities.csv".format(base_or_build)
+    # Leave this as comment because there was a use case where this made more sense
+    # output_dir      = "destchoice_{}_hh{}_pers{}".format(type_str, hh, persnum)
+    # output_filename = "{}_dc_utilities.csv".format(base_or_build)
+    output_dir = "."
+    output_filename = f"destchoice_{type_str}_hh{hh}_pers{persnum}_dc_utilities.csv"
     # from DestinationChoice.xls UEC, Work
     WORK_ROW_NAMES = {
         1 : "token, num dest choice segments",
@@ -2380,7 +2392,10 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
         37: "San Mateo to Santa Clara",
         38: "San Mateo to Alameda",
         39: "Santa Clara to SF",
-        40: "Santa Clara to Santa Clara"
+        40: "Santa Clara to Santa Clara",
+        41: "Alameda to Santa Clara",
+        42: "Contra Costa to San Mateo",
+        43: "Contra Costa to Santa Clara",
     }
     SHOPPING_ROW_NAMES = {
         1 : "token, numberOfSubzones",
@@ -2462,7 +2477,7 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
             if row_alt_dict["variable"] == "Infinity":
                 row_alt_dict["variable"] = numpy.Infinity
             elif row_alt_dict["variable"] == "NaN":
-                row_alt_dict["variable"] = numpy.NaN
+                row_alt_dict["variable"] = numpy.nan
             else:
                 row_alt_dict["variable"] = float(row_alt_dict["variable"])
 
@@ -2506,7 +2521,7 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
         if row_alt_dict["variable"] == "Infinity":
             row_alt_dict["variable"] = numpy.Infinity
         elif row_alt_dict["variable"] == "NaN":
-            row_alt_dict["variable"] = numpy.NaN
+            row_alt_dict["variable"] = numpy.nan
         else:
             row_alt_dict["variable"] = float(row_alt_dict["variable"])
 
@@ -2524,8 +2539,9 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
     print("Wrote {}".format(os.path.join(output_dir,output_filename)))
 
     # copy source log file
-    shutil.copyfile(log_file, os.path.join(output_dir, log_file))
-    print("Copied {} to {}".format(log_file, output_dir))
+    # commenting this out becuase this file is gigantic
+    # shutil.copyfile(log_file, os.path.join(output_dir, log_file))
+    # print("Copied {} to {}".format(log_file, output_dir))
 
     return (lines_read + utils_read, output_dir)
 
@@ -2623,7 +2639,7 @@ def read_wfh_choice_lines(file_object, attr_dict, base_or_build, log_file):
             if row_alt_dict["variable"] == "Infinity":
                 row_alt_dict["variable"] = numpy.Infinity
             elif row_alt_dict["variable"] == "NaN":
-                row_alt_dict["variable"] = numpy.NaN
+                row_alt_dict["variable"] = numpy.nan
             else:
                 row_alt_dict["variable"] = float(row_alt_dict["variable"])
 
@@ -2654,7 +2670,7 @@ def read_wfh_choice_lines(file_object, attr_dict, base_or_build, log_file):
         if row_alt_dict["variable"] == "Infinity":
             row_alt_dict["variable"] = numpy.Infinity
         elif row_alt_dict["variable"] == "NaN":
-            row_alt_dict["variable"] = numpy.NaN
+            row_alt_dict["variable"] = numpy.nan
         else:
             row_alt_dict["variable"] = float(row_alt_dict["variable"])
         # print(row_alt_dict["variable"])
@@ -2677,6 +2693,42 @@ def read_wfh_choice_lines(file_object, attr_dict, base_or_build, log_file):
     return (lines_read + utils_read, output_dir)
 
 
+def _pandas_dtype_to_hyper(dtype):
+    """Map a pandas dtype to a tableauhyperapi SqlType."""
+    if pandas.api.types.is_integer_dtype(dtype):
+        return tableauhyperapi.SqlType.big_int()
+    elif pandas.api.types.is_float_dtype(dtype):
+        return tableauhyperapi.SqlType.double()
+    else:
+        return tableauhyperapi.SqlType.text()
+
+
+def _create_hyper_table(connection, type_str, df):
+    """Create a Hyper table whose schema matches df's columns. Returns TableDefinition."""
+    columns = [
+        tableauhyperapi.TableDefinition.Column(str(col), _pandas_dtype_to_hyper(df[col].dtype), tableauhyperapi.NULLABLE)
+        for col in df.columns
+    ]
+    table_def = tableauhyperapi.TableDefinition(tableauhyperapi.TableName("Extract", type_str), columns)
+    connection.catalog.create_table(table_def)
+    print(f"Created Hyper table 'Extract'.\"{type_str}\" with {len(columns)} columns")
+    return table_def
+
+
+def _insert_df_to_hyper(connection, table_def, df):
+    """Insert all rows of df into an existing Hyper table."""
+    with tableauhyperapi.Inserter(connection, table_def) as inserter:
+        for row in df.itertuples(index=False):
+            values = [
+                None if (isinstance(v, float) and numpy.isnan(v))
+                else (v.item() if hasattr(v, 'item') else v)
+                for v in row
+            ]
+            inserter.add_row(values)
+        inserter.execute()
+    print(f"  Inserted {len(df):,} rows into Hyper table '{table_def.table_name}'")
+
+
 if __name__ == '__main__':
     pandas.options.display.width = 1000
     pandas.options.display.max_columns = 100
@@ -2684,6 +2736,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument("base_or_build",  choices=["base","build"], help="For output file name")
     parser.add_argument("log_file",  metavar="event-node0-something.log", help="Log file to parse")
+    parser.add_argument("--dest_taz", type=int, default=None, metavar="TAZ", nargs="+", help="For mode choice logsums: only process records for these destination TAZ(s)")
+    parser.add_argument("--print_lines", action="store_true", default=False, help="Print raw log lines as they are read (useful for debugging)")
+    parser.add_argument("--format", choices=["hyper","csv"], default="hyper", help="Output format (default: hyper)")
 
     args = parser.parse_args()
 
@@ -2698,11 +2753,24 @@ if __name__ == '__main__':
     attrs_nospc_re= re.compile(r"(?P<attr_name>[A-Za-z]+)=(?P<attr_value>[0-9A-Za-z\-_]+)")  # may have one space in attr_value
 
 
+    if args.format == "hyper":
+        hyper_output_path = "{}_utilities.hyper".format(args.base_or_build)
+        hyper_table_defs  = {}  # type_str -> TableDefinition
+        hyper_process     = tableauhyperapi.HyperProcess(telemetry=tableauhyperapi.Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU)
+        hyper_connection  = tableauhyperapi.Connection(
+            endpoint    = hyper_process.endpoint,
+            database    = hyper_output_path,
+            create_mode = tableauhyperapi.CreateMode.CREATE_AND_REPLACE,
+        )
+        hyper_connection.catalog.create_schema_if_not_exists("Extract")
+        print("Writing Hyper file: {}".format(hyper_output_path))
+    else:
+        csv_headers_written = {}  # type_str -> bool (True once header row written)
+
     print("Reading {}".format(args.log_file))
     log_fo = open(args.log_file, 'r')
     lines_read = 0
     output_dir = None
-    modechoice_df = pandas.DataFrame()
     trip_mc_od = {}
 
     while True:
@@ -2719,36 +2787,62 @@ if __name__ == '__main__':
         if match:
             print(f"tour_mc_re match for {line}")
 
-            type_str = "UsualWorkLocChoice"
+            type_str = "UsualWorkLocChoice_tourmc"
             if match.group('nonm') in [" Individual Non-Mandatory"," INDIVIDUAL_NON_MANDATORY"]:
-                type_str = "NonMandLocChoice"
+                type_str = "NonMandLocChoice_tourmc"
             elif match.group('nonm') == " MANDATORY":
-                type_str = "MandatoryTourModeChoice"
+                type_str = "MandatoryTourModeChoice_tourmc"
             output_dir  = "."
 
-            # parse the attrs
-            attrs_dict = dict(attrs_re.findall(match.group('attrs')))
+            # parse the attrs - use attrs_nospc_re so that 'destTaz=1254 destWalkSubzone=1'
+            # is not mis-parsed as destTaz='1254 destWalkSubzone'
+            attrs_dict = dict(attrs_nospc_re.findall(match.group('attrs')))
             # add purpose from match if needed
             if ('Purpose' not in attrs_dict) and ('purpose' in match.groupdict()):
                 attrs_dict['Purpose'] = match.groupdict()['purpose'].strip()
 
-            print(f"Found Tour Mode Choice info for type_str={type_str}")
+            if args.dest_taz is not None:
+                dest = int(attrs_dict.get('destTaz', attrs_dict.get('Dest', -1)))
+                if dest not in args.dest_taz:
+                    continue
 
-            (new_lines_read,df) = read_tour_mode_choice_logsum_lines(log_fo, type_str, attrs_dict, args.base_or_build, args.log_file)
+            print(f"Found Tour Mode Choice info for type_str={type_str}")
+            # only print raw lines when --print_lines is set AND destWalkSubzone == 1
+            do_print_lines = args.print_lines and (attrs_dict.get('destWalkSubzone', attrs_dict.get('DestSubZ', '-1')) == '1')
+            if do_print_lines: print(line)
+
+            (new_lines_read,df) = read_tour_mode_choice_logsum_lines(log_fo, type_str, attrs_dict, args.base_or_build, args.log_file, print_lines=do_print_lines)
             lines_read += new_lines_read
-            modechoice_df = pandas.concat([modechoice_df, df])
+            if do_print_lines:
+                # peek at the 5 lines following the block without consuming them
+                pos = log_fo.tell()
+                for _ in range(5):
+                    peek = log_fo.readline()
+                    if not peek:
+                        break
+                    print(peek.rstrip())
+                log_fo.seek(pos)
+            if args.format == "hyper":
+                if type_str not in hyper_table_defs:
+                    hyper_table_defs[type_str] = _create_hyper_table(hyper_connection, type_str, df)
+                _insert_df_to_hyper(hyper_connection, hyper_table_defs[type_str], df)
+            else:
+                output_filename = "{}_{}_utilities.csv".format(args.base_or_build, type_str)
+                df.to_csv(output_filename, mode=('w' if type_str not in csv_headers_written else 'a'), header=(type_str not in csv_headers_written), index=False)
+                csv_headers_written[type_str] = True
+                print(f"  Appended {len(df):,} rows to {output_filename}")
 
             continue
 
         match = tour_dc_re.match(line)
         if match:
 
-            dctype  = match.group(3)
-            purpose = match.group(4)
-            hh      = match.group(5)
-            persnum = match.group(6)
-            ptype   = match.group(7)
-            tournum = match.group(9)
+            dctype  = match.group(4)
+            purpose = match.group(5)
+            hh      = match.group(6)
+            persnum = match.group(7)
+            ptype   = match.group(8)
+            tournum = match.group(10)
             print("Found {} Destination Choice info for purpose={} hh={} persnum={} ptype={} tournum={}".format(dctype, purpose, hh, persnum, ptype, tournum))
 
             type_str = "UsualWorkLocChoice"
@@ -2784,7 +2878,15 @@ if __name__ == '__main__':
             (new_lines_read,df) = read_trip_mode_choice_lines(log_fo, type_str, attrs_dict, args.base_or_build, args.log_file)
             if new_lines_read > 0:
                 lines_read += new_lines_read
-                modechoice_df = pandas.concat([modechoice_df, df])
+                if args.format == "hyper":
+                    if type_str not in hyper_table_defs:
+                        hyper_table_defs[type_str] = _create_hyper_table(hyper_connection, type_str, df)
+                    _insert_df_to_hyper(hyper_connection, hyper_table_defs[type_str], df)
+                else:
+                    output_filename = "{}_{}_utilities.csv".format(args.base_or_build, type_str)
+                    df.to_csv(output_filename, mode=('w' if type_str not in csv_headers_written else 'a'), header=(type_str not in csv_headers_written), index=False)
+                    csv_headers_written[type_str] = True
+                    print(f"  Appended {len(df):,} rows to {output_filename}")
             continue
 
         match = cdap_wfh_re.match(line)
@@ -2809,11 +2911,15 @@ if __name__ == '__main__':
         # end for line in log file object
     log_fo.close()
 
-    print("modechoice_df length: {}".format(len(modechoice_df)))
     print("output_dir={}".format(output_dir))
-    if len(modechoice_df) > 0:
-        if not os.path.exists(output_dir): os.makedirs(output_dir)
-
-        output_filename = "{}_{}_utilities.csv".format(args.base_or_build, type_str)
-        modechoice_df.to_csv(os.path.join(output_dir, output_filename), index=False)
-        print("Wrote {}".format(os.path.join(output_dir,output_filename)))
+    if args.format == "hyper":
+        hyper_connection.close()
+        hyper_process.close()
+        if hyper_table_defs:
+            print("Wrote {}".format(hyper_output_path))
+            for ts in hyper_table_defs:
+                print("  table: {}".format(ts))
+    else:
+        if csv_headers_written:
+            for ts in csv_headers_written:
+                print("Wrote {}_{}_utilities.csv".format(args.base_or_build, ts))

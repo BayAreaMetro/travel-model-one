@@ -231,35 +231,129 @@ RUN PGM = MATRIX
   FILEI MATI[20]  = "metrics\II_IXXI_XX.tpp"
   FILEO PRINTO[1] = "metrics\II_IXXI_XX.csv",APPEND=T
 
-  MW[1]   = (mi.1.distvsm  * (mi.11.vstruck + mi.11.vstrucktoll)) +
-            (mi.2.distvsm  * (mi.12.vstruck + mi.12.vstrucktoll)) +
-            (mi.3.distvsm  * (mi.13.vstruck + mi.13.vstrucktoll)) +
-            (mi.4.distvsm  * (mi.14.vstruck + mi.14.vstrucktoll)) +
-            (mi.5.distvsm  * (mi.15.vstruck + mi.15.vstrucktoll)) +
-            (mi.1.distsml  * (mi.11.struck  + mi.11.strucktoll )) +
-            (mi.2.distsml  * (mi.12.struck  + mi.12.strucktoll )) +
-            (mi.3.distsml  * (mi.13.struck  + mi.13.strucktoll )) +
-            (mi.4.distsml  * (mi.14.struck  + mi.14.strucktoll )) +
-            (mi.5.distsml  * (mi.15.struck  + mi.15.strucktoll )) +
-            (mi.1.distmed  * (mi.11.mtruck  + mi.11.mtrucktoll )) +
-            (mi.2.distmed  * (mi.12.mtruck  + mi.12.mtrucktoll )) +
-            (mi.3.distmed  * (mi.13.mtruck  + mi.13.mtrucktoll )) +
-            (mi.4.distmed  * (mi.14.mtruck  + mi.14.mtrucktoll )) +
-            (mi.5.distmed  * (mi.15.mtruck  + mi.15.mtrucktoll )) +
-            (mi.1.distlrg  * (mi.11.ctruck  + mi.11.ctrucktoll )) +
-            (mi.2.distlrg  * (mi.12.ctruck  + mi.12.ctrucktoll )) +
-            (mi.3.distlrg  * (mi.13.ctruck  + mi.13.ctrucktoll )) +
-            (mi.4.distlrg  * (mi.14.ctruck  + mi.14.ctrucktoll )) +
-            (mi.5.distlrg  * (mi.15.ctruck  + mi.15.ctrucktoll ))
+  ; for debugging
+  ; FILEO MATO[1]   = "metrics\com_hwy_no_free.tpp",  MO=1-6, NAME=vsm_ea,vsm_am,vsm_md,vsm_pm,vsm_ev,vsm_am_inv
 
+  ; ODs with no free paths show up with distance=1M (and intrazonals are distance=0.5M)
+  ; which was causing problems in the summary
+  ; (https://app.asana.com/1/11860278793487/project/15119358130897/task/1213425511949079?focus=true)
+  ;
+  ; Initially, I tried to just multiply free-trips x free skim dist 
+  ; and toll trips x toll skim dist, but it was not sufficient since there must be some
+  ; free trips for invalid ODs. Therefore, there's more complicated logic below to move
+  ; those trips to tolled.
+  ; TODO: the TruckTollChoice.job needs to be fixed, if it continues to be used
+
+  ; missing free VSM path: dist == 1,000,000 or 5,000,000
+  ; 1 if missing, 0 if ok
+  MW[1] = round(mi.1.distvsm*0.000001)
+  MW[2] = round(mi.2.distvsm*0.000001)
+  MW[3] = round(mi.3.distvsm*0.000001)
+  MW[4] = round(mi.4.distvsm*0.000001)
+  MW[5] = round(mi.5.distvsm*0.000001)
+  ; reverse: 0 if missing, 1 if ok
+  MW[6] = 1-MW[1]
+  MW[7] = 1-MW[2]
+  MW[8] = 1-MW[3]
+  MW[9] = 1-MW[4]
+  MW[10]= 1-MW[5]
+
+  ; missing free SML path: dist == 1,000,000 or 5,000,000
+  ; 1 if no free path, 0 if ok
+  MW[11] = round(mi.1.distsml*0.000001)
+  MW[12] = round(mi.2.distsml*0.000001)
+  MW[13] = round(mi.3.distsml*0.000001)
+  MW[14] = round(mi.4.distsml*0.000001)
+  MW[15]= round(mi.5.distsml*0.000001)
+  ; reverse: 0 if no free path, 1 if ok
+  MW[16] = 1-MW[11]
+  MW[17] = 1-MW[12]
+  MW[18] = 1-MW[13]
+  MW[19] = 1-MW[14]
+  MW[20] = 1-MW[15]
+
+  ; missing free MED path: dist == 1,000,000 or 5,000,000
+  ; 1 if no free path, 0 if ok
+  MW[21] = round(mi.1.distmed*0.000001)
+  MW[22] = round(mi.2.distmed*0.000001)
+  MW[23] = round(mi.3.distmed*0.000001)
+  MW[24] = round(mi.4.distmed*0.000001)
+  MW[25] = round(mi.5.distmed*0.000001)
+  ; reverse: 0 if no free path, 1 if ok
+  MW[26] = 1-MW[21]
+  MW[27] = 1-MW[22]
+  MW[28] = 1-MW[23]
+  MW[29] = 1-MW[24]
+  MW[20] = 1-MW[25]
+
+  ; missing free LRG path: dist == 1,000,000 or 5,000,000
+  ; 1 if no free path, 0 if ok
+  MW[31] = round(mi.1.distlrg*0.000001)
+  MW[32] = round(mi.2.distlrg*0.000001)
+  MW[33] = round(mi.3.distlrg*0.000001)
+  MW[34] = round(mi.4.distlrg*0.000001)
+  MW[35] = round(mi.5.distlrg*0.000001)
+  ; reverse: 0 if no free path, 1 if ok
+  MW[36] = 1-MW[31]
+  MW[37] = 1-MW[32]
+  MW[38] = 1-MW[33]
+  MW[39] = 1-MW[34]
+  MW[30] = 1-MW[35]
+
+  ; truck miles:
+  ;  zero out free trips where there are no free skims (6-10: 0 if no free path)
+  ;  and add those free trips to toll trips (1-5: 1 if no free path)
+  MW[41]  = (mi.1.distvsm     * mi.11.vstruck*MW[6]  ) +
+            (mi.2.distvsm     * mi.12.vstruck*MW[7]  ) +
+            (mi.3.distvsm     * mi.13.vstruck*MW[8]  ) +
+            (mi.4.distvsm     * mi.14.vstruck*MW[9]  ) +
+            (mi.5.distvsm     * mi.15.vstruck*MW[10] ) +
+            (mi.1.tolldistvsm * (mi.11.vstrucktoll + (mi.11.vstruck*MW[1])) ) +
+            (mi.2.tolldistvsm * (mi.12.vstrucktoll + (mi.12.vstruck*MW[2])) ) +
+            (mi.3.tolldistvsm * (mi.13.vstrucktoll + (mi.13.vstruck*MW[3])) ) +
+            (mi.4.tolldistvsm * (mi.14.vstrucktoll + (mi.14.vstruck*MW[4])) ) +
+            (mi.5.tolldistvsm * (mi.15.vstrucktoll + (mi.15.vstruck*MW[5])) )
+
+  MW[42] =  (mi.1.distsml     * mi.11.struck*MW[16] )+
+            (mi.2.distsml     * mi.12.struck*MW[17] )+
+            (mi.3.distsml     * mi.13.struck*MW[18] )+
+            (mi.4.distsml     * mi.14.struck*MW[19] )+
+            (mi.5.distsml     * mi.15.struck*MW[20] )+
+            (mi.1.tolldistsml * (mi.11.strucktoll + (mi.11.struck*MW[11])) ) +
+            (mi.2.tolldistsml * (mi.12.strucktoll + (mi.12.struck*MW[12])) ) +
+            (mi.3.tolldistsml * (mi.13.strucktoll + (mi.13.struck*MW[13])) ) +
+            (mi.4.tolldistsml * (mi.14.strucktoll + (mi.14.struck*MW[14])) ) +
+            (mi.5.tolldistsml * (mi.15.strucktoll + (mi.15.struck*MW[15])) )
+
+  MW[43] =  (mi.1.distmed     * mi.11.mtruck*MW[26] ) +
+            (mi.2.distmed     * mi.12.mtruck*MW[27] ) +
+            (mi.3.distmed     * mi.13.mtruck*MW[28] ) +
+            (mi.4.distmed     * mi.14.mtruck*MW[29] ) +
+            (mi.5.distmed     * mi.15.mtruck*MW[20] ) +
+            (mi.1.tolldistmed * (mi.11.mtrucktoll + (mi.11.mtruck*MW[21])) ) +
+            (mi.2.tolldistmed * (mi.12.mtrucktoll + (mi.12.mtruck*MW[22])) ) +
+            (mi.3.tolldistmed * (mi.13.mtrucktoll + (mi.13.mtruck*MW[23])) ) +
+            (mi.4.tolldistmed * (mi.14.mtrucktoll + (mi.14.mtruck*MW[24])) ) +
+            (mi.5.tolldistmed * (mi.15.mtrucktoll + (mi.15.mtruck*MW[25])) )
+
+  MW[44] =  (mi.1.distlrg     * mi.11.ctruck*MW[36] )+
+            (mi.2.distlrg     * mi.12.ctruck*MW[37] )+
+            (mi.3.distlrg     * mi.13.ctruck*MW[38] )+
+            (mi.4.distlrg     * mi.14.ctruck*MW[39] )+
+            (mi.5.distlrg     * mi.15.ctruck*MW[30] )+
+            (mi.1.tolldistlrg * (mi.11.ctrucktoll + (mi.11.ctruck*MW[31])) ) +
+            (mi.2.tolldistlrg * (mi.12.ctrucktoll + (mi.12.ctruck*MW[32])) ) +
+            (mi.3.tolldistlrg * (mi.13.ctrucktoll + (mi.13.ctruck*MW[33])) ) +
+            (mi.4.tolldistlrg * (mi.14.ctrucktoll + (mi.14.ctruck*MW[34])) ) +
+            (mi.5.tolldistlrg * (mi.15.ctrucktoll + (mi.15.ctruck*MW[35])) )
   ; create II, IXXI, XX
-  MW[4] = (MW[1] + MW[2] + MW[3])*mi.20.II
-  MW[5] = (MW[1] + MW[2] + MW[3])*mi.20.IXXI
-  MW[6] = (MW[1] + MW[2] + MW[3])*mi.20.XX
+  MW[45] = (MW[41]+MW[42]+MW[43]+MW[44])*mi.20.II
+  MW[46] = (MW[41]+MW[42]+MW[43]+MW[44])*mi.20.IXXI
+  MW[47] = (MW[41]+MW[42]+MW[43]+MW[44])*mi.20.XX
 
-  VMT_II   = VMT_II   + ROWSUM(4)
-  VMT_IXXI = VMT_IXXI + ROWSUM(5)
-  VMT_XX   = VMT_XX   + ROWSUM(6)
+  VMT_II   = VMT_II   + ROWSUM(45)
+  VMT_IXXI = VMT_IXXI + ROWSUM(46)
+  VMT_XX   = VMT_XX   + ROWSUM(47)
   IF (I=1475)
     PRINT PRINTO=1 CSV=T, LIST="Trucks",VMT_II(10.2L), VMT_IXXI(10.2L), VMT_XX(10.2L)
   ENDIF

@@ -50,7 +50,7 @@ AUTO_OWNERSHIP_COST_INCQ2_IN_2018_DOLLARS  = 4224
 # Handle box drives in E: (e.g. for virtual machines)
 USERNAME    = os.getenv('USERNAME')
 BOX_DIR     = pathlib.Path(f"C:/Users/{USERNAME}/Box")
-if USERNAME.lower() in ['lzorn']:
+if USERNAME.lower() in ['lzorn', 'ywang']:
     BOX_DIR = pathlib.Path("E:\Box")
 
 def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str, 
@@ -688,7 +688,7 @@ def calculate_Connected2_crowding(model_runs_dict: dict):
     all_trn_crowding_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
 
-def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
+def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict, args_rtp: str):
     """
     Reads loaded roadway network, filtering to highway corridor links,
     as defined by METRICS_SOURCE_DIR/maj_corridors_hwy_links.csv
@@ -702,12 +702,21 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
         modelrun_alias
         route - this is from METRICS_SOURCE_DIR/maj_corridors_hwy_links.csv
         ctimAM - congested travel time in the AM, in minutes
+        ctimPM - congested travel time in the PM, in minutes
     """
     LOGGER.info("calculate_Connected2_hwy_traveltimes()")
+
     MAJ_CORRIDORS_HWY_LINKS_FILE = METRICS_SOURCE_DIR / 'maj_corridors_hwy_links.csv'
     LOGGER.info(f"  Reading {MAJ_CORRIDORS_HWY_LINKS_FILE}")
     maj_corridors_hwy_links_df   = pd.read_csv(MAJ_CORRIDORS_HWY_LINKS_FILE)
     maj_corridors_hwy_links_df   = maj_corridors_hwy_links_df[['route','a','b']]
+    # for NoTransit analysis, also summarize PM travel time, using PM lookup
+    if args_rtp == "noTransit":
+        MAJ_CORRIDORS_HWY_LINKS_PM_FILE = METRICS_SOURCE_DIR / 'maj_corridors_hwy_links_PM.csv'
+        maj_corridors_hwy_links_pm_df   = pd.read_csv(MAJ_CORRIDORS_HWY_LINKS_PM_FILE)
+        maj_corridors_hwy_links_pm_df   = maj_corridors_hwy_links_pm_df[['route','a','b']]
+        maj_corridors_hwy_links_df = pd.concat(
+            [maj_corridors_hwy_links_df, maj_corridors_hwy_links_pm_df])
     LOGGER.debug("  maj_corridors_hwy_links_df (len={}):\n{}".format(
         len(maj_corridors_hwy_links_df), maj_corridors_hwy_links_df.head(10)))
 
@@ -729,7 +738,7 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
 
         # Keeping essential columns of loaded highway network: node A and B, distance, free flow time, congested time
         tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
-        tm_loaded_network_df = tm_loaded_network_df[['a','b','distance','fft','ctimAM']]
+        tm_loaded_network_df = tm_loaded_network_df[['a','b','distance','fft','ctimAM','ctimPM']]
 
         # Only keep those from maj_corridor_hwy_links
         tm_loaded_network_df = pd.merge(
@@ -740,9 +749,10 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
         LOGGER.debug("  tm_loaded_network_df filtered to maj_corridors_hwy_links (len={}):\n{}".format(
             len(tm_loaded_network_df), tm_loaded_network_df.head(10)
         ))
+        assert len(tm_loaded_network_df) == len(maj_corridors_hwy_links_df)
 
         # groupby route and sum the congested AM time
-        corridor_times_df = tm_loaded_network_df.groupby('route').agg({'ctimAM':'sum'}).reset_index()
+        corridor_times_df = tm_loaded_network_df.groupby('route').agg({'ctimAM':'sum', 'ctimPM':'sum'}).reset_index()
         LOGGER.debug('corridor_times_df:\n{}'.format(corridor_times_df))
 
         # keep metadata
@@ -1341,7 +1351,7 @@ if __name__ == '__main__':
     # Connected
     if (my_args.only == None) or (my_args.only == 'connected'):
         extract_Connected1_JobAccess(model_runs_dict)
-        calculate_Connected2_hwy_traveltimes(model_runs_dict)
+        calculate_Connected2_hwy_traveltimes(model_runs_dict, my_args.rtp)
         calculate_Connected2_crowding(model_runs_dict)
         # don't bother for RTP2025; this script doesn't add anything
         if my_args.rtp == "RTP2021":
