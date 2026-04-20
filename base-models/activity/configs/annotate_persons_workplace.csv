@@ -16,8 +16,8 @@ work_zone_area_type,work_zone_area_type,"reindex(land_use.area_type, persons.wor
 ,_work_walk_available,(_walk_time_home_to_work > 0) & (_walk_time_work_to_home > 0)
 ,_roundtrip_walk_time_to_work,"np.where(_work_walk_available, _walk_time_home_to_work + _walk_time_work_to_home, _MAX_TIME_TO_WORK)"
 #,,_roundtrip_transit_time_to_work
-,_transit_ivt_home_to_work,"skim_dict.lookup(persons.home_zone_id, persons.workplace_zone_id, ('WLK_TRN_WLK_IVT', 'MD'))/TRANSIT_SCALE_FACTOR"
-,_transit_ivt_work_to_home,"skim_dict.lookup(persons.workplace_zone_id, persons.home_zone_id, ('WLK_TRN_WLK_IVT', 'MD'))/TRANSIT_SCALE_FACTOR"
+,_transit_ivt_home_to_work,"skim_dict.lookup(persons.home_zone_id, persons.workplace_zone_id, ('WLK_TRN_WLK_TOTIVT', 'MD'))/TRANSIT_SCALE_FACTOR"
+,_transit_ivt_work_to_home,"skim_dict.lookup(persons.workplace_zone_id, persons.home_zone_id, ('WLK_TRN_WLK_TOTIVT', 'MD'))/TRANSIT_SCALE_FACTOR"
 ,_work_transit_available,(_transit_ivt_home_to_work > 0) & (_transit_ivt_work_to_home > 0)
 ,_transit_iwait,"skim_dict.lookup(persons.home_zone_id, persons.workplace_zone_id, ('WLK_TRN_WLK_IWAIT', 'MD'))/TRANSIT_SCALE_FACTOR + skim_dict.lookup(persons.workplace_zone_id, persons.home_zone_id, ('WLK_TRN_WLK_IWAIT', 'MD'))/TRANSIT_SCALE_FACTOR"
 ,_transit_xwait,"skim_dict.lookup(persons.home_zone_id, persons.workplace_zone_id, ('WLK_TRN_WLK_XWAIT', 'MD'))/TRANSIT_SCALE_FACTOR + skim_dict.lookup(persons.workplace_zone_id, persons.home_zone_id, ('WLK_TRN_WLK_XWAIT', 'MD'))/TRANSIT_SCALE_FACTOR"

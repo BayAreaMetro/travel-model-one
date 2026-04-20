@@ -10,10 +10,14 @@ Usage::
 """
 
 import argparse
+import csv
 import logging
 import subprocess
 import sys
+import time
 from pathlib import Path
+
+import yaml
 
 from setup_scenario import setup
 from tm1.config import load_config
@@ -25,19 +29,8 @@ log = logging.getLogger(__name__)
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-# Major pipeline steps to notify on (subset to avoid spam)
-_MILESTONE_STEPS = {
-    "initialize_landuse",
-    "compute_accessibility",
-    "workplace_location",
-    "mandatory_tour_frequency",
-    "non_mandatory_tour_frequency",
-    "tour_mode_choice_simulate",
-    "trip_mode_choice",
-    "write_tables",
-}
-
-
+# TODO: Consider formalizing into src/tm1/__main__.py to make it the CLI runner. 
+# For now keeping it as a standalone script until migration settles down.
 def run(scenario_dir: Path, force_setup: bool = False, notify_slack: bool = True) -> int:
     slack.enabled = notify_slack
     scenario_dir = Path(scenario_dir).resolve()
@@ -67,20 +60,52 @@ def run(scenario_dir: Path, force_setup: bool = False, notify_slack: bool = True
         for c in config_dirs:
             cmd.extend(["-c", str(c)])
 
-        notify(f"Starting {label}")
+        # Read ActivitySim settings from the config chain (first dir wins)
+        asim_settings = {}
+        for c in reversed(config_dirs):
+            sf = c / "settings.yaml"
+            if sf.exists():
+                with open(sf) as f:
+                    asim_settings.update(yaml.safe_load(f) or {})
+
+        sample = asim_settings.get("households_sample_size", 0)
+        nproc = asim_settings.get("num_processes", 1)
+        sample_str = "all" if sample == 0 else f"{sample:,}"
+        notify(f"Starting {label} (HH sample: {sample_str}, processes: {nproc})")
         log.info("Running: %s", " ".join(cmd))
+
+        _NOTIFY_INTERVAL = 300  # seconds between Slack notifications
+        last_notify_time = time.monotonic() - _NOTIFY_INTERVAL  # ensure first step notifies
 
         proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, bufsize=1,
         )
-        for line in proc.stdout:
+        for line in proc.stdout: # pyright: ignore[reportOptionalIterable]
             sys.stdout.write(line)
-            # ActivitySim logs "Running model 'step_name'"
-            if "Running model '" in line:
-                step = line.split("Running model '")[1].split("'")[0]
-                if step in _MILESTONE_STEPS:
-                    notify(f"Running {step} in {label}")
+            # ActivitySim logs "time to execute run.{step}" after each step
+            if "time to execute run." in line.lower():
+                # Read RSS from the last row of mem.csv
+                rss_str = ""
+                mem_csv = output_dir / "mem.csv"
+                if mem_csv.exists():
+                    with open(mem_csv) as f:
+                        for row in csv.DictReader(f):
+                            pass  # advance to last row
+                        rss_bytes = int(row.get("rss", "0").replace("_", ""))
+                        rss_gb = rss_bytes / (1024 ** 3)
+                        rss_str = f" | RSS: {rss_gb:.1f} GB"
+
+                # Extract step name from "time to execute run.{step} : ..."
+                part = line.lower().split("time to execute run.")[1]
+                step = part.split()[0].strip()
+
+                now = time.monotonic()
+                if now - last_notify_time >= _NOTIFY_INTERVAL:
+                    notify(f"Completed {step}{rss_str}")
+                    last_notify_time = now
+                else:
+                    log.info("Completed %s%s", step, rss_str)
         rc = proc.wait()
 
     except Exception as e:

@@ -24,6 +24,8 @@ activitysim:
   data_dir: "E:/tm1a_test/data"
   output_dir: "E:/tm1a_test/output"
   configs:
+    # Top one "wins" and overrides any duplicate settings in other configs
+    - "base-models/activity/configs_mp"
     - "base-models/activity/configs"
 
 # Sources used by scripts/setup_scenario.py to assemble data_dir

@@ -53,7 +53,7 @@ for _csuf, _apre in _HWY_MODES.items():
         HWY_TABLE_MAP[f"TOLL{_comp}{_csuf}"] = f"{_apre}TOLL_{_comp}"
 
 PERIODS = ("EA", "AM", "MD", "PM", "EV")
-MODES = ("loc", "lrf", "exp", "hvy", "com")
+MODES = ("loc", "lrf", "exp", "hvy", "com", "trn")
 ACCESS_EGRESS = (
     ("wlk", "wlk"),
     ("drv", "wlk"),
@@ -65,7 +65,9 @@ _TRANSIT_COMPONENTS = {
     "ivt": "TOTIVT",
     "iwait": "IWAIT",
     "xwait": "XWAIT",
+    "wacc": "WACC",
     "waux": "WAUX",
+    "wegr": "WEGR",
     "fare": "FAR",
     "boards": "BOARDS",
 }
