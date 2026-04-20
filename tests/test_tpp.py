@@ -21,7 +21,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from tm1.tpp import read_tpp
+from cubeio.tpp import read_tpp
 
 # ---------------------------------------------------------------------------
 # Paths

@@ -28,8 +28,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/tm1"]
-artifacts = ["src/tm1/cubeless/vendor/**/*.dll"]
+packages = ["src/tm1", "src/cubeio"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

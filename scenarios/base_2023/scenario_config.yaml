@@ -27,11 +27,13 @@ activitysim:
     - "base-models/activity/configs"
 
 # Sources used by scripts/setup_scenario.py to assemble data_dir
+# For now I'm just using the testrun as a reference but we should point these to actual data inputs
 data_sources:
   reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
   land_use: "{reference_run}/landuse/tazData.csv"
   households: "{reference_run}/popsyn/hhFile.csv"
   persons: "{reference_run}/popsyn/personFile.csv"
+  skim_tpp_dir: "{reference_run}/skims"
   skims: "E:/tm1a_test/data/skims.omx"
 
 aequilibrae:
