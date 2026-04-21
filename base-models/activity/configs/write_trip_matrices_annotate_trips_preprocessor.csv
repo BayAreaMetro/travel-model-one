@@ -1,6 +1,6 @@
 Description,Target,Expression
 # add additional fields,,
-,tour_participants,trips.tour_id.map(tours.number_of_participants)
+,tour_participants,trips.tour_id.map(tours.reset_index().drop_duplicates(subset='tour_id').set_index('tour_id').number_of_participants)
 ,distance,od_skims['DIST']
 # code time periods,,
 ,is_ea,"trips.depart.between(time_periods['EA']['first_hour'], time_periods['EA']['last_hour'])"
