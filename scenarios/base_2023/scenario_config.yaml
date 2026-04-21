@@ -39,4 +39,4 @@ data_sources:
   skims: "E:/tm1a_test/data/skims.omx"
 
 aequilibrae:
-  # TBD
+  # TBD, need to do A-B evaluation to determine applicability

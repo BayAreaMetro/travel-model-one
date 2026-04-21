@@ -2,12 +2,9 @@
 
 Configuration (any one of these, checked in order):
   1. ``SLACK_WEBHOOK_URL`` environment variable
-  2. ``SLACK_WEBHOOK_FILE`` environment variable pointing to a text file
-  3. MTC default file: ``M:\\Software\\Slack\\TravelModel_SlackWebhook.txt``
+  2. MTC default file: ``M:\\Software\\Slack\\TravelModel_SlackWebhook.txt``
 
 If none are available, messages are logged but not sent.
-
-Set ``TM1_SLACK=0`` to disable sending (messages are still logged).
 """
 
 import logging
@@ -21,8 +18,8 @@ log = logging.getLogger(__name__)
 
 _MTC_WEBHOOK_FILE = Path(r"\\models.ad.mtc.ca.gov\data\models\Software\Slack\TravelModel_SlackWebhook.txt")
 
+level = "verbose"  # "false", "minimal", or "verbose"
 
-enabled = True
 
 def _get_webhook_url():
     """Resolve the Slack webhook URL from env var or MTC default file."""
@@ -47,12 +44,20 @@ def _get_prefix():
     return f"*{socket.gethostname()}*"
 
 
-def notify(message):
-    """Post a message to Slack. Falls back to logging if no webhook."""
+def notify(message, verbose_only=False):
+    """Post a message to Slack. Falls back to logging if no webhook.
+
+    Parameters
+    ----------
+    verbose_only : bool
+        If True, only send when level is "verbose".
+    """
     full = f"{_get_prefix()}: {message}"
     log.info(full)
 
-    if not enabled:
+    if level == "false":
+        return
+    if verbose_only and level != "verbose":
         return
 
     url = _get_webhook_url()
@@ -67,7 +72,6 @@ def notify(message):
         log.warning("Slack notification failed: %s", e)
 
 
-# Slack test
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     notify("Testing 1...2...3... Hello from TM1-ActivitySim!")

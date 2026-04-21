@@ -14,7 +14,6 @@ import csv
 import logging
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 import yaml
@@ -31,8 +30,9 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # TODO: Consider formalizing into src/tm1/__main__.py to make it the CLI runner. 
 # For now keeping it as a standalone script until migration settles down.
-def run(scenario_dir: Path, force_setup: bool = False, notify_slack: bool = True) -> int:
-    slack.enabled = notify_slack
+# TODO: Clean up slackbot stuff into its own module or helper to avoid cluttering
+def run(scenario_dir: Path, force_setup: bool = False, slack_level: str = "verbose") -> int:
+    slack.level = slack_level
     scenario_dir = Path(scenario_dir).resolve()
     label = str(scenario_dir)
     try:
@@ -74,8 +74,43 @@ def run(scenario_dir: Path, force_setup: bool = False, notify_slack: bool = True
         notify(f"Starting {label} (HH sample: {sample_str}, processes: {nproc})")
         log.info("Running: %s", " ".join(cmd))
 
-        _NOTIFY_INTERVAL = 300  # seconds between Slack notifications
-        last_notify_time = time.monotonic() - _NOTIFY_INTERVAL  # ensure first step notifies
+        log_file = output_dir / "activitysim.log"
+        last_log_pos = 0  # bytes read so far from log file
+
+        def _check_log_for_completions():
+            """Scan new lines in the log file for step completions."""
+            nonlocal last_log_pos
+            if not log_file.exists():
+                return
+            with open(log_file, "r") as lf:
+                lf.seek(last_log_pos)
+                new_lines = lf.readlines()
+                last_log_pos = lf.tell()
+            for ll in new_lines:
+                if "time to execute run_sub_simulations step" in ll.lower():
+                    part = ll.lower().split("run_sub_simulations step")[1]
+                    step = part.split(":")[0].strip()
+                elif "time to execute run." in ll.lower():
+                    part = ll.lower().split("time to execute run.")[1]
+                    step = part.split(":")[0].strip()
+                else:
+                    continue
+
+                # Read RSS from the last row of mem.csv
+                rss_str = ""
+                mem_csv = output_dir / "mem.csv"
+                if mem_csv.exists():
+                    try:
+                        with open(mem_csv) as f:
+                            for row in csv.DictReader(f):
+                                pass  # advance to last row
+                            rss_bytes = int(row.get("rss", "0").replace("_", ""))
+                            rss_gb = rss_bytes / (1024 ** 3)
+                            rss_str = f" | RSS: {rss_gb:.1f} GB"
+                    except Exception:
+                        pass
+
+                notify(f"Completed {step}{rss_str}", verbose_only=True)
 
         proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -83,31 +118,13 @@ def run(scenario_dir: Path, force_setup: bool = False, notify_slack: bool = True
         )
         for line in proc.stdout: # pyright: ignore[reportOptionalIterable]
             sys.stdout.write(line)
-            # ActivitySim logs "time to execute run.{step}" after each step
-            if "time to execute run." in line.lower():
-                # Read RSS from the last row of mem.csv
-                rss_str = ""
-                mem_csv = output_dir / "mem.csv"
-                if mem_csv.exists():
-                    with open(mem_csv) as f:
-                        for row in csv.DictReader(f):
-                            pass  # advance to last row
-                        rss_bytes = int(row.get("rss", "0").replace("_", ""))
-                        rss_gb = rss_bytes / (1024 ** 3)
-                        rss_str = f" | RSS: {rss_gb:.1f} GB"
-
-                # Extract step name from "time to execute run.{step} : ..."
-                part = line.lower().split("time to execute run.")[1]
-                step = part.split()[0].strip()
-
-                now = time.monotonic()
-                if now - last_notify_time >= _NOTIFY_INTERVAL:
-                    notify(f"Completed {step}{rss_str}")
-                    last_notify_time = now
-                else:
-                    log.info("Completed %s%s", step, rss_str)
+            _check_log_for_completions()
         rc = proc.wait()
+        _check_log_for_completions()  # catch any final completions
 
+    except KeyboardInterrupt:
+        notify(f":no_entry_sign: {label} cancelled by user")
+        raise
     except Exception as e:
         notify(f":exclamation: {label} crashed: {e}")
         raise
@@ -130,12 +147,12 @@ def main():
         help="Re-copy data files even if they already exist",
     )
     parser.add_argument(
-        "--no-slack", action="store_true",
-        help="Disable Slack notifications",
+        "--slack", choices=["false", "minimal", "verbose"], default="verbose",
+        help="Slack notification level (default: verbose)",
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    sys.exit(run(args.scenario_dir, force_setup=args.force_setup, notify_slack=not args.no_slack))
+    sys.exit(run(args.scenario_dir, force_setup=args.force_setup, slack_level=args.slack))
 
 
 if __name__ == "__main__":
@@ -143,6 +160,6 @@ if __name__ == "__main__":
     sys.exit(run(
         scenario_dir=_REPO_ROOT / "scenarios" / "base_2023",
         force_setup=False,
-        notify_slack=False,        
+        slack_level="verbose",        
         )
     )
