@@ -1,42 +1,51 @@
 # Base 2023 scenario — data configuration for TM1a
 
-urbansim:
-  # TBD
+# Global shorthand — available as {reference_run} in any step config
+reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
 
-populationsim:
-  # --- Raw Census PUMS (statewide California; filtered to Bay Area at runtime) ---
-  pums:
-    household: "M:/Data/Census/PUMS/PUMS 2023/csv_hca/psam_h06.csv"
-    person: "M:/Data/Census/PUMS/PUMS 2023/csv_pca/psam_p06.csv"
+steps:
+  setup:
+    # Creates the project directory structure and
+    # copies input files to activitysim data_dir
+    # Later they could be created as their own scenario'd steps if needed.
+    inputs:
+      land_use: "{reference_run}/landuse/tazData.csv"
+      households: "{reference_run}/popsyn/hhFile.csv"
+      persons: "{reference_run}/popsyn/personFile.csv"
 
-  # --- Control totals ---
-  # From travel-model-one/utilities/taz-data-baseyears/2023/
-  controls:
-    taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
-    county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
-    region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
+  convert_skims:
+    skim_tpp_dir: "{reference_run}/skims"
+    output: "E:/tm1a_test/data/skims.omx"
 
-  # --- Working / output directories ---
-  working_dir: ".cache/popsim"
-  output_dir: ".cache/data"
+  # urbansim:
+  #   # TBD -- run urbansim?
 
-activitysim:
-  data_dir: "E:/tm1a_test/data"
-  output_dir: "E:/tm1a_test/output"
-  configs:
-    # Top one "wins" and overrides any duplicate settings in other configs
-    - "base-models/activity/configs_mp"
-    - "base-models/activity/configs"
+  populationsim:
+    # Using pre-built synthetic population from reference run (stub).
+    # When ready to run PopulationSim natively, uncomment below:
+    # pums:
+    #   household: "M:/Data/Census/PUMS/PUMS 2023/csv_hca/psam_h06.csv"
+    #   person: "M:/Data/Census/PUMS/PUMS 2023/csv_pca/psam_p06.csv"
+    # controls:
+    #   taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
+    #   county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
+    #   region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
+    # working_dir: ".cache/popsim"
+    # output_dir: ".cache/data"
 
-# Sources used by scripts/setup_scenario.py to assemble data_dir
-# For now I'm just using the testrun as a reference but we should point these to actual data inputs
-data_sources:
-  reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
-  land_use: "{reference_run}/landuse/tazData.csv"
-  households: "{reference_run}/popsyn/hhFile.csv"
-  persons: "{reference_run}/popsyn/personFile.csv"
-  skim_tpp_dir: "{reference_run}/skims"
-  skims: "E:/tm1a_test/data/skims.omx"
+  activitysim:
+    data_dir: "E:/tm1a_test/data"
+    output_dir: "E:/tm1a_test/output"
+    
+    # Top config "wins" and overrides any duplicate settings in other configs
+    # single-thread config is configured to run only 1,000 HHs for testing,
+    # so you can conveniently comment configs_mp to just run a debug in single-thread.
+    configs:
+      - "base-models/activity/configs_mp"
+      - "base-models/activity/configs"
 
-aequilibrae:
-  # TBD, need to do A-B evaluation to determine applicability
+  # assignment:
+  #   # TBD, need to do A-B evaluation to determine applicability
+
+  summarize:
+    # TBD, need to do A-B evaluation to determine applicability

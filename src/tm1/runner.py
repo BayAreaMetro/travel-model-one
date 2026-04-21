@@ -1,126 +1,84 @@
-"""Run an ActivitySim scenario end-to-end.
+"""Step orchestrator — runs steps declared in scenario_config.yaml.
 
-Handles config loading, command building, subprocess launch,
-checkpoint monitoring, and Slack notifications.
+Each step is a module with a ``run(scenario_dir, cfg, **kwargs)`` function.
 """
 
 import logging
-import subprocess
-import sys
 from pathlib import Path
-from typing import Callable
-
-import pandas as pd
-import yaml
 
 import tm1.slack as slack
-from tm1.config import load_config
+import tm1.steps.activitysim as activitysim_step
+import tm1.steps.convert_skims as convert_skims_step
+import tm1.steps.populationsim as populationsim_step
+import tm1.steps.setup as setup_step
+import tm1.steps.summarize as summarize_step
+from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
 
 log = logging.getLogger(__name__)
 
+STEPS = {
+    "setup": setup_step,
+    "convert_skims": convert_skims_step,
+    "populationsim": populationsim_step,
+    "activitysim": activitysim_step,
+    "summarize": summarize_step,
+}
 
-def _check_checkpoints(checkpoints_file: Path, seen: set[str]):
-    """Notify on new pipeline checkpoints."""
-    if not checkpoints_file.exists():
-        return
-    try:
-        df = pd.read_parquet(checkpoints_file, columns=["checkpoint_name"])
-        names = set(df["checkpoint_name"]) - {"init"}
-        new = names - seen
-        for name in sorted(new):
-            notify(f"Completed {name}", verbose_only=True)
-        seen.update(new)
-    except Exception:
-        pass  # file may be mid-write
+DEFAULT_STEPS = list(STEPS.keys())
 
 
-def run(
+def run_model(
     scenario_dir: Path,
-    setup_fn: Callable[[Path, bool], None],
-    base_model_dir: Path,
-    force_setup: bool = False,
-    slack_level: str = "minimal",
-) -> int:
-    """Run an ActivitySim scenario.
+    steps: list[str] | None = None,
+    slack_level: str | bool | None = "minimal",
+    **kwargs,
+) -> None:
+    """Run a sequence of pipeline steps for a scenario.
 
     Parameters
     ----------
     scenario_dir : Path
         Path to the scenario directory.
-    setup_fn : callable
-        Function to prepare the data directory, e.g. ``setup_scenario.setup``.
-    base_model_dir : Path
-        Base directory for resolving relative config paths.
-    force_setup : bool
-        Re-copy data files even if they already exist.
+    steps : list[str], optional
+        Steps to run.  If None, uses step keys from config or DEFAULT_STEPS.
     slack_level : str
         "false", "minimal", or "verbose".
+    **kwargs
+        Passed through to each step's ``run()`` function.
+        Common: ``base_model_dir``, ``force``.
     """
-    slack.level = slack_level
+    slack.level = "verbose" if slack_level is True else (slack_level or "false")
     scenario_dir = Path(scenario_dir).resolve()
-    label = str(scenario_dir)
-    try:
-        notify(f"Setting up {label}")
-        setup_fn(scenario_dir, force_setup)
+    label = scenario_dir.name
 
-        cfg = load_config(scenario_dir)
-        asim = cfg["activitysim"]
-        data_dir = Path(asim["data_dir"])
-        output_dir = Path(asim["output_dir"])
-        output_dir.mkdir(parents=True, exist_ok=True)
+    cfg = resolve_templates(load_config(scenario_dir))
+    steps_cfg = cfg.get("steps", {})
+    if steps is None:
+        steps = list(steps_cfg.keys()) or DEFAULT_STEPS
 
-        config_dirs: list[Path] = []
-        for c in asim.get("configs", []):
-            p = Path(c)
-            if not p.is_absolute():
-                p = base_model_dir / p
-            config_dirs.append(p)
+    def on_checkpoint(name: str):
+        notify(f"Completed checkpoint: {name}", verbose_only=True)
 
-        cmd = [
-            sys.executable, "-m", "activitysim", "run",
-            "-d", str(data_dir),
-            "-o", str(output_dir),
-        ]
-        for c in config_dirs:
-            cmd.extend(["-c", str(c)])
+    notify(f"Starting {label}: {', '.join(steps)}")
 
-        # Read ActivitySim settings from the config chain (first dir wins)
-        asim_settings: dict = {}
-        for c in reversed(config_dirs):
-            sf = c / "settings.yaml"
-            if sf.exists():
-                with open(sf) as f:
-                    asim_settings.update(yaml.safe_load(f) or {})
+    for step_name in steps:
+        mod = STEPS.get(step_name)
+        if mod is None:
+            raise ValueError(f"Unknown step: {step_name!r}")
 
-        sample = asim_settings.get("households_sample_size", 0)
-        nproc = asim_settings.get("num_processes", 1)
-        sample_str = "all" if sample == 0 else f"{sample:,}"
-        notify(f"Starting {label} (HH sample: {sample_str}, processes: {nproc})")
-        log.info("Running: %s", " ".join(cmd))
+        notify(f"[{label}] {step_name}")
+        log.info("--- Step: %s ---", step_name)
 
-        checkpoints_file = output_dir / "pipeline.parquetpipeline" / "checkpoints.parquet"
-        seen: set[str] = set()
+        try:
+            mod.run(scenario_dir, steps_cfg, on_checkpoint=on_checkpoint, **kwargs)
+        except KeyboardInterrupt:
+            notify(f":no_entry_sign: {label} cancelled during {step_name}")
+            raise
+        except Exception as e:
+            notify(f":exclamation: {label} failed at {step_name}: {e}")
+            raise
 
-        proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, bufsize=1,
-        )
-        for line in proc.stdout:  # pyright: ignore[reportOptionalIterable]
-            sys.stdout.write(line)
-            _check_checkpoints(checkpoints_file, seen)
-        rc = proc.wait()
-        _check_checkpoints(checkpoints_file, seen)
+        log.info("--- Done: %s ---", step_name)
 
-    except KeyboardInterrupt:
-        notify(f":no_entry_sign: {label} cancelled by user")
-        raise
-    except Exception as e:
-        notify(f":exclamation: {label} crashed: {e}")
-        raise
-
-    if rc == 0:
-        notify(f"Finished {label} :white_check_mark:")
-    else:
-        notify(f":exclamation: Error in {label} (exit code {rc})")
-    return rc
+    notify(f"Finished {label} :white_check_mark:")

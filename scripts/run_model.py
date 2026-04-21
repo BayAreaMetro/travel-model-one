@@ -1,26 +1,22 @@
-"""Quick-launch convenience script for the base_2023 scenario.
+"""Quick-launch: run full pipeline for base_2023.
 
 For the full CLI, use::
 
     tm1 run --scenario base_2023
-    tm1 run --scenario base_2023 --force-setup --slack minimal
+    tm1 run --scenario base_2023 --step activitysim
 """
 
-import logging
-import sys
 from pathlib import Path
 
-from setup_scenario import setup
-from tm1.runner import run
+from tm1 import setup_logging
+from tm1.runner import run_model
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    sys.exit(run(
+    setup_logging()
+    run_model(
         scenario_dir=_REPO_ROOT / "scenarios" / "base_2023",
-        setup_fn=setup,
         base_model_dir=_REPO_ROOT,
-        force_setup=False,
-        slack_level="minimal",
-    ))
+        slack_level=None
+    )

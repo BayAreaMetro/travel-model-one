@@ -3,17 +3,16 @@
 Usage::
 
     tm1 run --scenario base_2023
-    tm1 run --scenario base_2023 --force-setup --slack minimal
+    tm1 run --scenario base_2023 --step activitysim
+    tm1 run --scenario base_2023 --force --slack verbose
 """
 
 import argparse
-import importlib
-import logging
-import subprocess
 import sys
 from pathlib import Path
 
-from tm1.runner import run
+from tm1 import setup_logging
+from tm1.runner import run_model
 
 
 def _find_repo_root() -> Path:
@@ -25,41 +24,37 @@ def _find_repo_root() -> Path:
     raise FileNotFoundError("Could not find repo root (no pyproject.toml above cwd)")
 
 
-def _get_setup_fn():
-    """Import setup_scenario.setup from the scripts/ directory."""
-    repo_root = _find_repo_root()
-    scripts_dir = str(repo_root / "scripts")
-    if scripts_dir not in sys.path:
-        sys.path.insert(0, scripts_dir)
-    mod = importlib.import_module("setup_scenario")
-    return mod.setup, repo_root
-
-
 def cmd_run(args):
-    """Run an ActivitySim scenario."""
-    setup_fn, repo_root = _get_setup_fn()
+    repo_root = _find_repo_root()
     scenario_dir = repo_root / "scenarios" / args.scenario
-    sys.exit(run(
+    steps = [args.step] if args.step else None
+    run_model(
         scenario_dir=scenario_dir,
-        setup_fn=setup_fn,
-        base_model_dir=repo_root,
-        force_setup=args.force_setup,
+        steps=steps,
         slack_level=args.slack,
-    ))
+        base_model_dir=repo_root,
+        force=args.force,
+    )
 
 
 def main():
+    setup_logging()
+
     parser = argparse.ArgumentParser(prog="tm1", description="Travel Model One CLI")
     sub = parser.add_subparsers(dest="command")
 
-    run_parser = sub.add_parser("run", help="Run an ActivitySim scenario")
+    run_parser = sub.add_parser("run", help="Run scenario pipeline (or a single step)")
     run_parser.add_argument(
         "--scenario", required=True,
         help="Scenario name (folder under scenarios/, e.g. base_2023)",
     )
     run_parser.add_argument(
-        "--force-setup", action="store_true",
-        help="Re-copy data files even if they already exist",
+        "--step",
+        help="Run a single step instead of the full pipeline",
+    )
+    run_parser.add_argument(
+        "--force", action="store_true",
+        help="Force rebuild of data files during setup",
     )
     run_parser.add_argument(
         "--slack", choices=["false", "minimal", "verbose"], default="minimal",
@@ -67,14 +62,9 @@ def main():
     )
 
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     if args.command == "run":
         cmd_run(args)
     else:
         parser.print_help()
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
