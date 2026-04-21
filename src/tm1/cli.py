@@ -3,7 +3,8 @@
 Usage::
 
     tm1 run --scenario base_2023
-    tm1 run --scenario base_2023 --step activitysim
+    tm1 run --scenario base_2023 --steps setup convert_skims
+    tm1 run --scenario base_2023 --iterations 3
     tm1 run --scenario base_2023 --force --slack verbose
 """
 
@@ -27,13 +28,13 @@ def _find_repo_root() -> Path:
 def cmd_run(args):
     repo_root = _find_repo_root()
     scenario_dir = repo_root / "scenarios" / args.scenario
-    steps = [args.step] if args.step else None
     run_model(
         scenario_dir=scenario_dir,
-        steps=steps,
+        steps=args.steps or None,
         slack_level=args.slack,
         base_model_dir=repo_root,
         force=args.force,
+        iterations=args.iterations,
     )
 
 
@@ -43,21 +44,25 @@ def main():
     parser = argparse.ArgumentParser(prog="tm1", description="Travel Model One CLI")
     sub = parser.add_subparsers(dest="command")
 
-    run_parser = sub.add_parser("run", help="Run scenario pipeline (or a single step)")
+    run_parser = sub.add_parser("run", help="Run scenario pipeline (or selected steps)")
     run_parser.add_argument(
         "--scenario", required=True,
         help="Scenario name (folder under scenarios/, e.g. base_2023)",
     )
     run_parser.add_argument(
-        "--step",
-        help="Run a single step instead of the full pipeline",
+        "--steps", nargs="+", metavar="STEP",
+        help="Run specific steps instead of the full pipeline",
+    )
+    run_parser.add_argument(
+        "--iterations", type=int, default=None,
+        help="Override simulate iteration count (0 = static skims, no assignment)",
     )
     run_parser.add_argument(
         "--force", action="store_true",
         help="Force rebuild of data files during setup",
     )
     run_parser.add_argument(
-        "--slack", choices=["false", "minimal", "verbose"], default="minimal",
+        "--slack", choices=["off", "minimal", "verbose"], default="minimal",
         help="Slack notification level (default: minimal)",
     )
 

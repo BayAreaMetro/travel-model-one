@@ -7,10 +7,10 @@ import logging
 from pathlib import Path
 
 import tm1.slack as slack
-import tm1.steps.activitysim as activitysim_step
 import tm1.steps.convert_skims as convert_skims_step
 import tm1.steps.populationsim as populationsim_step
 import tm1.steps.setup as setup_step
+import tm1.steps.simulate as simulate_step
 import tm1.steps.summarize as summarize_step
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
@@ -21,7 +21,7 @@ STEPS = {
     "setup": setup_step,
     "convert_skims": convert_skims_step,
     "populationsim": populationsim_step,
-    "activitysim": activitysim_step,
+    "simulate": simulate_step,
     "summarize": summarize_step,
 }
 
@@ -48,15 +48,17 @@ def run_model(
         Passed through to each step's ``run()`` function.
         Common: ``base_model_dir``, ``force``.
     """
-    slack.level = "verbose" if slack_level is True else (slack_level or "false")
+    slack.level = "verbose" if slack_level is True else (slack_level or "off")
     scenario_dir = Path(scenario_dir).resolve()
     label = scenario_dir.name
 
     cfg = resolve_templates(load_config(scenario_dir))
-    steps_cfg = cfg.get("steps", {})
+    steps_cfg = cfg.get("steps", {}) # pyright: ignore[reportAttributeAccessIssue]
     if steps is None:
-        steps = list(steps_cfg.keys()) or DEFAULT_STEPS
+        steps = list(steps_cfg.keys()) or DEFAULT_STEPS # pyright: ignore[reportAttributeAccessIssue]
 
+    # Pass full config to steps so they can read both their own
+    # section (cfg["steps"]["<name>"]) and top-level keys like reference_run.
     def on_checkpoint(name: str):
         notify(f"Completed checkpoint: {name}", verbose_only=True)
 
@@ -71,7 +73,7 @@ def run_model(
         log.info("--- Step: %s ---", step_name)
 
         try:
-            mod.run(scenario_dir, steps_cfg, on_checkpoint=on_checkpoint, **kwargs)
+            mod.run(scenario_dir, cfg, on_checkpoint=on_checkpoint, **kwargs)
         except KeyboardInterrupt:
             notify(f":no_entry_sign: {label} cancelled during {step_name}")
             raise

@@ -101,7 +101,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
     """Convert Cube TPP skims to OMX."""
     force = kwargs.get("force", False)
 
-    skim_cfg = cfg.get("convert_skims", {})
+    skim_cfg = cfg.get("steps", {}).get("convert_skims", {})
     tpp_dir = Path(skim_cfg["skim_tpp_dir"])
     skims_path = Path(skim_cfg["output"])
 

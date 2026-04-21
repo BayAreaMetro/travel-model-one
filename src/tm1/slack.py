@@ -55,7 +55,7 @@ def notify(message, verbose_only=False):
     full = f"{_get_prefix()}: {message}"
     log.info(full)
 
-    if level == "false":
+    if level in ("off", "false"):
         return
     if verbose_only and level != "verbose":
         return

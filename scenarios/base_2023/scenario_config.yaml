@@ -2,50 +2,62 @@
 
 # Global shorthand — available as {reference_run} in any step config
 reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
+proj_dir: "E:/tm1a_test"
 
 steps:
   setup:
     # Creates the project directory structure and
-    # copies input files to activitysim data_dir
-    # Later they could be created as their own scenario'd steps if needed.
-    inputs:
-      land_use: "{reference_run}/landuse/tazData.csv"
-      households: "{reference_run}/popsyn/hhFile.csv"
-      persons: "{reference_run}/popsyn/personFile.csv"
+    # copies input files to data_dir
+    # key = destination filename, value = source path
+    copy_inputs:
+      land_use:
+        from: "{reference_run}/landuse/tazData.csv"
+        to: "{proj_dir}/data/land_use.csv"
+      households:      
+        from: "{reference_run}/popsyn/hhFile.csv"
+        to: "{proj_dir}/data/households.csv"
+      persons:
+        from: "{reference_run}/popsyn/personFile.csv"
+        to: "{proj_dir}/data/persons.csv"
 
   convert_skims:
     skim_tpp_dir: "{reference_run}/skims"
-    output: "E:/tm1a_test/data/skims.omx"
+    output: "{proj_dir}/data/skims.omx"
 
   # urbansim:
   #   # TBD -- run urbansim?
 
-  populationsim:
-    # Using pre-built synthetic population from reference run (stub).
-    # When ready to run PopulationSim natively, uncomment below:
-    # pums:
-    #   household: "M:/Data/Census/PUMS/PUMS 2023/csv_hca/psam_h06.csv"
-    #   person: "M:/Data/Census/PUMS/PUMS 2023/csv_pca/psam_p06.csv"
-    # controls:
-    #   taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
-    #   county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
-    #   region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
-    # working_dir: ".cache/popsim"
-    # output_dir: ".cache/data"
+  # populationsim:
+  #   # Using pre-built synthetic population from reference run (stub).
+  #   # When ready to run PopulationSim natively, uncomment below:
+  #   pums:
+  #     household: "M:/Data/Census/PUMS/PUMS 2023/csv_hca/psam_h06.csv"
+  #     person: "M:/Data/Census/PUMS/PUMS 2023/csv_pca/psam_p06.csv"
+  #   controls:
+  #     taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
+  #     county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
+  #     region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
+  #   working_dir: ".cache/popsim"
+  #   output_dir: ".cache/data"
 
-  activitysim:
-    data_dir: "E:/tm1a_test/data"
-    output_dir: "E:/tm1a_test/output"
-    
-    # Top config "wins" and overrides any duplicate settings in other configs
-    # single-thread config is configured to run only 1,000 HHs for testing,
-    # so you can conveniently comment configs_mp to just run a debug in single-thread.
-    configs:
-      - "base-models/activity/configs_mp"
-      - "base-models/activity/configs"
+  simulate:
+    iterations: 0  # 0 = static skims, no assignment
+    # TODO: track incremental iteratoin outputs? or just current state?
+    activitysim:
+      data_dir: "{proj_dir}/data"
+      output_dir: "{proj_dir}/output"
 
-  # assignment:
-  #   # TBD, need to do A-B evaluation to determine applicability
+      # Top config "wins" and overrides any duplicate settings in other configs
+      # single-thread config is configured to run only 1,000 HHs for testing,
+      # so you can conveniently comment configs_mp to just run a debug in single-thread.
+      configs:
+        - "base-models/activity/configs_mp"
+        - "base-models/activity/configs"
+
+    assignment:
+      # TBD, need to do A-B evaluation to determine applicability
 
   summarize:
-    # TBD, need to do A-B evaluation to determine applicability
+    # Skim database CSVs and param blocks are recycled from reference_run
+    work_dir: "{proj_dir}/summarize"
+    
