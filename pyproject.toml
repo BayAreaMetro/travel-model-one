@@ -17,6 +17,9 @@ dependencies = [
 [tool.uv.sources]
 travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }
 
+[project.scripts]
+tm1 = "tm1.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

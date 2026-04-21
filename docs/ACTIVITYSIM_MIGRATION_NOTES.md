@@ -73,6 +73,35 @@ Key decisions:
   `annotate_persons_workplace.csv` to use `TOTIVT` everywhere, matching the
   mode-specific convention and eliminating a special case in the skim mapping.
 
+## `write_trip_matrices` — Duplicate `tour_id` Index
+
+The `write_trip_matrices` step crashed with:
+
+```
+InvalidIndexError: Reindexing only valid with uniquely valued Index objects
+```
+
+The failing expression in `write_trip_matrices_annotate_trips_preprocessor.csv`:
+
+```
+trips.tour_id.map(tours.number_of_participants)
+```
+
+**Cause:** Joint tours share a `tour_id` across participants, creating duplicate
+values in the `tours` table index. Newer pandas (2.x) rejects `.map()` on a
+Series with a non-unique index — the prototype_mtc configs were written for
+pandas 1.x which silently used the first match.
+
+**Fix:** Changed the expression to deduplicate before mapping:
+
+```
+trips.tour_id.map(tours.reset_index().drop_duplicates(subset='tour_id').set_index('tour_id').number_of_participants)
+```
+
+This is safe because all participants of a joint tour share the same
+`number_of_participants` value. The upstream prototype_mtc example has the same
+bug (as of April 2026).
+
 ## Slack Notifications
 
 Migrated from legacy `model-files/scripts/notify_slack.py` to `src/tm1/slack.py`.
