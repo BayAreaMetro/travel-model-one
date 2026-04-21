@@ -145,9 +145,15 @@ class CalibrationBase(ABC):
             self.iter = 1
             self.sampleshare = 0.2
 
+        # Check if using BATS data
+        self.bats_data = self.submodel_config.get("bats_data", False)
+
         # Set up paths
         self.target_dir = self.config.get('general', 'target_dir')
-        self.output_dir = f"{self.target_dir}/Output_{self.calib_iter}/calibration"
+        if self.bats_data:
+            self.output_dir = f"{self.target_dir}/BATS_Summaries"
+        else:
+            self.output_dir = f"{self.target_dir}/Output_{self.calib_iter}/calibration"
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         
         # Set up logging

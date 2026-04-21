@@ -74,18 +74,23 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             wsloc_results = wsloc_results.merge(person_data[['hh_id', 'person_id', 'person_weight', 'sampleRate']], left_on = ['HHID', 'PersonID'], right_on = ['hh_id', "person_id"])
             wsloc_results.fillna({'person_weight':0}, inplace = True)
 
-            wsloc_with_dist_file = f"{self.target_dir}/BATS_Summaries/MandatoryLocation_with_Distance.csv"
+            wsloc_with_dist_file = f"{self.target_dir}/MandatoryLocation_with_Distance.csv"
             
             # Process county summary using person weights
-            wsloc_county = wsloc_results.groupby(['HomeCounty_name', 'WorkCounty_name'])['person_weight'].sum().reset_index(name='num_pers')
+            wsloc_county = wsloc_results.groupby(['HomeCOUNTY', 'HomeCounty_name', 'WorkCOUNTY', 'WorkCounty_name'])['person_weight'].sum().reset_index(name='num_pers')
         else:
             wsloc_with_dist_file = f"{self.output_dir}/wsloc_results_with_distances.csv"
             
             # Process county summary using sampleshare
-            wsloc_county = wsloc_results.groupby(['HomeCounty_name', 'WorkCounty_name']).size().reset_index(name='num_pers')
+            
+            wsloc_county = wsloc_results.groupby(['HomeCOUNTY','HomeCounty_name', 'WorkCOUNTY','WorkCounty_name']).size().reset_index(name='num_pers')
             wsloc_county['num_pers'] = wsloc_county['num_pers'] / self.sampleshare
         
-        wsloc_county_spread = wsloc_county.pivot(index='HomeCounty_name', columns='WorkCounty_name', values='num_pers')
+        county_ids = sorted(self.county_lookup)
+        wsloc_county_spread = wsloc_county.pivot(index='HomeCOUNTY', columns='WorkCOUNTY', values='num_pers')
+        wsloc_county_spread = wsloc_county_spread.reindex(index=county_ids, columns=county_ids)
+        wsloc_county_spread = wsloc_county_spread.rename(index=self.county_lookup, columns=self.county_lookup)
+        wsloc_county_spread.index.name = 'HomeCounty_name'
         wsloc_county_spread = wsloc_county_spread.fillna(0).reset_index()
 
         wsloc_results.to_csv(wsloc_with_dist_file, index=False)
@@ -237,17 +242,17 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             trip_types = [('work', 2), ('univ', 15), ('school', 28)]
             for trip_type, col in trip_types:
                 if results[f'trip_tlfd_{trip_type}'] is not None:
-                    tlfd_file = f"{self.target_dir}/BATS_Summaries/{trip_type}TLFD.csv"
+                    tlfd_file = f"{self.output_dir}/{trip_type}TLFD.csv"
                     results[f'trip_tlfd_{trip_type}'].to_csv(tlfd_file, index = False)
-                    self.write_dataframe_to_sheet(results[f'trip_tlfd_{trip_type}'], start_row= 4,  start_col=col, sheet_name="CHTS TLFD",
+                    self.write_dataframe_to_sheet(results[f'trip_tlfd_{trip_type}'], start_row= 4,  start_col=col, sheet_name="BATS 2023 TLFD",
                                                  source_row=2, source_col=col, source_text=f"Source: {tlfd_file}")
                     
                     self.logger.info(f"Saving trip length frequency distributions for {trip_type} to {tlfd_file}")     
         
             # Average trip lengths
-            avg_length_file = f"{self.target_dir}/BATS_Summaries/AvgTripLen.csv"
+            avg_length_file = f"{self.output_dir}/AvgTripLen.csv"
             results['avg_trip_lengths'].to_csv(avg_length_file, index = False)
-            self.write_dataframe_to_sheet(results['avg_trip_lengths'], start_row=3, start_col=1, sheet_name="CHTS AvgTripLen",
+            self.write_dataframe_to_sheet(results['avg_trip_lengths'], start_row=3, start_col=1, sheet_name="BATS 2023 AvgTripLen",
                                         source_row=1, source_col=1, source_text=f"Source: {avg_length_file}")
             self.logger.info(f"Saving average trip lengths to {avg_length_file}")     
                 
