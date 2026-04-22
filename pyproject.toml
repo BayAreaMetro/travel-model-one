@@ -28,6 +28,7 @@ build-backend = "hatchling.build"
 dev = [
     "pytest>=9.0.3",
     "pytest-coverage>=0.0",
+    "ruff>=0.15.11",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -36,3 +37,19 @@ packages = ["src/tm1", "src/cubeio"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-p no:anyio"
+
+[tool.ruff]
+line-length = 100
+lint.select = ["ALL"]
+lint.pylint.max-args = 8  # Increase from default of 5 to accomodate 6 canon tables
+lint.ignore = [
+    "COM812",  # Trailing comma - conflicts with formatter
+    "D203",    # Use D211 (no blank line before class)
+    "D213",    # Use D212 (summary on first line)
+    "RET504",  # Allow return of assigned variable
+    "FBT001",  # Boolean args OK in this codebase
+    "FBT002",  # Boolean args OK in this codebase
+    "ERA001",  # Ignore commented out code
+]
+lint.pydocstyle.convention = "google"
+exclude = ["*.html", "uv.lock", "renv", "utilities", "core", "model-files"]
