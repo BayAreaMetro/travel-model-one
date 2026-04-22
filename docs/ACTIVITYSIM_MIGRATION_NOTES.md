@@ -52,6 +52,13 @@ Highway, transit, and non-motorized skims are converted from Cube Voyager TPP
 format to a single `skims.omx` file by `scripts/setup_scenario.py`. The full
 mapping is documented in `docs/skim_conversion_mapping.md`.
 
+## Output Column Mapping (ActivitySim → CTRAMP)
+
+The `summarize` step shims ActivitySim outputs into CTRAMP-format CSVs so that
+the legacy R `CoreSummaries.R` can consume them. The full column-by-column
+mapping is documented in [`docs/OUTPUT_MAPPING.md`](OUTPUT_MAPPING.md).
+Eventually this can be deprecated when we move away from R and can read directly from ActivitySim outputs.
+
 Key decisions:
 - External zones (1455–1475) are included in the matrix but are not used by
   ActivitySim demand models — they are assignment-only in the TM1 zone system.

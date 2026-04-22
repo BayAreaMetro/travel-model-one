@@ -57,7 +57,10 @@ steps:
     assignment:
       # TBD, need to do A-B evaluation to determine applicability
 
-  summarize:
+  core_summaries:
     # Skim database CSVs and param blocks are recycled from reference_run
     work_dir: "{proj_dir}/summarize"
+
+  calibration_summaries:
+    # Lightweight Python summaries for calibration — TBD
     

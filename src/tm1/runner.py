@@ -7,11 +7,12 @@ import logging
 from pathlib import Path
 
 import tm1.slack as slack
+import tm1.steps.calibration_summaries as calibration_summaries_step
 import tm1.steps.convert_skims as convert_skims_step
+import tm1.steps.core_summaries as core_summaries_step
 import tm1.steps.populationsim as populationsim_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate as simulate_step
-import tm1.steps.summarize as summarize_step
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
 
@@ -22,7 +23,8 @@ STEPS = {
     "convert_skims": convert_skims_step,
     "populationsim": populationsim_step,
     "simulate": simulate_step,
-    "summarize": summarize_step,
+    "core_summaries": core_summaries_step,
+    "calibration_summaries": calibration_summaries_step,
 }
 
 DEFAULT_STEPS = list(STEPS.keys())

@@ -121,21 +121,3 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
         log.info("--- Iteration %d / %d ---", i, iterations)
         _run_assignment(cfg, i)
         _run_activitysim(cfg, base_model_dir, on_checkpoint=on_checkpoint)
-
-    proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, bufsize=1,
-    )
-    for line in proc.stdout:  # pyright: ignore[reportOptionalIterable]
-        sys.stdout.write(line)
-        for cp in _check_checkpoints(checkpoints_file, seen):
-            if on_checkpoint:
-                on_checkpoint(cp)
-
-    rc = proc.wait()
-    for cp in _check_checkpoints(checkpoints_file, seen):
-        if on_checkpoint:
-            on_checkpoint(cp)
-
-    if rc != 0:
-        raise RuntimeError(f"ActivitySim exited with code {rc}")

@@ -1,4 +1,4 @@
-"""Summarize step: shim ActivitySim outputs for legacy R CoreSummaries.
+"""Core summaries step: shim ActivitySim outputs for legacy R CoreSummaries.
 
 Creates the CTRAMP-compatible directory layout that CoreSummaries.R expects,
 maps ActivitySim outputs to CTRAMP CSV format, and invokes Rscript.
@@ -23,6 +23,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from tm1.steps.ctramp_output import export_ctramp_csvs
+
 log = logging.getLogger(__name__)
 
 _SKIM_DB_PREFIXES = ("CostSkimsDatabase", "TimeSkimsDatabase",
@@ -34,7 +36,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
     """Build CTRAMP layout and run R CoreSummaries."""
     # --- Config stuffs ---
     base_model_dir = kwargs.get("base_model_dir", scenario_dir.parent.parent)
-    summarize_cfg = cfg.get("steps", {}).get("summarize", {}) or {}
+    step_cfg = cfg.get("steps", {}).get("core_summaries", {}) or {}
     sim_cfg = cfg.get("steps", {}).get("simulate", {}) or {}
     asim_cfg = sim_cfg.get("activitysim", sim_cfg)  # nested or flat
 
@@ -42,7 +44,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
     output_dir = Path(asim_cfg.get("output_dir", scenario_dir / "output"))
     data_dir = Path(asim_cfg.get("data_dir", scenario_dir / "data"))
     reference_run = cfg.get("reference_run", "")
-    work_dir = Path(summarize_cfg.get("work_dir", output_dir.parent / "summarize"))
+    work_dir = Path(step_cfg.get("work_dir", output_dir.parent / "summarize"))
     r_script = base_model_dir / "model-files" / "scripts" / "core_summaries" / "CoreSummaries.R"
 
     # ITER tells R which iteration's output files to read (e.g. householdData_3.csv).
@@ -50,7 +52,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
     iterations = sim_cfg.get("iterations", 0)
     iter_label = str(max(iterations, 1))
 
-    log.info("Summarize: building CTRAMP layout in %s", work_dir)
+    log.info("Core summaries: building CTRAMP layout in %s", work_dir)
 
     # --- Create directory skeleton ---
     for sub in (
@@ -108,14 +110,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
         log.warning("No ActivitySim output at %s — skipping R summaries", tours_csv)
         return
 
-    # TODO: implement column mapping once ActivitySim outputs are available.
-    # Needs to produce in main/:
-    #   householdData_{iter}.csv, personData_{iter}.csv,
-    #   indivTourData_{iter}.csv, jointTourData_{iter}.csv,
-    #   indivTripData_{iter}.csv, jointTripData_{iter}.csv,
-    #   wsLocResults_{iter}.csv
-    log.warning("CTRAMP column mapping not yet implemented — skipping R summaries")
-    return  # TODO: remove once column mapping is implemented
+    export_ctramp_csvs(output_dir, work_dir, iter_label)
 
     # --- Invoke CoreSummaries.R ---
     r_home = os.environ.get("R_HOME", "")
@@ -128,18 +123,36 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
         log.warning("Rscript not found at %s", rscript)
         return
 
+    # Build environment for R subprocess
+    r_env = {
+        **os.environ,
+        "TARGET_DIR": str(work_dir),
+        "ITER": iter_label,
+        "SAMPLESHARE": "1.00",
+    }
+
+    # Point R library path to the project renv library so packages are found
+    renv_lib = base_model_dir / "renv" / "library"
+    r_libs_dirs = sorted(renv_lib.glob("*/x86_64-w64-mingw32")) if renv_lib.exists() else []
+    if r_libs_dirs:
+        r_libs = str(r_libs_dirs[0])
+        r_env["R_LIBS"] = r_libs
+        r_env["R_LIBS_USER"] = r_libs
+        r_env["R_LIBS_SITE"] = r_libs
+        log.info("Using renv library: %s", r_libs)
+    else:
+        log.warning("No renv library found at %s — using system R libraries", renv_lib)
+
     log.info("Running CoreSummaries.R ...")
-    proc = subprocess.run(
+    proc = subprocess.Popen(
         [str(rscript), "--vanilla", str(r_script)],
-        env={
-            **os.environ,
-            "TARGET_DIR": str(work_dir),
-            "ITER": iter_label,
-            "SAMPLESHARE": "1.00",
-        },
-        capture_output=True, text=True,
+        env=r_env,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        text=True, bufsize=1,
     )
+    for line in proc.stdout:
+        log.info("[R] %s", line.rstrip())
+    proc.wait()
     if proc.returncode != 0:
-        log.error("CoreSummaries.R failed (exit %d):\n%s", proc.returncode, proc.stderr)
         raise RuntimeError(f"CoreSummaries.R failed with exit code {proc.returncode}")
     log.info("CoreSummaries.R complete")

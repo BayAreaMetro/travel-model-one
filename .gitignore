@@ -33,6 +33,9 @@ core/third-party/jppf-2.4/client/.project
 core/third-party/sqlitejdbc/.project
 
 
+# Renv
+.renv/
+
 # dev .working/ files not to be committed
 .working/
 
