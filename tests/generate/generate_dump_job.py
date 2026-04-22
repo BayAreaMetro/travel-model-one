@@ -22,20 +22,55 @@ from pathlib import Path
 TIME_PERIODS = ["EA", "AM", "MD", "PM", "EV"]
 
 HWYSKIM_TABLES = [
-    "TIMEDA", "DISTDA", "BTOLLDA",
-    "TOLLTIMEDA", "TOLLDISTDA", "TOLLBTOLLDA", "TOLLVTOLLDA",
-    "TIMES2", "DISTS2", "BTOLLS2",
-    "TOLLTIMES2", "TOLLDISTS2", "TOLLBTOLLS2", "TOLLVTOLLS2",
-    "TIMES3", "DISTS3", "BTOLLS3",
-    "TOLLTIMES3", "TOLLDISTS3", "TOLLBTOLLS3", "TOLLVTOLLS3",
+    "TIMEDA",
+    "DISTDA",
+    "BTOLLDA",
+    "TOLLTIMEDA",
+    "TOLLDISTDA",
+    "TOLLBTOLLDA",
+    "TOLLVTOLLDA",
+    "TIMES2",
+    "DISTS2",
+    "BTOLLS2",
+    "TOLLTIMES2",
+    "TOLLDISTS2",
+    "TOLLBTOLLS2",
+    "TOLLVTOLLS2",
+    "TIMES3",
+    "DISTS3",
+    "BTOLLS3",
+    "TOLLTIMES3",
+    "TOLLDISTS3",
+    "TOLLBTOLLS3",
+    "TOLLVTOLLS3",
 ]
 
 TRANSIT_TABLES = [
-    "ivt", "iwait", "xwait", "wait", "wacc", "waux", "wegr",
-    "dtime", "ddist", "fare", "boards",
-    "ivtLOC", "ivtLRF", "ivtEXP", "ivtHVY", "ivtCOM", "ivtFerry",
-    "ivtMUNILoc", "ivtMUNIMet",
-    "distLOC", "distLRF", "distEXP", "distHVY", "distCOM", "distFerry",
+    "ivt",
+    "iwait",
+    "xwait",
+    "wait",
+    "wacc",
+    "waux",
+    "wegr",
+    "dtime",
+    "ddist",
+    "fare",
+    "boards",
+    "ivtLOC",
+    "ivtLRF",
+    "ivtEXP",
+    "ivtHVY",
+    "ivtCOM",
+    "ivtFerry",
+    "ivtMUNILoc",
+    "ivtMUNIMet",
+    "distLOC",
+    "distLRF",
+    "distEXP",
+    "distHVY",
+    "distCOM",
+    "distFerry",
     "firstMode",
 ]
 
@@ -51,6 +86,7 @@ TRANSIT_COMBOS = [
 # ---------------------------------------------------------------------------
 # Generators
 # ---------------------------------------------------------------------------
+
 
 def _mw_lines(tables: list[str], indent: str = "    ") -> str:
     """Generate MW[n] = MI.1.name lines."""
@@ -75,7 +111,7 @@ def _sparsity_check(n: int, indent: str = "      ") -> str:
     # Format: groups of 4 per line
     lines = []
     for start in range(0, len(parts), 4):
-        chunk = parts[start:start + 4]
+        chunk = parts[start : start + 4]
         lines.append(" || ".join(chunk))
     joined = f" ||\n{indent}    ".join(lines)
     return f"{indent}IF ({joined})"
@@ -87,7 +123,7 @@ def _print_line(n: int, indent: str = "        ") -> str:
     for i in range(1, n + 1):
         pad = " " if i < 10 else ""
         comma = "," if i < n else ""
-        trail = f', ","' if i < n else ""
+        trail = ', ","' if i < n else ""
         parts.append(f"{indent}  MW[{i}](15.6f){trail}")
     parts.append(f"{indent}  PRINTO=1")
     return ",\n".join(parts)
@@ -171,6 +207,7 @@ ENDRUN
 # Main
 # ---------------------------------------------------------------------------
 
+
 def generate(skims_dir: str) -> str:
     parts = []
 
@@ -227,7 +264,9 @@ def generate(skims_dir: str) -> str:
 def main():
     if len(sys.argv) < 2:
         print("Usage: python scripts/generate_dump_job.py <skims_dir>")
-        print('Example: python scripts/generate_dump_job.py "E:\\Model3C-Share\\Projects\\2023_TM161_IPA_35_testrun\\skims"')
+        print(
+            'Example: python scripts/generate_dump_job.py "E:\\Model3C-Share\\Projects\\2023_TM161_IPA_35_testrun\\skims"'
+        )
         sys.exit(1)
 
     skims_dir = sys.argv[1].rstrip("\\")
@@ -241,10 +280,10 @@ def main():
     print(f"Generated {output.name} with {n_blocks} RUN PGM=MATRIX blocks")
     print(f"  Highway:      {len(TIME_PERIODS)} files")
     print(f"  Transit:      {len(TIME_PERIODS) * len(TRANSIT_COMBOS)} files")
-    print(f"  Non-motorized: 1 file")
+    print("  Non-motorized: 1 file")
     print(f"  Total:        {n_blocks} CSV files")
     print(f"\nOutput: {output}")
-    print(f"\nBefore running, create the output folder:")
+    print("\nBefore running, create the output folder:")
     print(f'  mkdir "{skims_dir}\\csv_dump"')
 
 

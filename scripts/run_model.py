@@ -18,5 +18,5 @@ if __name__ == "__main__":
     run_model(
         scenario_dir=_REPO_ROOT / "scenarios" / "base_2023",
         base_model_dir=_REPO_ROOT,
-        slack_level=None
+        slack_level=None,
     )

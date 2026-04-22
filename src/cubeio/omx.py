@@ -40,7 +40,7 @@ def tpp_to_omx(
     dtype
         NumPy dtype for the output matrices (default float32).
 
-    Returns
+    Returns:
     -------
     int
         Number of matrices written.

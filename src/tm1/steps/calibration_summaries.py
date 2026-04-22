@@ -3,8 +3,6 @@
 import logging
 from pathlib import Path
 
-from tm1.steps.ctramp_output import export_ctramp_csvs
-
 log = logging.getLogger(__name__)
 
 

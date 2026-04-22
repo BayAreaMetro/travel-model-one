@@ -98,7 +98,9 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
     household_data = hh.select(
         pl.col("household_id").alias("hh_id"),
         pl.col("home_zone_id").alias("taz"),
-        pl.lit(0).cast(pl.Int32).alias("walk_subzone"),  # TODO: needs walkAccessBuffers; affects JourneyToWork group-by
+        pl.lit(0)
+        .cast(pl.Int32)
+        .alias("walk_subzone"),  # TODO: needs walkAccessBuffers; affects JourneyToWork group-by
         pl.col("income"),
         pl.col("auto_ownership").alias("autos"),
         pl.col("hhsize").alias("size"),
@@ -116,7 +118,9 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
         pl.col("person_id"),
         pl.col("person_num"),
         pl.col("age"),
-        pl.col("sex").map_elements(lambda v: "m" if v == 1 else "f", return_dtype=pl.Utf8).alias("gender"),
+        pl.col("sex")
+        .map_elements(lambda v: "m" if v == 1 else "f", return_dtype=pl.Utf8)
+        .alias("gender"),
         pl.col("ptype").replace_strict(PTYPE_LABELS, default="Unknown").alias("type"),
         pl.col("value_of_time"),
         pl.col("free_parking_at_work").alias("fp_choice"),
@@ -171,8 +175,7 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
         jtp = pl.read_csv(jtp_csv)
         jtp_with_num = jtp.join(per.select("person_id", "person_num"), on="person_id", how="left")
         tour_parts = (
-            jtp_with_num
-            .sort("tour_id", "person_num")
+            jtp_with_num.sort("tour_id", "person_num")
             .group_by("tour_id")
             .agg(pl.col("person_num").cast(pl.Utf8).str.concat(" ").alias("tour_participants"))
         )
@@ -201,23 +204,22 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
     # -----------------------------------------------------------------
     # Trip prep: join tour_category + sample_rate, derive fields
     # -----------------------------------------------------------------
-    tour_keys = tours.select("tour_id", "tour_category", "tour_mode",
-                             "primary_purpose", "number_of_participants",
-                             "sample_rate")
-
-    trip = (
-        trips
-        .join(tour_keys, on="tour_id", how="left", suffix="_tour")
+    tour_keys = tours.select(
+        "tour_id",
+        "tour_category",
+        "tour_mode",
+        "primary_purpose",
+        "number_of_participants",
+        "sample_rate",
     )
+
+    trip = trips.join(tour_keys, on="tour_id", how="left", suffix="_tour")
 
     # orig_purpose: previous trip's purpose within the same tour,
     # "Home" for first outbound, tour purpose for first inbound
     trip = trip.sort("household_id", "person_id", "tour_id", "outbound", "trip_num")
     trip = trip.with_columns(
-        pl.col("purpose")
-        .shift(1)
-        .over("tour_id", "outbound")
-        .alias("_prev_purpose")
+        pl.col("purpose").shift(1).over("tour_id", "outbound").alias("_prev_purpose")
     )
     trip = trip.with_columns(
         pl.when(pl.col("_prev_purpose").is_not_null())
@@ -238,9 +240,7 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
     )
 
     # stop_id = trip_num - 1
-    trip = trip.with_columns(
-        (pl.col("trip_num") - 1).cast(pl.Int32).alias("stop_id")
-    )
+    trip = trip.with_columns((pl.col("trip_num") - 1).cast(pl.Int32).alias("stop_id"))
 
     # person_num from per
     per_num = per.select("person_id", "person_num")
@@ -316,8 +316,12 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
     # wsLocResults — workers only
     # -----------------------------------------------------------------
     workers = per.filter(pl.col("workplace_zone_id") > 0)
-    ws = workers.join(hh.select("household_id", "income", "home_zone_id"),
-                      on="household_id", how="left", suffix="_hh")
+    ws = workers.join(
+        hh.select("household_id", "income", "home_zone_id"),
+        on="household_id",
+        how="left",
+        suffix="_hh",
+    )
     ws_data = ws.select(
         pl.col("household_id").alias("HHID"),
         pl.col("person_id").alias("PersonID"),

@@ -27,8 +27,12 @@ from tm1.steps.ctramp_output import export_ctramp_csvs
 
 log = logging.getLogger(__name__)
 
-_SKIM_DB_PREFIXES = ("CostSkimsDatabase", "TimeSkimsDatabase",
-                     "DistanceSkimsDatabase", "ActiveTimeSkimsDatabase")
+_SKIM_DB_PREFIXES = (
+    "CostSkimsDatabase",
+    "TimeSkimsDatabase",
+    "DistanceSkimsDatabase",
+    "ActiveTimeSkimsDatabase",
+)
 _PERIODS = ("EA", "AM", "MD", "PM", "EV")
 
 
@@ -56,10 +60,14 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
 
     # --- Create directory skeleton ---
     for sub in (
-        "main", "popsyn", "landuse",
-        "database", "ctramp/scripts/block",
-        "core_summaries", "updated_output"
-        ):
+        "main",
+        "popsyn",
+        "landuse",
+        "database",
+        "ctramp/scripts/block",
+        "core_summaries",
+        "updated_output",
+    ):
         (work_dir / sub).mkdir(parents=True, exist_ok=True)
 
     # --- Copy popsyn + landuse from ActivitySim data dir ---
@@ -147,8 +155,10 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
     proc = subprocess.Popen(
         [str(rscript), "--vanilla", str(r_script)],
         env=r_env,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, bufsize=1,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
     )
     for line in proc.stdout:
         log.info("[R] %s", line.rstrip())

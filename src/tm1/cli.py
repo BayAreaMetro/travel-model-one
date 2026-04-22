@@ -46,23 +46,31 @@ def main():
 
     run_parser = sub.add_parser("run", help="Run scenario pipeline (or selected steps)")
     run_parser.add_argument(
-        "--scenario", required=True,
+        "--scenario",
+        required=True,
         help="Scenario name (folder under scenarios/, e.g. base_2023)",
     )
     run_parser.add_argument(
-        "--steps", nargs="+", metavar="STEP",
+        "--steps",
+        nargs="+",
+        metavar="STEP",
         help="Run specific steps instead of the full pipeline",
     )
     run_parser.add_argument(
-        "--iterations", type=int, default=None,
+        "--iterations",
+        type=int,
+        default=None,
         help="Override simulate iteration count (0 = static skims, no assignment)",
     )
     run_parser.add_argument(
-        "--force", action="store_true",
+        "--force",
+        action="store_true",
         help="Force rebuild of data files during setup",
     )
     run_parser.add_argument(
-        "--slack", choices=["off", "minimal", "verbose"], default="minimal",
+        "--slack",
+        choices=["off", "minimal", "verbose"],
+        default="minimal",
         help="Slack notification level (default: minimal)",
     )
 

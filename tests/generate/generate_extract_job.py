@@ -64,20 +64,56 @@ def sample_rows(stem: str) -> sorted:
 #   + one more highway period (PM) and transit combo for breadth
 
 HIGHWAY_TABLES = [
-    "TIMEDA", "DISTDA", "BTOLLDA", "TOLLTIMEDA", "TOLLDISTDA",
-    "TOLLBTOLLDA", "TOLLVTOLLDA", "TIMES2", "DISTS2", "BTOLLS2",
-    "TOLLTIMES2", "TOLLDISTS2", "TOLLBTOLLS2", "TOLLVTOLLS2",
-    "TIMES3", "DISTS3", "BTOLLS3", "TOLLTIMES3", "TOLLDISTS3",
-    "TOLLBTOLLS3", "TOLLVTOLLS3",
+    "TIMEDA",
+    "DISTDA",
+    "BTOLLDA",
+    "TOLLTIMEDA",
+    "TOLLDISTDA",
+    "TOLLBTOLLDA",
+    "TOLLVTOLLDA",
+    "TIMES2",
+    "DISTS2",
+    "BTOLLS2",
+    "TOLLTIMES2",
+    "TOLLDISTS2",
+    "TOLLBTOLLS2",
+    "TOLLVTOLLS2",
+    "TIMES3",
+    "DISTS3",
+    "BTOLLS3",
+    "TOLLTIMES3",
+    "TOLLDISTS3",
+    "TOLLBTOLLS3",
+    "TOLLVTOLLS3",
 ]
 
 TRANSIT_TABLES = [
-    "ivt", "iwait", "xwait", "wait", "wacc", "waux", "wegr",
-    "dtime", "ddist", "fare", "boards",
-    "ivtLOC", "ivtLRF", "ivtEXP", "ivtHVY", "ivtCOM",
-    "ivtFerry", "ivtMUNILoc", "ivtMUNIMet",
-    "distLOC", "distLRF", "distEXP", "distHVY", "distCOM",
-    "distFerry", "firstMode",
+    "ivt",
+    "iwait",
+    "xwait",
+    "wait",
+    "wacc",
+    "waux",
+    "wegr",
+    "dtime",
+    "ddist",
+    "fare",
+    "boards",
+    "ivtLOC",
+    "ivtLRF",
+    "ivtEXP",
+    "ivtHVY",
+    "ivtCOM",
+    "ivtFerry",
+    "ivtMUNILoc",
+    "ivtMUNIMet",
+    "distLOC",
+    "distLRF",
+    "distEXP",
+    "distHVY",
+    "distCOM",
+    "distFerry",
+    "firstMode",
     # Table 27 may or may not exist:
     "boards2",
 ]
@@ -90,7 +126,12 @@ FILES = [
     ("HWYSKMAM", "HWYSKMAM.tpp", HIGHWAY_TABLES, 21),
     ("HWYSKMMD", "HWYSKMMD.tpp", HIGHWAY_TABLES, 21),  # exercises 0xC8 dense short-lo + big RLE
     ("HWYSKMPM", "HWYSKMPM.tpp", HIGHWAY_TABLES, 21),
-    ("trnskmam_drv_com_wlk", "trnskmam_drv_com_wlk.tpp", TRANSIT_TABLES, 26),  # exercises 0x40 hi-byte-only
+    (
+        "trnskmam_drv_com_wlk",
+        "trnskmam_drv_com_wlk.tpp",
+        TRANSIT_TABLES,
+        26,
+    ),  # exercises 0x40 hi-byte-only
     ("trnskmam_wlk_com_wlk", "trnskmam_wlk_com_wlk.tpp", TRANSIT_TABLES, 26),
     ("trnskmam_drv_hvy_wlk", "trnskmam_drv_hvy_wlk.tpp", TRANSIT_TABLES, 26),
     ("trnskmpm_wlk_loc_drv", "trnskmpm_wlk_loc_drv.tpp", TRANSIT_TABLES, 26),
@@ -124,11 +165,11 @@ def _generate_matrix_block(stem, input_name, tables, n_tables):
 
     # Conditional: only copy sampled rows, zero everything else
     lines.append(f"    IF ({row_checks})")
-    lines.append(f"      ; keep data as-is")
-    lines.append(f"    ELSE")
+    lines.append("      ; keep data as-is")
+    lines.append("    ELSE")
     for i in range(1, n_tables + 1):
         lines.append(f"      MW[{i}] = 0")
-    lines.append(f"    ENDIF")
+    lines.append("    ENDIF")
     lines.append("")
     lines.append("ENDRUN")
     lines.append("")
@@ -162,7 +203,7 @@ def _generate_csv_dump_block(stem, tables, n_tables):
     lines.append(f"      IF ({checks})")
 
     # Build PRINT LIST
-    parts = [f'        PRINT LIST=I(5), ",", J(5)']
+    parts = ['        PRINT LIST=I(5), ",", J(5)']
     for i in range(1, n_tables + 1):
         parts.append(f'          ",", MW[{i}](15.6f)')
     parts.append("          PRINTO=1")
@@ -212,7 +253,7 @@ def main():
     out_path = Path(__file__).resolve().parent / "extract_golden_tpps.job"
     out_path.write_text(job_text, encoding="utf-8")
     print(f"Wrote {out_path} ({len(job_text)} bytes)")
-    print(f"\nFiles to extract:")
+    print("\nFiles to extract:")
     for stem, _, _, _ in FILES:
         rows = sample_rows(stem)
         print(f"  {stem:40s}  {len(rows)} rows: {rows}")

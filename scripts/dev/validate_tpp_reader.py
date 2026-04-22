@@ -9,13 +9,13 @@ Usage:
 Example:
     python scripts/validate_tpp_reader.py \\\\MODEL3-C\\...\\skims
 """
+
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
 import polars as pl
-
 from tm1.tpp import read_tpp
 
 
@@ -31,9 +31,7 @@ def validate_one(tpp_path: Path, csv_path: Path) -> tuple[int, int, list[str]]:
     # Read Cube CSV — format: I, J, table1, table2, ...
     # Cube pads values with spaces, so strip before casting.
     df = pl.read_csv(csv_path, infer_schema_length=0)
-    df = df.select([
-        pl.col(c).str.strip_chars().cast(pl.Float64) for c in df.columns
-    ])
+    df = df.select([pl.col(c).str.strip_chars().cast(pl.Float64) for c in df.columns])
 
     col_names = df.columns  # first two are I, J
     i_arr = df[col_names[0]].to_numpy().astype(int)
@@ -121,14 +119,14 @@ def main():
             failures.append(stem)
 
     elapsed_total = time.perf_counter() - t0
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"Checked {total_cells:,} cells across {len(pairs)} files in {elapsed_total:.0f}s")
     print(f"Mismatches: {total_bad:,}")
     if failures:
         print(f"Failures: {', '.join(failures)}")
     else:
         print("ALL FILES MATCH.")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     sys.exit(1 if failures else 0)
 

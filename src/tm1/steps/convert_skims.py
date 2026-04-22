@@ -109,6 +109,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
 
     if not need_build:
         import openmatrix as omx
+
         expected = {k for table_map in build_file_map(tpp_dir).values() for k in table_map.values()}
         try:
             with omx.open_file(str(skims_path), "r") as f:

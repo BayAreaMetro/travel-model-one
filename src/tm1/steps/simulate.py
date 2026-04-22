@@ -46,9 +46,14 @@ def _run_activitysim(cfg: dict, base_model_dir: Path, on_checkpoint=None):
         config_dirs.append(p)
 
     cmd = [
-        sys.executable, "-m", "activitysim", "run",
-        "-d", str(data_dir),
-        "-o", str(output_dir),
+        sys.executable,
+        "-m",
+        "activitysim",
+        "run",
+        "-d",
+        str(data_dir),
+        "-o",
+        str(output_dir),
     ]
     for c in config_dirs:
         cmd.extend(["-c", str(c)])
@@ -71,8 +76,11 @@ def _run_activitysim(cfg: dict, base_model_dir: Path, on_checkpoint=None):
     seen: set[str] = set()
 
     proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, bufsize=1,
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
     )
     for line in proc.stdout:  # pyright: ignore[reportOptionalIterable]
         sys.stdout.write(line)
@@ -110,7 +118,11 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
     on_checkpoint = kwargs.get("on_checkpoint")
 
     sim_cfg = cfg["steps"]["simulate"]
-    iterations = kwargs.get("iterations") if kwargs.get("iterations") is not None else sim_cfg.get("iterations", 0)
+    iterations = (
+        kwargs.get("iterations")
+        if kwargs.get("iterations") is not None
+        else sim_cfg.get("iterations", 0)
+    )
 
     # Always run ActivitySim at least once
     log.info("Running ActivitySim (iterations=%d)", iterations)

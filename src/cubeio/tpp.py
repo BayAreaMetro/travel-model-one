@@ -142,6 +142,7 @@ Implementation Notes
 - Pre-built fill tables (``_FILL``) and a precision lookup table
   (``_DIVISOR_LUT``) avoid per-element branching.
 """
+
 import struct
 from pathlib import Path
 
@@ -215,7 +216,7 @@ def _decode_blocks(
     allow_shorthand : bool
         Enable shorthand RLE (precision lane only).
 
-    Returns
+    Returns:
     -------
     tuple[np.ndarray, int]
         ``(uint8_array, bytes_consumed)``.
@@ -235,21 +236,21 @@ def _decode_blocks(
             if pos + 2 >= raw_len:
                 break
             big_count = count | ((mode & 0x7F) << 8)
-            n = big_count if big_count <= remaining else remaining
+            n = min(big_count, remaining)
             out[filled : filled + n] = _fill[raw[pos + 2]][:n]
             filled += n
             remaining -= n
             pos += 3
 
         elif mode == 0x00:
-            n = count if count <= remaining else remaining
+            n = min(count, remaining)
             out[filled : filled + n] = raw[pos + 2 : pos + 2 + n]
             filled += n
             remaining -= n
             pos += 2 + count
 
         elif allow_shorthand and count < 0x80:
-            n = count if count <= remaining else remaining
+            n = min(count, remaining)
             out[filled : filled + n] = _fill[mode][:n]
             filled += n
             remaining -= n
@@ -257,7 +258,7 @@ def _decode_blocks(
 
         else:
             big_count = (count | (mode << 8)) & 0x7FFF
-            n = big_count if big_count <= remaining else remaining
+            n = min(big_count, remaining)
             out[filled : filled + n] = raw[pos + 2 : pos + 2 + n]
             filled += n
             remaining -= n
@@ -291,7 +292,7 @@ def _decode_sparse(raw: bytes, zones: int) -> tuple[np.ndarray, int]:
     zones : int
         Number of output values (columns) to decode.
 
-    Returns
+    Returns:
     -------
     tuple[np.ndarray, int]
         ``(uint16_array, bytes_consumed)`` -- decoded values (promoted to
@@ -311,8 +312,7 @@ def _decode_sparse(raw: bytes, zones: int) -> tuple[np.ndarray, int]:
         if mode == 0x00:
             count = count_byte
             end = col + count
-            if end > zones:
-                end = zones
+            end = min(end, zones)
             n = end - col
             if pos + n > raw_len:
                 break
@@ -324,16 +324,14 @@ def _decode_sparse(raw: bytes, zones: int) -> tuple[np.ndarray, int]:
             if pos >= raw_len:
                 break
             end = col + count
-            if end > zones:
-                end = zones
-            out[col:end] = _fill[raw[pos]][:end - col]
+            end = min(end, zones)
+            out[col:end] = _fill[raw[pos]][: end - col]
             pos += 1
             col = end
         else:
             big_count = (count_byte | (mode << 8)) & 0x7FFF
             end = col + big_count
-            if end > zones:
-                end = zones
+            end = min(end, zones)
             n = end - col
             if pos + n > raw_len:
                 break
@@ -347,6 +345,7 @@ def _decode_sparse(raw: bytes, zones: int) -> tuple[np.ndarray, int]:
 # ---------------------------------------------------------------------------
 # Row decoders (vectorised value assembly)
 # ---------------------------------------------------------------------------
+
 
 def _assemble_dense_row(
     lo_bytes: bytes | memoryview,
@@ -374,39 +373,39 @@ def _assemble_dense_row(
 
 
 def _assemble_wide_dense_row(
-        lo_bytes: bytes | memoryview,
-        mid_values: np.ndarray,
-        hi_arr: np.ndarray,
-        prec_arr: np.ndarray,
-        zones: int,
+    lo_bytes: bytes | memoryview,
+    mid_values: np.ndarray,
+    hi_arr: np.ndarray,
+    prec_arr: np.ndarray,
+    zones: int,
 ) -> np.ndarray:
-        """Combine lo, mid, hi, and precision for 3-byte dense rows.
+    """Combine lo, mid, hi, and precision for 3-byte dense rows.
 
-        Used for 0xE8 dense blocks.
-        Value = ``(hi * 65536 + mid * 256 + lo) / divisor(prec)``.
+    Used for 0xE8 dense blocks.
+    Value = ``(hi * 65536 + mid * 256 + lo) / divisor(prec)``.
 
-        The byte lanes use a mixed layout:
-            - lo byte lane is raw
-            - mid byte lane uses the dense block codec
-            - hi and precision byte lanes use the sparse codec
-        """
-        lo = np.frombuffer(lo_bytes, dtype=np.uint8).astype(np.uint32)
+    The byte lanes use a mixed layout:
+        - lo byte lane is raw
+        - mid byte lane uses the dense block codec
+        - hi and precision byte lanes use the sparse codec
+    """
+    lo = np.frombuffer(lo_bytes, dtype=np.uint8).astype(np.uint32)
 
-        mid = np.zeros(zones, dtype=np.uint32)
-        n_mid = min(len(mid_values), zones)
-        mid[:n_mid] = mid_values[:n_mid]
+    mid = np.zeros(zones, dtype=np.uint32)
+    n_mid = min(len(mid_values), zones)
+    mid[:n_mid] = mid_values[:n_mid]
 
-        hi = np.zeros(zones, dtype=np.uint32)
-        n_hi = min(len(hi_arr), zones)
-        hi[:n_hi] = hi_arr[:n_hi]
+    hi = np.zeros(zones, dtype=np.uint32)
+    n_hi = min(len(hi_arr), zones)
+    hi[:n_hi] = hi_arr[:n_hi]
 
-        prec = np.full(zones, 0x20, dtype=np.uint8)
-        n_pr = min(len(prec_arr), zones)
-        prec[:n_pr] = prec_arr[:n_pr]
+    prec = np.full(zones, 0x20, dtype=np.uint8)
+    n_pr = min(len(prec_arr), zones)
+    prec[:n_pr] = prec_arr[:n_pr]
 
-        stored = hi * 65536 + mid * 256 + lo
-        divisors = _DIVISOR_LUT[prec]
-        return stored.astype(np.float64) / divisors
+    stored = hi * 65536 + mid * 256 + lo
+    divisors = _DIVISOR_LUT[prec]
+    return stored.astype(np.float64) / divisors
 
 
 def _assemble_sparse_row(
@@ -423,6 +422,7 @@ def _assemble_sparse_row(
 # ---------------------------------------------------------------------------
 # Header parser
 # ---------------------------------------------------------------------------
+
 
 def _parse_header(fh) -> tuple[int, list[str], list[int]]:
     """Parse TPP header records.
@@ -482,6 +482,7 @@ def _parse_header(fh) -> tuple[int, list[str], list[int]]:
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def read_tpp(path: str | Path) -> dict:
     """Read a Cube Voyager TPP matrix file.
 
@@ -496,7 +497,7 @@ def read_tpp(path: str | Path) -> dict:
     path : str or Path
         Path to the ``.tpp`` file.
 
-    Returns
+    Returns:
     -------
     dict
         ``zones``  -- int, number of zones.
@@ -514,10 +515,7 @@ def read_tpp(path: str | Path) -> dict:
         buf = fh.read()
 
         # Pre-allocate
-        matrices = {
-            name: np.zeros((zones, zones), dtype=np.float64)
-            for name in table_names
-        }
+        matrices = {name: np.zeros((zones, zones), dtype=np.float64) for name in table_names}
 
         # Parse data blocks from buffer
         pos = 0
@@ -566,9 +564,7 @@ def read_tpp(path: str | Path) -> dict:
                 body = block_data[3:]
                 lo_arr, lo_consumed = _decode_sparse(body, zones)
                 hi_arr, _ = _decode_sparse(body[lo_consumed:], zones)
-                matrices[tbl_name][row_idx] = _assemble_sparse_row(
-                    lo_arr, hi_arr
-                )
+                matrices[tbl_name][row_idx] = _assemble_sparse_row(lo_arr, hi_arr)
 
             elif type_byte == 0xC8:
                 zone_field = struct.unpack_from("<H", block_data, 3)[0]
@@ -577,12 +573,9 @@ def read_tpp(path: str | Path) -> dict:
                     body = block_data[3:]
                     lo_arr, lo_c = _decode_sparse(body, zones)
                     hi_arr, hi_c = _decode_sparse(body[lo_c:], zones)
-                    prec_arr, _ = _decode_sparse(body[lo_c + hi_c:], zones)
-                    stored = (hi_arr.astype(np.float64) * 256.0
-                              + lo_arr.astype(np.float64))
-                    divisors = _DIVISOR_LUT[
-                        prec_arr.astype(np.uint8)
-                    ]
+                    prec_arr, _ = _decode_sparse(body[lo_c + hi_c :], zones)
+                    stored = hi_arr.astype(np.float64) * 256.0 + lo_arr.astype(np.float64)
+                    divisors = _DIVISOR_LUT[prec_arr.astype(np.uint8)]
                     matrices[tbl_name][row_idx] = stored / divisors
                 else:
                     # Dense mode.  Layout:
@@ -607,15 +600,11 @@ def read_tpp(path: str | Path) -> dict:
                         lo_cont = np.empty(0, dtype=np.uint8)
 
                     # --- hi section (all zones) ---
-                    hi_arr, hi_c = _decode_blocks(
-                        rest, max_values=zones, allow_shorthand=False
-                    )
+                    hi_arr, hi_c = _decode_blocks(rest, max_values=zones, allow_shorthand=False)
                     rest = rest[hi_c:]
 
                     # --- prec section (all zones) ---
-                    prec_arr, _ = _decode_blocks(
-                        rest, max_values=zones, allow_shorthand=True
-                    )
+                    prec_arr, _ = _decode_blocks(rest, max_values=zones, allow_shorthand=True)
 
                     # Assemble: hi * 256 + lo, then divide by precision
                     dest = matrices[tbl_name][row_idx]
@@ -642,23 +631,15 @@ def read_tpp(path: str | Path) -> dict:
                     body = block_data[3:]
                     lo_arr, lo_c = _decode_sparse(body, zones)
                     mid_arr, mid_c = _decode_sparse(body[lo_c:], zones)
-                    hi_arr, hi_c = _decode_sparse(
-                        body[lo_c + mid_c:], zones
-                    )
-                    prec_arr, _ = _decode_sparse(
-                        body[lo_c + mid_c + hi_c:], zones
-                    )
+                    hi_arr, hi_c = _decode_sparse(body[lo_c + mid_c :], zones)
+                    prec_arr, _ = _decode_sparse(body[lo_c + mid_c + hi_c :], zones)
                     stored = (
                         hi_arr.astype(np.uint32) * 65536
                         + mid_arr.astype(np.uint32) * 256
                         + lo_arr.astype(np.uint32)
                     )
-                    divisors = _DIVISOR_LUT[
-                        prec_arr.astype(np.uint8)
-                    ]
-                    matrices[tbl_name][row_idx] = (
-                        stored.astype(np.float64) / divisors
-                    )
+                    divisors = _DIVISOR_LUT[prec_arr.astype(np.uint8)]
+                    matrices[tbl_name][row_idx] = stored.astype(np.float64) / divisors
                 else:
                     # Dense mode.  Layout (same continuation pattern as 0xC8):
                     #   n_raw raw lo bytes  (zones 0 .. n_raw-1)
@@ -694,20 +675,15 @@ def read_tpp(path: str | Path) -> dict:
                     sparse_tail = rest[mid_consumed:]
 
                     # --- hi / prec sections (sparse, all zones) ---
-                    hi_arr, hi_consumed = _decode_sparse(
-                        sparse_tail, zones
-                    )
-                    prec_arr, _ = _decode_sparse(
-                        sparse_tail[hi_consumed:], zones
-                    )
+                    hi_arr, hi_consumed = _decode_sparse(sparse_tail, zones)
+                    prec_arr, _ = _decode_sparse(sparse_tail[hi_consumed:], zones)
                     matrices[tbl_name][row_idx] = _assemble_wide_dense_row(
                         lo_bytes, mid_values, hi_arr, prec_arr, zones
                     )
 
             else:
                 raise ValueError(
-                    f"Unknown block type 0x{type_byte:02X} at "
-                    f"row={row}, table={tbl_name}"
+                    f"Unknown block type 0x{type_byte:02X} at row={row}, table={tbl_name}"
                 )
 
     return {

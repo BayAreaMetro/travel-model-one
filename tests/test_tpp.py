@@ -15,6 +15,7 @@ For exhaustive validation of all 81 TPP files, see
 Ground truth generated from the reference model run
 ``2023_TM161_IPA_35_testrun`` on MODEL3-C.
 """
+
 from pathlib import Path
 
 import numpy as np
@@ -34,6 +35,7 @@ _GOLDEN = _REPO / "tests" / "data" / "golden"
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _load_sparse_csv_gt(csv_path: Path) -> pl.DataFrame:
     """Load sparse I,J,table... CSV as a Polars DataFrame.
 
@@ -41,9 +43,7 @@ def _load_sparse_csv_gt(csv_path: Path) -> pl.DataFrame:
     strips whitespace, and casts to Float64.
     """
     df = pl.read_csv(csv_path, infer_schema_length=0)
-    return df.with_columns(
-        pl.col(c).str.strip_chars().cast(pl.Float64) for c in df.columns
-    )
+    return df.with_columns(pl.col(c).str.strip_chars().cast(pl.Float64) for c in df.columns)
 
 
 def _check_sparse_cells(result: dict, gt: pl.DataFrame, tol: float = 5e-4):
@@ -70,7 +70,7 @@ def _check_sparse_cells(result: dict, gt: pl.DataFrame, tol: float = 5e-4):
             idxs = np.nonzero(bad)[0]
             for idx in idxs[:5]:
                 errors.append(
-                    f"{tbl}[{i_arr[idx]+1},{j_arr[idx]+1}]: "
+                    f"{tbl}[{i_arr[idx] + 1},{j_arr[idx] + 1}]: "
                     f"got {actual[idx]:.6f}, expected {expected[idx]:.6f}"
                 )
             if len(errors) >= 20:
@@ -114,4 +114,3 @@ class TestGolden:
         gt = _load_sparse_csv_gt(golden_csv)
         assert len(gt) > 0, f"Golden CSV {golden_csv} has no rows"
         _check_sparse_cells(result, gt)
-

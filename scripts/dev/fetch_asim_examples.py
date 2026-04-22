@@ -31,4 +31,3 @@ for example in EXAMPLES:
         url=example_info["url"],
         assets=example_info.get("assets", {}),
     )
-

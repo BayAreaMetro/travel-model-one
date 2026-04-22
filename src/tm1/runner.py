@@ -6,13 +6,13 @@ Each step is a module with a ``run(scenario_dir, cfg, **kwargs)`` function.
 import logging
 from pathlib import Path
 
-import tm1.slack as slack
 import tm1.steps.calibration_summaries as calibration_summaries_step
 import tm1.steps.convert_skims as convert_skims_step
 import tm1.steps.core_summaries as core_summaries_step
 import tm1.steps.populationsim as populationsim_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate as simulate_step
+from tm1 import slack
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
 
@@ -55,9 +55,9 @@ def run_model(
     label = scenario_dir.name
 
     cfg = resolve_templates(load_config(scenario_dir))
-    steps_cfg = cfg.get("steps", {}) # pyright: ignore[reportAttributeAccessIssue]
+    steps_cfg = cfg.get("steps", {})  # pyright: ignore[reportAttributeAccessIssue]
     if steps is None:
-        steps = list(steps_cfg.keys()) or DEFAULT_STEPS # pyright: ignore[reportAttributeAccessIssue]
+        steps = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
 
     # Pass full config to steps so they can read both their own
     # section (cfg["steps"]["<name>"]) and top-level keys like reference_run.

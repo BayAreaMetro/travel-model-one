@@ -16,7 +16,9 @@ import requests
 
 log = logging.getLogger(__name__)
 
-_MTC_WEBHOOK_FILE = Path(r"\\models.ad.mtc.ca.gov\data\models\Software\Slack\TravelModel_SlackWebhook.txt")
+_MTC_WEBHOOK_FILE = Path(
+    r"\\models.ad.mtc.ca.gov\data\models\Software\Slack\TravelModel_SlackWebhook.txt"
+)
 
 level = "verbose"  # "false", "minimal", or "verbose"
 

@@ -7,6 +7,7 @@ by running extract_golden_tpps.job on MODEL3-C with runtpp.
 Usage:
     python tests/generate/cherry_pick_csv.py <csv_dump_dir> <golden_dir>
 """
+
 import hashlib
 import random
 import sys
@@ -69,9 +70,7 @@ def main():
         i_col = df.columns[0]
 
         # Strip whitespace padding from Cube output and cast to numeric
-        df = df.select([
-            pl.col(c).str.strip_chars() for c in df.columns
-        ])
+        df = df.select([pl.col(c).str.strip_chars() for c in df.columns])
 
         # Filter to sampled rows
         i_vals = df[i_col].cast(pl.Int64)
