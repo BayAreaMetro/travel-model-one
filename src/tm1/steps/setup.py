@@ -13,9 +13,9 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 
-def _strip_ctrl_z(path: Path):
+def _strip_ctrl_z(path: Path) -> None:
     """Remove trailing Ctrl-Z (0x1a) if present (legacy Windows EOF)."""
-    with open(path, "r+b") as f:
+    with path.open("r+b") as f:
         f.seek(-1, 2)
         if f.read(1) == b"\x1a":
             log.info("  Stripping trailing Ctrl-Z from %s", path.name)
@@ -23,14 +23,18 @@ def _strip_ctrl_z(path: Path):
             f.truncate()
 
 
-def run(scenario_dir: Path, cfg: dict, **kwargs):
+def run(
+    scenario_dir: Path,  # noqa: ARG001
+    cfg: dict,
+    **kwargs: object,
+) -> None:
     """Copy input files as specified in setup.copy_inputs."""
     force = kwargs.get("force", False)
 
     setup_cfg = cfg.get("steps", {}).get("setup", {})
     copy_inputs = setup_cfg.get("copy_inputs", {})
 
-    for name, entry in copy_inputs.items():
+    for entry in copy_inputs.values():
         src = Path(entry["from"])
         dest = Path(entry["to"])
         dest.parent.mkdir(parents=True, exist_ok=True)

@@ -38,11 +38,13 @@ FILES = [
 
 
 def seed_for_file(stem: str) -> int:
-    return int(hashlib.md5(stem.encode()).hexdigest()[:8], 16)
+    """Deterministic seed from filename for reproducible row sampling."""
+    return int(hashlib.md5(stem.encode()).hexdigest()[:8], 16)  # noqa: S324
 
 
 def sample_rows(stem: str) -> list[int]:
-    rng = random.Random(seed_for_file(stem))
+    """Return sorted list of sampled row indices for a given file stem."""
+    rng = random.Random(seed_for_file(stem))  # noqa: S311
     extras = set(EXTRA_ROWS.get(stem, []))
     base = set(FIXED_ROWS) | extras
     candidates = [r for r in range(1, ZONES + 1) if r not in base]
@@ -50,8 +52,9 @@ def sample_rows(stem: str) -> list[int]:
     return sorted(base | set(randoms))
 
 
-def main():
-    if len(sys.argv) < 3:
+def main() -> None:
+    """Cherry-pick sampled rows from CSV dumps into golden test data."""
+    if len(sys.argv) < 3:  # noqa: PLR2004
         print(f"Usage: {sys.argv[0]} <csv_dump_dir> <golden_dir>")
         sys.exit(1)
 

@@ -63,7 +63,9 @@ _KEYIVT_SOURCE = {
 NONMOT_TABLES = ("DISTWALK", "DISTBIKE", "DIST")
 
 
-def _transit_omx_keys(access, mode, egress, period):
+def _transit_omx_keys(
+    access: str, mode: str, egress: str, period: str
+) -> dict[str, str]:
     """Return ``{cube_table: omx_key}`` for one transit TPP file."""
     prefix = f"{access.upper()}_{mode.upper()}_{egress.upper()}"
     suffix = f"__{period}"
@@ -77,7 +79,7 @@ def _transit_omx_keys(access, mode, egress, period):
     return keys
 
 
-def build_file_map(skims_dir):
+def build_file_map(skims_dir: str | Path) -> dict[Path, dict[str, str]]:
     """Build ``{tpp_path: {cube_name: omx_key}}`` for all TM1 skims."""
     skims_dir = Path(skims_dir)
     fm: dict[Path, dict[str, str]] = {}
@@ -97,7 +99,11 @@ def build_file_map(skims_dir):
     return fm
 
 
-def run(scenario_dir: Path, cfg: dict, **kwargs):
+def run(
+    scenario_dir: Path,  # noqa: ARG001
+    cfg: dict,
+    **kwargs: object,
+) -> None:
     """Convert Cube TPP skims to OMX."""
     force = kwargs.get("force", False)
 
@@ -108,13 +114,13 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
     need_build = force or not skims_path.exists()
 
     if not need_build:
-        import openmatrix as omx
+        import openmatrix as omx  # noqa: PLC0415
 
         expected = {k for table_map in build_file_map(tpp_dir).values() for k in table_map.values()}
         try:
             with omx.open_file(str(skims_path), "r") as f:
                 actual = set(f.list_matrices())
-        except Exception:
+        except Exception:  # noqa: BLE001
             log.warning("Cannot read %s, rebuilding", skims_path)
             need_build = True
         else:

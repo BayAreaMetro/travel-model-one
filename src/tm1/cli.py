@@ -22,10 +22,12 @@ def _find_repo_root() -> Path:
     for parent in [p, *p.parents]:
         if (parent / "pyproject.toml").exists():
             return parent
-    raise FileNotFoundError("Could not find repo root (no pyproject.toml above cwd)")
+    msg = "Could not find repo root (no pyproject.toml above cwd)"
+    raise FileNotFoundError(msg)
 
 
-def cmd_run(args):
+def cmd_run(args: argparse.Namespace) -> None:
+    """Execute the 'run' subcommand."""
     repo_root = _find_repo_root()
     scenario_dir = repo_root / "scenarios" / args.scenario
     run_model(
@@ -38,7 +40,8 @@ def cmd_run(args):
     )
 
 
-def main():
+def main() -> None:
+    """Parse arguments and dispatch to subcommands."""
     setup_logging()
 
     parser = argparse.ArgumentParser(prog="tm1", description="Travel Model One CLI")

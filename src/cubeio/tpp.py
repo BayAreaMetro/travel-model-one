@@ -145,6 +145,7 @@ Implementation Notes
 
 import struct
 from pathlib import Path
+from typing import BinaryIO
 
 import numpy as np
 
@@ -249,7 +250,7 @@ def _decode_blocks(
             remaining -= n
             pos += 2 + count
 
-        elif allow_shorthand and count < 0x80:
+        elif allow_shorthand and count < 0x80:  # noqa: PLR2004
             n = min(count, remaining)
             out[filled : filled + n] = _fill[mode][:n]
             filled += n
@@ -424,7 +425,7 @@ def _assemble_sparse_row(
 # ---------------------------------------------------------------------------
 
 
-def _parse_header(fh) -> tuple[int, list[str], list[int]]:
+def _parse_header(fh: BinaryIO) -> tuple[int, list[str], list[int]]:  # noqa: C901, PLR0912
     """Parse TPP header records.
 
     The header is a sequence of length-prefixed ASCII records:
@@ -444,11 +445,13 @@ def _parse_header(fh) -> tuple[int, list[str], list[int]]:
 
     while True:
         hdr = fh.read(4)
-        if len(hdr) < 4:
-            raise ValueError("Unexpected end of file in header")
+        if len(hdr) < 4:  # noqa: PLR2004
+            msg = "Unexpected end of file in header"
+            raise ValueError(msg)
         rec_len = struct.unpack("<I", hdr)[0]
-        if rec_len < 4:
-            raise ValueError(f"Invalid header record length: {rec_len}")
+        if rec_len < 4:  # noqa: PLR2004
+            msg = f"Invalid header record length: {rec_len}"
+            raise ValueError(msg)
         payload = fh.read(rec_len - 4)
         text = payload.rstrip(b"\x00").decode("ascii", errors="replace")
 
@@ -471,9 +474,11 @@ def _parse_header(fh) -> tuple[int, list[str], list[int]]:
             break
 
     if zones == 0:
-        raise ValueError("Zones count not found in header")
+        msg = "Zones count not found in header"
+        raise ValueError(msg)
     if not table_names:
-        raise ValueError("No table names found in header")
+        msg = "No table names found in header"
+        raise ValueError(msg)
 
     return zones, table_names, mspecs
 
@@ -483,7 +488,7 @@ def _parse_header(fh) -> tuple[int, list[str], list[int]]:
 # ---------------------------------------------------------------------------
 
 
-def read_tpp(path: str | Path) -> dict:
+def read_tpp(path: str | Path) -> dict:  # noqa: C901, PLR0912, PLR0915
     """Read a Cube Voyager TPP matrix file.
 
     Parses the header to discover zone count and table names, then
@@ -507,7 +512,7 @@ def read_tpp(path: str | Path) -> dict:
     """
     path = Path(path)
 
-    with open(path, "rb") as fh:
+    with path.open("rb") as fh:
         zones, table_names, _mspecs = _parse_header(fh)
         n_tables = len(table_names)
 
@@ -532,7 +537,7 @@ def read_tpp(path: str | Path) -> dict:
                 pos += plen
                 continue
 
-            if pos + plen > buf_len or plen < 3:
+            if pos + plen > buf_len or plen < 3:  # noqa: PLR2004
                 pos += plen
                 continue
 
@@ -547,26 +552,26 @@ def read_tpp(path: str | Path) -> dict:
                 # All-zero row — already initialised to zero
                 pass
 
-            elif type_byte == 0x40:
+            elif type_byte == 0x40:  # noqa: PLR2004
                 # Sparse 1-byte: hi only, values are multiples of 256
                 body = block_data[3:]
                 hi_arr, _ = _decode_sparse(body, zones)
                 matrices[tbl_name][row_idx] = hi_arr.astype(np.float64) * 256.0
 
-            elif type_byte == 0x80:
-                # Sparse 1-byte: lo only, values 0–255
+            elif type_byte == 0x80:  # noqa: PLR2004
+                # Sparse 1-byte: lo only, values 0-255
                 body = block_data[3:]
                 lo_arr, _ = _decode_sparse(body, zones)
                 matrices[tbl_name][row_idx] = lo_arr.astype(np.float64)
 
-            elif type_byte == 0xC0:
+            elif type_byte == 0xC0:  # noqa: PLR2004
                 # Sparse 2-byte: lo + hi sections, integer values
                 body = block_data[3:]
                 lo_arr, lo_consumed = _decode_sparse(body, zones)
                 hi_arr, _ = _decode_sparse(body[lo_consumed:], zones)
                 matrices[tbl_name][row_idx] = _assemble_sparse_row(lo_arr, hi_arr)
 
-            elif type_byte == 0xC8:
+            elif type_byte == 0xC8:  # noqa: PLR2004
                 zone_field = struct.unpack_from("<H", block_data, 3)[0]
                 if zone_field & 0x8000:
                     # Sparse mode: lo + hi + prec sections
@@ -624,7 +629,7 @@ def read_tpp(path: str | Path) -> dict:
                         out=dest[:n_eff],
                     )
 
-            elif type_byte == 0xE8:
+            elif type_byte == 0xE8:  # noqa: PLR2004
                 zone_field = struct.unpack_from("<H", block_data, 3)[0]
                 if zone_field & 0x8000:
                     # Sparse mode: lo + mid + hi + prec sections
@@ -682,9 +687,8 @@ def read_tpp(path: str | Path) -> dict:
                     )
 
             else:
-                raise ValueError(
-                    f"Unknown block type 0x{type_byte:02X} at row={row}, table={tbl_name}"
-                )
+                msg = f"Unknown block type 0x{type_byte:02X} at row={row}, table={tbl_name}"
+                raise ValueError(msg)
 
     return {
         "zones": zones,

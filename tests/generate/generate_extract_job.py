@@ -1,5 +1,6 @@
-"""Generate a Cube .job that extracts sampled rows from full TPPs into small
-golden TPPs, then dumps them to CSV.
+"""Generate a Cube .job that extracts sampled rows from full TPPs.
+
+Extracts into small golden TPPs, then dumps them to CSV.
 
 Uses the SAME row-sampling logic so the golden CSVs and golden TPPs cover
 exactly the same cells.
@@ -33,7 +34,8 @@ OUTPUT_DIR = r"E:\Model3C-Share\Projects\2023_TM161_IPA_35_testrun\skims\golden_
 
 
 def seed_for_file(stem: str) -> int:
-    return int(hashlib.md5(stem.encode()).hexdigest()[:8], 16)
+    """Deterministic seed from filename for reproducible row sampling."""
+    return int(hashlib.md5(stem.encode()).hexdigest()[:8], 16)  # noqa: S324
 
 
 # Per-file extra rows that exercise specific block types / code paths.
@@ -48,7 +50,8 @@ EXTRA_ROWS: dict[str, list[int]] = {
 
 
 def sample_rows(stem: str) -> sorted:
-    rng = random.Random(seed_for_file(stem))
+    """Return sorted list of sampled row indices for a given file stem."""
+    rng = random.Random(seed_for_file(stem))  # noqa: S311
     extras = set(EXTRA_ROWS.get(stem, []))
     base = set(FIXED_ROWS) | extras
     candidates = [r for r in range(1, ZONES + 1) if r not in base]
@@ -139,10 +142,11 @@ FILES = [
 ]
 
 
-def _generate_matrix_block(stem, input_name, tables, n_tables):
+def _generate_matrix_block(
+    stem: str, input_name: str, tables: list[str], n_tables: int
+) -> str:
     """Generate one RUN PGM=MATRIX block."""
     rows = sample_rows(stem)
-    n = len(tables)
 
     # Build the IF condition for sampled rows
     row_checks = " || ".join(f"I == {r}" for r in rows)
@@ -167,8 +171,7 @@ def _generate_matrix_block(stem, input_name, tables, n_tables):
     lines.append(f"    IF ({row_checks})")
     lines.append("      ; keep data as-is")
     lines.append("    ELSE")
-    for i in range(1, n_tables + 1):
-        lines.append(f"      MW[{i}] = 0")
+    lines.extend(f"      MW[{i}] = 0" for i in range(1, n_tables + 1))
     lines.append("    ENDIF")
     lines.append("")
     lines.append("ENDRUN")
@@ -176,7 +179,7 @@ def _generate_matrix_block(stem, input_name, tables, n_tables):
     return "\n".join(lines)
 
 
-def _generate_csv_dump_block(stem, tables, n_tables):
+def _generate_csv_dump_block(stem: str, tables: list[str], n_tables: int) -> str:
     """Generate a RUN PGM=MATRIX block that dumps a golden TPP to CSV."""
     lines = []
     lines.append(f"; --- dump {stem}.tpp → {stem}.csv ---")
@@ -204,8 +207,7 @@ def _generate_csv_dump_block(stem, tables, n_tables):
 
     # Build PRINT LIST
     parts = ['        PRINT LIST=I(5), ",", J(5)']
-    for i in range(1, n_tables + 1):
-        parts.append(f'          ",", MW[{i}](15.6f)')
+    parts.extend(f'          ",", MW[{i}](15.6f)' for i in range(1, n_tables + 1))
     parts.append("          PRINTO=1")
     lines.append(",\n".join(parts))
 
@@ -217,7 +219,8 @@ def _generate_csv_dump_block(stem, tables, n_tables):
     return "\n".join(lines)
 
 
-def main():
+def main() -> None:
+    """Generate extract_golden_tpps.job for creating golden test data."""
     job_lines = []
     job_lines.append("; extract_golden_tpps.job")
     job_lines.append(";")

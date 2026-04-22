@@ -57,8 +57,8 @@ def tpp_to_omx(
         if tqdm is not None:
             items = tqdm(list(items), desc="TPP → OMX", unit="file")
 
-        for tpp_path, table_map in items:
-            tpp_path = Path(tpp_path)
+        for tpp_path_str, table_map in items:
+            tpp_path = Path(tpp_path_str)
             if not tpp_path.exists():
                 log.warning("%s not found, skipping", tpp_path)
                 continue

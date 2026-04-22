@@ -4,7 +4,9 @@ import re
 from pathlib import Path
 
 
-def find_latest_iter(directory, stem, suffix=".tpp"):
+def find_latest_iter(
+    directory: str | Path, stem: str, suffix: str = ".tpp"
+) -> Path | None:
     """Find the highest-numbered ``{stem}.avg.iter{N}{suffix}`` file.
 
     Falls back to ``{stem}{suffix}`` if no iteration files exist.

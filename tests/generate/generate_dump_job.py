@@ -1,4 +1,4 @@
-"""Generate a fully-expanded dump_skims_to_csv.job with no @token@ syntax.
+r"""Generate a fully-expanded dump_skims_to_csv.job with no @token@ syntax.
 
 The output .job file can be run directly in the Cube GUI (Application Manager)
 or with runtpp, with zero user input required.
@@ -7,7 +7,7 @@ Usage:
     python scripts/generate_dump_job.py <skims_dir>
 
 Example:
-    python scripts/generate_dump_job.py "E:\\Model3C-Share\\Projects\\2023_TM161_IPA_35_testrun\\skims"
+    python scripts/generate_dump_job.py "E:\Model3C-Share\Projects\2023_TM161_IPA_35_testrun\skims"
 
 Writes: scripts/dump_skims_to_csv.job  (overwrites)
 """
@@ -92,7 +92,7 @@ def _mw_lines(tables: list[str], indent: str = "    ") -> str:
     """Generate MW[n] = MI.1.name lines."""
     lines = []
     for i, name in enumerate(tables, 1):
-        pad = " " if i < 10 else ""
+        pad = " " if i < 10 else ""  # noqa: PLR2004
         lines.append(f"{indent}MW[{i}]{pad} = MI.1.{name}")
     return "\n".join(lines)
 
@@ -106,7 +106,7 @@ def _sparsity_check(n: int, indent: str = "      ") -> str:
     """Generate the IF (MW[1] != 0 || MW[2] != 0 || ...) condition."""
     parts = []
     for i in range(1, n + 1):
-        pad = " " if i < 10 else ""
+        pad = " " if i < 10 else ""  # noqa: PLR2004
         parts.append(f"MW[{i}]{pad} != 0")
     # Format: groups of 4 per line
     lines = []
@@ -121,8 +121,6 @@ def _print_line(n: int, indent: str = "        ") -> str:
     """Generate PRINT LIST=I(5), ..., MW[n](15.6f) lines."""
     parts = [f'{indent}PRINT LIST=I(5), ",", J(5), ","']
     for i in range(1, n + 1):
-        pad = " " if i < 10 else ""
-        comma = "," if i < n else ""
         trail = ', ","' if i < n else ""
         parts.append(f"{indent}  MW[{i}](15.6f){trail}")
     parts.append(f"{indent}  PRINTO=1")
@@ -209,6 +207,7 @@ ENDRUN
 
 
 def generate(skims_dir: str) -> str:
+    """Generate the full .job file content."""
     parts = []
 
     parts.append(f"""\
@@ -231,8 +230,7 @@ def generate(skims_dir: str) -> str:
 ; =========================================================================
 """)
 
-    for period in TIME_PERIODS:
-        parts.append(_hwy_block(skims_dir, period))
+    parts.extend(_hwy_block(skims_dir, period) for period in TIME_PERIODS)
 
     parts.append("""\
 ; =========================================================================
@@ -261,12 +259,12 @@ def generate(skims_dir: str) -> str:
     return "\n".join(parts)
 
 
-def main():
-    if len(sys.argv) < 2:
+def main() -> None:
+    """Generate dump_skims_to_csv.job from command-line arguments."""
+    if len(sys.argv) < 2:  # noqa: PLR2004
         print("Usage: python scripts/generate_dump_job.py <skims_dir>")
-        print(
-            'Example: python scripts/generate_dump_job.py "E:\\Model3C-Share\\Projects\\2023_TM161_IPA_35_testrun\\skims"'
-        )
+        example = r"E:\Model3C-Share\Projects\2023_TM161_IPA_35_testrun\skims"
+        print(f'Example: python scripts/generate_dump_job.py "{example}"')
         sys.exit(1)
 
     skims_dir = sys.argv[1].rstrip("\\")

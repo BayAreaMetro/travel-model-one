@@ -36,7 +36,7 @@ _SKIM_DB_PREFIXES = (
 _PERIODS = ("EA", "AM", "MD", "PM", "EV")
 
 
-def run(scenario_dir: Path, cfg: dict, **kwargs):
+def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: C901, PLR0912, PLR0915
     """Build CTRAMP layout and run R CoreSummaries."""
     # --- Config stuffs ---
     base_model_dir = kwargs.get("base_model_dir", scenario_dir.parent.parent)
@@ -152,7 +152,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
         log.warning("No renv library found at %s — using system R libraries", renv_lib)
 
     log.info("Running CoreSummaries.R ...")
-    proc = subprocess.Popen(
+    proc = subprocess.Popen(  # noqa: S603
         [str(rscript), "--vanilla", str(r_script)],
         env=r_env,
         stdout=subprocess.PIPE,
@@ -164,5 +164,6 @@ def run(scenario_dir: Path, cfg: dict, **kwargs):
         log.info("[R] %s", line.rstrip())
     proc.wait()
     if proc.returncode != 0:
-        raise RuntimeError(f"CoreSummaries.R failed with exit code {proc.returncode}")
+        msg = f"CoreSummaries.R failed with exit code {proc.returncode}"
+        raise RuntimeError(msg)
     log.info("CoreSummaries.R complete")

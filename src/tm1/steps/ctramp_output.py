@@ -53,7 +53,7 @@ MODE_TO_INT: dict[str, int] = {
 }
 
 
-def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> None:
+def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> None:  # noqa: PLR0915
     """Read ActivitySim outputs and write CTRAMP-format CSVs into ``work_dir/main/``.
 
     Parameters
@@ -136,7 +136,7 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
     # -----------------------------------------------------------------
     # Tour columns shared by indiv / joint
     # -----------------------------------------------------------------
-    _TOUR_COLS = [
+    tour_cols = [
         pl.col("household_id").alias("hh_id"),
         pl.col("person_id"),
         pl.col("tour_id"),
@@ -156,7 +156,7 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
     tour_per_num = per.select("person_id", "person_num", "ptype")
     indiv_tours_j = indiv_tours.join(tour_per_num, on="person_id", how="left")
     indiv_tour_data = indiv_tours_j.select(
-        *_TOUR_COLS,
+        *tour_cols,
         pl.col("person_num"),
         pl.col("ptype").alias("person_type"),
         pl.col("stop_frequency").alias("atWork_freq"),  # R drops this; must exist
@@ -249,7 +249,7 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
     # -----------------------------------------------------------------
     # Shared trip columns (individual)
     # -----------------------------------------------------------------
-    _TRIP_COLS = [
+    trip_cols = [
         pl.col("household_id").alias("hh_id"),
         pl.col("person_id"),
         pl.col("person_num"),
@@ -278,7 +278,7 @@ def export_ctramp_csvs(output_dir: Path, work_dir: Path, iter_label: str) -> Non
     # indivTripData
     # -----------------------------------------------------------------
     indiv_trips = trip.filter(pl.col("tour_category") != "joint")
-    indiv_trip_data = indiv_trips.select(*_TRIP_COLS)
+    indiv_trip_data = indiv_trips.select(*trip_cols)
     indiv_trip_data.write_csv(main / f"indivTripData_{iter_label}.csv")
     log.info("  Wrote indivTripData_%s.csv (%d rows)", iter_label, len(indiv_trip_data))
 

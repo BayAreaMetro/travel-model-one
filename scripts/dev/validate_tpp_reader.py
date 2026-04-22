@@ -1,4 +1,4 @@
-"""Exhaustive validation: read every TPP in a skims directory, compare to Cube CSV dump.
+r"""Exhaustive validation: read every TPP in a skims directory, compare to Cube CSV dump.
 
 For each TPP file with a matching CSV in csv_dump/, reads every cell via
 read_tpp() and compares against Cube's own CSV output. Reports mismatches.
@@ -25,8 +25,6 @@ def validate_one(tpp_path: Path, csv_path: Path) -> tuple[int, int, list[str]]:
     Returns (cells_checked, mismatches, error_samples).
     """
     result = read_tpp(tpp_path)
-    zones = result["zones"]
-    tables = result["tables"]
 
     # Read Cube CSV — format: I, J, table1, table2, ...
     # Cube pads values with spaces, so strip before casting.
@@ -62,17 +60,18 @@ def validate_one(tpp_path: Path, csv_path: Path) -> tuple[int, int, list[str]]:
 
         if n_bad > 0:
             idxs = np.nonzero(mismatch)[0][:5]
-            for idx in idxs:
-                errors.append(
-                    f"  {tbl_clean}[{i_arr[idx]},{j_arr[idx]}]: "
-                    f"tpp={actual[idx]:.6f} csv={expected[idx]:.6f}"
-                )
+            errors.extend(
+                f"  {tbl_clean}[{i_arr[idx]},{j_arr[idx]}]: "
+                f"tpp={actual[idx]:.6f} csv={expected[idx]:.6f}"
+                for idx in idxs
+            )
 
     return cells, bad, errors
 
 
-def main():
-    if len(sys.argv) < 2:
+def main() -> None:
+    """Validate TPP reader against Cube CSV dumps."""
+    if len(sys.argv) < 2:  # noqa: PLR2004
         print(f"Usage: {sys.argv[0]} <skims_dir>")
         sys.exit(1)
 
@@ -103,7 +102,7 @@ def main():
         t1 = time.perf_counter()
         try:
             cells, bad, errors = validate_one(tpp_path, csv_path)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"  CRASH  {stem}: {e}")
             failures.append(stem)
             continue

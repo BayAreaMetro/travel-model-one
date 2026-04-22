@@ -8,6 +8,7 @@ Assignment is not yet implemented.
 import logging
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
@@ -16,7 +17,7 @@ import yaml
 log = logging.getLogger(__name__)
 
 
-def _check_checkpoints(checkpoints_file: Path, seen: set[str]):
+def _check_checkpoints(checkpoints_file: Path, seen: set[str]) -> list[str]:
     """Return list of newly completed checkpoints."""
     if not checkpoints_file.exists():
         return []
@@ -25,12 +26,15 @@ def _check_checkpoints(checkpoints_file: Path, seen: set[str]):
         names = set(df["checkpoint_name"]) - {"init"}
         new = sorted(names - seen)
         seen.update(new)
-        return new
-    except Exception:
+    except Exception:  # noqa: BLE001
         return []
+    else:
+        return new
 
 
-def _run_activitysim(cfg: dict, base_model_dir: Path, on_checkpoint=None):
+def _run_activitysim(  # noqa: C901
+    cfg: dict, base_model_dir: Path, on_checkpoint: Callable | None = None
+) -> None:
     """Launch ActivitySim subprocess and stream output."""
     sim_cfg = cfg["steps"]["simulate"]
     asim_cfg = sim_cfg.get("activitysim", sim_cfg)  # nested or flat
@@ -63,7 +67,7 @@ def _run_activitysim(cfg: dict, base_model_dir: Path, on_checkpoint=None):
     for c in reversed(config_dirs):
         sf = c / "settings.yaml"
         if sf.exists():
-            with open(sf) as f:
+            with sf.open() as f:
                 asim_settings.update(yaml.safe_load(f) or {})
 
     sample = asim_settings.get("households_sample_size", 0)
@@ -75,7 +79,7 @@ def _run_activitysim(cfg: dict, base_model_dir: Path, on_checkpoint=None):
     checkpoints_file = output_dir / "pipeline.parquetpipeline" / "checkpoints.parquet"
     seen: set[str] = set()
 
-    proc = subprocess.Popen(
+    proc = subprocess.Popen(  # noqa: S603
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -93,15 +97,19 @@ def _run_activitysim(cfg: dict, base_model_dir: Path, on_checkpoint=None):
             on_checkpoint(cp)
 
     if rc != 0:
-        raise RuntimeError(f"ActivitySim exited with code {rc}")
+        msg = f"ActivitySim exited with code {rc}"
+        raise RuntimeError(msg)
 
 
-def _run_assignment(cfg: dict, iteration: int):
+def _run_assignment(
+    cfg: dict,  # noqa: ARG001
+    iteration: int,
+) -> None:
     """Run highway/transit assignment (not yet implemented)."""
     log.warning("Assignment not yet implemented — skipping iteration %d", iteration)
 
 
-def run(scenario_dir: Path, cfg: dict, **kwargs):
+def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:
     """Run the simulate loop.
 
     Parameters

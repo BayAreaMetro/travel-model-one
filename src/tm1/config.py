@@ -11,11 +11,13 @@ def load_config(scenario_dir: Path) -> dict:
     cfg_path = Path(scenario_dir) / "scenario_config.yaml"
     if not cfg_path.exists():
         sys.exit(f"Config not found: {cfg_path}")
-    with open(cfg_path) as f:
+    with cfg_path.open() as f:
         return yaml.safe_load(f)
 
 
-def resolve_templates(obj, variables: dict[str, str] | None = None):
+def resolve_templates(
+    obj: str | dict | list | object, variables: dict[str, str] | None = None
+) -> str | dict | list | object:
     """Expand ``{key}`` placeholders recursively.
 
     If *variables* is None, top-level string values in *obj* are used

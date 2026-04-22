@@ -1,8 +1,8 @@
-"""Slack webhook notifications for TM1 model runs.
+r"""Slack webhook notifications for TM1 model runs.
 
 Configuration (any one of these, checked in order):
   1. ``SLACK_WEBHOOK_URL`` environment variable
-  2. MTC default file: ``M:\\Software\\Slack\\TravelModel_SlackWebhook.txt``
+  2. MTC default file: ``M:\Software\Slack\TravelModel_SlackWebhook.txt``
 
 If none are available, messages are logged but not sent.
 """
@@ -23,7 +23,7 @@ _MTC_WEBHOOK_FILE = Path(
 level = "verbose"  # "false", "minimal", or "verbose"
 
 
-def _get_webhook_url():
+def _get_webhook_url() -> str | None:
     """Resolve the Slack webhook URL from env var or MTC default file."""
     url = os.environ.get("SLACK_WEBHOOK_URL")
     if url:
@@ -38,7 +38,7 @@ def _get_webhook_url():
     return None
 
 
-def _get_prefix():
+def _get_prefix() -> str:
     """Build a message prefix from INSTANCE env var or hostname."""
     instance = os.environ.get("INSTANCE")
     if instance:
@@ -46,7 +46,7 @@ def _get_prefix():
     return f"*{socket.gethostname()}*"
 
 
-def notify(message, verbose_only=False):
+def notify(message: str, *, verbose_only: bool = False) -> None:
     """Post a message to Slack. Falls back to logging if no webhook.
 
     Parameters

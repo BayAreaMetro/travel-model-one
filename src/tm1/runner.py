@@ -34,7 +34,7 @@ def run_model(
     scenario_dir: Path,
     steps: list[str] | None = None,
     slack_level: str | bool | None = "minimal",
-    **kwargs,
+    **kwargs: object,
 ) -> None:
     """Run a sequence of pipeline steps for a scenario.
 
@@ -61,7 +61,7 @@ def run_model(
 
     # Pass full config to steps so they can read both their own
     # section (cfg["steps"]["<name>"]) and top-level keys like reference_run.
-    def on_checkpoint(name: str):
+    def on_checkpoint(name: str) -> None:
         notify(f"Completed checkpoint: {name}", verbose_only=True)
 
     notify(f"Starting {label}: {', '.join(steps)}")
@@ -69,7 +69,8 @@ def run_model(
     for step_name in steps:
         mod = STEPS.get(step_name)
         if mod is None:
-            raise ValueError(f"Unknown step: {step_name!r}")
+            msg = f"Unknown step: {step_name!r}"
+            raise ValueError(msg)
 
         notify(f"[{label}] {step_name}")
         log.info("--- Step: %s ---", step_name)

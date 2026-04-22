@@ -46,7 +46,7 @@ def _load_sparse_csv_gt(csv_path: Path) -> pl.DataFrame:
     return df.with_columns(pl.col(c).str.strip_chars().cast(pl.Float64) for c in df.columns)
 
 
-def _check_sparse_cells(result: dict, gt: pl.DataFrame, tol: float = 5e-4):
+def _check_sparse_cells(result: dict, gt: pl.DataFrame, tol: float = 5e-4) -> None:
     """Assert cell values match sparse ground truth (I,J format).
 
     Vectorised per-table: extracts I/J arrays once, then slices our
@@ -69,11 +69,11 @@ def _check_sparse_cells(result: dict, gt: pl.DataFrame, tol: float = 5e-4):
         if bad.any():
             idxs = np.nonzero(bad)[0]
             for idx in idxs[:5]:
-                errors.append(
+                errors.append(  # noqa: PERF401
                     f"{tbl}[{i_arr[idx] + 1},{j_arr[idx] + 1}]: "
                     f"got {actual[idx]:.6f}, expected {expected[idx]:.6f}"
                 )
-            if len(errors) >= 20:
+            if len(errors) >= 20:  # noqa: PLR2004
                 break
     assert not errors, f"{len(errors)} cell mismatches:\n" + "\n".join(errors[:20])
 
@@ -102,14 +102,17 @@ _golden_cases = _discover_golden_cases()
 
 
 @pytest.mark.parametrize(
-    "test_id, golden_csv, tpp_path",
+    ("test_id", "golden_csv", "tpp_path"),
     _golden_cases,
     ids=[c[0] for c in _golden_cases],
 )
 class TestGolden:
     """Cell-level validation against Cube's own CSV dump of golden TPPs."""
 
-    def test_cell_values(self, golden_csv, test_id, tpp_path):
+    def test_cell_values(
+        self, golden_csv: Path, test_id: str, tpp_path: Path  # noqa: ARG002
+    ) -> None:
+        """Compare every non-zero cell in golden TPP against Cube CSV output."""
         result = read_tpp(tpp_path)
         gt = _load_sparse_csv_gt(golden_csv)
         assert len(gt) > 0, f"Golden CSV {golden_csv} has no rows"
