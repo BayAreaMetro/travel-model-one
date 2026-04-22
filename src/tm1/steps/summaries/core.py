@@ -23,7 +23,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from tm1.steps.ctramp_output import export_ctramp_csvs
+from tm1.steps.summaries.ctramp_output import export_ctramp_csvs
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: C901,
     """Build CTRAMP layout and run R CoreSummaries."""
     # --- Config stuffs ---
     base_model_dir = kwargs.get("base_model_dir", scenario_dir.parent.parent)
-    step_cfg = cfg.get("steps", {}).get("core_summaries", {}) or {}
+    step_cfg = cfg.get("steps", {}).get("summaries", {}).get("core", {}) or {}
     sim_cfg = cfg.get("steps", {}).get("simulate", {}) or {}
     asim_cfg = sim_cfg.get("activitysim", sim_cfg)  # nested or flat
 

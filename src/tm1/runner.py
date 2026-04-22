@@ -6,12 +6,12 @@ Each step is a module with a ``run(scenario_dir, cfg, **kwargs)`` function.
 import logging
 from pathlib import Path
 
-import tm1.steps.calibration_summaries as calibration_summaries_step
 import tm1.steps.convert_skims as convert_skims_step
-import tm1.steps.core_summaries as core_summaries_step
 import tm1.steps.populationsim as populationsim_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate as simulate_step
+import tm1.steps.summaries.calibration as calibration_step
+import tm1.steps.summaries.core as core_step
 from tm1 import slack
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
@@ -23,8 +23,10 @@ STEPS = {
     "convert_skims": convert_skims_step,
     "populationsim": populationsim_step,
     "simulate": simulate_step,
-    "core_summaries": core_summaries_step,
-    "calibration_summaries": calibration_summaries_step,
+    "summaries": {
+        "core": core_step,
+        "calibration": calibration_step,
+    },
 }
 
 DEFAULT_STEPS = list(STEPS.keys())
@@ -66,24 +68,34 @@ def run_model(
 
     notify(f"Starting {label}: {', '.join(steps)}")
 
+    def _run_step(name: str, mod, cfg: dict, **kw) -> None:
+        notify(f"[{label}] {name}")
+        log.info("--- Step: %s ---", name)
+        try:
+            mod.run(scenario_dir, cfg, on_checkpoint=on_checkpoint, **kw)
+        except KeyboardInterrupt:
+            notify(f":no_entry_sign: {label} cancelled during {name}")
+            raise
+        except Exception as e:
+            notify(f":exclamation: {label} failed at {name}: {e}")
+            raise
+        log.info("--- Done: %s ---", name)
+
     for step_name in steps:
-        mod = STEPS.get(step_name)
-        if mod is None:
+        entry = STEPS.get(step_name)
+        if entry is None:
             msg = f"Unknown step: {step_name!r}"
             raise ValueError(msg)
 
-        notify(f"[{label}] {step_name}")
-        log.info("--- Step: %s ---", step_name)
-
-        try:
-            mod.run(scenario_dir, cfg, on_checkpoint=on_checkpoint, **kwargs)
-        except KeyboardInterrupt:
-            notify(f":no_entry_sign: {label} cancelled during {step_name}")
-            raise
-        except Exception as e:
-            notify(f":exclamation: {label} failed at {step_name}: {e}")
-            raise
-
-        log.info("--- Done: %s ---", step_name)
+        if isinstance(entry, dict):
+            # Compound step — run sub-steps listed in config
+            sub_cfg = steps_cfg.get(step_name, {}) or {}
+            for sub_name, sub_mod in entry.items():
+                if sub_name in sub_cfg:
+                    _run_step(f"{step_name}.{sub_name}", sub_mod, cfg, **kwargs)
+                else:
+                    log.info("Skipping %s.%s (not in config)", step_name, sub_name)
+        else:
+            _run_step(step_name, entry, cfg, **kwargs)
 
     notify(f"Finished {label} :white_check_mark:")
