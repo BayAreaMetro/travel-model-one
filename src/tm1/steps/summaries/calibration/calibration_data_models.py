@@ -1,5 +1,4 @@
-"""
-Data models for calibration processing using Pydantic for validation.
+"""Data models for calibration processing using Pydantic for validation.
 
 Field Name Standardization Strategy:
 - Model attributes use snake_case (Python convention): home_taz, work_location
@@ -8,52 +7,60 @@ Field Name Standardization Strategy:
 - Use model_dump(by_alias=True) to export with original names
 
 """
-from typing import Optional, Literal
+
+from enum import Enum, StrEnum
+from typing import Literal
+
 import pandas as pd
-from enum import StrEnum, Enum
-from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic_core import core_schema
+
 
 ################################################################
 ###  Class for Labeled Enums
 ################################################################
 class LabeledEnum(Enum):
-    """Base enum class that auto-validates by id or label"""
+    """Base enum class that auto-validates by id or label."""
+
     @property
     def id(self):
         return self.value[0]
-    
+
     @property
     def label(self):
         return self.value[1]
-    
+
     @classmethod
     def from_value(cls, v):
         if isinstance(v, cls):
             return v
         for member in cls:
-            if v == member.id or v == member.label:
+            if v in (member.id, member.label):
                 return member
-        raise ValueError(f"Invalid county: {v}")
+        msg = f"Invalid county: {v}"
+        raise ValueError(msg)
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source, handler):
         return core_schema.no_info_plain_validator_function(cls.from_value)
 
+
 ################################################################
 ### Codebook Definitions for CTRAMP
 ################################################################
 
+
 class CTRAMPCounty(LabeledEnum):
-    SAN_FRANCISCO = (1, 'San Francisco')
-    SAN_MATEO = (2, 'San Mateo')
-    SANTA_CLARA = (3, 'Santa Clara')
-    ALAMEDA = (4, 'Alameda')
-    CONTRA_COSTA = (5, 'Contra Costa')
-    SOLANO = (6, 'Solano')
-    NAPA = (7, 'Napa')
-    SONOMA = (8, 'Sonoma')
-    MARIN = (9, 'Marin')
+    SAN_FRANCISCO = (1, "San Francisco")
+    SAN_MATEO = (2, "San Mateo")
+    SANTA_CLARA = (3, "Santa Clara")
+    ALAMEDA = (4, "Alameda")
+    CONTRA_COSTA = (5, "Contra Costa")
+    SOLANO = (6, "Solano")
+    NAPA = (7, "Napa")
+    SONOMA = (8, "Sonoma")
+    MARIN = (9, "Marin")
+
 
 class CTRAMPPersonType(LabeledEnum):
     FULL_TIME_WORKER = (1, "Full-time worker")
@@ -65,21 +72,25 @@ class CTRAMPPersonType(LabeledEnum):
     CHILD_DRIVING_AGE = (7, "Child of driving age")
     CHILD_UNDER_5 = (8, "Child too young for school")
 
+
 class CTRAMPActivityPattern(LabeledEnum):
     """Enumeration for activity pattern."""
+
     MANDATORY = "M", "Mandatory"
     NON_MANDATORY = "N", "Non-mandatory"
     HOME = "H", "Home"
 
 
 class CTRAMPSimplePurpose(LabeledEnum):
-    """Enumeration for simple tour purpose"""
-    WORK = 'work'
-    UNIVERSITY = 'university'
-    SCHOOL = 'school'
-    ATWORK = 'atwork'
-    IND_DISC = 'ind_disc'
-    IND_MAINT = 'ind_maint'
+    """Enumeration for simple tour purpose."""
+
+    WORK = "work"
+    UNIVERSITY = "university"
+    SCHOOL = "school"
+    ATWORK = "atwork"
+    IND_DISC = "ind_disc"
+    IND_MAINT = "ind_maint"
+
 
 class CTRAMPPurpose(LabeledEnum):
     """Enumeration for tour purpose."""
@@ -126,10 +137,10 @@ class CTRAMPPurpose(LabeledEnum):
             self.WORK_VERY_HIGH: CTRAMPSimplePurpose.WORK,
         }
         return mapping.get(self)
-       
+
 
 class CTRAMPModeType(LabeledEnum):
-    """Enumeration for mode choice"""
+    """Enumeration for mode choice."""
 
     DA = 1, "Drive alone"
     DA_TOLL = 2, "Drive alone - toll"
@@ -153,30 +164,35 @@ class CTRAMPModeType(LabeledEnum):
     TNC = 20, "TNC - single party"
     TNC2 = 21, "TNC - shared"
 
+
 class CTRAMPTransitMode(StrEnum):
-   LOCAL = 'Local'
-   EXPRESS = 'Express'
-   HEAVY_RAIL = 'HeavyRail'
-   COMM_RAIL = 'CommRail'
-   WLK_LRT = 'Light Rail - Walk'
-   DRV_LRT = 'Light Rail - Drive'
-   WLK_FERRY = 'Ferry - Walk'
-   DRV_FERRY = 'Ferry - Drive'
+    LOCAL = "Local"
+    EXPRESS = "Express"
+    HEAVY_RAIL = "HeavyRail"
+    COMM_RAIL = "CommRail"
+    WLK_LRT = "Light Rail - Walk"
+    DRV_LRT = "Light Rail - Drive"
+    WLK_FERRY = "Ferry - Walk"
+    DRV_FERRY = "Ferry - Drive"
+
 
 class IndivJoint(StrEnum):
-    INDIV= 'indiv'
-    JOINT = 'joint'
+    INDIV = "indiv"
+    JOINT = "joint"
+
 
 ################################################################
 ### Data Model for Output Results
 ################################################################
 
+
 # Usual Work School Location
 class CountyTripSummary(BaseModel):
     """Model for county-to-county summary results."""
-    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
 
-    home_county_name: CTRAMPCounty = Field(alias = 'HomeCounty_name')
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+    home_county_name: CTRAMPCounty = Field(alias="HomeCounty_name")
     San_Francisco: float = Field(alias="San Francisco", ge=0)
     San_Mateo: float = Field(alias="San Mateo", ge=0)
     Santa_Clara: float = Field(alias="Santa Clara", ge=0)
@@ -186,12 +202,14 @@ class CountyTripSummary(BaseModel):
     Napa: float = Field(ge=0)
     Sonoma: float = Field(ge=0)
     Marin: float = Field(ge=0)
-    
+
+
 class TripLengthFrequency(BaseModel):
     """Model for trip length frequency distribution."""
-    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
 
-    distbin: int = Field(ge=1, description = "Distance bin")
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+    distbin: int = Field(ge=1, description="Distance bin")
     # County columns
     San_Francisco: float = Field(alias="San Francisco", ge=0)
     San_Mateo: float = Field(alias="San Mateo", ge=0)
@@ -206,91 +224,106 @@ class TripLengthFrequency(BaseModel):
     # Total column - REQUIRED
     Total: float = Field(ge=0, description="Total across all counties")
 
+
 class AverageTripLength(BaseModel):
     """Model for average trip length by county and type."""
-    county: CTRAMPCounty | Literal['Total']
+
+    county: CTRAMPCounty | Literal["Total"]
     work: float
     univ: float
     school: float
 
-# Auto Ownership 
+
+# Auto Ownership
 class AutoOwnershipModel(BaseModel):
-    ZER0_VEHICLE: float = Field(ge =0, alias = "0") | Literal['NA']
-    ONE_VEHICLE: float = Field(ge =0, alias = "1") | Literal['NA']
-    TWO_VEHICLE: float = Field(ge =0, alias = "2") | Literal['NA']
-    THREE_VEHICLE: float = Field(ge =0, alias = "3") | Literal['NA']
-    FOUR_PLUS_VEHICLE: float = Field(ge =0, alias = "4") | Literal['NA']
+    ZER0_VEHICLE: float = Field(ge=0, alias="0") | Literal["NA"]
+    ONE_VEHICLE: float = Field(ge=0, alias="1") | Literal["NA"]
+    TWO_VEHICLE: float = Field(ge=0, alias="2") | Literal["NA"]
+    THREE_VEHICLE: float = Field(ge=0, alias="3") | Literal["NA"]
+    FOUR_PLUS_VEHICLE: float = Field(ge=0, alias="4") | Literal["NA"]
+
 
 class AutoOwnershipCountySummary(AutoOwnershipModel):
-    """Model for auto ownership county summmary"""
-    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
-    COUNTY:CTRAMPCounty
+    """Model for auto ownership county summmary."""
+
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+    COUNTY: CTRAMPCounty
     county_name: CTRAMPCounty
 
+
 class AutoOwnershipTAZSummary(AutoOwnershipModel):
-    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
-    TAZ: int = Field(ge = 1, alias = 'taz')
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+    TAZ: int = Field(ge=1, alias="taz")
     source: str
 
+
 class AutoOwnershipLongSummary(BaseModel):
-    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
-    TAZ: int = Field(ge = 1, alias = 'taz')
-    num_vehicles: float = Field(ge = 0)
-    num_hh: float = Field(ge = 0, description="Number of households")
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+    TAZ: int = Field(ge=1, alias="taz")
+    num_vehicles: float = Field(ge=0)
+    num_hh: float = Field(ge=0, description="Number of households")
     source: str
+
 
 # CDAP
 class CDAPSummary(BaseModel):
-    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
     person_type: CTRAMPPersonType
-    home: float = Field(ge=0, alias = 'H') | Literal['NA']
-    mandatory: float = Field(ge=0, alias = 'M') | Literal['NA']
-    non_mandatory: float = Field(ge=0, alias = 'N') | Literal['NA']
+    home: float = Field(ge=0, alias="H") | Literal["NA"]
+    mandatory: float = Field(ge=0, alias="M") | Literal["NA"]
+    non_mandatory: float = Field(ge=0, alias="N") | Literal["NA"]
+
 
 class CDAPSummaryBATS(BaseModel):
-    model_config = ConfigDict(validate_by_name = True, validate_by_alias= True)
-    person_type: CTRAMPPersonType = Field(alias = 'PersonType')
-    activity_pattern: CTRAMPActivityPattern = Field(alias = 'DAP')
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+    person_type: CTRAMPPersonType = Field(alias="PersonType")
+    activity_pattern: CTRAMPActivityPattern = Field(alias="DAP")
     num_pers: float
 
 
-# Non-Work Choice Destination 
+# Non-Work Choice Destination
 class NonMandAvgTripLength(BaseModel):
-    trip_purpose: CTRAMPPurpose = Field(alias='trip_type')
-    avg_trip_length: float = Field(ge=0, alias = 'mean_trip_length')
+    trip_purpose: CTRAMPPurpose = Field(alias="trip_type")
+    avg_trip_length: float = Field(ge=0, alias="mean_trip_length")
+
 
 class NonMandTripLengthFrequency(BaseModel):
-    distbin: int = Field(ge = 1, description = 'Distance bin')
-    escort: float = Field(ge=0, alias=('Escort'))
-    shop: float = Field(ge=0, alias=('Shop'))
-    maintenance: float = Field(ge=0, alias=('Maintenance'))
-    eat_out: float = Field(ge=0, alias=('eatout'))
-    visit: float = Field(ge = 0, alias = ('Visit'))
+    distbin: int = Field(ge=1, description="Distance bin")
+    escort: float = Field(ge=0, alias=("Escort"))
+    shop: float = Field(ge=0, alias=("Shop"))
+    maintenance: float = Field(ge=0, alias=("Maintenance"))
+    eat_out: float = Field(ge=0, alias=("eatout"))
+    visit: float = Field(ge=0, alias=("Visit"))
     discretionary: float = Field(ge=0)
-    at_work: float = Field(ge=0, alias=('atwork'))
+    at_work: float = Field(ge=0, alias=("atwork"))
+
 
 # Tour Mode Choice
 class TourModeChoiceModel(BaseModel):
     indiv_joint: IndivJoint
     tour_purpose: CTRAMPPurpose
-    zero_auto: float = Field(alias = ('Autos=0'))
-    autos_less_than_workers: float = Field(alias = ('Autos<Workers'))
-    autos_greater_than_workers: float = Field(alias = ('Autos>=Workers'))
+    zero_auto: float = Field(alias=("Autos=0"))
+    autos_less_than_workers: float = Field(alias=("Autos<Workers"))
+    autos_greater_than_workers: float = Field(alias=("Autos>=Workers"))
+
 
 class TourModeSummary(TourModeChoiceModel):
     tour_mode: CTRAMPModeType
+
 
 # TODO: Create Transit Mode Class
 class TourModeTransitSummary(TourModeChoiceModel):
     tour_mode: CTRAMPTransitMode
 
+
 # Trip Mode Choice
 class TripModeSummary(BaseModel):
     indiv_joint: IndivJoint
-    tour_purpose: CTRAMPPurpose	
+    tour_purpose: CTRAMPPurpose
     tour_mode: CTRAMPModeType
     trip_mode: CTRAMPModeType
     num_trips: float
+
 
 class TripModeTrnSummary(BaseModel):
     key: str
@@ -305,12 +338,8 @@ class TripModeTrnSummary(BaseModel):
 ################################################################
 # # Helper functions for DataFrame validation
 ################################################################
-def validate_dataframe(
-        df: pd.DataFrame, 
-        model_class,
-        expected_rows: int | None = None) -> None:
-    """
-    Validate DataFrame rows against Pydantic model.
+def validate_dataframe(df: pd.DataFrame, model_class, expected_rows: int | None = None) -> None:
+    """Validate DataFrame rows against Pydantic model.
 
     Args:
         df: DataFrame to validate the Pydantic model
@@ -322,20 +351,14 @@ def validate_dataframe(
         ValidationError: If any row fails validation
 
     """
-    errors = []
-        
     total_rows = len(df)
 
     # Check row count first if expected_rows is not none
-    if expected_rows is not None:
-        if total_rows != expected_rows:
-            raise ValueError(
-                f"{model_class.__name__} has {total_rows}, expected {expected_rows}"
-            )
-        else:
-            print(f"✓ Row count validated for {model_class.__name__}")
-    # Convert entire DataFrame to list of dicts once 
-    rows = df.to_dict(orient = 'records')
+    if expected_rows is not None and total_rows != expected_rows:
+        msg = f"{model_class.__name__} has {total_rows}, expected {expected_rows}"
+        raise ValueError(msg)
+    # Convert entire DataFrame to list of dicts once
+    rows = df.to_dict(orient="records")
 
     # Batch validate with progress reporting
     batch_size = 100_000
@@ -364,11 +387,12 @@ def validate_dataframe(
 
     _report_errors(error_groups)
 
+
 def _report_errors(error_groups: dict[str, list[int]]) -> None:
-    """Report validation errors for a DataFrame"""
+    """Report validation errors for a DataFrame."""
     if not error_groups:
         return
-    
+
     total_error_count = sum(len(rows) for rows in error_groups.values())
 
     # Format error summary
@@ -397,8 +421,4 @@ def _report_errors(error_groups: dict[str, list[int]]) -> None:
         f"{error_summary}"
     )
 
-    raise ValueError(
-        summary_msg
-    )
-
-
+    raise ValueError(summary_msg)
