@@ -1,4 +1,4 @@
-"""Submodel 01: Usual work and school location calibration."""
+"""Usual work and school location calibration summary."""
 
 import argparse
 import sys
@@ -139,115 +139,7 @@ class WorkSchoolLocationCalibration(CalibrationBase):
 
         # Process trip length distributions and averages
         self.logger.info("Processing trip length distributions...")
-        trip_types = ["work", "univ", "school"]
-        trip_tlfd_results = {}
-        avg_trip_lengths = []
-
-        for trip_type in trip_types:
-            # Filter data based on trip type and use attached distances
-            if trip_type == "work":
-                filter_cols = ["HomeCounty_name", "EmploymentCategory", "WorkDist"]
-                if self.bats_data:
-                    filter_cols.append("person_weight")
-                trip_dists = wsloc_results[wsloc_results["WorkLocation"] > 0][filter_cols].copy()
-                trip_dists = trip_dists.rename(columns={"WorkDist": "DIST"})
-            elif trip_type == "univ":
-                filter_cols = ["HomeCounty_name", "StudentCategory", "SchoolDist"]
-                if self.bats_data:
-                    filter_cols.append("person_weight")
-                trip_dists = wsloc_results[
-                    (wsloc_results["SchoolLocation"] > 0)
-                    & (wsloc_results["StudentCategory"] == "College or higher")
-                ][filter_cols].copy()
-                trip_dists = trip_dists.rename(columns={"SchoolDist": "DIST"})
-            elif trip_type == "school":
-                filter_cols = ["HomeCounty_name", "StudentCategory", "SchoolDist"]
-                if self.bats_data:
-                    filter_cols.append("person_weight")
-                trip_dists = wsloc_results[
-                    (wsloc_results["SchoolLocation"] > 0)
-                    & (wsloc_results["StudentCategory"] == "Grade or high school")
-                ][filter_cols].copy()
-                trip_dists = trip_dists.rename(columns={"SchoolDist": "DIST"})
-
-            # Calculate trip length frequency distribution
-            if self.bats_data:
-                trip_tlfd = pd.DataFrame({"distbin": range(1, 52)})
-            else:
-                trip_tlfd = pd.DataFrame({"distbin": range(1, 151)})
-
-            # Process by county
-            for county in self.county_lookup.values():
-                county_trip_dists = trip_dists[trip_dists["HomeCounty_name"] == county]
-
-                if len(county_trip_dists) > 0:
-                    if self.bats_data:
-                        hist_df = create_histogram_tlfd(
-                            county_trip_dists["DIST"],
-                            bins=range(52),
-                            weights=county_trip_dists["person_weight"],
-                        )
-                        # Weighted average
-                        weighted_mean = np.average(
-                            county_trip_dists["DIST"], weights=county_trip_dists["person_weight"]
-                        )
-                    else:
-                        hist_df = create_histogram_tlfd(
-                            county_trip_dists["DIST"], sampleshare=self.sampleshare
-                        )
-                        weighted_mean = county_trip_dists["DIST"].mean()
-
-                    # Remove county prefix for column name
-                    col_name = county
-                    hist_df = hist_df.rename(columns={"count": col_name})
-                    trip_tlfd = trip_tlfd.merge(hist_df, on="distbin", how="left")
-
-                    # Add to average trip lengths
-                    avg_trip_lengths.append(
-                        {
-                            "county": col_name,
-                            "trip_type": trip_type,
-                            "mean_trip_length": weighted_mean,
-                        }
-                    )
-
-            # Total across all counties
-            if len(trip_dists) > 0:
-                if self.bats_data:
-                    hist_df = create_histogram_tlfd(
-                        trip_dists["DIST"], bins=range(52), weights=trip_dists["person_weight"]
-                    )
-                    # Weighted average
-                    total_weighted_mean = np.average(
-                        trip_dists["DIST"], weights=trip_dists["person_weight"]
-                    )
-                else:
-                    hist_df = create_histogram_tlfd(
-                        trip_dists["DIST"], sampleshare=self.sampleshare
-                    )
-                    total_weighted_mean = trip_dists["DIST"].mean()
-
-                hist_df = hist_df.rename(columns={"count": "Total"})
-                trip_tlfd = trip_tlfd.merge(hist_df, on="distbin", how="left")
-
-                avg_trip_lengths.append(
-                    {
-                        "county": "Total",
-                        "trip_type": trip_type,
-                        "mean_trip_length": total_weighted_mean,
-                    }
-                )
-
-            # Reorder columns and fill NaN
-            county_cols = sorted(
-                [col for col in trip_tlfd.columns if col not in ["distbin", "Total"]]
-            )
-            col_order = (
-                ["distbin"] + county_cols + (["Total"] if "Total" in trip_tlfd.columns else [])
-            )
-            trip_tlfd = trip_tlfd[col_order].fillna(0)
-
-            trip_tlfd_results[trip_type] = trip_tlfd
+        trip_tlfd_results, avg_trip_lengths = self._build_trip_tlfds(wsloc_results)
 
         # Process average trip lengths
         avg_trip_lengths_df = pd.DataFrame(avg_trip_lengths)
@@ -269,6 +161,86 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             "trip_tlfd_school": trip_tlfd_results.get("school"),
             "avg_trip_lengths": avg_triplen_spread,
         }
+
+    # ------------------------------------------------------------------
+    # Helpers for process_data
+    # ------------------------------------------------------------------
+
+    def _filter_trip_dists(self, wsloc_results: pd.DataFrame, trip_type: str) -> pd.DataFrame:
+        """Filter wsloc results to trip distances for a single trip type."""
+        if trip_type == "work":
+            filter_cols = ["HomeCounty_name", "EmploymentCategory", "WorkDist"]
+            if self.bats_data:
+                filter_cols.append("person_weight")
+            out = wsloc_results[wsloc_results["WorkLocation"] > 0][filter_cols].copy()
+            return out.rename(columns={"WorkDist": "DIST"})
+
+        # univ and school share the same base columns
+        filter_cols = ["HomeCounty_name", "StudentCategory", "SchoolDist"]
+        if self.bats_data:
+            filter_cols.append("person_weight")
+
+        category = "College or higher" if trip_type == "univ" else "Grade or high school"
+        out = wsloc_results[
+            (wsloc_results["SchoolLocation"] > 0) & (wsloc_results["StudentCategory"] == category)
+        ][filter_cols].copy()
+        return out.rename(columns={"SchoolDist": "DIST"})
+
+    def _compute_hist_and_mean(self, dists: pd.DataFrame) -> tuple[pd.DataFrame, float]:
+        """Return (histogram_df, weighted_mean) for a set of trip distances."""
+        if self.bats_data:
+            hist_df = create_histogram_tlfd(
+                dists["DIST"], bins=range(52), weights=dists["person_weight"]
+            )
+            mean = np.average(dists["DIST"], weights=dists["person_weight"])
+        else:
+            hist_df = create_histogram_tlfd(dists["DIST"], sampleshare=self.sampleshare)
+            mean = dists["DIST"].mean()
+        return hist_df, mean
+
+    def _build_trip_tlfds(
+        self, wsloc_results: pd.DataFrame
+    ) -> tuple[dict[str, pd.DataFrame], list[dict]]:
+        """Build TLFDs and average trip lengths for work/univ/school."""
+        trip_tlfd_results: dict[str, pd.DataFrame] = {}
+        avg_trip_lengths: list[dict] = []
+        max_bin = 52 if self.bats_data else 151
+
+        for trip_type in ("work", "univ", "school"):
+            trip_dists = self._filter_trip_dists(wsloc_results, trip_type)
+            trip_tlfd = pd.DataFrame({"distbin": range(1, max_bin)})
+
+            # Per-county histograms
+            for county in self.county_lookup.values():
+                county_dists = trip_dists[trip_dists["HomeCounty_name"] == county]
+                if len(county_dists) == 0:
+                    continue
+                hist_df, mean = self._compute_hist_and_mean(county_dists)
+                hist_df = hist_df.rename(columns={"count": county})
+                trip_tlfd = trip_tlfd.merge(hist_df, on="distbin", how="left")
+                avg_trip_lengths.append(
+                    {"county": county, "trip_type": trip_type, "mean_trip_length": mean}
+                )
+
+            # Total across all counties
+            if len(trip_dists) > 0:
+                hist_df, total_mean = self._compute_hist_and_mean(trip_dists)
+                hist_df = hist_df.rename(columns={"count": "Total"})
+                trip_tlfd = trip_tlfd.merge(hist_df, on="distbin", how="left")
+                avg_trip_lengths.append(
+                    {"county": "Total", "trip_type": trip_type, "mean_trip_length": total_mean}
+                )
+
+            # Reorder columns and fill NaN
+            county_cols = sorted(
+                col for col in trip_tlfd.columns if col not in ("distbin", "Total")
+            )
+            col_order = (
+                ["distbin"] + county_cols + (["Total"] if "Total" in trip_tlfd.columns else [])
+            )
+            trip_tlfd_results[trip_type] = trip_tlfd[col_order].fillna(0)
+
+        return trip_tlfd_results, avg_trip_lengths
 
     def validate_outputs(self, results: dict) -> None:
         """Validate outputs before generating the files and updating excel."""

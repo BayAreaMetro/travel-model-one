@@ -1,4 +1,4 @@
-"""Submodel 02: Auto ownership calibration."""
+"""Auto ownership calibration summary."""
 
 import shutil
 import sys

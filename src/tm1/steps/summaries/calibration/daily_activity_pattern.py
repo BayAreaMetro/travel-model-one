@@ -1,4 +1,4 @@
-"""Submodel 04: Coordinated daily activity pattern (CDAP) calibration."""
+"""Coordinated daily activity pattern (CDAP) calibration summary."""
 
 import sys
 from pathlib import Path

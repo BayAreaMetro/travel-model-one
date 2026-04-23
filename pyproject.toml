@@ -60,4 +60,3 @@ exclude = ["*.html", "uv.lock", "renv", "utilities", "core", "model-files"]
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = ["T201", "INP001"]    # Allow print(); standalone scripts, not packages
 "tests/**" = ["T201", "S101", "INP001"]  # Allow print(), assert; not packages
-"src/tm1/steps/summaries/calibration/[0-9]*" = ["N999", "C901", "PLR0912", "PLR0915"]  # Legacy digit-prefixed filenames; complexity deferred
