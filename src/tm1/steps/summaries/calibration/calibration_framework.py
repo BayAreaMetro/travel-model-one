@@ -1,10 +1,17 @@
+"""Calibration framework: config management and base class for calibration submodels."""
+
 import logging
 import os
+from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import yaml
+from calibration_data_models import CTRAMPCounty
+
+logger = logging.getLogger(__name__)
 
 try:
     import xlwings as xw
@@ -13,29 +20,27 @@ try:
     xw.App().visible = False
 except ImportError:
     USE_XLWINGS = False
-from abc import ABC, abstractmethod
-from typing import Any
-
-from calibration_data_models import CTRAMPCounty
 
 
 class CalibrationConfig:
     """Configuration manager for calibration scripts."""
 
-    def __init__(self, config_file: str | None = None, submodel: str | None = None) -> None:
-        self.config = {}
-        self.raw_config = {}
+    def __init__(self, config_file: str | None = None, _submodel: str | None = None) -> None:
+        """Load calibration config from *config_file* (or default YAML)."""
+        self.config: dict[str, Any] = {}
+        self.raw_config: dict[str, Any] = {}
 
         # Load config file
-        config_file = config_file or str(Path(__file__).parent / "calibration_config.yaml")
-        if os.path.exists(config_file):
-            with open(config_file) as f:
+        config_path = (
+            Path(config_file) if config_file else Path(__file__).parent / "calibration_config.yaml"
+        )
+        if config_path.exists():
+            with config_path.open() as f:
                 self.raw_config = yaml.safe_load(f)
                 self._apply_env_overrides()
                 self.config = self._substitute_parameters(self.raw_config)
-
         else:
-            msg = f"Configuration file not found: {config_file}"
+            msg = f"Configuration file not found: {config_path}"
             raise FileNotFoundError(msg)
 
     def _apply_env_overrides(self) -> None:
@@ -63,7 +68,7 @@ class CalibrationConfig:
         # Get parameters from general section
         params = config.get("general", {})
 
-        def substitute_value(value):
+        def substitute_value(value: object) -> object:
             """Recursively substitute parameters in values."""
             if isinstance(value, dict):
                 return {k: substitute_value(v) for k, v in value.items()}
@@ -73,10 +78,9 @@ class CalibrationConfig:
                 try:
                     return value.format(**params)
                 except KeyError as e:
-                    self.logger.info(f"Warning: Missing parameter {e} in string: {value}")
+                    logger.info("Missing parameter %s in string: %s", e, value)
                     return value
-            else:
-                return value
+            return value
 
         return substitute_value(config)
 
@@ -90,8 +94,8 @@ class CalibrationConfig:
     ) -> str:
         """Get file path from configuration with optional validation."""
         path = self.get(section, key, fallback)
-        if validate and path and not os.path.exists(path):
-            self.logger.warning(f"Warning: Path does not exist: {path}")
+        if validate and path and not Path(path).exists():
+            logger.warning("Path does not exist: %s", path)
         return path
 
     def get_all_paths(self, section: str, validate: bool = False) -> dict[str, str]:
@@ -103,8 +107,8 @@ class CalibrationConfig:
                 "/" in value or "\\" in value or value.endswith((".csv", ".xlsx"))
             ):
                 paths[key] = value
-                if validate and not os.path.exists(value):
-                    self.logger.warning(f"Warning: {key} path does not exist: {value}")
+                if validate and not Path(value).exists():
+                    logger.warning("%s path does not exist: %s", key, value)
         return paths
 
     def getfloat(self, section: str, key: str, fallback: float | None = None) -> float:
@@ -136,6 +140,7 @@ class CalibrationBase(ABC):
     """Base class for calibration processing."""
 
     def __init__(self, submodel: str, config_file: str | None = None) -> None:
+        """Initialize calibration for *submodel* using *config_file*."""
         self.config = CalibrationConfig(config_file, submodel)
         self.submodel = submodel
         self.submodel_config = self.config.get_submodel_config(submodel)
@@ -194,29 +199,29 @@ class CalibrationBase(ABC):
         self.logger.addHandler(console_handler)
 
         # File handler (writes to log file)
-        log_file = os.path.join(self.output_dir, "calibration.log")
+        log_file = Path(self.output_dir) / "calibration.log"
         file_handler = logging.FileHandler(log_file, mode="a")  # 'w' overwrites, 'a' appends
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
 
-        self.logger.info(f"Logging to: {log_file}")
+        self.logger.info("Logging to: %s", log_file)
 
     def _print_config(self) -> None:
         """Print configuration summary."""
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nCONFIGURATION SUMMARY\n{sep}")
-        self.logger.info(f"Submodel: {self.submodel} - {self.submodel_config['name']}")
-        self.logger.info(f"TARGET_DIR  = {self.target_dir}")
-        self.logger.info(f"ITER        = {self.iter}")
-        self.logger.info(f"SAMPLESHARE = {self.sampleshare}")
-        self.logger.info(f"CALIB_ITER  = {self.calib_iter}")
-        self.logger.info(f"EXCEL_WORKBOOK = {self.submodel_config.get('workbook_template')}")
+        self.logger.info("\n%s\nCONFIGURATION SUMMARY\n%s", sep, sep)
+        self.logger.info("Submodel: %s - %s", self.submodel, self.submodel_config["name"])
+        self.logger.info("TARGET_DIR  = %s", self.target_dir)
+        self.logger.info("ITER        = %s", self.iter)
+        self.logger.info("SAMPLESHARE = %s", self.sampleshare)
+        self.logger.info("CALIB_ITER  = %s", self.calib_iter)
+        self.logger.info("EXCEL_WORKBOOK = %s", self.submodel_config.get("workbook_template"))
 
     def setup_workbook(self) -> None:
         """Set up Excel workbook paths and load template."""
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nWORKBOOK SETUP\n{sep}")
+        self.logger.info("\n%s\nWORKBOOK SETUP\n%s", sep, sep)
         workbook_template = self.submodel_config.get("workbook_template")
 
         # Skip if no template specified
@@ -246,14 +251,14 @@ class CalibrationBase(ABC):
 
         workbook_dir = Path(self.workbook_path).parent
         workbook_dir.mkdir(parents=True, exist_ok=True)
-        self.logger.info(f"Workbook Output Directory: {workbook_dir}")
+        self.logger.info("Workbook Output Directory: %s", workbook_dir)
 
         try:
-            self.logger.info(f"Loading Excel workbook from {self.workbook_blank}...")
+            self.logger.info("Loading Excel workbook from %s...", self.workbook_blank)
             self.calib_workbook = xw.Book(self.workbook_blank)
             self.modeldata_sheet = self.calib_workbook.sheets["modeldata"]
-        except Exception as e:
-            self.logger.warning(f"Skipping Excel workbook: {e}")
+        except (OSError, AttributeError) as e:
+            self.logger.warning("Skipping Excel workbook: %s", e)
             self.calib_workbook = None
             self.modeldata_sheet = None
 
@@ -279,27 +284,27 @@ class CalibrationBase(ABC):
             sheet.range((start_row, start_col)).value = df.columns.tolist()
 
             # Write data without index
-            sheet.range((start_row + 1, start_col)).value = df.values
+            sheet.range((start_row + 1, start_col)).value = df.to_numpy()
 
             if source_row and source_col and source_text:
                 sheet.range((source_row, source_col)).value = source_text
 
-        except Exception as e:
-            self.logger.warning(f"Warning: Could not write to Excel sheet: {e}")
+        except (OSError, KeyError) as e:
+            self.logger.warning("Could not write to Excel sheet: %s", e)
 
     def save_workbook(self) -> None:
         """Save the Excel workbook."""
         self.logger.info("Saving calibration workbook to:")
-        self.logger.info(f"Temp Workbook: {self.workbook_temp}")
-        self.logger.info(f"Iteration Workbook: {self.workbook_iter}")
+        self.logger.info("Temp Workbook: %s", self.workbook_temp)
+        self.logger.info("Iteration Workbook: %s", self.workbook_iter)
         if self.calib_workbook:
             try:
                 self.calib_workbook.save(self.workbook_temp)
                 self.calib_workbook.save(self.workbook_iter)
-                self.logger.info(f"Wrote {self.workbook_temp}")
+                self.logger.info("Wrote %s", self.workbook_temp)
                 self.calib_workbook.close()
-            except Exception as e:
-                self.logger.info(f"Warning: Could not save Excel workbook: {e}")
+            except OSError as e:
+                self.logger.info("Could not save Excel workbook: %s", e)
                 self.calib_workbook.close()
         else:
             self.logger.info("Did not save workbook")
@@ -309,24 +314,20 @@ class CalibrationBase(ABC):
         """Process the calibration data. Must be implemented by subclasses."""
 
     @abstractmethod
-    def validate_outputs(self, results):
+    def validate_outputs(self, results: dict[str, pd.DataFrame]) -> None:
         """Validate the process data. Must be implemented by subclasses."""
 
     @abstractmethod
-    def generate_outputs(self, results: dict[str, pd.DataFrame]):
+    def generate_outputs(self, results: dict[str, pd.DataFrame]) -> None:
         """Generate output files and Excel updates. Must be implemented by subclasses."""
 
     def run(self) -> None:
         """Execute the complete calibration process."""
-        try:
-            results = self.process_data()
-            self.validate_outputs(results)
-            self.setup_workbook()
-            self.generate_outputs(results)
-            self.save_workbook()
-        except Exception as e:
-            self.logger.info(f"Error during calibration processing: {e}")
-            raise
+        results = self.process_data()
+        self.validate_outputs(results)
+        self.setup_workbook()
+        self.generate_outputs(results)
+        self.save_workbook()
 
 
 def add_county_info(
@@ -368,7 +369,10 @@ def add_county_info(
 
 
 def create_histogram_tlfd(
-    data: pd.Series, bins: range | None = None, sampleshare: float = 1.0, weights: pd.Series = None
+    data: pd.Series,
+    bins: range | None = None,
+    sampleshare: float = 1.0,
+    weights: pd.Series | None = None,
 ) -> pd.DataFrame:
     """Create trip length frequency distribution histogram.
 
@@ -386,7 +390,7 @@ def create_histogram_tlfd(
 
     if weights is not None:
         # Use weighted histogram
-        hist, bin_edges = np.histogram(data, bins=bins, weights=weights)
+        hist, _bin_edges = np.histogram(data, bins=bins, weights=weights)
         return pd.DataFrame({"distbin": list(bins)[1:], "count": hist})
     # Use sampleshare scaling
     hist, _bin_edges = np.histogram(data, bins=bins)
