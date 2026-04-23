@@ -1,19 +1,14 @@
 """Coordinated daily activity pattern (CDAP) calibration summary."""
 
-import sys
-from pathlib import Path
-
 import pandas as pd
 
-# Import the calibration framework
-sys.path.append(str(Path(__file__).resolve().parent))
-from calibration_data_models import (
+from .calibration_data_models import (
     CDAPSummary,
     CDAPSummaryBATS,
     CTRAMPPersonType,
     validate_dataframe,
 )
-from calibration_framework import CalibrationBase
+from .calibration_framework import CalibrationBase
 
 
 class DailyActivityPatternCalibration(CalibrationBase):

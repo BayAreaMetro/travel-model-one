@@ -1,22 +1,18 @@
 """Auto ownership calibration summary."""
 
+import contextlib
 import shutil
-import sys
 from pathlib import Path
 
 import pandas as pd
 
-# Import the calibration framework
-sys.path.append(str(Path(__file__).resolve().parent))
-import contextlib
-
-from calibration_data_models import (
+from .calibration_data_models import (
     AutoOwnershipCountySummary,
     AutoOwnershipLongSummary,
     AutoOwnershipTAZSummary,
     validate_dataframe,
 )
-from calibration_framework import CalibrationBase, add_county_info
+from .calibration_framework import CalibrationBase, add_county_info
 
 
 class AutoOwnershipCalibration(CalibrationBase):

@@ -9,7 +9,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import yaml
-from calibration_data_models import CTRAMPCounty
+
+from .calibration_data_models import CTRAMPCounty
 
 logger = logging.getLogger(__name__)
 

@@ -1,21 +1,17 @@
 """Usual work and school location calibration summary."""
 
 import argparse
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-# Import the calibration framework
-sys.path.append(str(Path(__file__).resolve().parent))
-from calibration_data_models import (
+from .calibration_data_models import (
     AverageTripLength,
     CountyTripSummary,
     TripLengthFrequency,
     validate_dataframe,
 )
-from calibration_framework import CalibrationBase, add_county_info, create_histogram_tlfd
+from .calibration_framework import CalibrationBase, add_county_info, create_histogram_tlfd
 
 
 class WorkSchoolLocationCalibration(CalibrationBase):
