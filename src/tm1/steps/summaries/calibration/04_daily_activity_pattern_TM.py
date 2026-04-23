@@ -1,10 +1,12 @@
-import os
+"""Submodel 04: Coordinated daily activity pattern (CDAP) calibration."""
+
 import sys
+from pathlib import Path
 
 import pandas as pd
 
 # Import the calibration framework
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(str(Path(__file__).resolve().parent))
 from calibration_data_models import (
     CDAPSummary,
     CDAPSummaryBATS,
@@ -18,6 +20,7 @@ class DailyActivityPatternCalibration(CalibrationBase):
     """Calibration processor for coordinated daily activity pattern."""
 
     def __init__(self, config_file: str | None = None) -> None:
+        """Initialize CDAP calibration."""
         super().__init__("04", config_file)
         self.bats_data = self.submodel_config.get("bats_data", False)
 
@@ -25,13 +28,13 @@ class DailyActivityPatternCalibration(CalibrationBase):
         """Process the coordinated daily activity pattern data."""
         # Load input data
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nPROCESS DATA\n{sep}")
+        self.logger.info("\n%s\nPROCESS DATA\n%s", sep, sep)
         cdap_results = pd.read_csv(self.submodel_config["input_file"])
-        self.logger.info(f"Reading in CDAP Input File: {self.submodel_config['input_file']}")
-        CTRAMPPersonTypeLookUp = {person.label: person.id for person in CTRAMPPersonType}
+        self.logger.info("Reading in CDAP Input File: %s", self.submodel_config["input_file"])
+        ctramp_ptype_lookup = {person.label: person.id for person in CTRAMPPersonType}
 
         if self.bats_data:
-            cdap_results["person_type"] = cdap_results["type"].map(CTRAMPPersonTypeLookUp)
+            cdap_results["person_type"] = cdap_results["type"].map(ctramp_ptype_lookup)
             cdap_results = cdap_results.fillna({"person_weight": 0})
             cdap_ptype = (
                 cdap_results.groupby(["person_type", "activity_pattern"])["person_weight"]
@@ -50,7 +53,7 @@ class DailyActivityPatternCalibration(CalibrationBase):
         cdap_ptype["num_pers"] = cdap_ptype["num_pers"] / self.sampleshare
 
         # Pivot to spread format
-        cdap_ptype_spread = cdap_ptype.pivot(
+        cdap_ptype_spread = cdap_ptype.pivot_table(
             index="PersonType", columns="ActivityString", values="num_pers"
         )
         cdap_ptype_spread = cdap_ptype_spread.fillna(0).reset_index()
@@ -60,7 +63,7 @@ class DailyActivityPatternCalibration(CalibrationBase):
     def validate_outputs(self, results: dict) -> None:
         """Validate outputs before generating the files and updating excel."""
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nOUTPUT VAlIDATION\n{sep}")
+        self.logger.info("\n%s\nOUTPUT VAlIDATION\n%s", sep, sep)
 
         # Validate person type summary
         if results["person_type_summary"] is not None:
@@ -74,7 +77,7 @@ class DailyActivityPatternCalibration(CalibrationBase):
     def generate_outputs(self, results: dict) -> None:
         """Generate output files and Excel updates."""
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
+        self.logger.info("\n%s\nGENERATE OUTPUTS\n%s", sep, sep)
 
         # Person type summary
         if results["person_type_summary"] is not None:
@@ -101,7 +104,7 @@ class DailyActivityPatternCalibration(CalibrationBase):
                 )
 
             results["person_type_summary"].to_csv(summary_file, index=False)
-            self.logger.info(f"Saving person type summary to {summary_file}")
+            self.logger.info("Saving person type summary to %s", summary_file)
 
 
 def main() -> None:

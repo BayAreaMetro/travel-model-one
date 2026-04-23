@@ -1,11 +1,13 @@
-import os
+"""Submodel 02: Auto ownership calibration."""
+
 import shutil
 import sys
+from pathlib import Path
 
 import pandas as pd
 
 # Import the calibration framework
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(str(Path(__file__).resolve().parent))
 import contextlib
 
 from calibration_data_models import (
@@ -21,16 +23,17 @@ class AutoOwnershipCalibration(CalibrationBase):
     """Calibration processor for auto ownership."""
 
     def __init__(self, config_file: str | None = None) -> None:
+        """Initialize auto ownership calibration."""
         super().__init__("02", config_file)
 
     def process_data(self) -> dict:
         """Process the auto ownership data."""
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nPROCESS INPUT DATA\n{sep}")
+        self.logger.info("\n%s\nPROCESS INPUT DATA\n%s", sep, sep)
 
         self.logger.info("Loading input data files:")
-        self.logger.info(f"TAZ Data: {self.config.get('data_sources', 'taz_data')}")
-        self.logger.info(f"Auto Ownership: {self.submodel_config['ao_results']}")
+        self.logger.info("TAZ Data: %s", self.config.get("data_sources", "taz_data"))
+        self.logger.info("Auto Ownership: %s", self.submodel_config["ao_results"])
         # Load input data
         pop_households = pd.read_csv(self.submodel_config["input_file"])[["HHID", "TAZ", "PERSONS"]]
         taz_data = pd.read_csv(self.config.get("data_sources", "taz_data"))
@@ -49,7 +52,7 @@ class AutoOwnershipCalibration(CalibrationBase):
         ao_county["num_hh"] = ao_county["num_hh"] / self.sampleshare
 
         # Pivot to spread format
-        ao_county_spread = ao_county.pivot(
+        ao_county_spread = ao_county.pivot_table(
             index=["COUNTY", "county_name"], columns="AO", values="num_hh"
         )
         ao_county_spread = ao_county_spread.fillna(0).reset_index()
@@ -62,7 +65,7 @@ class AutoOwnershipCalibration(CalibrationBase):
         ao_taz = ao_taz.rename(columns={"AO": "num_vehicles"})
 
         # TAZ spread format
-        ao_taz_spread = ao_taz.pivot(
+        ao_taz_spread = ao_taz.pivot_table(
             index=["TAZ", "source"], columns="num_vehicles", values="num_hh"
         )
         ao_taz_spread = ao_taz_spread.fillna(0).reset_index()
@@ -73,7 +76,7 @@ class AutoOwnershipCalibration(CalibrationBase):
     def validate_outputs(self, results: dict) -> None:
         """Validate outputs before generating the files and updating excel."""
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nOUTPUT VAlIDATION\n{sep}")
+        self.logger.info("\n%s\nOUTPUT VAlIDATION\n%s", sep, sep)
 
         # Validate county summary
         if results["county_summary"] is not None:
@@ -94,7 +97,7 @@ class AutoOwnershipCalibration(CalibrationBase):
     def generate_outputs(self, results: dict) -> None:
         """Generate output files and Excel updates."""
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
+        self.logger.info("\n%s\nGENERATE OUTPUTS\n%s", sep, sep)
         # County summary
         county_file = f"{self.output_dir}/{self.submodel}_auto_ownership_TAZ_TM.csv"
         results["county_summary"].to_csv(county_file, index=False)
@@ -113,8 +116,12 @@ class AutoOwnershipCalibration(CalibrationBase):
 
         # Copy ACS comparison file
         # TODO: Update and Verify source
-        acs_source = "M:/Data/Census/ACS/ACS2013-2017/B08201 Household Size by Vehicles Available/vehiclesAvailableByTazACS_long.csv"
-        acs_dest = os.path.join(self.output_dir, f"{self.submodel}_auto_ownership_TAZ_ACS.csv")
+        acs_source = (
+            "M:/Data/Census/ACS/ACS2013-2017/"
+            "B08201 Household Size by Vehicles Available/"
+            "vehiclesAvailableByTazACS_long.csv"
+        )
+        acs_dest = Path(self.output_dir) / f"{self.submodel}_auto_ownership_TAZ_ACS.csv"
         with contextlib.suppress(Exception):
             shutil.copy(acs_source, acs_dest)
 
