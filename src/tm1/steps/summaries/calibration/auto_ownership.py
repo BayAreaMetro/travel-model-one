@@ -18,9 +18,9 @@ from .calibration_framework import CalibrationBase, add_county_info
 class AutoOwnershipCalibration(CalibrationBase):
     """Calibration processor for auto ownership."""
 
-    def __init__(self, config_file: str | None = None) -> None:
+    def __init__(self, config_file: str | None = None, *, config: dict | None = None) -> None:
         """Initialize auto ownership calibration."""
-        super().__init__("02", config_file)
+        super().__init__("02", config_file, config=config)
 
     def process_data(self) -> dict:
         """Process the auto ownership data."""

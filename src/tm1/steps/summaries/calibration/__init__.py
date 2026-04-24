@@ -21,20 +21,25 @@ def run(
     the ``steps.summaries.calibration`` section in scenario config.
     """
     submodels = {
-        "usual_work_school_location": WorkSchoolLocationCalibration,
-        "auto_ownership": AutoOwnershipCalibration,
-        "daily_activity_pattern": DailyActivityPatternCalibration,
+        "usual_work_school_location": ("calibration_01", WorkSchoolLocationCalibration),
+        "auto_ownership": ("calibration_02", AutoOwnershipCalibration),
+        "daily_activity_pattern": ("calibration_04", DailyActivityPatternCalibration),
     }
 
     calib_cfg = cfg.get("steps", {}).get("summaries", {}).get("calibration", {}) or {}
     config_file = calib_cfg.get("config_file")
-    requested = calib_cfg.get("submodels", list(submodels))
+    # Default: only run submodels whose calibration_XX section exists in config
+    requested = calib_cfg.get(
+        "submodels",
+        [name for name, (section, _cls) in submodels.items() if section in calib_cfg],
+    )
 
     for name in requested:
-        cls = submodels.get(name)
-        if cls is None:
+        entry = submodels.get(name)
+        if entry is None:
             log.warning("Unknown calibration submodel: %s — skipping", name)
             continue
+        _section, cls = entry
         log.info("Running calibration submodel: %s", name)
-        instance = cls(config_file=config_file)
+        instance = cls(config_file=config_file, config=calib_cfg)
         instance.run()

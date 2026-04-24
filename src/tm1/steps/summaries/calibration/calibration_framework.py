@@ -18,7 +18,6 @@ try:
     import xlwings as xw
 
     USE_XLWINGS = True
-    xw.App().visible = False
 except ImportError:
     USE_XLWINGS = False
 
@@ -26,23 +25,37 @@ except ImportError:
 class CalibrationConfig:
     """Configuration manager for calibration scripts."""
 
-    def __init__(self, config_file: str | None = None, _submodel: str | None = None) -> None:
-        """Load calibration config from *config_file* (or default YAML)."""
+    def __init__(
+        self,
+        config_file: str | None = None,
+        _submodel: str | None = None,
+        *,
+        config: dict[str, Any] | None = None,
+    ) -> None:
+        """Load calibration config from *config_file*, or accept a pre-loaded *config* dict."""
         self.config: dict[str, Any] = {}
         self.raw_config: dict[str, Any] = {}
 
-        # Load config file
-        config_path = (
-            Path(config_file) if config_file else Path(__file__).parent / "calibration_config.yaml"
-        )
-        if config_path.exists():
-            with config_path.open() as f:
-                self.raw_config = yaml.safe_load(f)
-                self._apply_env_overrides()
-                self.config = self._substitute_parameters(self.raw_config)
+        if config is not None:
+            # Accept a pre-loaded dict (e.g. from scenario_config.yaml)
+            self.raw_config = dict(config)
+            self._apply_env_overrides()
+            self.config = self._substitute_parameters(self.raw_config)
         else:
-            msg = f"Configuration file not found: {config_path}"
-            raise FileNotFoundError(msg)
+            # Load from file
+            config_path = (
+                Path(config_file)
+                if config_file
+                else Path(__file__).parent / "calibration_config.yaml"
+            )
+            if config_path.exists():
+                with config_path.open() as f:
+                    self.raw_config = yaml.safe_load(f)
+                    self._apply_env_overrides()
+                    self.config = self._substitute_parameters(self.raw_config)
+            else:
+                msg = f"Configuration file not found: {config_path}"
+                raise FileNotFoundError(msg)
 
     def _apply_env_overrides(self) -> None:
         """Override selected general config values from batch environment variables."""
@@ -140,9 +153,15 @@ class CalibrationConfig:
 class CalibrationBase(ABC):
     """Base class for calibration processing."""
 
-    def __init__(self, submodel: str, config_file: str | None = None) -> None:
-        """Initialize calibration for *submodel* using *config_file*."""
-        self.config = CalibrationConfig(config_file, submodel)
+    def __init__(
+        self,
+        submodel: str,
+        config_file: str | None = None,
+        *,
+        config: dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize calibration for *submodel* using *config_file* or *config* dict."""
+        self.config = CalibrationConfig(config_file, submodel, config=config)
         self.submodel = submodel
         self.submodel_config = self.config.get_submodel_config(submodel)
 
@@ -245,7 +264,7 @@ class CalibrationBase(ABC):
         self.workbook_temp = self.workbook_path.replace(".xlsx", "_temp.xlsx")
         self.workbook_iter = self.workbook_path.replace(".xlsx", f"_{self.calib_iter}.xlsx")
         self.workbook_blank = str(
-            Path(self.config.get("general", "code_dir"))
+            Path(__file__).parent
             / "workbook_templates"
             / f"{workbook_template}_blank.xlsx"
         )
@@ -257,8 +276,9 @@ class CalibrationBase(ABC):
         try:
             self.logger.info("Loading Excel workbook from %s...", self.workbook_blank)
             self.calib_workbook = xw.Book(self.workbook_blank)
+            self.calib_workbook.app.visible = False
             self.modeldata_sheet = self.calib_workbook.sheets["modeldata"]
-        except (OSError, AttributeError) as e:
+        except Exception as e:
             self.logger.warning("Skipping Excel workbook: %s", e)
             self.calib_workbook = None
             self.modeldata_sheet = None
@@ -303,10 +323,13 @@ class CalibrationBase(ABC):
                 self.calib_workbook.save(self.workbook_temp)
                 self.calib_workbook.save(self.workbook_iter)
                 self.logger.info("Wrote %s", self.workbook_temp)
-                self.calib_workbook.close()
-            except OSError as e:
-                self.logger.info("Could not save Excel workbook: %s", e)
-                self.calib_workbook.close()
+            except Exception as e:
+                self.logger.warning("Could not save Excel workbook: %s", e)
+            finally:
+                try:
+                    self.calib_workbook.close()
+                except Exception:
+                    pass
         else:
             self.logger.info("Did not save workbook")
 

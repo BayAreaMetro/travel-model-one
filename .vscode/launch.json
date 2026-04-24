@@ -18,7 +18,7 @@
                 // "setup",
                 // "convert_skims",
                 // "simulate",
-                "core_summaries",
+                "summaries",
             ]
         },
         {

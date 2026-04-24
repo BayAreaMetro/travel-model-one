@@ -11,6 +11,7 @@ dependencies = [
     "populationsim==0.10.0",
     "python-dotenv>=1.0",
     "travel-diary-survey-tools",
+    "xlwings>=0.35.1",
     "zstandard>=0.25.0",
 ]
 

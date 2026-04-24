@@ -5,6 +5,8 @@ import argparse
 import numpy as np
 import pandas as pd
 
+from cubeio import tpp
+
 from .calibration_data_models import (
     AverageTripLength,
     CountyTripSummary,
@@ -17,12 +19,12 @@ from .calibration_framework import CalibrationBase, add_county_info, create_hist
 class WorkSchoolLocationCalibration(CalibrationBase):
     """Calibration processor for usual work and school location."""
 
-    def __init__(self, config_file: str | None = None) -> None:
+    def __init__(self, config_file: str | None = None, *, config: dict | None = None) -> None:
         """Initialize work/school location calibration."""
-        super().__init__("01", config_file)
+        super().__init__("01", config_file, config=config)
         self.bats_data = self.submodel_config.get("bats_data", False)
 
-    def process_data(self) -> dict:
+    def process_data(self) -> dict:  # noqa: PLR0915
         """Process the usual work and school location data."""
         # Load input data
         sep = "=" * 80
@@ -34,9 +36,21 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         wsloc_results = pd.read_csv(self.submodel_config["input_file"])
 
         # Load distance skim
-        dist_skim = pd.read_csv(
-            self.config.get("data_sources", "dist_skim"), header=0, usecols=["orig", "dest", "DIST"]
-        )
+        if self.config.get("data_sources", "dist_skim").endswith(".csv"):
+            dist_skim = pd.read_csv(
+                self.config.get("data_sources", "dist_skim"), header=0, usecols=["orig", "dest", "DIST"]  # noqa: E501
+            )
+        elif self.config.get("data_sources", "dist_skim").endswith(".tpp"):
+            # Load TPP file using tpp package
+            _skims = tpp.read_tpp(self.config.get("data_sources", "dist_skim"))
+            n_zones = _skims["zones"]
+            taz_ids = np.arange(1, n_zones + 1)
+            orig, dest = np.meshgrid(taz_ids, taz_ids, indexing="ij")
+            dist_skim = pd.DataFrame({
+                "orig": orig.ravel(),
+                "dest": dest.ravel(),
+                "DIST": _skims["data"]["DIST"].ravel(),
+            })
 
         # Add Home COUNTY
         self.logger.info("Merging Home County Data")
@@ -246,7 +260,7 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         # Validate county summary
         if results["county_summary"] is not None:
             validate_dataframe(results["county_summary"], CountyTripSummary)
-            self.logger.info("✓ County Summary Validated")
+            self.logger.info("County Summary Validated")
 
         # Validate trip length frequency distribution
         expected_rows = 51 if self.bats_data else 150
@@ -254,12 +268,12 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             df = results[f"trip_tlfd_{trip_type}"]
             if df is not None:
                 validate_dataframe(df, TripLengthFrequency, expected_rows)
-                self.logger.info("\u2713 %s TLFD validated", trip_type.capitalize())
+                self.logger.info("%s TLFD validated", trip_type.capitalize())
 
         # Validate average trip lengths
         if results["avg_trip_lengths"] is not None:
             validate_dataframe(results["avg_trip_lengths"], AverageTripLength)
-            self.logger.info("✓ Average Trip Length Summary Validated")
+            self.logger.info("Average Trip Length Summary Validated")
 
     def generate_outputs(self, results: dict) -> None:
         """Generate output files and Excel updates."""

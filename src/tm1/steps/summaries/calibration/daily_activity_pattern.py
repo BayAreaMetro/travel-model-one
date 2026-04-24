@@ -14,9 +14,9 @@ from .calibration_framework import CalibrationBase
 class DailyActivityPatternCalibration(CalibrationBase):
     """Calibration processor for coordinated daily activity pattern."""
 
-    def __init__(self, config_file: str | None = None) -> None:
+    def __init__(self, config_file: str | None = None, *, config: dict | None = None) -> None:
         """Initialize CDAP calibration."""
-        super().__init__("04", config_file)
+        super().__init__("04", config_file, config=config)
         self.bats_data = self.submodel_config.get("bats_data", False)
 
     def process_data(self) -> dict:
