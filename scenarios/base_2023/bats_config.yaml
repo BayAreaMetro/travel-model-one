@@ -4,9 +4,9 @@
 # config.yaml
 
 # Define directory shorthands
-survey_dir: "M:/Data/HomeInterview/Bay Area Travel Study 2023/Data/Full Weighted 2023 Dataset/WeightedDataset_02212025"
-weights_dir: "X:/survey_repos/ProjRoot_Mon-Thu20251201/WgtRoot_Mon-Thu20251201_nocommutemode/output/"
-pums_dir: "M:/Data/Census/PUMS/2023_1yr"
+survey_dir: "//models.ad.mtc.ca.gov/data/models/Data/HomeInterview/Bay Area Travel Study 2023/Data/Full Weighted 2023 Dataset/WeightedDataset_02212025"
+weights_dir: "//model3-a/Model3A-Share/survey_repos/ProjRoot_Mon-Thu20251201/WgtRoot_Mon-Thu20251201_nocommutemode/output/"
+pums_dir: "//models.ad.mtc.ca.gov/data/models/Data/Census/PUMS/2023_1yr"
 output_dir: "E:/tm1a_test/survey"
 TM1_shapefile_dir: "E:/GitHub/travel-model-one/utilities/geographies"
 TM2_shapefile_dir: "E:/GitHub/TM2/tm2py-utils/tm2py_utils/inputs/maz_taz/shapefiles"
@@ -316,12 +316,12 @@ steps:
     cache: false
     params:
       zone_geographies:
-        - zone_name: "taz"  # Primary TAZ for DaySim (TM1)
-          shapefile: "{{ TM2_shapefile_dir }}/tazs_TM2_2_5.shp"
-          zone_id_field: "TAZ_NODE"
-        - zone_name: "maz"  # Primary MAZ for DaySim (TM2)
-          shapefile: "{{ TM2_shapefile_dir }}/mazs_TM2_2_5.shp"
-          zone_id_field: "MAZ_NODE"
+        # - zone_name: "taz"  # Primary TAZ for DaySim (TM1)
+        #   shapefile: "{{ TM2_shapefile_dir }}/tazs_TM2_2_5.shp"
+        #   zone_id_field: "TAZ_NODE"
+        # - zone_name: "maz"  # Primary MAZ for DaySim (TM2)
+        #   shapefile: "{{ TM2_shapefile_dir }}/mazs_TM2_2_5.shp"
+        #   zone_id_field: "MAZ_NODE"
         # Add additional zone geographies as needed:
         - zone_name: "TAZ1454"
           shapefile: "{{ TM1_shapefile_dir }}/bayarea_rtaz1454_rev1_WGS84.shp"
@@ -377,12 +377,12 @@ steps:
         tours: "{{ output_dir }}/survey/tours_2023.csv"
         joint_trips: "{{ output_dir }}/survey/joint_trips_2023.csv"
 
-        # DaySim Formats
-        households_daysim: "{{ output_dir }}/daysim_2023/households.csv"
-        persons_daysim: "{{ output_dir }}/daysim_2023/persons.csv"
-        days_daysim: "{{ output_dir }}/daysim_2023/days.csv"
-        linked_trips_daysim: "{{ output_dir }}/daysim_2023/linked_trips.csv"
-        tours_daysim: "{{ output_dir }}/daysim_2023/tours.csv"
+        # # DaySim Formats
+        # households_daysim: "{{ output_dir }}/daysim_2023/households.csv"
+        # persons_daysim: "{{ output_dir }}/daysim_2023/persons.csv"
+        # days_daysim: "{{ output_dir }}/daysim_2023/days.csv"
+        # linked_trips_daysim: "{{ output_dir }}/daysim_2023/linked_trips.csv"
+        # tours_daysim: "{{ output_dir }}/daysim_2023/tours.csv"
 
         # CTRAMP Formats
         households_ctramp: "{{ output_dir }}/ctramp_2023/HouseholdData.csv"

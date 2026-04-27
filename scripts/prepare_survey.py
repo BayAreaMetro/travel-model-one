@@ -20,22 +20,25 @@ def main() -> None:
     parser.add_argument("config", type=Path, help="Path to pipeline YAML config")
     parser.add_argument("--force", action="store_true", help="Re-run even if outputs exist")
     parser.add_argument("--cache-dir", default=".cache/survey", help="Pipeline cache directory")
+    parser.add_argument(
+        "--clean-step", action="append", default=[],
+        help="Path or URL to a clean_*.py step (repeatable)",
+    )
     args = parser.parse_args()
 
     if not args.config.exists():
         sys.exit(f"Config not found: {args.config}")
 
-    step_cfg = {"config_path": str(args.config), "cache_dir": args.cache_dir}
+    step_cfg = {
+        "config_path": str(args.config),
+        "cache_dir": args.cache_dir,
+        "clean_steps": args.clean_step,
+    }
 
     if not args.force and _should_skip(step_cfg, force=False):
         return
 
-    # Add config's directory to sys.path for project-specific clean_*.py steps
-    project_dir = str(args.config.parent.resolve())
-    if project_dir not in sys.path:
-        sys.path.insert(0, project_dir)
-
-    _run_pipeline(args.config, step_cfg)
+    _run_pipeline(args.config, step_cfg, args.config.parent.resolve())
 
 
 if __name__ == "__main__":

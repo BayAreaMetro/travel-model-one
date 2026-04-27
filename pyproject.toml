@@ -17,7 +17,8 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }
+# travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }
+travel-diary-survey-tools = { path = "../travel-diary-survey-tools", editable = true }
 
 [project.scripts]
 tm1 = "tm1.cli:main"

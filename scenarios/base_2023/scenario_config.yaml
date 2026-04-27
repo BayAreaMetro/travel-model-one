@@ -25,14 +25,19 @@ steps:
     skim_tpp_dir: "{reference_run}/skims"
     output: "{proj_dir}/data/skims.omx"
 
-  # prepare_survey:
-  #   config_path: "bats_config.yaml"  # resolved relative to scenario_dir
-  #   cache_dir: ".cache/survey"
-  #   # Skip pipeline if these CTRAMP output files already exist (use --force to override)
-  #   check_outputs:
-  #     - "{survey_output_dir}/ctramp_2023/PersonData.csv"
-  #     - "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
-  #     - "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
+  prepare_survey:
+    config_path: "bats_config.yaml"  # resolved relative to scenario_dir
+    cache_dir: ".cache/survey"
+    # Hack to avoid copying code into this repo -- will import directly from survey repo instead
+    # Could be cleaned up later somehow.
+    clean_steps:
+      - url: "https://raw.githubusercontent.com/BayAreaMetro/travel-diary-survey-tools/develop/projects/bats_2023/clean_bats_2023.py"
+        function: "clean_2023_bats"
+    # Skip pipeline if these CTRAMP output files already exist (use --force to override)
+    check_outputs:
+      - "{survey_output_dir}/ctramp_2023/PersonData.csv"
+      - "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
+      - "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
 
   # urbansim:
   #   # TBD -- run urbansim?
@@ -89,16 +94,16 @@ steps:
             ao_results: "{reference_run}/main/aoResults.csv"
             cdap_results: "{reference_run}/main/cdapResults.csv"
 
-        # - label: "BATS_2023"
-        #   format: ctramp  # survey data pre-formatted to CTRAMP column names
-        #   sampleshare: 1.0
-        #   weight_col: "person_weight"
-        #   paths:
-        #     persons: "{survey_output_dir}/ctramp_2023/PersonData.csv"
-        #     wsloc_results: "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
-        #     taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
-        #     dist_skim: "{reference_run}/skims/nonmotskm.tpp"
-        #     cdap_results: "{survey_output_dir}/ctramp_2023/PersonData.csv"
+        - label: "BATS_2023"
+          format: ctramp  # survey data pre-formatted to CTRAMP column names
+          sampleshare: 1.0
+          weight_col: "person_weight"
+          paths:
+            persons: "{survey_output_dir}/ctramp_2023/PersonData.csv"
+            wsloc_results: "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
+            taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
+            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+            cdap_results: "{survey_output_dir}/ctramp_2023/PersonData.csv"
 
       submodels:
         - work_school_location

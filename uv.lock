@@ -1862,7 +1862,7 @@ wheels = [
 [[package]]
 name = "travel-diary-survey-tools"
 version = "0.1.0"
-source = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools?branch=develop#5d4c06cc8042002969021f8edd085c200b2b296a" }
+source = { editable = "../travel-diary-survey-tools" }
 dependencies = [
     { name = "exactextract" },
     { name = "geopandas" },
@@ -1882,6 +1882,51 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "tqdm" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "exactextract", specifier = ">=0.3.0" },
+    { name = "geopandas", specifier = ">=1.1.1" },
+    { name = "hypothesis", specifier = ">=6.151.5" },
+    { name = "networkx", specifier = ">=3.6.1" },
+    { name = "numba", specifier = ">=0.64.0" },
+    { name = "numpy", specifier = "<1.26" },
+    { name = "openpyxl", specifier = ">=3.1.0" },
+    { name = "polars", specifier = ">=1.35.1" },
+    { name = "pyarrow", specifier = ">=22.0.0" },
+    { name = "pydantic", specifier = ">=2.12.4" },
+    { name = "pygris", specifier = ">=0.2.1" },
+    { name = "python-levenshtein", specifier = ">=0.27.3" },
+    { name = "rasterio", specifier = ">=1.4.4" },
+    { name = "requests", specifier = ">=2.28.0" },
+    { name = "samplics", specifier = ">=0.4.1" },
+    { name = "scikit-learn", specifier = ">=1.8.0" },
+    { name = "scipy", specifier = ">=1.16.3" },
+    { name = "tqdm", specifier = ">=4.60.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=25.12.0" },
+    { name = "griffe-pydantic", specifier = ">=1.0.0" },
+    { name = "jupyter", specifier = ">=1.1.1" },
+    { name = "kaleido", specifier = ">=1.2.0" },
+    { name = "matplotlib", specifier = ">=3.10.8" },
+    { name = "mkdocs", specifier = ">=1.6.0,<2.0" },
+    { name = "mkdocs-include-markdown-plugin", specifier = ">=6.0.0" },
+    { name = "mkdocs-material", specifier = ">=9.5.0" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.26.0" },
+    { name = "pandas", specifier = ">=2.1.0" },
+    { name = "plotly", specifier = ">=6.4.0" },
+    { name = "pre-commit", specifier = ">=0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "ruff", specifier = ">=0.14.3" },
+    { name = "tabulate", specifier = ">=0.9.0" },
+]
+test = [
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
 ]
 
 [[package]]
@@ -1915,7 +1960,7 @@ requires-dist = [
     { name = "polars", specifier = ">=1.39.3" },
     { name = "populationsim", specifier = "==0.10.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "travel-diary-survey-tools", git = "https://github.com/BayAreaMetro/travel-diary-survey-tools?branch=develop" },
+    { name = "travel-diary-survey-tools", editable = "../travel-diary-survey-tools" },
     { name = "xlwings", specifier = ">=0.35.1" },
     { name = "zstandard", specifier = ">=0.25.0" },
 ]

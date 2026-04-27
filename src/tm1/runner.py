@@ -63,25 +63,7 @@ def run_model(
     if steps is None:
         steps = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
 
-    # Pass full config to steps so they can read both their own
-    # section (cfg["steps"]["<name>"]) and top-level keys like reference_run.
-    def on_checkpoint(name: str) -> None:
-        notify(f"Completed checkpoint: {name}", verbose_only=True)
-
     notify(f"Starting {label}: {', '.join(steps)}")
-
-    def _run_step(name: str, mod, cfg: dict, **kw) -> None:
-        notify(f"[{label}] {name}")
-        log.info("--- Step: %s ---", name)
-        try:
-            mod.run(scenario_dir, cfg, on_checkpoint=on_checkpoint, **kw)
-        except KeyboardInterrupt:
-            notify(f":no_entry_sign: {label} cancelled during {name}")
-            raise
-        except Exception as e:
-            notify(f":exclamation: {label} failed at {name}: {e}")
-            raise
-        log.info("--- Done: %s ---", name)
 
     for step_name in steps:
         entry = STEPS.get(step_name)
@@ -89,15 +71,31 @@ def run_model(
             msg = f"Unknown step: {step_name!r}"
             raise ValueError(msg)
 
+        # Build list of (display_name, module) — compound steps expand to sub-steps
         if isinstance(entry, dict):
-            # Compound step — run sub-steps listed in config
             sub_cfg = steps_cfg.get(step_name, {}) or {}
-            for sub_name, sub_mod in entry.items():
-                if sub_name in sub_cfg:
-                    _run_step(f"{step_name}.{sub_name}", sub_mod, cfg, **kwargs)
-                else:
-                    log.info("Skipping %s.%s (not in config)", step_name, sub_name)
+            run_list = [
+                (f"{step_name}.{sub}", mod)
+                for sub, mod in entry.items()
+                if sub in sub_cfg
+            ]
+            skipped = [s for s in entry if s not in sub_cfg]
+            for s in skipped:
+                log.info("Skipping %s.%s (not in config)", step_name, s)
         else:
-            _run_step(step_name, entry, cfg, **kwargs)
+            run_list = [(step_name, entry)]
+
+        for name, mod in run_list:
+            notify(f"[{label}] {name}")
+            log.info("--- Step: %s ---", name)
+            try:
+                mod.run(scenario_dir, cfg, **kwargs)
+            except KeyboardInterrupt:
+                notify(f":no_entry_sign: {label} cancelled during {name}")
+                raise
+            except Exception as e:
+                notify(f":exclamation: {label} failed at {name}: {e}")
+                raise
+            log.info("--- Done: %s ---", name)
 
     notify(f"Finished {label} :white_check_mark:")
