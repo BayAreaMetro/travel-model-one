@@ -8,6 +8,7 @@ from pathlib import Path
 
 import tm1.steps.convert_skims as convert_skims_step
 import tm1.steps.populationsim as populationsim_step
+import tm1.steps.prepare_survey as prepare_survey_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate as simulate_step
 import tm1.steps.summaries.calibration as calibration_step
@@ -21,6 +22,7 @@ log = logging.getLogger(__name__)
 STEPS = {
     "setup": setup_step,
     "convert_skims": convert_skims_step,
+    "prepare_survey": prepare_survey_step,
     "populationsim": populationsim_step,
     "simulate": simulate_step,
     "summaries": {
