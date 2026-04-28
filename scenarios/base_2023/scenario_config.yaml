@@ -44,6 +44,7 @@ steps:
       - "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
       - "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
       - "{survey_output_dir}/ctramp_2023/cdapResults.csv"
+      - "{survey_output_dir}/ctramp_2023/aoResults.csv"
 
   # urbansim:
   #   # TBD -- run urbansim?
@@ -85,6 +86,7 @@ steps:
 
     calibration:
       output_dir: "{proj_dir}/calibration_output"
+      write_csv: false
 
       datasets:
       # Add any number of comparison datasets here.
@@ -111,8 +113,9 @@ steps:
             taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
             dist_skim: "{reference_run}/skims/nonmotskm.tpp"
             cdap_results: "{survey_output_dir}/ctramp_2023/cdapResults.csv"
+            ao_results: "{survey_output_dir}/ctramp_2023/aoResults.csv"
 
       submodels:
-        # - work_school_location
-        # - auto_ownership
+        - work_school_location
+        - auto_ownership
         - daily_activity_pattern

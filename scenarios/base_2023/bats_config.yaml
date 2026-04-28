@@ -389,6 +389,7 @@ steps:
         persons_ctramp: "{{ output_dir }}/ctramp_2023/PersonData.csv"
         mandatory_locations_ctramp: "{{ output_dir }}/ctramp_2023/MandatoryLocationData.csv"
         cdap_results_ctramp: "{{ output_dir }}/ctramp_2023/cdapResults.csv"
+        ao_results_ctramp: "{{ output_dir }}/ctramp_2023/aoResults.csv"
         individual_tours_ctramp: "{{ output_dir }}/ctramp_2023/IndivTourData.csv"
         individual_trips_ctramp: "{{ output_dir }}/ctramp_2023/IndivTripData.csv"
         joint_tours_ctramp: "{{ output_dir }}/ctramp_2023/JointTourData.csv"

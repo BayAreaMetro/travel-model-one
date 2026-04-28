@@ -19,6 +19,10 @@ import polars as pl
 
 log = logging.getLogger(__name__)
 
+# Cache for expensive skim reads keyed by resolved absolute path.
+# Populated by read_skim(); cleared between runs if needed.
+_skim_cache: dict[str, pl.LazyFrame] = {}
+
 
 # ---------------------------------------------------------------------------
 # Canonical column maps  (format → table → {source_col: canonical_col})
@@ -30,7 +34,7 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
     "ctramp": {
         "taz_data": {"ZONE": "zone", "COUNTY": "county"},
         "dist_skim": {"DIST": "dist"},
-        "households": {"HHID": "hh_id", "TAZ": "home_taz"},
+        "households": {"HHID": "hh_id", "TAZ": "home_taz", "taz": "home_taz"},
         "persons": {
             "HHID": "hh_id",
             "PersonID": "person_id",
@@ -69,21 +73,33 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
 def read_skim(path: str | Path) -> pl.LazyFrame:
     """Read a distance-skim file and return a 3-column LazyFrame (orig, dest, DIST).
 
+    Results are cached by resolved path so the same skim file is only read once
+    even when multiple datasets reference it.
+
     Dispatches by file extension:
     * ``.csv`` — expects columns ``orig``, ``dest``, ``DIST``.
     * ``.tpp`` — Cube binary; uses ``cubeio.tpp``.
     * ``.omx``  — OpenMatrix; uses ``openmatrix``.
     """
     path = Path(path)
+    cache_key = str(path.resolve())
+    if cache_key in _skim_cache:
+        log.info("Using cached skim: %s", path)
+        return _skim_cache[cache_key]
+
     suffix = path.suffix.lower()
     if suffix == ".csv":
-        return _read_skim_csv(path)
-    if suffix == ".tpp":
-        return _read_skim_tpp(path)
-    if suffix == ".omx":
-        return _read_skim_omx(path)
-    msg = f"Unsupported skim format: {suffix}"
-    raise ValueError(msg)
+        lf = _read_skim_csv(path)
+    elif suffix == ".tpp":
+        lf = _read_skim_tpp(path)
+    elif suffix == ".omx":
+        lf = _read_skim_omx(path)
+    else:
+        msg = f"Unsupported skim format: {suffix}"
+        raise ValueError(msg)
+
+    _skim_cache[cache_key] = lf
+    return lf
 
 
 def scan_csv(path: str | Path, **kwargs: object) -> pl.LazyFrame:

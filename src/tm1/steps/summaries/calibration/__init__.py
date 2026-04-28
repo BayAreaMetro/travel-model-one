@@ -10,6 +10,7 @@ from .bundle import ModelBundle
 from .compare import build_comparison, write_comparison_csvs
 from .config import parse_config
 from .io import load_bundle
+from .report import write_report
 from .submodels import auto_ownership, daily_activity_pattern, work_school_location
 
 log = logging.getLogger(__name__)
@@ -141,4 +142,8 @@ def run(
         comparisons = build_comparison(all_results)
         if run_cfg.write_csv:
             write_comparison_csvs(comparisons, run_cfg.output_dir)
+
+    # HTML calibration report
+    report_path = write_report(all_results, run_cfg.output_dir)
+    log.info("Wrote calibration report: %s", report_path)
 
