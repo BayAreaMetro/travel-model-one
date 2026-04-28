@@ -26,6 +26,9 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 set R_HOME=C:\Program Files\R\R-4.2.1
 set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
 
+:: The location of Git
+set GIT_PATH=C:\Program Files\Git\cmd
+
 :: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
 
@@ -40,7 +43,7 @@ set CONDA_PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w
 set ENV_NAME=tm15-python310
 
 :: Add these variables to the PATH environment variable, moving the current path to the back
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%CONDA_PATH%
+set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%CONDA_PATH%;%GIT_PATH%
 
 :: Activate the correct conda environment -- this will update the PATH
 call activate %ENV_NAME%
