@@ -21,7 +21,7 @@
                 // // "convert_skims",
                 // // "simulate",
                 "prepare_survey",
-                // "summaries",
+                "summaries",
             ]
         },
         {

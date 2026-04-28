@@ -21,10 +21,15 @@ steps:
         from: "{reference_run}/popsyn/personFile.csv"
         to: "{proj_dir}/data/persons.csv"
 
+  # Convert skims from reference run to OMX format for use in ActivitySim.
+  # Temporary shim to communicate between legacy CUBE skims and ActivitySim
   convert_skims:
     skim_tpp_dir: "{reference_run}/skims"
     output: "{proj_dir}/data/skims.omx"
 
+  # Prepare survey data for calibration comparisons.
+  # This includes cleaning raw survey files and re-formatting to match CTRAMP output structure.
+  # One-time with skipping. Allows convenient re-processing for both model run and summaries when tweaking cleaning/formatting logic.
   prepare_survey:
     config_path: "bats_config.yaml"  # resolved relative to scenario_dir
     cache_dir: ".cache/survey"
@@ -38,6 +43,7 @@ steps:
       - "{survey_output_dir}/ctramp_2023/PersonData.csv"
       - "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
       - "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
+      - "{survey_output_dir}/ctramp_2023/cdapResults.csv"
 
   # urbansim:
   #   # TBD -- run urbansim?
@@ -99,13 +105,14 @@ steps:
           sampleshare: 1.0
           weight_col: "person_weight"
           paths:
+            households: "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
             persons: "{survey_output_dir}/ctramp_2023/PersonData.csv"
             wsloc_results: "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
             taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
             dist_skim: "{reference_run}/skims/nonmotskm.tpp"
-            cdap_results: "{survey_output_dir}/ctramp_2023/PersonData.csv"
+            cdap_results: "{survey_output_dir}/ctramp_2023/cdapResults.csv"
 
       submodels:
-        - work_school_location
-        - auto_ownership
+        # - work_school_location
+        # - auto_ownership
         - daily_activity_pattern

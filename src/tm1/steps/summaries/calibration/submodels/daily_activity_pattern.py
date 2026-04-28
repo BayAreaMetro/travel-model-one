@@ -8,7 +8,7 @@ import polars as pl
 
 from tm1.steps.summaries.calibration.enums import CTRAMPPersonType
 
-PERSON_TYPE_LOOKUP: dict[str, int] = {pt.label: pt.id for pt in CTRAMPPersonType}
+PERSON_TYPE_LOOKUP: dict[str, int] = {pt.label: pt.id for pt in CTRAMPPersonType} # pyright: ignore[reportAssignmentType]
 
 # Required bundle fields for this submodel.
 REQUIRED_FIELDS = ("cdap_results",)

@@ -63,7 +63,7 @@ def run(
 
     # Run pipeline
     log.info("Running survey pipeline from %s", config_path)
-    SurveyPipeline = Pipeline(
+    survey_pipe = Pipeline(
         config_path=config_path,
         steps=[
             load_data, *clean_steps, add_zone_ids, link_trips,
@@ -71,7 +71,7 @@ def run(
             format_ctramp, format_daysim, write_data,
             add_existing_weights, compute_weights,
         ],
-        caching=Path(step_cfg.get("cache_dir", ".cache/survey")),
+        caching=False,  # Force no caching, since we handle skipping externally
         data_models={
             "households_daysim": daysim.HouseholdDaysimModel,
             "persons_daysim": daysim.PersonDaysimModel,
@@ -85,9 +85,10 @@ def run(
             "individual_trips_ctramp": ctramp.IndividualTripCTRAMPModel,
             "joint_tours_ctramp": ctramp.JointTourCTRAMPModel,
             "joint_trips_ctramp": ctramp.JointTripCTRAMPModel,
+            "cdap_results_ctramp": ctramp.CDAPResultsCTRAMPModel,
         },
     )
-    SurveyPipeline.run()
+    survey_pipe.run()
     log.info("Survey pipeline finished")
 
 
@@ -103,6 +104,10 @@ def _load_step(entry: str | dict, scenario_dir: Path) -> object:
     else:
         source = entry
         func_name = Path(source.split("/")[-1]).stem
+
+    if not isinstance(source, str):
+        msg = f"Invalid source type: {type(source)}"
+        raise TypeError(msg)
 
     if source.startswith(("https://", "http://")):
         log.info("Fetching step from %s", source)
