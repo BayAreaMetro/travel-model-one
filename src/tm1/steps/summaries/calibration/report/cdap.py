@@ -14,7 +14,9 @@ from .helpers import (
     esc_js,
     fit_table,
     load_template,
+    pair_selector,
     pct_cell,
+    pick_datasets,
     wrap_chart,
 )
 
@@ -40,35 +42,34 @@ def render(
     labels: list[str],
 ) -> str:
     """Return HTML fragment for the CDAP tab."""
-    frames: dict[str, pl.DataFrame] = {}
-    for label in labels:
-        df = per_label.get(label, {}).get("person_type_summary")
-        if df is not None:
-            frames[label] = df
-
-    if len(frames) < 2:  # noqa: PLR2004
+    datasets = pick_datasets(per_label, labels, "person_type_summary")
+    if len(datasets) < 2:  # noqa: PLR2004
         return "<p>Need at least two datasets for comparison.</p>"
 
-    present = [lb for lb in labels if lb in frames]
-    obs_label = present[0]
-    mod_label = present[1]
+    return pair_selector(datasets, "cdap", _render_pair)
 
-    obs = _label_person_types(frames[obs_label])
-    mod = _label_person_types(frames[mod_label])
 
-    obs_shares = add_shares(obs, PATTERNS)
-    mod_shares = add_shares(mod, PATTERNS)
+def _render_pair(
+    obs_label: str,
+    obs_raw: pl.DataFrame,
+    mod_label: str,
+    mod_raw: pl.DataFrame,
+) -> str:
+    """Render a single (reference, model) comparison."""
+    obs = add_shares(_label_person_types(obs_raw), PATTERNS)
+    mod = add_shares(_label_person_types(mod_raw), PATTERNS)
 
+    chart_id = f"cdap_{obs_label}_{mod_label}".replace(" ", "_")
     parts: list[str] = [
         "<h3>Absolute Counts</h3>",
-        _counts_table(obs_shares, mod_shares, obs_label, mod_label),
+        _counts_table(obs, mod, obs_label, mod_label),
         "<h3>Share Comparison</h3>",
-        _shares_table(obs_shares, mod_shares, obs_label, mod_label),
+        _shares_table(obs, mod, obs_label, mod_label),
         "<h3>Model Constant Adjustment ln(Target / Current)</h3>",
-        _constants_table(obs_shares, mod_shares, obs_label, mod_label),
+        _constants_table(obs, mod, obs_label, mod_label),
         "<h3>Goodness of Fit</h3>",
-        _fit_table(obs_shares, mod_shares),
-        _chart(obs_shares, mod_shares, obs_label, mod_label),
+        _fit_table(obs, mod),
+        _chart(obs, mod, obs_label, mod_label, chart_id),
     ]
     return "\n".join(parts)
 
@@ -310,6 +311,7 @@ def _chart(
     mod: pl.DataFrame,
     obs_label: str,
     mod_label: str,
+    chart_id: str = "cdap_chart",
 ) -> str:
     obs_sorted = obs.sort("person_type")
     mod_sorted = mod.sort("person_type")
@@ -337,5 +339,5 @@ def _chart(
             )
 
     tmpl = load_template("cdap_chart.js")
-    js = tmpl.substitute(div_id="cdap_chart", traces=", ".join(traces))
-    return wrap_chart("cdap_chart", js)
+    js = tmpl.substitute(div_id=chart_id, traces=", ".join(traces))
+    return wrap_chart(chart_id, js)

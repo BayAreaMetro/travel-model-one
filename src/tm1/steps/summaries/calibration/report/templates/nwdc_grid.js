@@ -1,5 +1,6 @@
 (function() {
   var purposes = $purposes;
+  var btnCss = 'margin:4px 0;padding:3px 8px;font-size:11px;cursor:pointer;';
   purposes.forEach(function(p) {
     Plotly.newPlot(p.div_id, p.traces, {
       title: {text: p.title, font: {size: 13}},
@@ -11,16 +12,15 @@
 
     var div = document.getElementById(p.div_id);
     var btn = document.createElement('button');
-    btn.textContent = 'Log';
-    btn.style.cssText = 'position:absolute;top:4px;right:4px;padding:2px 6px;font-size:10px;cursor:pointer;z-index:10;opacity:0.7;';
+    btn.textContent = 'Log Scale';
+    btn.style.cssText = btnCss;
     btn.onclick = function() {
       var cur = div.layout.yaxis.type;
       var newType = (cur === 'log') ? 'linear' : 'log';
       var fmt = (newType === 'log') ? '.1e' : '.1%';
       Plotly.relayout(div, {'yaxis.type': newType, 'yaxis.tickformat': fmt});
-      btn.textContent = (newType === 'log') ? 'Lin' : 'Log';
+      btn.textContent = (newType === 'log') ? 'Linear Scale' : 'Log Scale';
     };
-    div.style.position = 'relative';
-    div.appendChild(btn);
+    div.after(btn);
   });
 })();

@@ -10,9 +10,10 @@ from .helpers import (
     esc,
     fit_table,
     load_template,
-    pick_pair,
-    tlfd_shares,
-    tlfd_trace_dicts,
+    normalise_shares,
+    pair_selector,
+    pick_datasets,
+    tlfd_traces_nway,
 )
 
 
@@ -23,7 +24,6 @@ def render(
     """Return HTML fragment for the Non-work Destination Choice tab."""
     parts: list[str] = []
 
-    # TLFD grid — compute first so we have fit_rows for the tables row
     purposes = [
         ("nwdc_tlfd_escort", "Escort"),
         ("nwdc_tlfd_shopping", "Shopping"),
@@ -34,27 +34,43 @@ def render(
         ("nwdc_tlfd_atwork", "At-Work"),
     ]
 
+    # --- TLFD grid: overlay all datasets on each purpose chart ---
     fit_rows: list[dict] = []
     grid_items: list[dict] = []
 
     for tlfd_key, purpose_title in purposes:
-        pair = pick_pair(per_label, labels, tlfd_key)
-        if not pair:
+        datasets = pick_datasets(per_label, labels, tlfd_key)
+        if len(datasets) < 2:  # noqa: PLR2004
             continue
-        item = _build_grid_item(pair[1], pair[3], pair[0], pair[2], tlfd_key, purpose_title)
-        grid_items.append(item)
-        fit_rows.extend(_compute_tlfd_fit(pair[1], pair[3], purpose_title))
+        _bins, traces = tlfd_traces_nway(datasets)
+        grid_items.append({
+            "div_id": f"nwdc_{tlfd_key}",
+            "title": purpose_title,
+            "traces": traces,
+        })
+        # Fit metrics: one row per (ref, model_i) pair
+        ref_label, ref_df = datasets[0]
+        _rb, ref_share, _rs = normalise_shares(ref_df)
+        for mod_label, mod_df in datasets[1:]:
+            _mb, mod_share, _ms = normalise_shares(mod_df)
+            row_label = (
+                purpose_title if len(datasets) == 2  # noqa: PLR2004
+                else f"{purpose_title} ({mod_label})"
+            )
+            fit_rows.append(
+                compute_fit_row(ref_share, mod_share, row_label, label_key="Purpose"),
+            )
 
-    # Tables row: avg trip lengths + GOF side by side
-    avg_pair = pick_pair(per_label, labels, "nwdc_avg_trip_lengths")
-    has_tables = avg_pair or fit_rows
+    # --- Average trip lengths table: pair-toggled ---
+    avg_datasets = pick_datasets(per_label, labels, "nwdc_avg_trip_lengths")
+    has_tables = len(avg_datasets) >= 2 or fit_rows  # noqa: PLR2004
     if has_tables:
         parts.append(
-            "<div style='display:flex;gap:24px;flex-wrap:wrap;align-items:start;'>"
+            "<div style='display:flex;gap:24px;flex-wrap:wrap;align-items:start;'>",
         )
-    if avg_pair:
+    if len(avg_datasets) >= 2:  # noqa: PLR2004
         parts.append("<div><h3>Average Trip Lengths (miles)</h3>")
-        parts.append(_avg_trip_table(avg_pair[1], avg_pair[3], avg_pair[0], avg_pair[2]))
+        parts.append(pair_selector(avg_datasets, "nwdc_avg", _render_avg_pair))
         parts.append("</div>")
     if fit_rows:
         append_overall_fit(fit_rows)
@@ -64,25 +80,19 @@ def render(
     if has_tables:
         parts.append("</div>")
 
-    # Plot grid below the tables
     if grid_items:
         parts.append(_render_grid(grid_items))
 
     return "\n".join(parts) if parts else "<p>Insufficient data for comparison.</p>"
 
 
-def _build_grid_item(
-    obs: pl.DataFrame,
-    mod: pl.DataFrame,
+def _render_avg_pair(
     obs_label: str,
+    obs: pl.DataFrame,
     mod_label: str,
-    key: str,
-    title: str,
-) -> dict:
-    """Build a single plot spec for the grid."""
-    bins, obs_share, mod_share, mod_smooth = tlfd_shares(obs, mod)
-    traces = tlfd_trace_dicts(bins, obs_share, mod_share, mod_smooth, obs_label, mod_label)
-    return {"div_id": f"nwdc_{key}", "title": title, "traces": traces}
+    mod: pl.DataFrame,
+) -> str:
+    return _avg_trip_table(obs, mod, obs_label, mod_label)
 
 
 def _render_grid(items: list[dict]) -> str:
@@ -93,8 +103,10 @@ def _render_grid(items: list[dict]) -> str:
     )
     for item in items:
         grid_html += (
-            f"  <div id='{item['div_id']}' "
-            f"style='width:100%;height:320px;position:relative;'></div>\n"
+            f"  <div class='tlfd-cell'>\n"
+            f"    <div id='{item['div_id']}' "
+            f"style='width:100%;height:320px;'></div>\n"
+            f"  </div>\n"
         )
     grid_html += "</div>\n"
 
@@ -104,15 +116,6 @@ def _render_grid(items: list[dict]) -> str:
     js = tmpl.substitute(purposes=purposes_json)
     grid_html += f"<script>\n{js}\n</script>"
     return grid_html
-
-
-def _compute_tlfd_fit(
-    obs: pl.DataFrame,
-    mod: pl.DataFrame,
-    label: str,
-) -> list[dict]:
-    _bins, obs_share, mod_share, _smooth = tlfd_shares(obs, mod)
-    return [compute_fit_row(obs_share, mod_share, label, label_key="Purpose")]
 
 
 def _avg_trip_table(

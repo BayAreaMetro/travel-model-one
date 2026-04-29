@@ -10,8 +10,9 @@ from .helpers import (
     delta_cell,
     esc,
     fit_table,
+    pair_selector,
     pct_cell,
-    pick_pair,
+    pick_datasets,
 )
 
 _COUNTY_NAMES = [c.label for c in CTRAMPCounty]
@@ -22,11 +23,19 @@ def render(
     labels: list[str],
 ) -> str:
     """Return HTML fragment for the Commuting Flows tab."""
-    pair = pick_pair(per_label, labels, "county_summary")
-    if not pair:
+    datasets = pick_datasets(per_label, labels, "county_summary")
+    if len(datasets) < 2:  # noqa: PLR2004
         return "<p>Insufficient data for comparison.</p>"
 
-    obs_label, obs_df, mod_label, mod_df = pair
+    return pair_selector(datasets, "cflow", _render_pair)
+
+
+def _render_pair(
+    obs_label: str,
+    obs_df: pl.DataFrame,
+    mod_label: str,
+    mod_df: pl.DataFrame,
+) -> str:
     parts: list[str] = [
         _flow_tables(obs_df, mod_df, obs_label, mod_label),
         "<h3>Goodness of Fit</h3>",
@@ -47,12 +56,17 @@ def _flow_tables(
     mod_label: str,
 ) -> str:
     county_col = "home_county_name"
-    value_cols = [c for c in obs.columns if c in _COUNTY_NAMES]
+    # Use canonical county order for both rows and columns so the diagonal
+    # (home→same work county) is easy to read.
+    value_cols = [c for c in _COUNTY_NAMES if c in obs.columns or c in mod.columns]
 
     obs_s = add_shares(obs, value_cols)
     mod_s = add_shares(mod, value_cols)
-    obs_rows = obs_s.sort(county_col).to_dicts()
-    mod_rows = mod_s.sort(county_col).to_dicts()
+
+    # Sort rows by canonical county order
+    county_order = {name: i for i, name in enumerate(_COUNTY_NAMES)}
+    obs_rows = sorted(obs_s.to_dicts(), key=lambda r: county_order.get(r[county_col], 99))
+    mod_rows = sorted(mod_s.to_dicts(), key=lambda r: county_order.get(r[county_col], 99))
     mod_by_hc: dict[str, dict] = {r[county_col]: r for r in mod_rows}
 
     out = f"<h3>{esc(obs_label)} (Share)</h3>"
@@ -105,11 +119,13 @@ def _matrix_html(
 def _flows_fit_table(obs: pl.DataFrame, mod: pl.DataFrame) -> str:
     """Fit metrics per home county comparing destination distributions."""
     county_col = "home_county_name"
-    value_cols = [c for c in obs.columns if c in _COUNTY_NAMES]
+    value_cols = [c for c in _COUNTY_NAMES if c in obs.columns or c in mod.columns]
 
-    obs_s = add_shares(obs, value_cols).sort(county_col)
-    mod_s = add_shares(mod, value_cols).sort(county_col)
-    obs_rows = obs_s.to_dicts()
+    obs_s = add_shares(obs, value_cols)
+    mod_s = add_shares(mod, value_cols)
+
+    county_order = {name: i for i, name in enumerate(_COUNTY_NAMES)}
+    obs_rows = sorted(obs_s.to_dicts(), key=lambda r: county_order.get(r[county_col], 99))
     mod_by_hc = {r[county_col]: r for r in mod_s.to_dicts()}
 
     fit_rows: list[dict] = []

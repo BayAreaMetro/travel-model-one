@@ -9,7 +9,8 @@ from .helpers import (
     esc,
     esc_js,
     fit_table,
-    pick_pair,
+    pair_selector,
+    pick_datasets,
     wrap_chart,
 )
 
@@ -19,20 +20,28 @@ def render(
     labels: list[str],
 ) -> str:
     """Return HTML fragment for the Tour Mode Choice tab."""
-    pair = pick_pair(per_label, labels, "tour_mode_summary")
-    if not pair:
+    datasets = pick_datasets(per_label, labels, "tour_mode_summary")
+    if len(datasets) < 2:  # noqa: PLR2004
         return "<p>Insufficient data for comparison.</p>"
 
-    obs_label, obs, mod_label, mod = pair
-    parts: list[str] = []
+    return pair_selector(datasets, "tmc", _render_pair)
 
-    parts.append("<h3>Tour Mode Shares by Purpose</h3>")
-    parts.append(_mode_share_table(obs, mod, obs_label, mod_label))
-    parts.append("<h3>Goodness of Fit</h3>")
-    parts.append(_fit_section(obs, mod))
-    parts.append("<h3>Mode Share Chart</h3>")
-    parts.append(_mode_chart(obs, mod, obs_label, mod_label))
 
+def _render_pair(
+    obs_label: str,
+    obs: pl.DataFrame,
+    mod_label: str,
+    mod: pl.DataFrame,
+) -> str:
+    chart_id = f"tmc_{obs_label}_{mod_label}".replace(" ", "_")
+    parts: list[str] = [
+        "<h3>Tour Mode Shares by Purpose</h3>",
+        _mode_share_table(obs, mod, obs_label, mod_label),
+        "<h3>Goodness of Fit</h3>",
+        _fit_section(obs, mod),
+        "<h3>Mode Share Chart</h3>",
+        _mode_chart(obs, mod, obs_label, mod_label, chart_id),
+    ]
     return "\n".join(parts)
 
 
@@ -168,6 +177,7 @@ def _mode_chart(
     mod: pl.DataFrame,
     obs_label: str,
     mod_label: str,
+    chart_id: str = "tmc_chart",
 ) -> str:
     """Stacked bar chart: one bar per purpose×dataset, segments are mode groups."""
     obs_g = _group_modes(obs)
@@ -232,7 +242,7 @@ def _mode_chart(
 
     height = max(400, len(purposes) * 100)
     js = (
-        f"Plotly.newPlot('tmc_chart', [{', '.join(traces)}], {{"
+        f"Plotly.newPlot('{chart_id}', [{', '.join(traces)}], {{"
         f"barmode:'stack', "
         f"title:'Tour Mode Shares by Purpose', "
         f"xaxis:{{tickformat:'.0%', title:'Share', range:[0,1]}}, "
@@ -241,4 +251,4 @@ def _mode_chart(
         f"margin:{{l:180, t:40, b:60}}"
         f"}});"
     )
-    return wrap_chart("tmc_chart", js, width=1000, height=height)
+    return wrap_chart(chart_id, js, width=1000, height=height)

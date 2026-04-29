@@ -11,9 +11,10 @@ from .helpers import (
     esc,
     fit_table,
     load_template,
-    pick_pair,
-    tlfd_shares,
-    tlfd_trace_dicts,
+    normalise_shares,
+    pair_selector,
+    pick_datasets,
+    tlfd_traces_nway,
     wrap_chart,
 )
 
@@ -25,49 +26,72 @@ def render(
     """Return HTML fragment for the Work / School Location tab."""
     parts: list[str] = []
 
-    # Average trip lengths table FIRST
-    pair = pick_pair(per_label, labels, "avg_trip_lengths")
-    if pair:
+    # Average trip lengths table — pair-toggled
+    avg_datasets = pick_datasets(per_label, labels, "avg_trip_lengths")
+    if len(avg_datasets) >= 2:  # noqa: PLR2004
         parts.append("<h3>Average Trip Lengths (miles)</h3>")
-        parts.append(_avg_trip_table(pair[1], pair[3], pair[0], pair[2]))
-        parts.append("<h3>Goodness of Fit — Trip Length</h3>")
-        parts.append(_tlfd_fit_table(per_label, labels))
+        parts.append(pair_selector(avg_datasets, "wsloc_avg", _render_avg_pair))
 
-    # TLFD plots AFTER table
-    for trip_key, trip_title in [
+    # Fit metrics across all datasets
+    fit_rows: list[dict] = []
+    trip_purposes = [
         ("trip_tlfd_work", "Work"),
         ("trip_tlfd_univ", "University"),
         ("trip_tlfd_school", "School"),
-    ]:
-        pair = pick_pair(per_label, labels, trip_key)
-        if pair:
-            parts.append(
-                f"<h3>Trip Length Frequency Distribution — {trip_title}</h3>",
+    ]
+    for trip_key, trip_title in trip_purposes:
+        ds = pick_datasets(per_label, labels, trip_key)
+        if len(ds) < 2:  # noqa: PLR2004
+            continue
+        ref_label, ref_df = ds[0]
+        _rb, ref_share, _rs = normalise_shares(ref_df)
+        for mod_label, mod_df in ds[1:]:
+            _mb, mod_share, _ms = normalise_shares(mod_df)
+            row_label = (
+                trip_title if len(ds) == 2  # noqa: PLR2004
+                else f"{trip_title} ({mod_label})"
             )
-            parts.append(
-                _tlfd_chart(pair[1], pair[3], pair[0], pair[2], trip_key),
+            fit_rows.append(
+                compute_fit_row(ref_share, mod_share, row_label, label_key="Purpose"),
             )
+
+    if fit_rows:
+        append_overall_fit(fit_rows)
+        parts.append("<h3>Goodness of Fit — Trip Length</h3>")
+        parts.append(fit_table(fit_rows, label_key="Purpose"))
+
+    # TLFD plots — all datasets overlaid
+    for trip_key, trip_title in trip_purposes:
+        ds = pick_datasets(per_label, labels, trip_key)
+        if len(ds) < 2:  # noqa: PLR2004
+            continue
+        parts.append(
+            f"<h3>Trip Length Frequency Distribution — {trip_title}</h3>",
+        )
+        parts.append(_tlfd_chart(ds, trip_key))
 
     return "\n".join(parts) if parts else "<p>Insufficient data for comparison.</p>"
 
 
+def _render_avg_pair(
+    obs_label: str,
+    obs: pl.DataFrame,
+    mod_label: str,
+    mod: pl.DataFrame,
+) -> str:
+    return _avg_trip_table(obs, mod, obs_label, mod_label)
+
+
 # ---------------------------------------------------------------------------
-# TLFD chart with log-scale toggle
+# TLFD chart with log-scale toggle — N-way overlay
 # ---------------------------------------------------------------------------
 
 
 def _tlfd_chart(
-    obs: pl.DataFrame,
-    mod: pl.DataFrame,
-    obs_label: str,
-    mod_label: str,
+    datasets: list[tuple[str, pl.DataFrame]],
     key: str,
 ) -> str:
-    bins, obs_share, mod_share, mod_smooth = tlfd_shares(obs, mod)
-    traces = tlfd_trace_dicts(
-        bins, obs_share, mod_share, mod_smooth, obs_label, mod_label,
-    )
-
+    _bins, traces = tlfd_traces_nway(datasets)
     div_id = f"tlfd_{key}"
     trip_title = key.replace("trip_tlfd_", "").title()
     tmpl = load_template("tlfd_chart.js")
@@ -122,34 +146,3 @@ def _avg_trip_table(
         body += "</tr>"
 
     return header + body + "</tbody></table>"
-
-
-# ---------------------------------------------------------------------------
-# TLFD fit metrics
-# ---------------------------------------------------------------------------
-
-
-def _tlfd_fit_table(
-    per_label: dict[str, dict[str, pl.DataFrame]],
-    labels: list[str],
-) -> str:
-    """Fit metrics comparing TLFD distributions for each trip purpose."""
-    fit_rows: list[dict] = []
-    for trip_key, trip_title in [
-        ("trip_tlfd_work", "Work"),
-        ("trip_tlfd_univ", "University"),
-        ("trip_tlfd_school", "School"),
-    ]:
-        pair = pick_pair(per_label, labels, trip_key)
-        if not pair:
-            continue
-        _bins, obs_sh, mod_sh, _smooth = tlfd_shares(pair[1], pair[3])
-        fit_rows.append(
-            compute_fit_row(obs_sh, mod_sh, trip_title, label_key="Purpose"),
-        )
-
-    if not fit_rows:
-        return ""
-
-    append_overall_fit(fit_rows)
-    return fit_table(fit_rows, label_key="Purpose")

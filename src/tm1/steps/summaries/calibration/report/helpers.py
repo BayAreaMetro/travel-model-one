@@ -103,29 +103,97 @@ def add_shares(df: pl.DataFrame, value_cols: list[str]) -> pl.DataFrame:
     return df
 
 
-def pick_pair(
+def pick_datasets(
     per_label: dict[str, dict[str, pl.DataFrame]],
     labels: list[str],
     table_key: str,
-) -> tuple[str, pl.DataFrame, str, pl.DataFrame] | None:
-    """Return ``(obs_label, obs_df, mod_label, mod_df)`` for *table_key*, or None."""
-    frames: dict[str, pl.DataFrame] = {}
-    for label in labels:
-        df = per_label.get(label, {}).get(table_key)
-        if df is not None:
-            frames[label] = df
-    present = [lb for lb in labels if lb in frames]
-    if len(present) < 2:  # noqa: PLR2004
-        return None
-    return present[0], frames[present[0]], present[1], frames[present[1]]
+) -> list[tuple[str, pl.DataFrame]]:
+    """Return all ``(label, df)`` pairs that have data for *table_key*.
+
+    Order follows *labels* (config order).  The first entry is conventionally
+    the reference / observed dataset; subsequent entries are models.
+    """
+    return [
+        (label, per_label[label][table_key])
+        for label in labels
+        if table_key in per_label.get(label, {})
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Pair-selector widget for table-based tabs
+# ---------------------------------------------------------------------------
+# For tabs where an N-way comparison would make tables too wide, we let the
+# user pick exactly 2 of N datasets via toggle buttons.  All C(N,2) pairs
+# are pre-rendered as hidden sections; the JS tracks which 2 buttons are
+# active and shows the matching section.  Clicking an inactive button bumps
+# the oldest active one (FIFO).
+
+
+def pair_selector(
+    datasets: list[tuple[str, pl.DataFrame]],
+    tab_prefix: str,
+    render_pair: object,
+) -> str:
+    """Build a "pick 2" dataset toggle for table/chart comparisons.
+
+    *datasets* must have ≥ 2 entries.
+    *tab_prefix* is a short unique string used for HTML id attributes.
+    *render_pair* is called as ``render_pair(label_a, df_a, label_b, df_b)``
+    and must return an HTML string for that pair.
+
+    With exactly 2 datasets, content is rendered directly (no buttons).
+    With 3+, one button per dataset is shown; exactly 2 are active at a time.
+    """
+    n = len(datasets)
+
+    # Only one possible pair — render directly, no selector
+    if n == 2:  # noqa: PLR2004
+        return render_pair(
+            datasets[0][0], datasets[0][1],
+            datasets[1][0], datasets[1][1],
+        )
+
+    # --- 3+ datasets: build "pick 2" toggle buttons ---
+    # One button per dataset; first two are active by default
+    buttons: list[str] = []
+    for k, (label, _df) in enumerate(datasets):
+        active = " ds-btn-active" if k < 2 else ""  # noqa: PLR2004
+        buttons.append(
+            f"<button class='ds-btn{active}' "
+            f"data-ds-group='{tab_prefix}' data-ds-idx='{k}' "
+            f"onclick=\"toggleDataset('{tab_prefix}',{k})\">"
+            f"{esc(label)}</button>",
+        )
+
+    # Pre-render all C(n,2) ordered pairs as hidden sections.
+    # Pair (i,j) with i<j: datasets[i] is "obs", datasets[j] is "mod".
+    sections: list[str] = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            pair_id = f"{tab_prefix}_p{i}_{j}"
+            display = "block" if (i == 0 and j == 1) else "none"
+            content = render_pair(
+                datasets[i][0], datasets[i][1],
+                datasets[j][0], datasets[j][1],
+            )
+            sections.append(
+                f"<div class='{tab_prefix}_pairsec' "
+                f"id='{pair_id}' style='display:{display}'>\n{content}\n</div>",
+            )
+
+    bar = "<div class='ds-bar'>" + "\n".join(buttons) + "</div>\n"
+    return bar + "\n".join(sections)
 
 
 def wrap_chart(
-    div_id: str, js_body: str, *, width: int = 900, height: int = 450,
+    div_id: str, js_body: str, *, width: int | str = 900, height: int | str = 450,
 ) -> str:
     """Wrap a Plotly JS snippet in a div + script block."""
+    w = f"{width}px" if isinstance(width, int) else width
+    h = f"{height}px" if isinstance(height, int) else height
     return (
-        f"<div id='{div_id}' style='width:{width}px;height:{height}px;'></div>\n"
+        f"<div id='{div_id}' style='width:{w};height:{h};'></div>\n"
         f"<script>\n{js_body}\n</script>"
     )
 
@@ -236,45 +304,76 @@ def compute_fit_row(
 # ---------------------------------------------------------------------------
 
 
-def tlfd_shares(
-    obs: pl.DataFrame,
-    mod: pl.DataFrame,
+def normalise_shares(
+    df: pl.DataFrame,
     *,
     sigma: float = 2.0,
-) -> tuple[list, list[float], list[float], list[float]]:
-    """Compute normalised shares from TLFD DataFrames.
+) -> tuple[list, list[float], list[float]]:
+    """Compute normalised shares and smoothed curve from a single TLFD DataFrame.
 
-    Returns ``(bins, obs_share, mod_share, mod_smooth)``.
+    Returns ``(bins, share, smooth)``.
     """
-    bins = obs["distbin"].to_list()
-    obs_total = obs["Total"].to_list() if "Total" in obs.columns else []
-    mod_total = mod["Total"].to_list() if "Total" in mod.columns else []
-    obs_sum = sum(obs_total) or 1
-    mod_sum = sum(mod_total) or 1
-    obs_share = [v / obs_sum for v in obs_total]
-    mod_share = [v / mod_sum for v in mod_total]
-    mod_smooth = gaussian_smooth(mod_share, sigma=sigma)
-    return bins, obs_share, mod_share, mod_smooth
+    bins = df["distbin"].to_list()
+    total = df["Total"].to_list() if "Total" in df.columns else []
+    s = sum(total) or 1
+    share = [v / s for v in total]
+    smooth = gaussian_smooth(share, sigma=sigma)
+    return bins, share, smooth
 
 
-def tlfd_trace_dicts(
-    bins: list,
-    obs_share: list[float],
-    mod_share: list[float],
-    mod_smooth: list[float],
-    obs_label: str,
-    mod_label: str,
-) -> list[dict]:
-    """Build Plotly trace dicts for a TLFD comparison."""
-    return [
-        {"name": obs_label, "x": bins, "y": obs_share,
-         "type": "scatter", "mode": "lines"},
-        {"name": f"{mod_label} (raw)", "x": bins, "y": mod_share,
-         "type": "scatter", "mode": "markers",
-         "marker": {"size": 3, "opacity": 0.4}},
-        {"name": f"{mod_label} (smooth)", "x": bins, "y": mod_smooth,
-         "type": "scatter", "mode": "lines", "line": {"width": 2}},
-    ]
+# Distinct colours for overlaying multiple datasets on line charts.
+# Drawn from Tableau 10; first entry is typically the reference/survey.
+DATASET_COLOURS = [
+    "#4e79a7",  # blue
+    "#e15759",  # red
+    "#59a14f",  # green
+    "#f28e2b",  # orange
+    "#b07aa1",  # purple
+    "#76b7b2",  # teal
+    "#edc949",  # gold
+]
+
+
+def tlfd_traces_nway(
+    datasets: list[tuple[str, pl.DataFrame]],
+    *,
+    sigma: float = 2.0,
+) -> tuple[list, list[dict]]:
+    """Build Plotly trace dicts for an N-way TLFD comparison.
+
+    The first dataset is the reference (sparse survey data) — it gets raw
+    markers plus a Gaussian-smoothed line.  Subsequent datasets are model
+    output (large sample) and are shown as solid lines only, no smoothing.
+
+    Returns ``(bins, traces)`` where *bins* comes from the first dataset.
+    """
+    traces: list[dict] = []
+    bins: list = []
+    for i, (label, df) in enumerate(datasets):
+        b, share, smooth = normalise_shares(df, sigma=sigma)
+        if i == 0:
+            bins = b
+        colour = DATASET_COLOURS[i % len(DATASET_COLOURS)]
+        if i == 0:
+            # Reference / survey: raw markers + smoothed line
+            traces.append({
+                "name": f"{label} (raw)", "x": b, "y": share,
+                "type": "scatter", "mode": "markers",
+                "marker": {"size": 3, "opacity": 0.4, "color": colour},
+            })
+            traces.append({
+                "name": f"{label} (smooth)", "x": b, "y": smooth,
+                "type": "scatter", "mode": "lines",
+                "line": {"width": 2, "color": colour},
+            })
+        else:
+            # Model: solid line only (large-sample data doesn't need smoothing)
+            traces.append({
+                "name": label, "x": b, "y": share,
+                "type": "scatter", "mode": "lines",
+                "line": {"width": 2, "color": colour},
+            })
+    return bins, traces
 
 
 def append_overall_fit(

@@ -134,21 +134,20 @@ steps:
             joint_tour_data: "{asim_output_dir}/final_tours.csv"
             indiv_trip_data: "{asim_output_dir}/final_trips.csv"
 
-        # Uncomment to include CTRAMP (will be 3rd, ignored by 2-way report)
-        # - label: "CTRAMP_v161_testrun"
-        #   format: ctramp
-        #   sampleshare: 0.5
-        #   paths:
-        #     taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
-        #     dist_skim: "{reference_run}/skims/nonmotskm.tpp"
-        #     wsloc_results: "{reference_run}/main/wsLocResults_3.csv"
-        #     households: "{reference_run}/INPUT/popsyn/hhFile.2023_v12.csv"
-        #     ao_results: "{reference_run}/main/aoResults.csv"
-        #     cdap_results: "{reference_run}/main/cdapResults.csv"
-        #     indiv_tour_data: "{reference_run}/main/indivTourData_3.csv"
-        #     joint_tour_data: "{reference_run}/main/jointTourData_3.csv"
-        #     indiv_trip_data: "{reference_run}/main/indivTripData_3.csv"
-        #     joint_trip_data: "{reference_run}/main/jointTripData_3.csv"
+        - label: "CTRAMP_v161_testrun"
+          format: ctramp
+          sampleshare: 0.5
+          paths:
+            taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
+            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+            wsloc_results: "{reference_run}/main/wsLocResults_3.csv"
+            households: "{reference_run}/INPUT/popsyn/hhFile.2023_v12.csv"
+            ao_results: "{reference_run}/main/aoResults.csv"
+            cdap_results: "{reference_run}/main/cdapResults.csv"
+            indiv_tour_data: "{reference_run}/main/indivTourData_3.csv"
+            joint_tour_data: "{reference_run}/main/jointTourData_3.csv"
+            indiv_trip_data: "{reference_run}/main/indivTripData_3.csv"
+            joint_trip_data: "{reference_run}/main/jointTripData_3.csv"
 
       submodels:
         - work_school_location

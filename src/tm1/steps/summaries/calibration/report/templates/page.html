@@ -30,6 +30,10 @@ h2 { margin-bottom: 4px; }
 .fit-hint { font-size: 0.82em; color: #666; margin: 4px 0 16px; }
 .pos { color: #d63d2f; }
 .neg { color: #2f7ed6; }
+.ds-bar { display: flex; gap: 6px; margin: 12px 0 8px; }
+.ds-btn { padding: 6px 14px; border: 1px solid #bbb; background: #f0f0f0; cursor: pointer;
+          font-size: 0.85em; border-radius: 4px; transition: background 0.15s; }
+.ds-btn-active { background: #4e79a7; color: #fff; border-color: #4e79a7; font-weight: 600; }
 h3 { margin-top: 28px; }
 h4 { margin-top: 20px; color: #555; }
 </style>
@@ -47,6 +51,42 @@ function showTab(id) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(id).style.display = 'block';
   event.target.classList.add('active');
+}
+
+/* ---- "Pick 2 of N" dataset toggle ----
+   dsActive[prefix] = [olderIdx, newerIdx]  (FIFO order)
+   Clicking an inactive button bumps the oldest active one.
+   Clicking an already-active button does nothing. */
+var dsActive = {};
+function toggleDataset(prefix, idx) {
+  if (!dsActive[prefix]) {
+    dsActive[prefix] = [];
+    document.querySelectorAll('[data-ds-group="' + prefix + '"].ds-btn-active')
+      .forEach(function(b) { dsActive[prefix].push(parseInt(b.dataset.dsIdx)); });
+  }
+  var active = dsActive[prefix];
+  if (active.indexOf(idx) !== -1) return;   // already selected — no-op
+
+  active.shift();   // drop oldest
+  active.push(idx); // add new
+
+  // Update button highlights
+  document.querySelectorAll('[data-ds-group="' + prefix + '"]').forEach(function(b) {
+    b.classList.toggle('ds-btn-active', active.indexOf(parseInt(b.dataset.dsIdx)) !== -1);
+  });
+
+  // Show the section whose id encodes the sorted pair of active indices
+  var sorted = active.slice().sort(function(a, b) { return a - b; });
+  var pairId = prefix + '_p' + sorted[0] + '_' + sorted[1];
+  document.querySelectorAll('.' + prefix + '_pairsec').forEach(function(s) {
+    s.style.display = 'none';
+  });
+  var sec = document.getElementById(pairId);
+  sec.style.display = 'block';
+  // Re-fire Plotly resize for charts that were hidden
+  sec.querySelectorAll('[class*="js-plotly-plot"]').forEach(function(el) {
+    Plotly.Plots.resize(el);
+  });
 }
 </script>
 </body>
