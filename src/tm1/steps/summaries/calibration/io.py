@@ -12,6 +12,7 @@ never need to know the source format.
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 
 import numpy as np
@@ -57,6 +58,10 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
             "PersonType": "person_type",
             "ActivityString": "activity_pattern",
         },
+        "indiv_tour_data": {},
+        "joint_tour_data": {},
+        "indiv_trip_data": {},
+        "joint_trip_data": {},
     },
     # TODO: populate when ActivitySim column names are finalised
     "activitysim": {
@@ -173,14 +178,16 @@ def load_bundle(dataset_cfg: object) -> object:
     bundle = ModelBundle(
         label=cfg.label,
         sampleshare=cfg.sampleshare,
-        weight_col=cfg.weight_col,
+        weight_cols=cfg.weight_cols,
         source_paths={k: str(v) for k, v in cfg.paths.items()},
     )
 
     for table_name, raw_path in cfg.paths.items():
         resolved = Path(raw_path)
+        t0 = time.perf_counter()
         if table_name == "dist_skim":
             lf = read_skim(resolved)
+            log.info("Read skim %s (%.1fs)", resolved.name, time.perf_counter() - t0)
         else:
             log.info("Scanning %s: %s", table_name, resolved)
             lf = scan_csv(resolved)

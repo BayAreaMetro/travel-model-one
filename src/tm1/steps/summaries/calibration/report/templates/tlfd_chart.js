@@ -1,9 +1,12 @@
-Plotly.newPlot('$div_id', [$traces], {
-  title: 'TLFD — $trip_title',
-  xaxis: {title: 'Distance (miles)'},
-  yaxis: {title: 'Share', tickformat: '.1%'}
-});
 (function() {
+  var traces = $traces_json;
+  Plotly.newPlot('$div_id', traces, {
+    title: 'TLFD — $trip_title',
+    xaxis: {title: 'Distance (miles)', rangemode: 'nonnegative'},
+    yaxis: {title: 'Share', tickformat: '.1%'},
+    legend: {orientation: 'h', y: -0.2, x: 0.5, xanchor: 'center'},
+    margin: {b: 60}
+  });
   var div = document.getElementById('$div_id');
   var btn = document.createElement('button');
   btn.textContent = 'Toggle Log Scale';

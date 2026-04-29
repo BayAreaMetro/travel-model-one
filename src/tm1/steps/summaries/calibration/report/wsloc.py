@@ -1,16 +1,19 @@
 """Work / School Location tab renderer."""
 
+import json
+
 import polars as pl
 
 from .helpers import (
+    append_overall_fit,
     compute_fit_row,
     delta_cell,
     esc,
-    esc_js,
     fit_table,
-    gaussian_smooth,
     load_template,
     pick_pair,
+    tlfd_shares,
+    tlfd_trace_dicts,
     wrap_chart,
 )
 
@@ -60,34 +63,15 @@ def _tlfd_chart(
     mod_label: str,
     key: str,
 ) -> str:
-    bins = obs["distbin"].to_list()
-
-    obs_total = obs["Total"].to_list() if "Total" in obs.columns else []
-    mod_total = mod["Total"].to_list() if "Total" in mod.columns else []
-
-    obs_sum = sum(obs_total) or 1
-    mod_sum = sum(mod_total) or 1
-    obs_share = [v / obs_sum for v in obs_total]
-    mod_share = [v / mod_sum for v in mod_total]
-
-    # Smoothed survey trace to reveal trend through sparse tail
-    mod_smooth = gaussian_smooth(mod_share, sigma=2.0)
-
-    traces = (
-        f"{{name:'{esc_js(obs_label)}', x:{bins!r}, "
-        f"y:{obs_share!r}, type:'scatter', mode:'lines'}}, "
-        f"{{name:'{esc_js(mod_label)} (raw)', x:{bins!r}, "
-        f"y:{mod_share!r}, type:'scatter', mode:'markers', "
-        f"marker:{{size:4, opacity:0.4}}}}, "
-        f"{{name:'{esc_js(mod_label)} (smoothed)', x:{bins!r}, "
-        f"y:{mod_smooth!r}, type:'scatter', mode:'lines', "
-        f"line:{{width:2}}}}"
+    bins, obs_share, mod_share, mod_smooth = tlfd_shares(obs, mod)
+    traces = tlfd_trace_dicts(
+        bins, obs_share, mod_share, mod_smooth, obs_label, mod_label,
     )
 
     div_id = f"tlfd_{key}"
     trip_title = key.replace("trip_tlfd_", "").title()
     tmpl = load_template("tlfd_chart.js")
-    js = tmpl.substitute(div_id=div_id, traces=traces, trip_title=trip_title)
+    js = tmpl.substitute(div_id=div_id, traces_json=json.dumps(traces), trip_title=trip_title)
     return wrap_chart(div_id, js)
 
 
@@ -159,13 +143,7 @@ def _tlfd_fit_table(
         pair = pick_pair(per_label, labels, trip_key)
         if not pair:
             continue
-        obs_df, mod_df = pair[1], pair[3]
-        obs_total = obs_df["Total"].to_list() if "Total" in obs_df.columns else []
-        mod_total = mod_df["Total"].to_list() if "Total" in mod_df.columns else []
-        obs_sum = sum(obs_total) or 1
-        mod_sum = sum(mod_total) or 1
-        obs_sh = [v / obs_sum for v in obs_total]
-        mod_sh = [v / mod_sum for v in mod_total]
+        _bins, obs_sh, mod_sh, _smooth = tlfd_shares(pair[1], pair[3])
         fit_rows.append(
             compute_fit_row(obs_sh, mod_sh, trip_title, label_key="Purpose"),
         )
@@ -173,14 +151,5 @@ def _tlfd_fit_table(
     if not fit_rows:
         return ""
 
-    if len(fit_rows) > 1:
-        n = len(fit_rows)
-        fit_rows.append({
-            "Purpose": "Overall",
-            "rmse": sum(r["rmse"] for r in fit_rows) / n,
-            "dissim": sum(r["dissim"] for r in fit_rows) / n,
-            "hellinger": sum(r["hellinger"] for r in fit_rows) / n,
-            "_bold": True,
-        })
-
+    append_overall_fit(fit_rows)
     return fit_table(fit_rows, label_key="Purpose")

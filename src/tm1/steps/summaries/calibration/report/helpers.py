@@ -187,3 +187,67 @@ def compute_fit_row(
         "dissim": dissim_num / 2,
         "hellinger": hellinger(obs_shares, mod_shares),
     }
+
+
+# ---------------------------------------------------------------------------
+# TLFD helpers (shared by nwdc and wsloc tabs)
+# ---------------------------------------------------------------------------
+
+
+def tlfd_shares(
+    obs: pl.DataFrame,
+    mod: pl.DataFrame,
+    *,
+    sigma: float = 2.0,
+) -> tuple[list, list[float], list[float], list[float]]:
+    """Compute normalised shares from TLFD DataFrames.
+
+    Returns ``(bins, obs_share, mod_share, mod_smooth)``.
+    """
+    bins = obs["distbin"].to_list()
+    obs_total = obs["Total"].to_list() if "Total" in obs.columns else []
+    mod_total = mod["Total"].to_list() if "Total" in mod.columns else []
+    obs_sum = sum(obs_total) or 1
+    mod_sum = sum(mod_total) or 1
+    obs_share = [v / obs_sum for v in obs_total]
+    mod_share = [v / mod_sum for v in mod_total]
+    mod_smooth = gaussian_smooth(mod_share, sigma=sigma)
+    return bins, obs_share, mod_share, mod_smooth
+
+
+def tlfd_trace_dicts(
+    bins: list,
+    obs_share: list[float],
+    mod_share: list[float],
+    mod_smooth: list[float],
+    obs_label: str,
+    mod_label: str,
+) -> list[dict]:
+    """Build Plotly trace dicts for a TLFD comparison."""
+    return [
+        {"name": obs_label, "x": bins, "y": obs_share,
+         "type": "scatter", "mode": "lines"},
+        {"name": f"{mod_label} (raw)", "x": bins, "y": mod_share,
+         "type": "scatter", "mode": "markers",
+         "marker": {"size": 3, "opacity": 0.4}},
+        {"name": f"{mod_label} (smooth)", "x": bins, "y": mod_smooth,
+         "type": "scatter", "mode": "lines", "line": {"width": 2}},
+    ]
+
+
+def append_overall_fit(
+    rows: list[dict],
+    *,
+    label_key: str = "Purpose",
+) -> None:
+    """Append a bold 'Overall' average row to *rows* (in-place)."""
+    if not rows:
+        return
+    n = len(rows)
+    rows.append({
+        label_key: "Overall",
+        "rmse": sum(r["rmse"] for r in rows) / n,
+        "dissim": sum(r["dissim"] for r in rows) / n,
+        "hellinger": sum(r["hellinger"] for r in rows) / n,
+        "_bold": True,
+    })

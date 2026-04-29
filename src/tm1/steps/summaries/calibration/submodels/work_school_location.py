@@ -28,7 +28,7 @@ def summarize(
     *,
     weight_col: str | None = None,
     sampleshare: float = 1.0,
-    max_bin: int = 151,
+    max_bin: int = 80,
 ) -> dict[str, pl.DataFrame]:
     """Produce work/school location calibration summaries.
 
@@ -48,7 +48,14 @@ def summarize(
         ``trip_tlfd_univ``, ``trip_tlfd_school``, ``avg_trip_lengths``.
     """
     # -- uniform weight if no per-record column ----------------------------
-    if weight_col is None:
+    if weight_col is not None:
+        if weight_col not in wsloc.columns:
+            msg = (
+                f"weight_col {weight_col!r} not found in wsloc_results "
+                f"columns: {wsloc.columns}"
+            )
+            raise ValueError(msg)
+    else:
         weight_col = "_weight"
         wsloc = wsloc.with_columns(pl.lit(1.0 / sampleshare).alias(weight_col))
 

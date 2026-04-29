@@ -45,6 +45,10 @@ steps:
       - "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
       - "{survey_output_dir}/ctramp_2023/cdapResults.csv"
       - "{survey_output_dir}/ctramp_2023/aoResults.csv"
+      - "{survey_output_dir}/ctramp_2023/IndivTourData.csv"      
+      - "{survey_output_dir}/ctramp_2023/IndivTripData.csv"
+      - "{survey_output_dir}/ctramp_2023/JointTourData.csv"
+      - "{survey_output_dir}/ctramp_2023/JointTripData.csv"
 
   # urbansim:
   #   # TBD -- run urbansim?
@@ -101,11 +105,22 @@ steps:
             households: "{reference_run}/INPUT/popsyn/hhFile.2023_v12.csv"
             ao_results: "{reference_run}/main/aoResults.csv"
             cdap_results: "{reference_run}/main/cdapResults.csv"
+            indiv_tour_data: "{reference_run}/main/indivTourData_3.csv"
+            joint_tour_data: "{reference_run}/main/jointTourData_3.csv"
+            indiv_trip_data: "{reference_run}/main/indivTripData_3.csv"
+            joint_trip_data: "{reference_run}/main/jointTripData_3.csv"
 
         - label: "BATS_2023"
           format: ctramp  # survey data pre-formatted to CTRAMP column names
-          sampleshare: 1.0
-          weight_col: "person_weight"
+          weight_col:
+            wsloc_results: "person_weight"
+            cdap_results: "person_weight"
+            households: "hh_weight"
+            ao_results: "hh_weight"
+            indiv_tour_data: "tour_weight"
+            joint_tour_data: "tour_weight"
+            indiv_trip_data: "trip_weight"
+            joint_trip_data: "trip_weight"
           paths:
             households: "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
             persons: "{survey_output_dir}/ctramp_2023/PersonData.csv"
@@ -114,8 +129,15 @@ steps:
             dist_skim: "{reference_run}/skims/nonmotskm.tpp"
             cdap_results: "{survey_output_dir}/ctramp_2023/cdapResults.csv"
             ao_results: "{survey_output_dir}/ctramp_2023/aoResults.csv"
+            indiv_tour_data: "{survey_output_dir}/ctramp_2023/IndivTourData.csv"
+            indiv_trip_data: "{survey_output_dir}/ctramp_2023/IndivTripData.csv"            
+            joint_tour_data: "{survey_output_dir}/ctramp_2023/JointTourData.csv"
+            joint_trip_data: "{survey_output_dir}/ctramp_2023/JointTripData.csv"
 
       submodels:
         - work_school_location
         - auto_ownership
         - daily_activity_pattern
+        - nonwork_dest_choice
+        - tour_mode_choice
+        - trip_mode_choice

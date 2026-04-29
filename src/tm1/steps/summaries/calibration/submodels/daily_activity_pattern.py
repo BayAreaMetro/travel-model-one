@@ -45,11 +45,17 @@ def summarize(
         )
 
     # Assign weight
-    if weight_col is None:
+    if weight_col is not None:
+        if weight_col not in df.columns:
+            msg = (
+                f"weight_col {weight_col!r} not found in cdap_results "
+                f"columns: {df.columns}"
+            )
+            raise ValueError(msg)
+        weight = weight_col
+    else:
         weight = "_weight"
         df = df.with_columns(pl.lit(1.0 / sampleshare).alias(weight))
-    else:
-        weight = weight_col
 
     # Aggregate: person_type x activity_pattern -> sum of weights
     grouped = (
