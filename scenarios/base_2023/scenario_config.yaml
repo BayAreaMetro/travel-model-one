@@ -4,6 +4,8 @@
 reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
 proj_dir: "E:/tm1a_test"
 survey_output_dir: "{proj_dir}/survey"
+asim_output_dir: "{proj_dir}/output_full"
+
 
 steps:
   setup:
@@ -93,23 +95,7 @@ steps:
       write_csv: false
 
       datasets:
-      # Add any number of comparison datasets here.
-      # Each dataset will be processed by each submodel's summarize() function.
-        - label: "CTRAMP_v161_testrun"
-          format: ctramp
-          sampleshare: 0.5
-          paths:
-            taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
-            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
-            wsloc_results: "{reference_run}/main/wsLocResults_3.csv"
-            households: "{reference_run}/INPUT/popsyn/hhFile.2023_v12.csv"
-            ao_results: "{reference_run}/main/aoResults.csv"
-            cdap_results: "{reference_run}/main/cdapResults.csv"
-            indiv_tour_data: "{reference_run}/main/indivTourData_3.csv"
-            joint_tour_data: "{reference_run}/main/jointTourData_3.csv"
-            indiv_trip_data: "{reference_run}/main/indivTripData_3.csv"
-            joint_trip_data: "{reference_run}/main/jointTripData_3.csv"
-
+      # First two datasets are compared in the report.
         - label: "BATS_2023"
           format: ctramp  # survey data pre-formatted to CTRAMP column names
           weight_col:
@@ -130,9 +116,39 @@ steps:
             cdap_results: "{survey_output_dir}/ctramp_2023/cdapResults.csv"
             ao_results: "{survey_output_dir}/ctramp_2023/aoResults.csv"
             indiv_tour_data: "{survey_output_dir}/ctramp_2023/IndivTourData.csv"
-            indiv_trip_data: "{survey_output_dir}/ctramp_2023/IndivTripData.csv"            
+            indiv_trip_data: "{survey_output_dir}/ctramp_2023/IndivTripData.csv"
             joint_tour_data: "{survey_output_dir}/ctramp_2023/JointTourData.csv"
             joint_trip_data: "{survey_output_dir}/ctramp_2023/JointTripData.csv"
+
+        - label: "ActivitySim"
+          format: activitysim
+          sampleshare: 0.5
+          paths:
+            taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
+            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+            households: "{asim_output_dir}/final_households.csv"
+            ao_results: "{asim_output_dir}/final_households.csv"
+            cdap_results: "{asim_output_dir}/final_persons.csv"
+            wsloc_results: "{asim_output_dir}/final_persons.csv"
+            indiv_tour_data: "{asim_output_dir}/final_tours.csv"
+            joint_tour_data: "{asim_output_dir}/final_tours.csv"
+            indiv_trip_data: "{asim_output_dir}/final_trips.csv"
+
+        # Uncomment to include CTRAMP (will be 3rd, ignored by 2-way report)
+        # - label: "CTRAMP_v161_testrun"
+        #   format: ctramp
+        #   sampleshare: 0.5
+        #   paths:
+        #     taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
+        #     dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+        #     wsloc_results: "{reference_run}/main/wsLocResults_3.csv"
+        #     households: "{reference_run}/INPUT/popsyn/hhFile.2023_v12.csv"
+        #     ao_results: "{reference_run}/main/aoResults.csv"
+        #     cdap_results: "{reference_run}/main/cdapResults.csv"
+        #     indiv_tour_data: "{reference_run}/main/indivTourData_3.csv"
+        #     joint_tour_data: "{reference_run}/main/jointTourData_3.csv"
+        #     indiv_trip_data: "{reference_run}/main/indivTripData_3.csv"
+        #     joint_trip_data: "{reference_run}/main/jointTripData_3.csv"
 
       submodels:
         - work_school_location

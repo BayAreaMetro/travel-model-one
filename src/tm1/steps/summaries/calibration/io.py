@@ -18,6 +18,8 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
+from tm1.steps.summaries.ctramp_output import MODE_TO_INT, PTYPE_LABELS
+
 log = logging.getLogger(__name__)
 
 # Cache for expensive skim reads keyed by resolved absolute path.
@@ -67,6 +69,46 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
     "activitysim": {
         "taz_data": {"ZONE": "zone", "COUNTY": "county"},
         "dist_skim": {"DIST": "dist"},
+        "households": {
+            "household_id": "hh_id",
+            "home_zone_id": "home_taz",
+            "num_workers": "hworkers",
+        },
+        "ao_results": {
+            "household_id": "hh_id",
+        },
+        "cdap_results": {
+            "household_id": "hh_id",
+            "person_id": "person_id",
+            "cdap_activity": "activity_pattern",
+        },
+        "wsloc_results": {
+            "household_id": "hh_id",
+            "person_id": "person_id",
+            "home_zone_id": "home_taz",
+            "workplace_zone_id": "work_location",
+            "school_zone_id": "school_location",
+        },
+        "indiv_tour_data": {
+            "household_id": "hh_id",
+            "primary_purpose": "tour_purpose",
+            "origin": "orig_taz",
+            "destination": "dest_taz",
+        },
+        "joint_tour_data": {
+            "household_id": "hh_id",
+            "primary_purpose": "tour_purpose",
+            "origin": "orig_taz",
+            "destination": "dest_taz",
+        },
+        "indiv_trip_data": {
+            "household_id": "hh_id",
+            "primary_purpose": "tour_purpose",
+        },
+        "joint_trip_data": {
+            "household_id": "hh_id",
+            "primary_purpose": "tour_purpose",
+        },
     },
 }
 
@@ -200,6 +242,82 @@ def load_bundle(dataset_cfg: object) -> object:
             if rename:
                 lf = lf.rename(rename)
 
+        # ActivitySim-specific post-rename transforms
+        if fmt == "activitysim":
+            lf = _apply_asim_transforms(table_name, lf)
+
         setattr(bundle, table_name, lf)
 
     return bundle
+
+
+# ---------------------------------------------------------------------------
+# ActivitySim post-rename transforms
+# ---------------------------------------------------------------------------
+
+# Invert MODE_TO_INT for integer→string lookups (not needed here, but
+# the forward dict maps string→int which is what we need).
+_PTYPE_TO_STUDENT_CAT: dict[int, str] = {
+    3: "College or higher",         # University student
+    6: "Grade or high school",      # Driving-age student
+    7: "Grade or high school",      # Non-driving-age student
+    8: "Grade or high school",      # Pre-school (young child)
+}
+
+
+def _apply_asim_transforms(table_name: str, lf: pl.LazyFrame) -> pl.LazyFrame:
+    """Convert ActivitySim-specific values to canonical after column renames."""
+    cols = set(lf.collect_schema().names())
+
+    if table_name == "cdap_results":
+        # ptype int → string label for CDAP
+        if "ptype" in cols:
+            lf = lf.with_columns(
+                pl.col("ptype")
+                .replace_strict(PTYPE_LABELS, default="Unknown")
+                .alias("person_type"),
+            )
+
+    elif table_name == "wsloc_results":
+        # Derive student_category from ptype
+        if "ptype" in cols:
+            lf = lf.with_columns(
+                pl.col("ptype")
+                .replace_strict(_PTYPE_TO_STUDENT_CAT, default=None)
+                .alias("student_category"),
+            )
+
+    elif table_name == "indiv_tour_data":
+        # Filter to non-joint tours only
+        if "tour_category" in cols:
+            lf = lf.filter(pl.col("tour_category") != "joint")
+        if "tour_mode" in cols:
+            lf = lf.with_columns(
+                pl.col("tour_mode")
+                .replace_strict(MODE_TO_INT, default=0)
+                .cast(pl.Int64),
+            )
+
+    elif table_name == "joint_tour_data":
+        # Filter to joint tours only
+        if "tour_category" in cols:
+            lf = lf.filter(pl.col("tour_category") == "joint")
+        if "tour_mode" in cols:
+            lf = lf.with_columns(
+                pl.col("tour_mode")
+                .replace_strict(MODE_TO_INT, default=0)
+                .cast(pl.Int64),
+            )
+        # Rename number_of_participants → num_participants for submodel compat
+        if "number_of_participants" in cols:
+            lf = lf.rename({"number_of_participants": "num_participants"})
+
+    elif table_name in ("indiv_trip_data", "joint_trip_data"):
+        if "trip_mode" in cols:
+            lf = lf.with_columns(
+                pl.col("trip_mode")
+                .replace_strict(MODE_TO_INT, default=0)
+                .cast(pl.Int64),
+            )
+
+    return lf

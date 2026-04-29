@@ -8,9 +8,51 @@ from string import Template
 
 import polars as pl
 
+from tm1.steps.summaries.calibration.enums import CTRAMPModeType
+
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 _NEAR_ZERO = 1e-9
+
+# ---------------------------------------------------------------------------
+# Simplified mode groups for tour/trip mode charts and tables.
+#
+# Each key is the display label; the value is the list of integer mode codes
+# drawn from CTRAMPModeType.  These groups collapse the 21 individual modes
+# into 8 reporting categories used by both the tour-mode and trip-mode tabs.
+# ---------------------------------------------------------------------------
+M = CTRAMPModeType  # shorthand for readability
+
+MODE_GROUPS: dict[str, list[int]] = {
+    "Drive Alone": [M.DA.id, M.DA_TOLL.id],
+    "Shared Ride 2": [M.SR2.id, M.SR2_TOLL.id],
+    "Shared Ride 3+": [M.SR3.id, M.SR3_TOLL.id],
+    "Walk": [M.WALK.id],
+    "Bike": [M.BIKE.id],
+    "Transit - Walk": [
+        M.WLK_LOC_WLK.id, M.WLK_LRF_WLK.id, M.WLK_EXP_WLK.id,
+        M.WLK_HVY_WLK.id, M.WLK_COM_WLK.id,
+    ],
+    "Transit - Drive": [
+        M.DRV_LOC_WLK.id, M.DRV_LRF_WLK.id, M.DRV_EXP_WLK.id,
+        M.DRV_HVY_WLK.id, M.DRV_COM_WLK.id,
+    ],
+    "Taxi/TNC": [M.TAXI.id, M.TNC.id, M.TNC2.id],
+}
+
+del M  # remove shorthand from module namespace
+
+# Colours aligned 1:1 with MODE_GROUPS keys (8 groups → 8 colours).
+MODE_COLOURS = [
+    "#1f77b4",  # Drive Alone
+    "#ff7f0e",  # Shared Ride 2
+    "#2ca02c",  # Shared Ride 3+
+    "#9467bd",  # Walk
+    "#8c564b",  # Bike
+    "#e377c2",  # Transit - Walk
+    "#d62728",  # Transit - Drive
+    "#bcbd22",  # Taxi/TNC
+]
 
 
 def load_template(name: str) -> Template:

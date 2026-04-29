@@ -12,6 +12,7 @@ REQUIRED_FIELDS = ("indiv_tour_data", "ao_results", "households")
 
 # Purpose simplification: raw CTRAMP purpose → simple category
 _SIMPLE_PURPOSE: dict[str, str] = {
+    # CTRAMP purpose names
     "atwork_business": "At-Work",
     "atwork_eat": "At-Work",
     "atwork_maint": "At-Work",
@@ -29,6 +30,12 @@ _SIMPLE_PURPOSE: dict[str, str] = {
     "work_low": "Work",
     "work_med": "Work",
     "work_very high": "Work",
+    # ActivitySim purpose names
+    "atwork": "At-Work",
+    "escort": "Maintenance",
+    "school": "School",
+    "univ": "University",
+    "work": "Work",
 }
 
 MODE_LABELS: dict[int, str] = {m.id: m.label for m in CTRAMPModeType}

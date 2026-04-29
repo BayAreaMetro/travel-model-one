@@ -8,15 +8,15 @@ import polars as pl
 
 REQUIRED_FIELDS = ("indiv_tour_data", "dist_skim")
 
-# Purpose grouping: display_name → list of raw CTRAMP tour_purpose values
+# Purpose grouping: display_name → list of raw CTRAMP/ActivitySim tour_purpose values
 PURPOSE_GROUPS: dict[str, list[str]] = {
-    "Escort": ["escort_kids", "escort_no kids"],
+    "Escort": ["escort_kids", "escort_no kids", "escort"],
     "Shopping": ["shopping"],
     "Maintenance": ["othmaint"],
     "Eating Out": ["eatout"],
     "Visiting": ["social"],
     "Discretionary": ["othdiscr"],
-    "At-Work": ["atwork_business", "atwork_eat", "atwork_maint"],
+    "At-Work": ["atwork_business", "atwork_eat", "atwork_maint", "atwork"],
 }
 
 _MAX_DIST = 25

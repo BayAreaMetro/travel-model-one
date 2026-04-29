@@ -36,10 +36,20 @@ def render(
     mod = frames[mod_label]
 
     county_col = "county_name" if "county_name" in obs.columns else obs.columns[0]
-    veh_cols = sorted(
-        (c for c in obs.columns if c not in ("county", "county_name")),
+
+    # Use the union of vehicle columns across both datasets so that missing
+    # columns (e.g. AO=5 only in survey) get filled with zeros.
+    non_veh = {"county", "county_name"}
+    all_veh = sorted(
+        {c for c in [*obs.columns, *mod.columns] if c not in non_veh},
         key=lambda x: (int(x) if x.isdigit() else float("inf"), x),
     )
+    for vc in all_veh:
+        if vc not in obs.columns:
+            obs = obs.with_columns(pl.lit(0).alias(vc))
+        if vc not in mod.columns:
+            mod = mod.with_columns(pl.lit(0).alias(vc))
+    veh_cols = all_veh
 
     parts: list[str] = [
         "<h3>County &times; Auto Ownership</h3>",

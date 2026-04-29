@@ -3,6 +3,8 @@
 import polars as pl
 
 from .helpers import (
+    MODE_COLOURS,
+    MODE_GROUPS,
     compute_fit_row,
     esc,
     esc_js,
@@ -10,23 +12,6 @@ from .helpers import (
     pick_pair,
     wrap_chart,
 )
-
-# Simplified mode groups for the chart (aggregate transit submodes, etc.)
-_MODE_GROUPS: dict[str, list[int]] = {
-    "Drive Alone": [1, 2],
-    "Shared Ride 2": [3, 4],
-    "Shared Ride 3+": [5, 6],
-    "Walk": [7],
-    "Bike": [8],
-    "Transit - Walk": [9, 10, 11, 12, 13],
-    "Transit - Drive": [14, 15, 16, 17, 18],
-    "Taxi/TNC": [19, 20, 21],
-}
-
-_MODE_COLOURS = [
-    "#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd",
-    "#8c564b", "#e377c2", "#d62728", "#bcbd22",
-]
 
 
 def render(
@@ -55,7 +40,7 @@ def _group_modes(df: pl.DataFrame) -> pl.DataFrame:
     """Aggregate tour_mode into simplified mode groups."""
     # Build mode → group mapping
     mode_map: dict[int, str] = {}
-    for group_name, modes in _MODE_GROUPS.items():
+    for group_name, modes in MODE_GROUPS.items():
         for m in modes:
             mode_map[m] = group_name
 
@@ -80,8 +65,11 @@ def _mode_share_table(
     obs_g = _group_modes(obs)
     mod_g = _group_modes(mod)
 
-    purposes = sorted(obs_g["simple_purpose"].unique().to_list())
-    mode_groups = list(_MODE_GROUPS)
+    purposes = sorted(
+        set(obs_g["simple_purpose"].unique().to_list())
+        & set(mod_g["simple_purpose"].unique().to_list()),
+    )
+    mode_groups = list(MODE_GROUPS)
 
     # Compute shares within each purpose
     obs_totals = obs_g.group_by("simple_purpose").agg(pl.col("num_tours").sum().alias("total"))
@@ -132,8 +120,11 @@ def _fit_section(obs: pl.DataFrame, mod: pl.DataFrame) -> str:
     obs_g = _group_modes(obs)
     mod_g = _group_modes(mod)
 
-    purposes = sorted(obs_g["simple_purpose"].unique().to_list())
-    mode_groups = list(_MODE_GROUPS)
+    purposes = sorted(
+        set(obs_g["simple_purpose"].unique().to_list())
+        & set(mod_g["simple_purpose"].unique().to_list()),
+    )
+    mode_groups = list(MODE_GROUPS)
 
     obs_totals = obs_g.group_by("simple_purpose").agg(pl.col("num_tours").sum().alias("total"))
     mod_totals = mod_g.group_by("simple_purpose").agg(pl.col("num_tours").sum().alias("total"))
@@ -182,8 +173,11 @@ def _mode_chart(
     obs_g = _group_modes(obs)
     mod_g = _group_modes(mod)
 
-    purposes = sorted(obs_g["simple_purpose"].unique().to_list())
-    mode_groups = list(_MODE_GROUPS)
+    purposes = sorted(
+        set(obs_g["simple_purpose"].unique().to_list())
+        & set(mod_g["simple_purpose"].unique().to_list()),
+    )
+    mode_groups = list(MODE_GROUPS)
 
     # Total per purpose for shares
     obs_totals = {
@@ -219,15 +213,15 @@ def _mode_chart(
 
     traces: list[str] = []
     for i, mg in enumerate(mode_groups):
-        colour = _MODE_COLOURS[i % len(_MODE_COLOURS)]
+        colour = MODE_COLOURS[i % len(MODE_COLOURS)]
         x_vals: list[float] = []
         first = True
         for p in reversed(purposes):
             if not first:
                 x_vals.append(0)  # spacer
             first = False
-            mod_share = mod_lookup.get((p, mg), 0) / mod_totals.get(p, 1)
-            obs_share = obs_lookup.get((p, mg), 0) / obs_totals.get(p, 1)
+            mod_share = mod_lookup.get((p, mg), 0) / (mod_totals.get(p) or 1)
+            obs_share = obs_lookup.get((p, mg), 0) / (obs_totals.get(p) or 1)
             x_vals.append(mod_share)
             x_vals.append(obs_share)
         traces.append(
