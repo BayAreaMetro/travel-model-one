@@ -1,0 +1,20 @@
+# Scenario-specific ActivitySim settings for base_2023
+#
+# This file overrides settings from base-models/activity/configs_mp/settings.yaml.
+# Only include settings you want to CHANGE — everything else is inherited.
+
+inherit_settings: True
+
+# --- Run configuration ---
+multiprocess: True
+num_processes: 40
+households_sample_size: 0        # 0 = full population
+chunk_size: 0                    # 0 = no chunking (requires sufficient RAM)
+use_shadow_pricing: False        # Enable after initial calibration converges
+
+# --- Development/debugging ---
+# Uncomment below for a quick single-process test run:
+# multiprocess: False
+# num_processes: 1
+# households_sample_size: 1000
+# chunk_training_mode: disabled

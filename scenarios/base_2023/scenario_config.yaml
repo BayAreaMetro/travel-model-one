@@ -1,17 +1,26 @@
-# Base 2023 scenario — data configuration for TM1a
-
-# Global shorthand — available as {reference_run} in any step config
+# Base 2023 Scenario — TM1.7 ActivitySim calibration against BATS 2023 survey
+#
+# See README.md in this folder for a walkthrough of the scenario structure.
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
 reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
 proj_dir: "E:/tm1a_test"
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  DERIVED PATHS — generally no need to change                               │
+# └─────────────────────────────────────────────────────────────────────────────┘
 survey_output_dir: "{proj_dir}/survey"
 asim_output_dir: "{proj_dir}/output_full"
 
 
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
 steps:
+  # --- 1. Setup: copy inputs from reference run into project directory ---
   setup:
-    # Creates the project directory structure and
-    # copies input files to data_dir
-    # key = destination filename, value = source path
     copy_inputs:
       land_use:
         from: "{reference_run}/landuse/tazData.csv"
@@ -23,20 +32,15 @@ steps:
         from: "{reference_run}/popsyn/personFile.csv"
         to: "{proj_dir}/data/persons.csv"
 
-  # Convert skims from reference run to OMX format for use in ActivitySim.
-  # Temporary shim to communicate between legacy CUBE skims and ActivitySim
+  # --- 2. Convert skims: CUBE .tpp → OMX for ActivitySim ---
   convert_skims:
     skim_tpp_dir: "{reference_run}/skims"
     output: "{proj_dir}/data/skims.omx"
 
-  # Prepare survey data for calibration comparisons.
-  # This includes cleaning raw survey files and re-formatting to match CTRAMP output structure.
-  # One-time with skipping. Allows convenient re-processing for both model run and summaries when tweaking cleaning/formatting logic.
+  # --- 3. Prepare survey: clean BATS 2023, reformat to CTRAMP structure ---
   prepare_survey:
     config_path: "bats_config.yaml"  # resolved relative to scenario_dir
     cache_dir: ".cache/survey"
-    # Hack to avoid copying code into this repo -- will import directly from survey repo instead
-    # Could be cleaned up later somehow.
     clean_steps:
       - url: "https://raw.githubusercontent.com/BayAreaMetro/travel-diary-survey-tools/develop/projects/bats_2023/clean_bats_2023.py"
         function: "clean_2023_bats"
@@ -52,12 +56,10 @@ steps:
       - "{survey_output_dir}/ctramp_2023/JointTourData.csv"
       - "{survey_output_dir}/ctramp_2023/JointTripData.csv"
 
-  # urbansim:
-  #   # TBD -- run urbansim?
-
+  # --- 4. PopulationSim (stub) ---
+  # Using pre-built synthetic population from reference run.
+  # When ready to run PopulationSim natively, uncomment below:
   # populationsim:
-  #   # Using pre-built synthetic population from reference run (stub).
-  #   # When ready to run PopulationSim natively, uncomment below:
   #   pums:
   #     household: "M:/Data/Census/PUMS/PUMS 2023/csv_hca/psam_h06.csv"
   #     person: "M:/Data/Census/PUMS/PUMS 2023/csv_pca/psam_p06.csv"
@@ -68,27 +70,25 @@ steps:
   #   working_dir: ".cache/popsim"
   #   output_dir: ".cache/data"
 
+  # --- 5. Simulate: run ActivitySim demand model ---
   simulate:
-    iterations: 0  # 0 = static skims, no assignment
-    # TODO: track incremental iteratoin outputs? or just current state?
+    iterations: 0  # 0 = static skims (no highway assignment feedback loop)
     activitysim:
       data_dir: "{proj_dir}/data"
       output_dir: "{proj_dir}/output"
 
-      # Top config "wins" and overrides any duplicate settings in other configs
-      # single-thread config is configured to run only 1,000 HHs for testing,
-      # so you can conveniently comment configs_mp to just run a debug in single-thread.
+      # Config directory chain — first directory wins (whole-file override).
+      # Scenario-specific overrides go in configs/ within this scenario folder.
       configs:
-        - "base-models/activity/configs_mp"
-        - "base-models/activity/configs"
+        - "scenarios/base_2023/configs"       # ← scenario overrides (highest priority)
+        - "base-models/activity/configs_mp"   # multiprocessing defaults
+        - "base-models/activity/configs"      # full model specification (lowest priority)
 
-    assignment:
-      # TBD, need to do A-B evaluation to determine applicability
+    # assignment:
+    #   # Highway assignment feedback (future — requires Cube or equivalent)
 
+  # --- 6. Summaries: generate calibration report ---
   summaries:
-    # core:
-    #   # Skim database CSVs and param blocks are recycled from reference_run
-    #   work_dir: "{proj_dir}/summarize"
 
     calibration:
       output_dir: "{proj_dir}/calibration_output"

@@ -235,9 +235,19 @@ def _constants_table(
     First-dataset column: ln(second / first).
     Second-dataset column: ln(first / second).
     Delta column: difference between the two adjustments.
+
+    ActivitySim uses opposite sign convention for CDAP ASCs compared to CTRAMP.
+    When the model is ActivitySim, we negate its adjustment column so that the
+    displayed value can be added directly to the ActivitySim coefficient file.
     """
     rows_obs = obs.sort("person_type").to_dicts()
     mod_by_pt = {r["person_type"]: r for r in mod.sort("person_type").to_dicts()}
+
+    # Detect ActivitySim model — negate its column for direct applicability
+    mod_is_asim = "activitysim" in mod_label.lower()
+    obs_is_asim = "activitysim" in obs_label.lower()
+    mod_sign = -1.0 if mod_is_asim else 1.0
+    obs_sign = -1.0 if obs_is_asim else 1.0
 
     out = _open_table()
     out += _two_row_header(obs_label, mod_label, "Delta")
@@ -249,22 +259,35 @@ def _constants_table(
         for p in PATTERNS:
             obs_s = row.get(f"{p}_share", 0) or 0
             mod_s = mr.get(f"{p}_share", 0) or 0
-            out += _const_cell(_ln_ratio(mod_s, obs_s))
+            out += _const_cell(_ln_ratio(mod_s, obs_s) * obs_sign)
         for i, p in enumerate(PATTERNS):
             obs_s = row.get(f"{p}_share", 0) or 0
             mod_s = mr.get(f"{p}_share", 0) or 0
             sep = "group-sep" if i == 0 else ""
-            out += _const_cell(_ln_ratio(obs_s, mod_s), extra_cls=sep)
+            out += _const_cell(_ln_ratio(obs_s, mod_s) * mod_sign, extra_cls=sep)
         for i, p in enumerate(PATTERNS):
             obs_s = row.get(f"{p}_share", 0) or 0
             mod_s = mr.get(f"{p}_share", 0) or 0
-            adj1 = _ln_ratio(mod_s, obs_s)
-            adj2 = _ln_ratio(obs_s, mod_s)
+            adj1 = _ln_ratio(mod_s, obs_s) * obs_sign
+            adj2 = _ln_ratio(obs_s, mod_s) * mod_sign
             sep = "group-sep" if i == 0 else ""
             out += _const_cell(adj1 - adj2, extra_cls=sep)
         out += "</tr>"
 
-    return out + "</tbody></table>"
+    out += "</tbody></table>"
+
+    # Footnote about sign convention
+    if mod_is_asim or obs_is_asim:
+        out += (
+            "<div class='fit-hint'>"
+            "<b>Note:</b> ActivitySim uses the opposite sign convention for CDAP ASCs "
+            "compared to CTRAMP. Values shown for ActivitySim columns have been "
+            "negated so adjustments can be added directly to the ActivitySim "
+            "<code>cdap_coefficients.csv</code> file."
+            "</div>"
+        )
+
+    return out
 
 
 # ---------------------------------------------------------------------------
