@@ -11,7 +11,7 @@ def load_config(scenario_dir: Path) -> dict:
     cfg_path = Path(scenario_dir) / "scenario_config.yaml"
     if not cfg_path.exists():
         sys.exit(f"Config not found: {cfg_path}")
-    with cfg_path.open() as f:
+    with cfg_path.open(encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

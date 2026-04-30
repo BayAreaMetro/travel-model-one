@@ -71,7 +71,7 @@ steps:
   #   output_dir: ".cache/data"
 
   # --- 5. Simulate: run ActivitySim demand model ---
-  simulate:
+  simulate_activitysim:
     iterations: 0  # 0 = static skims (no highway assignment feedback loop)
     activitysim:
       data_dir: "{proj_dir}/data"

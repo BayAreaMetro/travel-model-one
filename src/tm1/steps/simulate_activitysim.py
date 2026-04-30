@@ -36,7 +36,7 @@ def _run_activitysim(  # noqa: C901
     cfg: dict, base_model_dir: Path, on_checkpoint: Callable | None = None
 ) -> None:
     """Launch ActivitySim subprocess and stream output."""
-    sim_cfg = cfg["steps"]["simulate"]
+    sim_cfg = cfg["steps"].get("simulate_activitysim", cfg["steps"].get("simulate", {}))
     asim_cfg = sim_cfg.get("activitysim", sim_cfg)  # nested or flat
     data_dir = Path(asim_cfg["data_dir"])
     output_dir = Path(asim_cfg["output_dir"])
@@ -125,7 +125,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:
     base_model_dir = kwargs.get("base_model_dir", scenario_dir.parent.parent)
     on_checkpoint = kwargs.get("on_checkpoint")
 
-    sim_cfg = cfg["steps"]["simulate"]
+    sim_cfg = cfg["steps"].get("simulate_activitysim", cfg["steps"].get("simulate", {}))
     iterations = (
         kwargs.get("iterations")
         if kwargs.get("iterations") is not None

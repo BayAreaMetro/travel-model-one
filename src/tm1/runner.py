@@ -10,7 +10,8 @@ import tm1.steps.convert_skims as convert_skims_step
 import tm1.steps.populationsim as populationsim_step
 import tm1.steps.prepare_survey as prepare_survey_step
 import tm1.steps.setup as setup_step
-import tm1.steps.simulate as simulate_step
+import tm1.steps.simulate_activitysim as simulate_activitysim_step
+import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.summaries.calibration as calibration_step
 import tm1.steps.summaries.core as core_step
 from tm1 import slack
@@ -24,7 +25,8 @@ STEPS = {
     "convert_skims": convert_skims_step,
     "prepare_survey": prepare_survey_step,
     "populationsim": populationsim_step,
-    "simulate": simulate_step,
+    "simulate_activitysim": simulate_activitysim_step,
+    "simulate_ctramp": simulate_ctramp_step,
     "summaries": {
         "core": core_step,
         "calibration": calibration_step,
@@ -54,11 +56,18 @@ def run_model(
         Passed through to each step's ``run()`` function.
         Common: ``base_model_dir``, ``force``.
     """
-    slack.level = "verbose" if slack_level is True else (slack_level or "off")
     scenario_dir = Path(scenario_dir).resolve()
     label = scenario_dir.name
 
     cfg = resolve_templates(load_config(scenario_dir))
+
+    # Slack level: CLI flag wins, then yaml key, then default "minimal"
+    if slack_level is not None:
+        slack.level = "verbose" if slack_level is True else slack_level
+    else:
+        cfg_slack = cfg.get("slack", "minimal")
+        slack.level = cfg_slack if isinstance(cfg_slack, str) else "off"
+
     steps_cfg = cfg.get("steps", {})  # pyright: ignore[reportAttributeAccessIssue]
     if steps is None:
         steps = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]

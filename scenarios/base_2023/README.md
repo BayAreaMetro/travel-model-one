@@ -57,7 +57,7 @@ chunk_training_mode: disabled
 tm1 run --scenario base_2023
 
 # Single step
-tm1 run --scenario base_2023 --step simulate
+tm1 run --scenario base_2023 --step simulate_activitysim
 
 # Or via the convenience script
 python scripts/run_model.py
@@ -81,5 +81,5 @@ Everything else derives from these two variables.
 | `setup` | Copy input files (land use, households, persons) from reference run |
 | `convert_skims` | Convert CUBE .tpp skims to OMX format |
 | `prepare_survey` | Clean and format BATS 2023 survey to CTRAMP structure |
-| `simulate` | Run ActivitySim (iterates with highway assignment when iterations > 0) |
+| `simulate_activitysim` | Run ActivitySim (iterates with highway assignment when iterations > 0) |
 | `summaries` | Generate calibration report comparing survey, ActivitySim, and CTRAMP |

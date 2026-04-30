@@ -1,8 +1,9 @@
 """Setup step: create directories and copy input files.
 
 Reads ``cfg["steps"]["setup"]["copy_inputs"]`` — a dict of named entries,
-each with ``from`` and ``to`` paths.  Idempotent: skips files that already
-exist unless ``force=True``.
+each with ``from`` and ``to`` paths.  If ``from`` is a directory, the entire
+tree is copied (or filtered by ``glob`` pattern).  Idempotent: skips
+files/dirs that already exist unless ``force=True``.
 """
 
 import logging
@@ -34,17 +35,42 @@ def run(
     setup_cfg = cfg.get("steps", {}).get("setup", {})
     copy_inputs = setup_cfg.get("copy_inputs", {})
 
-    for entry in copy_inputs.values():
+    copied = 0
+    for name, entry in copy_inputs.items():
         src = Path(entry["from"])
         dest = Path(entry["to"])
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        if not force and dest.exists():
-            log.info("Already exists: %s", dest)
-            continue
         if not src.exists():
             sys.exit(f"Source not found: {src}")
-        log.info("Copying %s -> %s", src, dest)
-        shutil.copy2(src, dest)
-        _strip_ctrl_z(dest)
 
-    log.info("Setup complete: copied %d file(s)", len(copy_inputs))
+        if src.is_dir():
+            pattern = entry.get("glob")
+            if pattern:
+                # Copy only files matching the glob from a directory.
+                dest.mkdir(parents=True, exist_ok=True)
+                for f in sorted(src.glob(pattern)):
+                    if not f.is_file():
+                        continue
+                    target = dest / f.name
+                    if not force and target.exists():
+                        continue
+                    shutil.copy2(f, target)
+                    copied += 1
+                log.info("Copied %s/%s -> %s (%d files)", src, pattern, dest, copied)
+            else:
+                if not force and dest.exists():
+                    log.info("Already exists: %s", dest)
+                    continue
+                log.info("Copying directory %s -> %s", src, dest)
+                shutil.copytree(src, dest, dirs_exist_ok=force)
+                copied += 1
+        else:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if not force and dest.exists():
+                log.info("Already exists: %s", dest)
+                continue
+            log.info("Copying %s -> %s", src, dest)
+            shutil.copy2(src, dest)
+            _strip_ctrl_z(dest)
+            copied += 1
+
+    log.info("Setup complete: %d item(s) configured, files copied", len(copy_inputs))

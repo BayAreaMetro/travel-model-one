@@ -73,8 +73,8 @@ def main() -> None:
     run_parser.add_argument(
         "--slack",
         choices=["off", "minimal", "verbose"],
-        default="minimal",
-        help="Slack notification level (default: minimal)",
+        default=None,
+        help="Slack notification level (default: from scenario config, or 'minimal')",
     )
 
     args = parser.parse_args()
