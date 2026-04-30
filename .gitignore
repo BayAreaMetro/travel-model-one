@@ -31,3 +31,5 @@ core/projects/mtc/.project
 core/third-party/jppf-2.4/.project
 core/third-party/jppf-2.4/client/.project
 core/third-party/sqlitejdbc/.project
+utilities/airpax/version-2026/output/*.dbf
+utilities/airpax/version-2026/reference_output/*
