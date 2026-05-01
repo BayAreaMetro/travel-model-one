@@ -5,24 +5,53 @@
 Launches the legacy Java model with configurable RunModel.* flags.
 Properties are patched in-place before each run.
 
+Architecture
+------------
+CTRAMP runs as multiple Java processes communicating via RMI:
+
+    ┌─────────────┐   ┌───────────────────┐   ┌──────────────────┐
+    │ JPPF Driver │──▶│ JPPF Node (worker) │──▶│ MatrixDataServer │
+    └─────────────┘   └───────────────────┘   └──────────────────┘
+                              ▲                          │
+                              │                    VoyagerFileAccess.dll
+    ┌────────────────────┐    │                    (reads .tpp skims)
+    │ MtcTourBasedModel  │────┘
+    │  (main process)    │
+    └────────────────────┘
+            ▲
+    ┌───────────────────┐
+    │ HouseholdDataMgr  │
+    └───────────────────┘
+
+License constraint (Bentley/Cube):
+    VoyagerFileAccess.dll requires the Bentley license pipe which is ONLY
+    accessible from the interactive Windows desktop session.  SSH and VS Code
+    Remote sessions cannot reach it.  When running remotely, all Java
+    processes are launched in the interactive session via Windows Task
+    Scheduler (schtasks /it) and monitored via log file tailing.
+
+Execution modes:
+    - Interactive session: direct subprocess.Popen (fast, simple)
+    - SSH/remote session:  schtasks launcher bat → interactive session
+      Python stays in SSH, monitors logs/sentinel for progress/completion.
+
 Requires:
-- Java 8+ with JPPF and MTC jars on classpath
-- Cube runtime DLLs for skim IO (java.library.path)
-- Pre-built skims and accessibility files
-- RuntimeConfiguration.py to have already been run
+    - Java 8 (JDK 1.8.x) with JPPF and MTC jars on classpath
+    - Cube Voyager 6.5+ installed (VoyagerFileAccess.dll + tppdlibx.dll)
+    - Bentley CONNECTION Client signed in (for license)
+    - Pre-built skims (.tpp) and accessibility files
+    - Population synthesis outputs (popsyn/hhFile.csv, personFile.csv)
 
 Usage in scenario_config.yaml::
 
     simulate_ctramp:
-      project_dir: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
-      host_ip: "10.164.0.202"
+      project_dir: "E:/Projects/2023_TM161_IPA_35_testrun"
+      host_ip: "123.123.123.123"  # IP address of the machine running CTRAMP
       iteration: 3
       sample_rate: 0.5
       components:
         UsualWorkAndSchoolLocationChoice: true
         AutoOwnership: true
-        FreeParking: true
-        CoordinatedDailyActivityPattern: true
         ...
 """
 
@@ -43,25 +72,33 @@ log = logging.getLogger(__name__)
 
 # Execution order of CTRAMP model components (matches mtcTourBased.properties).
 COMPONENTS: list[str] = [
+    # Usual work/school location
     "UsualWorkAndSchoolLocationChoice",
+    # Auto ownership
     "AutoOwnership",
+    # Free Parking
     "FreeParking",
     "CoordinatedDailyActivityPattern",
+    # Mandatory Tours
     "IndividualMandatoryTourFrequency",
     "MandatoryTourDepartureTimeAndDuration",
     "MandatoryTourModeChoice",
+    # Joint tours
     "JointTourFrequency",
     "JointTourLocationChoice",
     "JointTourDepartureTimeAndDuration",
     "JointTourModeChoice",
+    # Individual non-mandatory tours must run after joint tours to see their updated
     "IndividualNonMandatoryTourFrequency",
     "IndividualNonMandatoryTourLocationChoice",
     "IndividualNonMandatoryTourDepartureTimeAndDuration",
     "IndividualNonMandatoryTourModeChoice",
+    # At-work subtours
     "AtWorkSubTourFrequency",
     "AtWorkSubTourLocationChoice",
     "AtWorkSubTourDepartureTimeAndDuration",
     "AtWorkSubTourModeChoice",
+    # Stop frequency/location (must be last to see all upstream tour info):
     "StopFrequency",
     "StopLocation",
 ]
@@ -74,6 +111,11 @@ _SUB_FLAGS: dict[str, list[str]] = {
         "UsualWorkAndSchoolLocationChoice.RunFlag.School",
     ],
 }
+
+
+# ---------------------------------------------------------------------------
+# Configuration patching
+# ---------------------------------------------------------------------------
 
 
 def components_to_flags(components: dict[str, bool]) -> dict[str, str]:
@@ -232,6 +274,11 @@ def _ensure_native_dlls(runtime_dir: Path) -> None:
     raise FileNotFoundError(msg)
 
 
+# ---------------------------------------------------------------------------
+# License / session detection
+# ---------------------------------------------------------------------------
+
+
 def _is_interactive_session() -> bool:
     """Return True if the current process runs in an interactive desktop session.
 
@@ -247,16 +294,6 @@ def _is_interactive_session() -> bool:
     # VS Code Remote sets VSCODE_AGENT_FOLDER
     if os.environ.get("VSCODE_AGENT_FOLDER"):
         return False
-    # Check Windows session ID — interactive desktop is typically session 1+
-    # but services/SSH use session 0 or a different logon session.
-    # The definitive check: can we see the named pipe?
-    # On Windows, checking pipe existence is unreliable from Python — fall
-    # back to probing the Bentley.Connect.Client process session.
-    with contextlib.suppress(FileNotFoundError, subprocess.TimeoutExpired):
-        subprocess.run(
-            ["query", "session"],
-            capture_output=True, text=True, check=False, timeout=5,
-        )
     return True
 
 
@@ -373,7 +410,7 @@ def _write_launcher_bat(
             com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased ^
             -iteration {iteration} ^
             -sampleRate {sample_rate} ^
-            -sampleSeed {seed}
+            -sampleSeed {seed} >> "logs\\event_main.log" 2>&1
 
         echo %ERRORLEVEL% > "{sentinel}"
         taskkill /f /im java.exe >nul 2>&1
@@ -429,7 +466,7 @@ def _run_via_schtasks(
     logs_dir = project_dir / "logs"
     stop_event = threading.Event()
     monitor = threading.Thread(
-        target=_monitor_node_log, args=(logs_dir, stop_event), daemon=True,
+        target=_monitor_logs, args=(logs_dir, stop_event), daemon=True,
     )
     monitor.start()
 
@@ -545,76 +582,49 @@ def kill_infrastructure(procs: list[subprocess.Popen]) -> None:
         )
 
 
-def _monitor_node_log(logs_dir: Path, stop: threading.Event) -> None:
-    """Background thread: stream node log lines, collapsing repeated messages."""
-    node_log = logs_dir / "event-node0.log"
-    offset = 0
-    repeat_msg = ""
-    repeat_count = 0
-    interval = 5  # seconds between polls
+# ---------------------------------------------------------------------------
+# Log monitoring
+# ---------------------------------------------------------------------------
 
-    # Lines matching these patterns are noise (matrix index cataloguing, repeated warnings)
-    _SKIP_PREFIXES = (
-        "group name:", "index flag:",
-        "matrix group=", "full matrix group information:",
-    )
 
-    def _flush_repeats():
-        nonlocal repeat_msg, repeat_count
-        if repeat_count > 1:
-            log.info("[node] ... x%d: %s", repeat_count, repeat_msg)
-        repeat_msg = ""
-        repeat_count = 0
+def _monitor_logs(logs_dir: Path, stop: threading.Event) -> None:
+    """Background thread: tail log files and forward all lines to Python logging.
 
-    def _extract_msg(line: str) -> str:
-        """Strip timestamp prefix, return the message portion."""
-        if ", INFO, " in line:
-            return line.split(", INFO, ", 1)[1]
-        if ", WARN, " in line:
-            return line.split(", WARN, ", 1)[1]
-        return line
+    Monitors both the JPPF node log (event-node0.log) and the main model
+    stdout log (event_main.log) so progress is visible from the SSH session.
+    """
+    targets = {
+        "node": (logs_dir / "event-node0.log", 0),
+        "main": (logs_dir / "event_main.log", 0),
+    }
+    interval = 3  # seconds between polls
 
     while not stop.wait(timeout=interval):
-        if not node_log.exists():
-            continue
-        try:
-            size = node_log.stat().st_size
-        except OSError:
-            continue
-        if size <= offset:
-            continue
-
-        try:
-            with node_log.open("r", encoding="utf-8", errors="replace") as f:
-                f.seek(offset)
-                new_text = f.read()
-            offset = size
-        except OSError:
-            continue
-
-        for line in new_text.splitlines():
-            line = line.strip()
-            if not line:
+        for label, (path, offset) in list(targets.items()):
+            if not path.exists():
                 continue
-            msg = _extract_msg(line)
-            # Skip noisy matrix index lines
-            stripped = msg.lstrip()
-            if stripped.startswith(_SKIP_PREFIXES):
+            try:
+                size = path.stat().st_size
+            except OSError:
                 continue
-            if msg == repeat_msg:
-                repeat_count += 1
-            else:
-                _flush_repeats()
-                repeat_msg = msg
-                repeat_count = 1
-                log.info("[node] %s", msg)
+            if size <= offset:
+                continue
+            try:
+                with path.open("r", encoding="utf-8", errors="replace") as f:
+                    f.seek(offset)
+                    new_text = f.read()
+                targets[label] = (path, size)
+            except OSError:
+                continue
+            for raw_line in new_text.splitlines():
+                line = raw_line.strip()
+                if line:
+                    log.info("[%s] %s", label, line)
 
-        # Report ongoing repeats so user sees a count each poll cycle
-        if repeat_count > 1:
-            log.info("[node] ... x%d so far: %s", repeat_count, repeat_msg)
 
-    # Final flush on exit
-    _flush_repeats()
+# ---------------------------------------------------------------------------
+# Direct execution (interactive session only)
+# ---------------------------------------------------------------------------
 
 
 def run_model(
@@ -656,11 +666,11 @@ def run_model(
     ]
     log.info("CTRAMP: iter=%d sample=%s seed=%d", iteration, sample_rate, seed)
 
-    # Start background node-log monitor
+    # Start background log monitor
     logs_dir = project_dir / "logs"
     stop_event = threading.Event()
     monitor = threading.Thread(
-        target=_monitor_node_log, args=(logs_dir, stop_event), daemon=True,
+        target=_monitor_logs, args=(logs_dir, stop_event), daemon=True,
     )
     monitor.start()
 
