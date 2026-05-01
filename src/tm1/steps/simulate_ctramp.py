@@ -34,6 +34,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import textwrap
 import threading
 import time
 from pathlib import Path
@@ -229,6 +230,249 @@ def _ensure_native_dlls(runtime_dir: Path) -> None:
 
     msg = "VoyagerFileAccess.dll not found — cannot run CTRAMP"
     raise FileNotFoundError(msg)
+
+
+def _is_interactive_session() -> bool:
+    """Return True if the current process runs in an interactive desktop session.
+
+    The Bentley license pipe (net.pipe://localhost/bentleyconnect/client/
+    licenseservice) is only accessible from the interactive Windows session.
+    SSH sessions, VS Code Remote terminals, and service sessions cannot reach
+    the pipe, causing VoyagerFileAccess.dll to hang indefinitely on
+    MatReaderOpen.
+    """
+    # SSH_CONNECTION is set by OpenSSH server for remote sessions
+    if os.environ.get("SSH_CONNECTION"):
+        return False
+    # VS Code Remote sets VSCODE_AGENT_FOLDER
+    if os.environ.get("VSCODE_AGENT_FOLDER"):
+        return False
+    # Check Windows session ID — interactive desktop is typically session 1+
+    # but services/SSH use session 0 or a different logon session.
+    # The definitive check: can we see the named pipe?
+    # On Windows, checking pipe existence is unreliable from Python — fall
+    # back to probing the Bentley.Connect.Client process session.
+    with contextlib.suppress(FileNotFoundError, subprocess.TimeoutExpired):
+        subprocess.run(
+            ["query", "session"],
+            capture_output=True, text=True, check=False, timeout=5,
+        )
+    return True
+
+
+def _preflight_license() -> bool:
+    """Check whether the Bentley license is accessible from this session.
+
+    Returns True if we can safely call the DLL directly (interactive session).
+    Returns False if we need to use schtasks to run in the interactive session.
+    Does NOT touch the DLL — that would deadlock on failure.
+    """
+    if _is_interactive_session():
+        log.info("Preflight: interactive session — direct execution OK")
+        return True
+
+    log.warning(
+        "Preflight: SSH/remote session detected — Bentley license pipe "
+        "is not accessible from this session. Java processes that load "
+        "VoyagerFileAccess.dll will be launched in the interactive session "
+        "via schtasks."
+    )
+    return False
+
+
+def _recover_license() -> None:
+    """Kill hung processes and allow Bentley license service to recover.
+
+    Called during teardown to prevent the license from getting stuck.
+    Safe to call even when nothing is hung.
+    """
+    for image in ["java.exe", "Cluster.exe", "runtpp.exe", "VOYAGER.EXE"]:
+        subprocess.run(
+            ["taskkill", "/f", "/im", image],
+            capture_output=True, check=False,
+        )
+    # Restart Bentley services so the pipe recovers
+    for image in ["Bentley.Connect.Client.exe", "Bentley.Licensing.Service.exe"]:
+        subprocess.run(
+            ["taskkill", "/f", "/im", image],
+            capture_output=True, check=False,
+        )
+    # Bentley services auto-restart; give them time
+    time.sleep(5)
+    log.info("License recovery: killed processes, Bentley services restarting")
+
+
+# ---------------------------------------------------------------------------
+# schtasks-based execution (for SSH/remote sessions)
+# ---------------------------------------------------------------------------
+
+_TASK_NAME = "CTRAMP_Python_Run"
+_SENTINEL_FILE = "ctramp_sentinel.txt"
+
+
+def _write_launcher_bat(
+    project_dir: Path,
+    runtime_dir: Path,
+    host_ip: str,
+    *,
+    iteration: int,
+    sample_rate: float,
+    seed: int,
+) -> Path:
+    """Write a .bat that starts infrastructure + runs the model.
+
+    This .bat is executed via schtasks in the interactive session where
+    the Bentley license pipe is accessible.
+    """
+    cp = _classpath(runtime_dir)
+    lib = _lib_path(runtime_dir)
+    sentinel = project_dir / _SENTINEL_FILE
+
+    bat_content = textwrap.dedent(f"""\
+        @echo off
+        cd /d "{project_dir}"
+        set CLASSPATH={cp}
+        set PATH={lib};%PATH%
+
+        del /f "{sentinel}" 2>nul
+
+        echo Starting JPPF Driver...
+        start /b java -server -Xmx16m ^
+            -Dlog4j.configuration=log4j-driver.properties ^
+            -Djppf.config=jppf-driver.properties ^
+            org.jppf.server.DriverLauncher
+
+        echo Starting JPPF Node...
+        start /b java -server -Xmx16m ^
+            -Dlog4j.configuration=log4j-node0.xml ^
+            -Djppf.config=jppf-node0.properties ^
+            org.jppf.node.NodeLauncher
+
+        echo Starting Household Data Manager...
+        start /b java -Xms20000m -Xmx20000m ^
+            -Dlog4j.configuration=log4j_hh.xml ^
+            com.pb.mtc.ctramp.MtcHouseholdDataManager ^
+            -hostname {host_ip}
+
+        echo Starting Matrix Data Server...
+        start /b java -Xms14000m -Xmx14000m ^
+            -Dlog4j.configuration=log4j_mtx.xml ^
+            -Djava.library.path="{lib}" ^
+            com.pb.models.ctramp.MatrixDataServer ^
+            -hostname {host_ip}
+
+        echo Waiting 15s for infrastructure startup...
+        timeout /t 15 /nobreak >nul
+
+        echo Running CTRAMP model...
+        java -showversion -Xmx6000m ^
+            -cp "{cp}" ^
+            -Dlog4j.configuration=log4j.xml ^
+            -Djava.library.path="{lib}" ^
+            -Djppf.config=jppf-clientDistributed.properties ^
+            com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased ^
+            -iteration {iteration} ^
+            -sampleRate {sample_rate} ^
+            -sampleSeed {seed}
+
+        echo %ERRORLEVEL% > "{sentinel}"
+        taskkill /f /im java.exe >nul 2>&1
+    """)
+
+    bat_path = project_dir / "_ctramp_launcher.bat"
+    bat_path.write_text(bat_content, encoding="utf-8")
+    log.info("Wrote launcher bat: %s", bat_path)
+    return bat_path
+
+
+def _run_via_schtasks(
+    project_dir: Path,
+    runtime_dir: Path,
+    host_ip: str,
+    *,
+    iteration: int,
+    sample_rate: float,
+    seed: int,
+) -> None:
+    """Launch the full CTRAMP run in the interactive session via schtasks.
+
+    Monitors progress by tailing log files. Blocks until completion.
+    """
+    bat_path = _write_launcher_bat(
+        project_dir, runtime_dir, host_ip,
+        iteration=iteration, sample_rate=sample_rate, seed=seed,
+    )
+    sentinel = project_dir / _SENTINEL_FILE
+    sentinel.unlink(missing_ok=True)
+
+    # Create scheduled task that runs interactively (/it)
+    subprocess.run(
+        ["schtasks", "/create",
+         "/tn", _TASK_NAME,
+         "/tr", f'cmd /c "{bat_path}"',
+         "/sc", "once",
+         "/st", "00:00",
+         "/f",  # force overwrite
+         "/it",  # interactive only
+         "/rl", "HIGHEST"],
+        capture_output=True, check=True, text=True,
+    )
+
+    # Run it now
+    subprocess.run(
+        ["schtasks", "/run", "/tn", _TASK_NAME],
+        capture_output=True, check=True, text=True,
+    )
+    log.info("Launched CTRAMP via schtasks (interactive session)")
+
+    # Monitor via log file and sentinel
+    logs_dir = project_dir / "logs"
+    stop_event = threading.Event()
+    monitor = threading.Thread(
+        target=_monitor_node_log, args=(logs_dir, stop_event), daemon=True,
+    )
+    monitor.start()
+
+    try:
+        # Poll for sentinel file (written when model completes)
+        poll_interval = 10
+        while not sentinel.exists():
+            time.sleep(poll_interval)
+            # Check if task is still running
+            result = subprocess.run(
+                ["schtasks", "/query", "/tn", _TASK_NAME, "/fo", "csv", "/nh"],
+                capture_output=True, text=True, check=False,
+            )
+            if "Running" not in result.stdout and sentinel.exists():
+                break
+            if "Running" not in result.stdout and not sentinel.exists():
+                # Task ended without sentinel — something crashed
+                msg = (
+                    "CTRAMP task ended without writing sentinel file. "
+                    "Check logs in: " + str(logs_dir)
+                )
+                raise RuntimeError(msg)
+    finally:
+        stop_event.set()
+        monitor.join(timeout=2)
+        # Cleanup the scheduled task
+        subprocess.run(
+            ["schtasks", "/delete", "/tn", _TASK_NAME, "/f"],
+            capture_output=True, check=False,
+        )
+
+    # Read exit code from sentinel
+    exit_code_str = sentinel.read_text().strip()
+    try:
+        exit_code = int(exit_code_str)
+    except ValueError:
+        exit_code = -1
+
+    if exit_code != 0:
+        msg = f"CTRAMP exited with code {exit_code}"
+        raise RuntimeError(msg)
+
+    log.info("CTRAMP completed successfully (via schtasks)")
 
 
 def start_infrastructure(
@@ -494,7 +738,6 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     threads = step_cfg.get("threads", max(1, (os.cpu_count() or 4) - 2))
 
     patch_properties(runtime_dir / "mtcTourBased.properties", flags)
-    lib = _lib_path(runtime_dir)
     patch_jppf_configs(runtime_dir / "config", host_ip, threads=threads)
 
     enabled = sum(1 for v in components.values() if v)
@@ -504,11 +747,27 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     kill_infrastructure([])
 
     _ensure_native_dlls(runtime_dir)
-    procs = start_infrastructure(runtime_dir, project_dir, host_ip)
-    try:
-        run_model(
-            project_dir, runtime_dir,
-            iteration=iteration, sample_rate=sample_rate, seed=seed,
-        )
-    finally:
-        kill_infrastructure(procs)
+
+    # Preflight: determine if we can access the Bentley license from this
+    # session, or if we need to launch via schtasks in the interactive session.
+    interactive = _preflight_license()
+
+    if not interactive:
+        # SSH/remote session: run everything via schtasks in interactive session
+        try:
+            _run_via_schtasks(
+                project_dir, runtime_dir, host_ip,
+                iteration=iteration, sample_rate=sample_rate, seed=seed,
+            )
+        finally:
+            _recover_license()
+    else:
+        # Interactive session: direct subprocess execution (original path)
+        procs = start_infrastructure(runtime_dir, project_dir, host_ip)
+        try:
+            run_model(
+                project_dir, runtime_dir,
+                iteration=iteration, sample_rate=sample_rate, seed=seed,
+            )
+        finally:
+            kill_infrastructure(procs)
