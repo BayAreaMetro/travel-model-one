@@ -185,15 +185,15 @@ class CalibrationBase(ABC):
         # Stop messages from bubbling up to the root logger
         self.logger.propagate = False
 
-        # Console handler
-        console_handler = logging.StreamHandler()
+        # Console handler (force UTF-8 so Unicode characters like ✓ don't fail on cp1252 terminals)
+        console_handler = logging.StreamHandler(stream=open(sys.stdout.fileno(), mode='w', encoding='utf-8', closefd=False))
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
 
         # File handler (writes to log file)
         log_file = os.path.join(self.output_dir, 'calibration.log')
-        file_handler = logging.FileHandler(log_file, mode='a')  # 'w' overwrites, 'a' appends
+        file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')  # 'w' overwrites, 'a' appends
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
