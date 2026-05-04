@@ -63,7 +63,9 @@ def write_stage_settings(
             "name": "mp_households", "begin": hh_begin,
             "slice": {"tables": ["households", "persons"]},
         })
-    mp_steps.append({"name": "mp_summarize", "begin": "write_tables"})
+    # write_trip_matrices writes shared OMX files — must run sequentially
+    summarize_begin = "write_trip_matrices" if "write_trip_matrices" in models else "write_tables"
+    mp_steps.append({"name": "mp_summarize", "begin": summarize_begin})
 
     settings = {
         "inherit_settings": True,
@@ -146,18 +148,8 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
     names = [stages[s - 1]["name"] for s in active]
     label = f"ablation [{','.join(names)}] HH={sample_size:,} ({sample_rate:.0%})"
 
-    # Plan
-    lines = []
-    cum: list[str] = list(INIT_MODELS)
-    for i, s in enumerate(stages, 1):
-        cum.extend(s["activitysim_models"])
-        if i in active:
-            added = ", ".join(s["activitysim_models"])
-            lines.append(f"\u2022 Stage {i} \u2014 *{s['name']}*: +{added} ({len(cum)} total)")
-    plan = "\n".join(lines)
-
-    notify(f":microscope: Starting ActivitySim {label} on {socket.gethostname()}\n{plan}")
-    log.info("Ablation plan:\n%s", plan)
+    notify(f":microscope: Starting ActivitySim {label} on {socket.gethostname()}")
+    log.info("Active stages: %s", names)
 
     asim_output = project_dir / "output"
     t_total = time.time()
@@ -170,6 +162,7 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
 
         if (stage_dir / "final_households.csv").exists():
             log.info("Stage %d (%s) already exists — skipping", stage_num, stage_name)
+            notify(f":fast_forward: Stage {stage_num} ({stage_name}) already done — skipping")
             continue
 
         models = build_models_list(stages, stage_num)
