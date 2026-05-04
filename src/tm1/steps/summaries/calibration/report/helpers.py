@@ -338,12 +338,16 @@ def tlfd_traces_nway(
     datasets: list[tuple[str, pl.DataFrame]],
     *,
     sigma: float = 2.0,
+    survey_labels: set[str] | None = None,
 ) -> tuple[list, list[dict]]:
     """Build Plotly trace dicts for an N-way TLFD comparison.
 
-    The first dataset is the reference (sparse survey data) — it gets raw
-    markers plus a Gaussian-smoothed line.  Subsequent datasets are model
-    output (large sample) and are shown as solid lines only, no smoothing.
+    Datasets whose label is in *survey_labels* get raw markers plus a
+    Gaussian-smoothed line (useful for sparse survey data).  All other
+    datasets are shown as solid lines only.
+
+    If *survey_labels* is ``None``, the legacy behaviour applies: only the
+    first dataset (index 0) is treated as survey.
 
     Returns ``(bins, traces)`` where *bins* comes from the first dataset.
     """
@@ -354,8 +358,11 @@ def tlfd_traces_nway(
         if i == 0:
             bins = b
         colour = DATASET_COLOURS[i % len(DATASET_COLOURS)]
-        if i == 0:
-            # Reference / survey: raw markers + smoothed line
+        is_survey = (
+            label in survey_labels if survey_labels is not None else i == 0
+        )
+        if is_survey:
+            # Survey: raw markers + smoothed line
             traces.append({
                 "name": f"{label} (raw)", "x": b, "y": share,
                 "type": "scatter", "mode": "markers",

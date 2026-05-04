@@ -141,7 +141,7 @@ def _write_csvs(
             log.info("Wrote %s", path)
 
 
-def run(
+def run(  # noqa: C901, PLR0912
     scenario_dir: Path,  # noqa: ARG001
     cfg: dict,
     **kwargs: object,  # noqa: ARG001
@@ -218,9 +218,16 @@ def run(
         if run_cfg.write_csv:
             write_comparison_csvs(comparisons, run_cfg.output_dir)
 
+    # Identify survey datasets (those using per-record weights, not sampleshare)
+    survey_labels = {
+        ds_cfg.label for ds_cfg in run_cfg.datasets if ds_cfg.weight_cols
+    }
+
     # HTML calibration report
     t_rpt = time.perf_counter()
-    report_path = write_report(all_results, run_cfg.output_dir)
+    report_path = write_report(
+        all_results, run_cfg.output_dir, survey_labels=survey_labels,
+    )
     log.info("Wrote calibration report: %s (%.1fs)", report_path, time.perf_counter() - t_rpt)
     log.info("Calibration complete (%.1fs total)", time.perf_counter() - t_total)
 

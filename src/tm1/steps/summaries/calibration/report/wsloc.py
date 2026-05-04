@@ -22,6 +22,8 @@ from .helpers import (
 def render(
     per_label: dict[str, dict[str, pl.DataFrame]],
     labels: list[str],
+    *,
+    survey_labels: set[str] | None = None,
 ) -> str:
     """Return HTML fragment for the Work / School Location tab."""
     parts: list[str] = []
@@ -68,7 +70,7 @@ def render(
         parts.append(
             f"<h3>Trip Length Frequency Distribution — {trip_title}</h3>",
         )
-        parts.append(_tlfd_chart(ds, trip_key))
+        parts.append(_tlfd_chart(ds, trip_key, survey_labels=survey_labels))
 
     return "\n".join(parts) if parts else "<p>Insufficient data for comparison.</p>"
 
@@ -90,8 +92,10 @@ def _render_avg_pair(
 def _tlfd_chart(
     datasets: list[tuple[str, pl.DataFrame]],
     key: str,
+    *,
+    survey_labels: set[str] | None = None,
 ) -> str:
-    _bins, traces = tlfd_traces_nway(datasets)
+    _bins, traces = tlfd_traces_nway(datasets, survey_labels=survey_labels)
     div_id = f"tlfd_{key}"
     trip_title = key.replace("trip_tlfd_", "").title()
     tmpl = load_template("tlfd_chart.js")

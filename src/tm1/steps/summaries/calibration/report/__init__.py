@@ -29,6 +29,8 @@ _RENDERERS: list[tuple[str, str, object]] = [
 def write_report(
     all_results: dict[str, dict[str, dict[str, pl.DataFrame]]],
     output_dir: Path,
+    *,
+    survey_labels: set[str] | None = None,
 ) -> Path:
     """Write ``calibration_report.html`` to *output_dir* and return the path."""
     output_dir = Path(output_dir)
@@ -43,7 +45,17 @@ def write_report(
             for label in labels
         }
         if any(per_label.values()):
-            tabs.append((title, renderer(per_label, labels)))
+            # Pass survey_labels to renderers that accept it (wsloc, nwdc)
+            import inspect  # noqa: PLC0415
+
+            sig = inspect.signature(renderer)
+            if "survey_labels" in sig.parameters:
+                tabs.append((
+                    title,
+                    renderer(per_label, labels, survey_labels=survey_labels),
+                ))
+            else:
+                tabs.append((title, renderer(per_label, labels)))
 
     dest = output_dir / "calibration_report.html"
     if not tabs:

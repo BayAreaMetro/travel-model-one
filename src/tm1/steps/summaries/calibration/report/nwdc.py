@@ -20,6 +20,8 @@ from .helpers import (
 def render(
     per_label: dict[str, dict[str, pl.DataFrame]],
     labels: list[str],
+    *,
+    survey_labels: set[str] | None = None,
 ) -> str:
     """Return HTML fragment for the Non-work Destination Choice tab."""
     parts: list[str] = []
@@ -42,7 +44,7 @@ def render(
         datasets = pick_datasets(per_label, labels, tlfd_key)
         if len(datasets) < 2:  # noqa: PLR2004
             continue
-        _bins, traces = tlfd_traces_nway(datasets)
+        _bins, traces = tlfd_traces_nway(datasets, survey_labels=survey_labels)
         grid_items.append({
             "div_id": f"nwdc_{tlfd_key}",
             "title": purpose_title,
