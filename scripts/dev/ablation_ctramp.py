@@ -23,6 +23,7 @@ Usage:
 
 import logging
 import shutil
+import socket
 import sys
 import time
 from pathlib import Path
@@ -182,21 +183,29 @@ def clean_outputs(project_dir: Path) -> None:
             f.write_text("")
 
 
+def _count_households(project_dir: Path) -> int:
+    """Count rows in the input households CSV (excludes header)."""
+    hh_file = project_dir / "popsyn" / "hhFile.csv"
+    with hh_file.open() as f:
+        return sum(1 for _ in f) - 1  # subtract header
+
+
 def _build_plan_table(active_stages: list[int]) -> str:
-    """Build a formatted ablation plan showing cumulative components per stage."""
-    lines = ["Stage | Name             | + Added this stage"]
-    lines.append("------+------------------+--------------------------------------------")
+    """Build a bullet list showing cumulative components per stage."""
+    lines: list[str] = []
     cumulative: list[str] = []
     for s in range(1, len(STAGES) + 1):
         name, comps = STAGES[s - 1]
         cumulative.extend(comps)
         added = ", ".join(comps)
-        marker = " *" if s in active_stages else ""
-        lines.append(f"  {s}   | {name:<16} | +{added} (={len(cumulative)} total){marker}")
+        marker = " :point_right:" if s in active_stages else ""
+        lines.append(
+            f"\u2022 Stage {s} \u2014 *{name}*: +{added} ({len(cumulative)} total){marker}"
+        )
     return "\n".join(lines)
 
 
-def run_ablation(
+def run_ablation(  # noqa: PLR0915
     project_dir: Path,
     output_base: Path,
     *,
@@ -210,14 +219,21 @@ def run_ablation(
     if stages is None:
         stages = list(range(1, len(STAGES) + 1))
 
+    total_hh = _count_households(project_dir)
+    hh_count = int(total_hh * sample_rate)
+    log.info("Households: %d total, sampling %d (%.0f%%)", total_hh, hh_count, sample_rate * 100)
+
     stage_names = [STAGES[s - 1][0] for s in stages if 1 <= s <= len(STAGES)]
-    label = f"ablation [{','.join(stage_names)}] sample={sample_rate}"
+    label = (
+        f"ablation [{','.join(stage_names)}] "
+        f"HH={hh_count:,} ({sample_rate:.0%}) on {socket.gethostname()}"
+    )
 
     plan_text = _build_plan_table(stages)
     log.info("Ablation plan:\n%s", plan_text)
     if slack:
         notify(
-            f":test_tube: Starting {label} with python (Yes python!)\n```\n{plan_text}\n```"
+            f":test_tube: Starting {label} with python (Yes python!)\n{plan_text}"
         )
 
     log.info("=" * 60)
@@ -227,6 +243,7 @@ def run_ablation(
     log.info("=" * 60)
 
     t_total = time.time()
+    any_failed = False
 
     for stage_num in stages:
         if stage_num < 1 or stage_num > len(STAGES):
@@ -267,6 +284,7 @@ def run_ablation(
             run(project_dir, cfg)
         except Exception:
             failed = True
+            any_failed = True
             log.exception("STAGE %d FAILED", stage_num)
             if slack:
                 notify(
@@ -294,10 +312,16 @@ def run_ablation(
     log.info("ABLATION COMPLETE. Results in: %s", output_base)
     log.info("=" * 60)
     if slack:
-        notify(
-            f":white_check_mark: Finished {label}, much rejoicing! "
-            f"\u2014 {elapsed_total:.1f} min total"
-        )
+        if any_failed:
+            notify(
+                f":warning: Finished {label} with failures "
+                f"\u2014 {elapsed_total:.1f} min total"
+            )
+        else:
+            notify(
+                f":white_check_mark: Finished {label}, much rejoicing! "
+                f"\u2014 {elapsed_total:.1f} min total"
+            )
 
 
 if __name__ == "__main__":
