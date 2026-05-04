@@ -45,6 +45,12 @@ The following submodel scripts are still in R and are not yet active in [copy_ou
 
 #### Environment Setup
 
+Create the conda environment (first time only):
+
+```
+conda env create -f environment.yml -p E:\conda\envs\tm1.7_calibration
+```
+
 Activate the conda environment before running Python scripts:
 
 ```

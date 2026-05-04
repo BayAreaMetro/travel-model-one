@@ -8,8 +8,10 @@ dependencies:
   - numpy
   - openpyxl
   - xlrd
-  - xlutils
   - xlwings
   - pydantic
   - pyyaml
   - ipykernel
+  - pip
+  - pip:
+    - --no-deps -e e:/GitHub/BATS/travel-diary-survey-tools
