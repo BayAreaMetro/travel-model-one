@@ -103,6 +103,21 @@ OUTPUT_PATTERNS: list[str] = [
     "personData_*.csv",
 ]
 
+# Files to clean between runs. ShadowPricing is excluded because UWSL needs
+# the warmstart file (ShadowPricing_5.csv) from the previous full model run.
+CLEAN_PATTERNS: list[str] = [
+    "wsLocResults_*.csv",
+    "aoResults_*.csv",
+    "fpResults_*.csv",
+    "cdapResults*.csv",
+    "indivTourData_*.csv",
+    "jointTourData_*.csv",
+    "indivTripData_*.csv",
+    "jointTripData_*.csv",
+    "householdData_*.csv",
+    "personData_*.csv",
+]
+
 
 def parse_stages(stage_spec: str) -> list[int]:
     """Parse stage specification like '1-4' or '5,6,7,8' into list of 1-based indices."""
@@ -156,7 +171,7 @@ def clean_outputs(project_dir: Path) -> None:
     main_dir = project_dir / "main"
     if not main_dir.exists():
         return
-    for pattern in OUTPUT_PATTERNS:
+    for pattern in CLEAN_PATTERNS:
         for f in main_dir.glob(pattern):
             f.unlink()
 
@@ -167,6 +182,20 @@ def clean_outputs(project_dir: Path) -> None:
             f.write_text("")
 
 
+def _build_plan_table(active_stages: list[int]) -> str:
+    """Build a formatted ablation plan showing cumulative components per stage."""
+    lines = ["Stage | Name             | + Added this stage"]
+    lines.append("------+------------------+--------------------------------------------")
+    cumulative: list[str] = []
+    for s in range(1, len(STAGES) + 1):
+        name, comps = STAGES[s - 1]
+        cumulative.extend(comps)
+        added = ", ".join(comps)
+        marker = " *" if s in active_stages else ""
+        lines.append(f"  {s}   | {name:<16} | +{added} (={len(cumulative)} total){marker}")
+    return "\n".join(lines)
+
+
 def run_ablation(
     project_dir: Path,
     output_base: Path,
@@ -175,6 +204,7 @@ def run_ablation(
     sample_rate: float = DEFAULT_SAMPLE_RATE,
     seed: int = DEFAULT_SEED,
     stages: list[int] | None = None,
+    slack: bool = True,
 ) -> None:
     """Run the full ablation sequence."""
     if stages is None:
@@ -182,7 +212,13 @@ def run_ablation(
 
     stage_names = [STAGES[s - 1][0] for s in stages if 1 <= s <= len(STAGES)]
     label = f"ablation [{','.join(stage_names)}] sample={sample_rate}"
-    notify(f":test_tube: Starting {label} with python (Yes python!)")
+
+    plan_text = _build_plan_table(stages)
+    log.info("Ablation plan:\n%s", plan_text)
+    if slack:
+        notify(
+            f":test_tube: Starting {label} with python (Yes python!)\n```\n{plan_text}\n```"
+        )
 
     log.info("=" * 60)
     log.info("CTRAMP ABLATION: %d stages, sample_rate=%.2f", len(stages), sample_rate)
@@ -226,14 +262,17 @@ def run_ablation(
         }
 
         t0 = time.time()
+        failed = False
         try:
             run(project_dir, cfg)
         except Exception:
+            failed = True
             log.exception("STAGE %d FAILED", stage_num)
-            notify(
-                f":boom: Stage {stage_num} ({stage_name}) just failed. "
-                f"Java giveth, Java taketh away."
-            )
+            if slack:
+                notify(
+                    f":boom: Stage {stage_num} ({stage_name}) just failed. "
+                    f"Java giveth, Java taketh away."
+                )
             # Still try to collect whatever outputs were produced
         elapsed = time.time() - t0
 
@@ -243,12 +282,22 @@ def run_ablation(
         log.info("Stage %d complete: %.1f min, %d output files saved to %s",
                  stage_num, elapsed / 60, n_files, stage_output)
 
+        if not failed and slack:
+            notify(
+                f":white_check_mark: Stage {stage_num}/{len(STAGES)} ({stage_name}) "
+                f"done in {elapsed / 60:.1f} min, {n_files} files"
+            )
+
     elapsed_total = (time.time() - t_total) / 60
     log.info("")
     log.info("=" * 60)
     log.info("ABLATION COMPLETE. Results in: %s", output_base)
     log.info("=" * 60)
-    notify(f":white_check_mark: Finished {label}, much rejoicing! — {elapsed_total:.1f} min total")
+    if slack:
+        notify(
+            f":white_check_mark: Finished {label}, much rejoicing! "
+            f"\u2014 {elapsed_total:.1f} min total"
+        )
 
 
 if __name__ == "__main__":
@@ -264,4 +313,5 @@ if __name__ == "__main__":
         output_base=Path(r"E:\Tests\tm1_ctramp_test\ablation"),
         sample_rate=DEFAULT_SAMPLE_RATE,
         seed=DEFAULT_SEED,
+        slack=True,
     )
