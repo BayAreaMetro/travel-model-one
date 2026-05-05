@@ -270,26 +270,24 @@ class CalibrationConfig:
         # Use canonical county labels from shared CTRAMP codebook.
         return {county.id: county.label for county in CTRAMPCounty}
     
-    def get_submodel_config(self, submodel: str) -> Dict[str, str]:
-        """Return the configuration block for a specific submodel.
+    def get_submodel_config(self, submodel: str) -> Optional[Dict[str, str]]:
+        """Return the configuration block for a specific submodel, or None.
 
         Looks for a top-level YAML section named ``calibration_<submodel>``
-        (e.g. ``calibration_01``).
+        (e.g. ``calibration_01``).  Returns ``None`` when the section is
+        absent so that callers can decide how to handle a missing submodel
+        (e.g. skip gracefully when running a BATS config against a submodel
+        that does not use survey data).
 
         Args:
-            submodel: Submodel identifier string (e.g. ``"01"``).
+            submodel: Two-digit submodel identifier string (e.g. ``"01"``).
 
         Returns:
-            Dict of all key/value pairs under ``calibration_<submodel>``.
-
-        Raises:
-            ValueError: If the expected section is absent from the config.
+            Dict of all key/value pairs under ``calibration_<submodel>``,
+            or ``None`` if the section does not exist in the config file.
         """
         section_name = f"calibration_{submodel}"
-        if section_name not in self.config:
-            raise ValueError(f"No configuration found for submodel: {submodel}")
-        
-        return self.config[section_name]
+        return self.config.get(section_name)
 
 
 class CalibrationBase(ABC):
@@ -337,6 +335,10 @@ class CalibrationBase(ABC):
         self.config = CalibrationConfig(config_file, submodel)
         self.submodel = submodel
         self.submodel_config = self.config.get_submodel_config(submodel)
+        if self.submodel_config is None:
+            config_file_used = config_file or str(Path(__file__).parent / 'calibration_config.yaml')
+            print(f"Submodel {submodel} is not configured in {config_file_used} — nothing to do.")
+            sys.exit(0)
         self.excel_app = None
         
         # Set up parameters

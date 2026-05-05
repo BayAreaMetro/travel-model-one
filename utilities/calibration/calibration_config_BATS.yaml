@@ -24,11 +24,7 @@ calibration_01:
   bats_data: true
   bats_person_data: "{target_dir}/PersonData.csv"  # path to PersonData.csv with person_weight column for BATS survey mode
 
-calibration_02:
-  name: Automobile Ownership
-  workbook_template: 02_AutoOwnership
-  input_file: "{target_dir}/INPUT/popsyn/hhFile.2023_v12.csv"
-  ao_results: "{target_dir}/OUTPUT_{calib_iter}/main/aoResults.csv"
+# Auto Ownership relies on ACS data and not BATS
 
 calibration_04:
   name: Coordinated Daily Activity Pattern

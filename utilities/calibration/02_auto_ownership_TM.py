@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 import os
@@ -118,7 +119,11 @@ class AutoOwnershipCalibration(CalibrationBase):
 
 def main():
     """Main entry point for the auto ownership calibration."""
-    calibration = AutoOwnershipCalibration()
+    parser = argparse.ArgumentParser(description="Auto ownership calibration")
+    parser.add_argument("--config", default=None, help="Path to calibration_config.yaml (default: same directory as this script)")
+    args = parser.parse_args()
+
+    calibration = AutoOwnershipCalibration(config_file=args.config)
     calibration.run()
 
 

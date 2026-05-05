@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 import os
@@ -93,7 +94,11 @@ class DailyActivityPatternCalibration(CalibrationBase):
 
 def main():
     """Main entry point for the daily activity pattern calibration."""
-    calibration = DailyActivityPatternCalibration()
+    parser = argparse.ArgumentParser(description="Coordinated daily activity pattern calibration")
+    parser.add_argument("--config", default=None, help="Path to calibration_config.yaml (default: same directory as this script)")
+    args = parser.parse_args()
+
+    calibration = DailyActivityPatternCalibration(config_file=args.config)
     calibration.run()
 
 
