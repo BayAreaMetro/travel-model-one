@@ -1,3 +1,28 @@
+"""Usual work and school location calibration submodel (submodel 01).
+
+This script calibrates the usual work and school location (mandatory location)
+submodel of CT-RAMP by comparing modeled destination TAZ distributions against
+observed BATS survey data.  It produces three outputs:
+
+- A home-to-work county-to-county flow matrix.
+- Trip Length Frequency Distributions (TLFDs) by county for work, university,
+  and K–12 school trips, binned in 1-mile increments.
+- Average trip lengths by county and trip type.
+
+When ``bats_data`` is ``true`` in the submodel config the script reads person-
+weighted BATS 2023 survey records and writes results to the ``BATS_Summaries``
+subdirectory (for use as calibration targets).  When ``bats_data`` is ``false``
+it reads CT-RAMP model output and writes results to the iteration output
+directory for comparison against those targets.
+
+Usage::
+
+    python 01_usual_work_school_location_TM.py [--config PATH]
+
+Arguments:
+    --config    Optional path to the YAML configuration file.  Defaults to
+                ``calibration_config.yaml`` in the same directory as this script.
+"""
 import argparse
 import pandas as pd
 import numpy as np
@@ -17,14 +42,72 @@ from calibration_data_models import (
 )
 
 class WorkSchoolLocationCalibration(CalibrationBase):
-    """Calibration processor for usual work and school location."""
-    
+    """Calibration processor for the usual work and school location submodel.
+
+    Inherits shared infrastructure (config loading, logging, Excel workbook
+    helpers) from :class:`CalibrationBase` and implements the three-stage
+    pipeline defined by that base class:
+
+    1. :meth:`process_data`   – loads inputs, attaches distances, and builds
+       summary DataFrames.
+    2. :meth:`validate_outputs` – checks that every output DataFrame conforms
+       to its Pydantic schema before anything is written to disk.
+    3. :meth:`generate_outputs` – writes CSV files and (optionally) updates
+       the calibration Excel workbook.
+
+    The behaviour of the script differs depending on the ``bats_data`` flag in
+    the submodel configuration:
+
+    * ``bats_data: true``  – survey-weighted BATS 2023 run; outputs land in
+      ``<target_dir>/BATS_Summaries/`` and serve as calibration targets.
+    * ``bats_data: false`` – model run; outputs land in
+      ``<target_dir>/Output_<calib_iter>/calibration/`` for comparison.
+    """
+
     def __init__(self, config_file: str = None):
+        """Initialise the calibration processor.
+
+        Args:
+            config_file: Path to the YAML configuration file.  ``None`` causes
+                :class:`CalibrationBase` to look for ``calibration_config.yaml``
+                in the same directory as this script.
+        """
         super().__init__("01", config_file)
         self.bats_data = self.submodel_config.get("bats_data", False)
     
     def process_data(self) -> dict:
-        """Process the usual work and school location data."""
+        """Load inputs, merge spatial attributes, and compute summary statistics.
+
+        Steps:
+
+        1. Read the CT-RAMP (or BATS) work/school location file and the TAZ
+           attribute table.
+        2. Attach home, work, and school county names via :func:`add_county_info`.
+        3. Join skim distances for home→work and home→school pairs.
+        4. Optionally merge BATS person weights (``bats_data`` mode only).
+        5. Compute a home-county × work-county flow matrix.
+        6. Build per-county and total TLFDs (1-mile bins) for work, university,
+           and K–12 school trip types.
+        7. Compute weighted (BATS) or unweighted/scaled (model) average trip
+           lengths by county and trip type.
+
+        Returns:
+            A dict with the following keys:
+
+            ``county_summary``
+                Wide-format DataFrame of home→work county flows
+                (rows = home county, columns = work county).
+            ``trip_tlfd_work``
+                TLFD DataFrame for work trips
+                (distbin column + one column per county + ``Total``).
+            ``trip_tlfd_univ``
+                TLFD DataFrame for university trips (college or higher).
+            ``trip_tlfd_school``
+                TLFD DataFrame for K–12 school trips (grade or high school).
+            ``avg_trip_lengths``
+                Wide-format DataFrame of mean trip distances
+                (rows = county, columns = ``work`` / ``univ`` / ``school``).
+        """
         # Load input data
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nPROCESS INPUT DATA\n{sep}")
@@ -210,8 +293,25 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             'avg_trip_lengths': avg_triplen_spread
         }
     
-    def validate_outputs(self, results:dict):
-        """Validate outputs before generating the files and updating excel"""
+    def validate_outputs(self, results: dict):
+        """Validate output DataFrames against their Pydantic schemas.
+
+        Called by :meth:`CalibrationBase.run` after :meth:`process_data` and
+        before :meth:`generate_outputs`.  Raises ``ValidationError`` if any
+        DataFrame does not conform to its expected schema, halting the pipeline
+        before any files are written.
+
+        Validates:
+
+        - ``county_summary``   → :class:`CountyTripSummary`
+        - ``trip_tlfd_work``   → :class:`TripLengthFrequency`  (51 rows for BATS, 150 for model)
+        - ``trip_tlfd_univ``   → :class:`TripLengthFrequency`
+        - ``trip_tlfd_school`` → :class:`TripLengthFrequency`
+        - ``avg_trip_lengths`` → :class:`AverageTripLength`
+
+        Args:
+            results: The dict returned by :meth:`process_data`.
+        """
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nOUTPUT VAlIDATION\n{sep}")
 
@@ -234,7 +334,27 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             self.logger.info("✓ Average Trip Length Summary Validated")
 
     def generate_outputs(self, results: dict):
-        """Generate output files and Excel updates."""
+        """Write validated results to CSV files and update the calibration workbook.
+
+        In **BATS mode** (``bats_data: true``) outputs are written to
+        ``<output_dir>/`` and the corresponding sheets in the Excel workbook
+        ("BATS 2023 TLFD", "BATS 2023 AvgTripLen") are updated:
+
+        - ``workTLFD.csv``, ``univTLFD.csv``, ``schoolTLFD.csv``
+        - ``AvgTripLen.csv``
+
+        In **model mode** (``bats_data: false``) the county flow matrix, per-
+        trip-type TLFDs, and average trip lengths are written to
+        ``<output_dir>/`` and the ``modeldata`` sheet of the workbook is
+        updated with column offsets that match the template layout.
+
+        In both modes the workbook update is skipped gracefully if no workbook
+        template was configured or if the file cannot be opened.
+
+        Args:
+            results: The dict returned by :meth:`process_data` and validated
+                by :meth:`validate_outputs`.
+        """
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
 
@@ -289,7 +409,12 @@ class WorkSchoolLocationCalibration(CalibrationBase):
 
 
 def main():
-    """Main entry point for the usual work and school location calibration."""
+    """Parse CLI arguments and run the work/school location calibration.
+
+    Constructs a :class:`WorkSchoolLocationCalibration` instance, then calls
+    its :meth:`~CalibrationBase.run` method which executes the
+    ``process_data → validate_outputs → generate_outputs`` pipeline.
+    """
     parser = argparse.ArgumentParser(description="Usual work and school location calibration")
     parser.add_argument("--config", default=None, help="Path to calibration_config.yaml (default: same directory as this script)")
     args = parser.parse_args()
