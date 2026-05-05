@@ -1,3 +1,39 @@
+"""Shared infrastructure for CT-RAMP calibration submodel scripts.
+
+This module provides two reusable building blocks:
+
+:class:`CalibrationConfig`
+    Loads a YAML configuration file, applies optional environment-variable
+    overrides (e.g. ``TARGET_DIR``, ``CALIB_ITER``), performs ``{param}``
+    string substitution across all values, and exposes typed accessors for
+    individual settings, file paths, and the county lookup table.
+
+:class:`CalibrationBase`
+    Abstract base class that every submodel script subclasses.  It handles
+    logging setup, output-directory creation, Excel workbook lifecycle, and
+    orchestrates the ``process_data → validate_outputs → generate_outputs``
+    pipeline via :meth:`CalibrationBase.run`.  Concrete subclasses implement
+    the three abstract methods.
+
+Two module-level helper functions are also provided:
+
+:func:`add_county_info`
+    Join TAZ-level county IDs and names onto any DataFrame via a TAZ column.
+
+:func:`create_histogram_tlfd`
+    Build a 1-mile-bin trip-length frequency distribution from a distance
+    series, supporting both weighted (survey) and sample-scaled (model) inputs.
+
+Typical usage::
+
+    class MySubmodelCalibration(CalibrationBase):
+        def process_data(self): ...
+        def validate_outputs(self, results): ...
+        def generate_outputs(self, results): ...
+
+    calibration = MySubmodelCalibration(config_file="calibration_config_BATS.yaml")
+    calibration.run()
+"""
 import pandas as pd
 import numpy as np
 import os
@@ -22,9 +58,33 @@ from calibration_data_models import CTRAMPCounty
 
 
 class CalibrationConfig:
-    """Configuration manager for calibration scripts."""
-    
+    """Loads, validates, and exposes calibration configuration from a YAML file.
+
+    Configuration values support ``{param}`` substitution using keys defined
+    in the ``general`` section.  Selected ``general`` keys can also be
+    overridden at runtime by environment variables (e.g. set by a batch
+    launcher), which is useful when running many calibration iterations from a
+    single wrapper script.
+
+    Attributes:
+        config (dict): Fully substituted configuration dictionary.
+        raw_config (dict): Raw parsed YAML before substitution (used as the
+            basis for environment-variable overrides).
+    """
+
     def __init__(self, config_file: str = None, submodel: str = None):
+        """Load and prepare the configuration file.
+
+        Args:
+            config_file: Path to the YAML configuration file.  Defaults to
+                ``calibration_config.yaml`` in the same directory as this
+                module.
+            submodel: Submodel identifier string (e.g. ``"01"``).  Currently
+                accepted for API symmetry but not used directly here.
+
+        Raises:
+            FileNotFoundError: If the resolved config file path does not exist.
+        """
         self.config = {}
         self.raw_config = {}
         
@@ -40,11 +100,29 @@ class CalibrationConfig:
             raise FileNotFoundError(f"Configuration file not found: {config_file}")
 
     def _apply_env_overrides(self):
-        """Override selected general config values from batch environment variables."""
+        """Override selected ``general`` config keys from environment variables.
+
+        Reads the following environment variables and, if set, writes their
+        values into the ``general`` section of :attr:`raw_config` before
+        parameter substitution runs:
+
+        ==================  ===================
+        Environment var     Config key
+        ==================  ===================
+        ``TARGET_DIR``      ``target_dir``
+        ``CALIB_ITER``      ``calib_iter``
+        ``ITER``            ``iter``
+        ``MODEL_DIR``       ``model_dir``
+        ``WORKBOOK_BASE_PATH`` ``workbook_base_path``
+        ==================  ===================
+
+        Path-like values (keys ending in ``_dir`` or ``_path``) are
+        normalised to POSIX separators so that downstream ``{param}``
+        substitution stays platform-consistent.
+        """
         general = self.raw_config.setdefault('general', {})
         env_to_key = {
             'TARGET_DIR': 'target_dir',
-            'CODE_DIR': 'code_dir',
             'CALIB_ITER': 'calib_iter',
             'ITER': 'iter',
             'MODEL_DIR': 'model_dir',
@@ -60,7 +138,19 @@ class CalibrationConfig:
                     general[config_key] = env_val
     
     def _substitute_parameters(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Recursively substitute parameters in configuration."""
+        """Recursively expand ``{param}`` placeholders throughout the config.
+
+        Placeholder keys are resolved against the ``general`` section of the
+        config, so a value like ``"{target_dir}/Output_{calib_iter}"`` becomes
+        the fully resolved path.  Dict and list nodes are traversed
+        recursively; non-string leaf values are returned unchanged.
+
+        Args:
+            config: Raw (or partially processed) configuration dictionary.
+
+        Returns:
+            A new dictionary with all resolvable placeholders substituted.
+        """
         # Get parameters from general section
         params = config.get('general', {})
         
@@ -82,19 +172,54 @@ class CalibrationConfig:
         return substitute_value(config)
     
     def get(self, section: str, key: str, fallback: str = None) -> str:
-        """Get configuration value (already substituted)."""
+        """Return a substituted string value from the configuration.
+
+        Args:
+            section: Top-level YAML section name (e.g. ``"general"``,
+                ``"data_sources"``).
+            key: Key within that section.
+            fallback: Value to return if the key is absent.  Defaults to
+                ``None``.
+
+        Returns:
+            The substituted string value, or *fallback* if not found.
+        """
         value = self.config.get(section, {}).get(key, fallback)
         return value
     
     def get_path(self, section: str, key: str, fallback: str = None, validate: bool = False) -> str:
-        """Get file path from configuration with optional validation."""
+        """Return a file path from the configuration, optionally checking existence.
+
+        Args:
+            section: Top-level YAML section name.
+            key: Key within that section.
+            fallback: Default value if the key is absent.
+            validate: If ``True``, log a warning when the resolved path does
+                not exist on disk.
+
+        Returns:
+            The resolved path string, or *fallback* if not found.
+        """
         path = self.get(section, key, fallback)
         if validate and path and not os.path.exists(path):
             self.logger.warning(f"Warning: Path does not exist: {path}")
         return path
     
     def get_all_paths(self, section: str, validate: bool = False) -> Dict[str, str]:
-        """Get all file paths from a configuration section."""
+        """Return every file-path value found in a configuration section.
+
+        Heuristically identifies path-like values by the presence of a
+        directory separator or a ``.csv`` / ``.xlsx`` extension.
+
+        Args:
+            section: Top-level YAML section name to scan.
+            validate: If ``True``, log a warning for each path that does not
+                exist on disk.
+
+        Returns:
+            Dict mapping config key → resolved path string for all
+            path-like entries in the section.
+        """
         section_config = self.config.get(section, {})
         paths = {}
         for key, value in section_config.items():
@@ -105,22 +230,61 @@ class CalibrationConfig:
         return paths
     
     def getfloat(self, section: str, key: str, fallback: float = None) -> float:
-        """Get configuration value as float."""
+        """Return a configuration value cast to ``float``.
+
+        Args:
+            section: Top-level YAML section name.
+            key: Key within that section.
+            fallback: Default value if the key is absent.
+
+        Returns:
+            The value as a Python ``float``, or *fallback* if not found.
+        """
         value = self.config.get(section, {}).get(key, fallback)
         return float(value) if value is not None else fallback
     
     def getint(self, section: str, key: str, fallback: int = None) -> int:
-        """Get configuration value as integer."""
+        """Return a configuration value cast to ``int``.
+
+        Args:
+            section: Top-level YAML section name.
+            key: Key within that section.
+            fallback: Default value if the key is absent.
+
+        Returns:
+            The value as a Python ``int``, or *fallback* if not found.
+        """
         value = self.config.get(section, {}).get(key, fallback)
         return int(value) if value is not None else fallback
     
     def get_county_lookup(self) -> dict:
-        """Get county lookup dictionary mapping county ID to county name."""
+        """Return a mapping of Bay Area county integer IDs to county name strings.
+
+        Values are sourced from :class:`~calibration_data_models.CTRAMPCounty`
+        so they stay in sync with the canonical codebook.
+
+        Returns:
+            Dict mapping county ID (int) → county label (str),
+            e.g. ``{1: "San Francisco", 2: "San Mateo", ...}``.
+        """
         # Use canonical county labels from shared CTRAMP codebook.
         return {county.id: county.label for county in CTRAMPCounty}
     
     def get_submodel_config(self, submodel: str) -> Dict[str, str]:
-        """Get configuration for specific submodel."""
+        """Return the configuration block for a specific submodel.
+
+        Looks for a top-level YAML section named ``calibration_<submodel>``
+        (e.g. ``calibration_01``).
+
+        Args:
+            submodel: Submodel identifier string (e.g. ``"01"``).
+
+        Returns:
+            Dict of all key/value pairs under ``calibration_<submodel>``.
+
+        Raises:
+            ValueError: If the expected section is absent from the config.
+        """
         section_name = f"calibration_{submodel}"
         if section_name not in self.config:
             raise ValueError(f"No configuration found for submodel: {submodel}")
@@ -129,9 +293,47 @@ class CalibrationConfig:
 
 
 class CalibrationBase(ABC):
-    """Base class for calibration processing."""
-    
+    """Abstract base class for CT-RAMP calibration submodel processors.
+
+    Provides shared infrastructure so that every submodel script only needs to
+    implement the three domain-specific methods:
+
+    * :meth:`process_data` — load inputs and compute summary DataFrames.
+    * :meth:`validate_outputs` — check schemas before anything is written.
+    * :meth:`generate_outputs` — write CSV files and update the Excel workbook.
+
+    :meth:`run` orchestrates these three steps and wraps them with workbook
+    setup and save.
+
+    Attributes:
+        config (CalibrationConfig): Loaded configuration object.
+        submodel (str): Submodel identifier (e.g. ``"01"``).
+        submodel_config (dict): Config block for this submodel.
+        calib_iter (str): Calibration iteration label (e.g. ``"00"``, ``"01"``).
+        iter (int): Model iteration number derived from *calib_iter*
+            (``3`` for ``"00"``, ``1`` otherwise).
+        sampleshare (float): Fraction of the full model sample
+            (``0.5`` for ``"00"``, ``0.2`` otherwise).
+        bats_data (bool): ``True`` when operating on survey data rather than
+            model output.
+        target_dir (str): Root output directory from config.
+        output_dir (str): Resolved output directory (created on init).
+        county_lookup (dict): Mapping of county ID → county name.
+        logger (logging.Logger): Configured logger for this submodel.
+    """
+
     def __init__(self, submodel: str, config_file: str = None):
+        """Initialise shared calibration infrastructure.
+
+        Loads config, resolves and creates the output directory, configures
+        logging, and populates the county lookup table.
+
+        Args:
+            submodel: Two-digit submodel identifier string (e.g. ``"01"``).
+            config_file: Path to the YAML configuration file.  ``None``
+                defaults to ``calibration_config.yaml`` in the script
+                directory.
+        """
         self.config = CalibrationConfig(config_file, submodel)
         self.submodel = submodel
         self.submodel_config = self.config.get_submodel_config(submodel)
@@ -167,7 +369,23 @@ class CalibrationBase(ABC):
         self._print_config()
     
     def _setup_logging(self):
-        """Set up logging configuration for calibration script"""
+        """Configure a named logger with console and file handlers.
+
+        The logger name is the concrete subclass name (e.g.
+        ``"WorkSchoolLocationCalibration"``).  Both handlers use UTF-8
+        encoding so that Unicode characters such as ``✓`` render correctly
+        even on Windows terminals that default to cp1252.
+
+        **Console handler** — streams to stdout with UTF-8 encoding.
+
+        **File handler** — writes to ``<output_dir>/<name>.log``
+        (or ``<name>_BATS.log`` for BATS survey runs), where *name* is the
+        submodel name with spaces removed (e.g.
+        ``UsualWorkAndSchoolLocation_BATS.log``).  BATS runs open the file
+        with ``mode='w'`` (overwrite) since they are one-shot reference runs;
+        model calibration runs use ``mode='a'`` (append) so successive
+        iterations accumulate in a single log.
+        """
         
         # Create logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -192,9 +410,14 @@ class CalibrationBase(ABC):
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
 
-        # File handler (writes to log file)
-        log_file = os.path.join(self.output_dir, 'calibration.log')
-        file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')  # 'w' overwrites, 'a' appends
+        # File handler — named after the submodel (spaces removed); BATS runs overwrite ('w')
+        # since they are one-shot reference runs, while model iterations append ('a')
+        # so successive calibration passes accumulate in a single log.
+        submodel_name = self.submodel_config.get('name', self.submodel).replace(' ', '')
+        log_prefix = f"{submodel_name}_BATS" if self.bats_data else submodel_name
+        log_file = os.path.join(self.output_dir, f'{log_prefix}.log')
+        log_mode = 'w' if self.bats_data else 'a'
+        file_handler = logging.FileHandler(log_file, mode=log_mode, encoding='utf-8')
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
@@ -202,7 +425,11 @@ class CalibrationBase(ABC):
         self.logger.info(f"Logging to: {log_file}")
 
     def _print_config(self):
-        """Print configuration summary."""
+        """Log a human-readable summary of the active configuration.
+
+        Emits submodel name, target directory, iteration parameters, sample
+        share, and the Excel workbook template name at INFO level.
+        """
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nCONFIGURATION SUMMARY\n{sep}")
         self.logger.info(f"Submodel: {self.submodel} - {self.submodel_config['name']}")
@@ -213,7 +440,27 @@ class CalibrationBase(ABC):
         self.logger.info(f"EXCEL_WORKBOOK = {self.submodel_config.get('workbook_template')}")
 
     def setup_workbook(self):
-        """Set up Excel workbook paths and load template."""
+        """Resolve Excel workbook paths and open the blank template.
+
+        Looks up the ``workbook_template`` name from the submodel config and
+        constructs three path variants:
+
+        ``workbook_path``
+            Final versioned workbook path under the calibration base directory.
+        ``workbook_temp``
+            Temporary save path (``<name>_temp.xlsx``) used to avoid
+            overwriting the current iteration file mid-save.
+        ``workbook_iter``
+            Iteration-stamped path (``<name>_<calib_iter>.xlsx``).
+        ``workbook_blank``
+            Source blank template, resolved relative to this module's
+            ``workbook_templates/`` subdirectory.
+
+        The blank template is opened via xlwings (or skipped gracefully if
+        xlwings is unavailable or the file cannot be found).  Sets
+        ``self.calib_workbook`` and ``self.modeldata_sheet`` to ``None`` if
+        no template is configured or the open fails.
+        """
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nWORKBOOK SETUP\n{sep}")
         workbook_template = self.submodel_config.get('workbook_template')
@@ -232,10 +479,9 @@ class CalibrationBase(ABC):
         self.workbook_path = f"{workbook_base}/{self.submodel} {submodel_name}/{workbook_template}.xlsx"
         self.workbook_temp = self.workbook_path.replace('.xlsx', '_temp.xlsx')
         self.workbook_iter = self.workbook_path.replace('.xlsx', f'_{self.calib_iter}.xlsx')
-        self.workbook_blank = str(Path(self.config.get('general', 'code_dir')) / "workbook_templates" / f"{workbook_template}_blank.xlsx")
+        self.workbook_blank = str(Path(__file__).parent / "workbook_templates" / f"{workbook_template}_blank.xlsx")
         
         workbook_dir = Path(self.workbook_path).parent
-        workbook_dir.mkdir(parents=True, exist_ok = True)
         self.logger.info(f"Workbook Output Directory: {workbook_dir}")
 
         try: 
@@ -268,7 +514,31 @@ class CalibrationBase(ABC):
 
     def write_dataframe_to_sheet(self, df: pd.DataFrame, start_row: int, start_col: int, sheet_name: str ="modeldata",
                                 source_row: int = None, source_col: int = None, source_text: str = ""):
-        """Write DataFrame to Excel sheet with optional source annotation."""
+        """Write a DataFrame into an open Excel workbook sheet.
+
+        Writes the column headers to *start_row* and the data values
+        immediately below.  Optionally writes a source-file annotation to a
+        separate cell (useful for traceability in the workbook).
+
+        Row and column indices follow xlwings convention (1-based).
+
+        Args:
+            df: DataFrame to write.  The index is not written.
+            start_row: 1-based row for the header row.
+            start_col: 1-based column for the leftmost data column.
+            sheet_name: Name of the target sheet.  Defaults to
+                ``"modeldata"``.
+            source_row: 1-based row for the source annotation cell.
+                Skipped if ``None``.
+            source_col: 1-based column for the source annotation cell.
+                Skipped if ``None``.
+            source_text: Text to write at *(source_row, source_col)*,
+                typically the output CSV file path.
+
+        Notes:
+            Silently skips (with a warning log) if
+            ``self.calib_workbook`` is ``None``.
+        """
         if not self.calib_workbook:
 
             self.logger.warning(f"Warning: Calibration Workbook does not exist")
@@ -290,18 +560,39 @@ class CalibrationBase(ABC):
             self.logger.warning(f"Warning: Could not write to Excel sheet: {e}")
     
     def save_workbook(self):
-        """Save the Excel workbook."""
-        self.logger.info("Saving calibration workbook to:")
-        self.logger.info(f"Temp Workbook: {self.workbook_temp}")
-        self.logger.info(f"Iteration Workbook: {self.workbook_iter}")
+        """Save the open calibration workbook.
+
+        **BATS mode**: overwrites the blank template (:attr:`workbook_blank`)
+        so that survey targets are baked into the source file used by future
+        model runs.  No iteration snapshot is written.
+
+        **Model mode**: saves to both :attr:`workbook_temp` (stable
+        "current" filename) and :attr:`workbook_iter` (iteration-stamped
+        snapshot, e.g. ``_01.xlsx``) so successive calibration passes can be
+        compared without overwriting earlier results.
+
+        If the workbook was never opened (e.g. no template configured) the
+        method logs a note and returns without error.  Any save error is
+        caught and logged as a warning.
+        """
         if self.calib_workbook:
             try:
-                self.calib_workbook.save(self.workbook_temp)
-                self.calib_workbook.save(self.workbook_iter)
-                self.logger.info(f"Wrote {self.workbook_temp}")
+                if self.bats_data:
+                    self.logger.info(f"Saving BATS targets to blank template: {self.workbook_blank}")
+                    self.calib_workbook.save(self.workbook_blank)
+                    self.logger.info(f"Wrote {self.workbook_blank}")
+                else:
+                    self.logger.info("Saving calibration workbook to:")
+                    self.logger.info(f"  Temp Workbook:      {self.workbook_temp}")
+                    self.logger.info(f"  Iteration Workbook: {self.workbook_iter}")
+                    Path(self.workbook_temp).parent.mkdir(parents=True, exist_ok=True)
+                    self.calib_workbook.save(self.workbook_temp)
+                    self.calib_workbook.save(self.workbook_iter)
+                    self.logger.info(f"Wrote {self.workbook_temp}")
+                    self.logger.info(f"Wrote {self.workbook_iter}")
                 self.calib_workbook.close()
             except Exception as e:
-                self.logger.info(f"Warning: Could not save Excel workbook: {e}")
+                self.logger.warning(f"Warning: Could not save Excel workbook: {e}")
                 self.calib_workbook.close()
             finally:
                 if self.excel_app:
@@ -316,21 +607,52 @@ class CalibrationBase(ABC):
     
     @abstractmethod
     def process_data(self) -> Dict[str, pd.DataFrame]:
-        """Process the calibration data. Must be implemented by subclasses."""
+        """Load input files and produce summary DataFrames.
+
+        Returns:
+            Dict mapping result-name strings to DataFrames.  The exact keys
+            are submodel-specific and must be consistent with what
+            :meth:`validate_outputs` and :meth:`generate_outputs` expect.
+        """
         pass
-    
+
     @abstractmethod
-    def validate_outputs(self, results):
-        """Validate the process data. Must be implemented by subclasses"""
+    def validate_outputs(self, results: Dict[str, pd.DataFrame]):
+        """Validate output DataFrames against their Pydantic schemas.
+
+        Called by :meth:`run` after :meth:`process_data` and before
+        :meth:`generate_outputs`.  Should raise ``ValidationError`` (or any
+        exception) to abort the pipeline before any files are written.
+
+        Args:
+            results: The dict returned by :meth:`process_data`.
+        """
         pass
 
     @abstractmethod
     def generate_outputs(self, results: Dict[str, pd.DataFrame]):
-        """Generate output files and Excel updates. Must be implemented by subclasses."""
+        """Write validated results to CSV files and update the Excel workbook.
+
+        Args:
+            results: The dict returned by :meth:`process_data` and validated
+                by :meth:`validate_outputs`.
+        """
         pass
-    
+
     def run(self):
-        """Execute the complete calibration process."""
+        """Run the complete calibration pipeline for this submodel.
+
+        Executes the following steps in order:
+
+        1. :meth:`process_data` — load inputs and compute summaries.
+        2. :meth:`validate_outputs` — schema-check every output DataFrame.
+        3. :meth:`setup_workbook` — open the Excel template.
+        4. :meth:`generate_outputs` — write CSVs and populate the workbook.
+        5. :meth:`save_workbook` — persist the workbook to disk.
+
+        Any unhandled exception is logged before being re-raised so that the
+        error appears in the log file as well as the console.
+        """
         try:
             results = self.process_data()
             self.validate_outputs(results)
@@ -342,26 +664,38 @@ class CalibrationBase(ABC):
             raise
 
 
-def add_county_info(df: pd.DataFrame, taz_data: pd.DataFrame, 
+def add_county_info(df: pd.DataFrame, taz_data: pd.DataFrame,
                    county_lookup: dict, taz_col: str = 'TAZ',
                    county_col_name: str = 'COUNTY',
                    county_name_col: str = 'county_name') -> pd.DataFrame:
-    """
-    Add county information to a DataFrame based on TAZ.
-    
+    """Join county ID and name columns onto a DataFrame via a TAZ key.
+
+    Performs a left merge so that rows with an unrecognised TAZ (e.g. TAZ 0
+    meaning "no location") are retained with ``NaN`` county values rather
+    than being dropped.
+
     Args:
-        df: DataFrame containing TAZ column
-        taz_data: DataFrame with ZONE and COUNTY columns
-        county_lookup: Dictionary mapping county ID to county name
-        taz_col: Name of TAZ column in df
-        county_col_name: Name for output county ID column
-        county_name_col: Name for output county name column
-        
+        df: DataFrame that contains a TAZ column to join on.
+        taz_data: TAZ attribute table with at least ``ZONE`` and ``COUNTY``
+            columns (typically read from the model's TAZ CSV).
+        county_lookup: Mapping of county integer ID → county name string,
+            as returned by :meth:`CalibrationConfig.get_county_lookup`.
+        taz_col: Name of the TAZ column in *df*.  Defaults to ``"TAZ"``.
+        county_col_name: Desired name for the output county-ID column.
+            Defaults to ``"COUNTY"``.
+        county_name_col: Desired name for the output county-name column.
+            Defaults to ``"county_name"``.
+
     Returns:
-        DataFrame with county ID and name columns added
-        
-    Example:
-        df = add_county_info(results, taz_data, county_lookup, taz_col='HomeTAZ')
+        *df* with two additional columns: *county_col_name* (integer county
+        ID) and *county_name_col* (string county name).
+
+    Example::
+
+        wsloc = add_county_info(wsloc, taz_data, county_lookup,
+                                taz_col='HomeTAZ',
+                                county_col_name='HomeCOUNTY',
+                                county_name_col='HomeCounty_name')
     """
     # Merge with TAZ county data
     taz_county = taz_data[['ZONE', 'COUNTY']].rename(columns={'ZONE': taz_col})
@@ -377,18 +711,39 @@ def add_county_info(df: pd.DataFrame, taz_data: pd.DataFrame,
     return df
 
 
-def create_histogram_tlfd(data: pd.Series, bins: range = None, sampleshare: float = 1.0, 
+def create_histogram_tlfd(data: pd.Series, bins: range = None, sampleshare: float = 1.0,
                          weights: pd.Series = None) -> pd.DataFrame:
-    """Create trip length frequency distribution histogram.
-    
+    """Build a trip-length frequency distribution in 1-mile bins.
+
+    Wraps ``numpy.histogram`` to produce a tidy DataFrame suitable for
+    writing directly to a calibration CSV or Excel sheet.
+
+    Two weighting modes are supported:
+
+    * **Survey mode** (``weights`` provided): uses ``np.histogram`` weighted
+      counts — each observation contributes its person weight to the bin.
+    * **Model mode** (``weights=None``): uses raw counts divided by
+      *sampleshare* to scale up to a full-population estimate.
+
     Args:
-        data: Distance values
-        bins: Bin edges for histogram
-        sampleshare: Sample share to scale up counts (used when weights not provided)
-        weights: Individual weights for each observation (for survey data)
-    
+        data: Series of trip distances in miles (one value per person/trip).
+        bins: Bin edges passed to ``np.histogram``.  The number of output
+            rows equals ``len(bins) - 1``.  Defaults to ``range(151)``
+            (bins 1–150 miles) for model runs; pass ``range(52)`` for
+            BATS survey runs (bins 1–51 miles).
+        sampleshare: Fraction of the full model population represented by
+            the input data (e.g. ``0.5`` for a 50 % sample).  Only used
+            when *weights* is ``None``.  Defaults to ``1.0``.
+        weights: Per-observation person weights (BATS survey mode).  When
+            provided, *sampleshare* is ignored.
+
     Returns:
-        DataFrame with distbin and count columns
+        DataFrame with columns:
+
+        ``distbin``
+            Upper edge of each bin (i.e. the integer mile value, 1-based).
+        ``count``
+            Weighted or scaled count of trips in that bin.
     """
     if bins is None:
         bins = range(151)
