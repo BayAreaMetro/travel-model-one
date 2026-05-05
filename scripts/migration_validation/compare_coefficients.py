@@ -183,6 +183,15 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
         except (ValueError, TypeError):
             return "<td></td>"
 
+    def _ctramp_expr(row: dict) -> str:
+        """Combine CTRAMP filter + formula into a single expression string."""
+        if not row:
+            return ""
+        f, e = row.get("filter", ""), row.get("formula", "")
+        if f and e:
+            return f"[{f}] {e}"
+        return e or f
+
     body = ""
 
     if multi_seg:
@@ -193,8 +202,8 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
             for sn, alt in zip(seg_names, asim_alts)
         )
         h = ("<table class='coeff mapped sortable'><thead><tr>"
-             "<th>ASim Label</th><th>CTRAMP No.</th><th>CTRAMP Description</th>"
-             f"<th>ASim Expression</th>{coeff_hdrs}"
+             "<th>ASim Label</th><th>No.</th><th>Description</th>"
+             f"<th>CTRAMP Expression</th><th>ASim Expression</th>{coeff_hdrs}"
              "</tr></thead><tbody>")
 
         for asim_label, ctramp_ref in crosswalk.items():
@@ -204,7 +213,6 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
 
             for i, ctramp_no in enumerate(ctramp_nos):
                 used_ctramp.add(ctramp_no)
-                # Get description from first sheet that has this row
                 cr_any = ctramp_by_sheet_no.get((seg_names[0], ctramp_no))
                 show_asim = (i == 0)
                 rowspan = f" rowspan='{len(ctramp_nos)}'" if show_asim and len(ctramp_nos) > 1 else ""
@@ -214,6 +222,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
                     body += f"<td{rowspan}>{esc(asim_label)}</td>"
                 body += f"<td>{ctramp_no}</td>"
                 body += f"<td>{esc(cr_any['desc']) if cr_any else ''}</td>"
+                body += f"<td>{esc(_ctramp_expr(cr_any))}</td>"
                 if show_asim:
                     body += f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
 
@@ -235,7 +244,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
                     used_ctramp.add(r["no"])
                     body += (
                         f"<tr class='ctramp-only'><td></td><td>{r['no']}</td>"
-                        f"<td>{esc(r['desc'])}</td><td></td>"
+                        f"<td>{esc(r['desc'])}</td><td>{esc(_ctramp_expr(r))}</td><td></td>"
                     )
                     for sn, alt in zip(seg_names, asim_alts):
                         cr = ctramp_by_sheet_no.get((sn, r["no"]))
@@ -246,19 +255,18 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
         # Unmatched ASim rows
         for r in spec["rows"]:
             if r["label"] not in used_asim:
-                body += f"<tr class='asim-only'><td>{esc(r['label'])}</td><td></td><td></td><td>{esc(r['expr'])}</td>"
+                body += f"<tr class='asim-only'><td>{esc(r['label'])}</td><td></td><td></td><td></td><td>{esc(r['expr'])}</td>"
                 for sn, alt in zip(seg_names, asim_alts):
                     a_val = str(_coeff_for_alt(r, alt))
                     body += f"<td></td><td class='num'>{_fmt(a_val) if a_val != '' else ''}</td><td></td>"
                 body += "</tr>"
 
     else:
-        # Single-segment table (original logic)
+        # Single-segment table
         h = ("<table class='coeff mapped sortable'><thead><tr>"
-             "<th>ASim Label</th><th>CTRAMP No.</th><th>CTRAMP Description</th>"
-             "<th>CTRAMP Filter</th><th>CTRAMP Formula</th>"
-             "<th>ASim Expression</th><th>ASim Coeff</th>"
-             "<th>CTRAMP Coeff</th><th>Diff</th>"
+             "<th>ASim Label</th><th>No.</th><th>Description</th>"
+             "<th>CTRAMP Expression</th><th>ASim Expression</th>"
+             "<th>CTRAMP Coeff</th><th>ASim Coeff</th><th>Diff</th>"
              "</tr></thead><tbody>")
 
         # Matched rows (driven by crosswalk: asim_label → ctramp_no or [ctramp_nos])
@@ -296,16 +304,16 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
                 body += (
                     f"<td>{cr['no'] if cr else ''}</td>"
                     f"<td>{esc(cr['desc']) if cr else ''}</td>"
-                    f"<td>{esc(cr['filter']) if cr else ''}</td>"
-                    f"<td>{esc(cr['formula']) if cr else ''}</td>"
+                    f"<td>{esc(_ctramp_expr(cr))}</td>"
                 )
                 if show_asim:
-                    body += (
-                        f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
-                        f"<td class='num'{rowspan}>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
-                    )
+                    body += f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
                 body += (
                     f"<td class='num'>{_fmt(c_coeff) if c_coeff != '' else ''}</td>"
+                )
+                if show_asim:
+                    body += f"<td class='num'{rowspan}>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
+                body += (
                     f"{_diff_cell(c_coeff, a_coeff)}"
                     "</tr>"
                 )
@@ -320,11 +328,10 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
                         f"<td></td>"
                         f"<td>{r['no']}</td>"
                         f"<td>{esc(r['desc'])}</td>"
-                        f"<td>{esc(r['filter'])}</td>"
-                        f"<td>{esc(r['formula'])}</td>"
-                        f"<td></td><td></td>"
+                        f"<td>{esc(_ctramp_expr(r))}</td>"
+                        f"<td></td>"
                         f"<td class='num'>{_fmt(c_coeff) if c_coeff != '' else ''}</td>"
-                        f"<td></td></tr>"
+                        f"<td></td><td></td></tr>"
                     )
 
         # Unmatched ActivitySim rows
@@ -334,10 +341,10 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
                 body += (
                     f"<tr class='asim-only'>"
                     f"<td>{esc(r['label'])}</td>"
-                    f"<td></td><td>{esc(r['desc'])}</td><td></td><td></td>"
+                    f"<td></td><td>{esc(r['desc'])}</td><td></td>"
                     f"<td>{esc(r['expr'])}</td>"
-                    f"<td class='num'>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
                     f"<td></td>"
+                    f"<td class='num'>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
                     f"<td></td></tr>"
                 )
 

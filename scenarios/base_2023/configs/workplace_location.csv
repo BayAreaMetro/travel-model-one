@@ -1,6 +1,7 @@
 Label,Description,Expression,coefficient
 local_dist,,_DIST@skims['DIST'],1
-local_home_county,,_HOME_COUNTY@reindex(land_use.county_id; df.home_zone_id),1
+local_home_county,,"_HOME_COUNTY@reindex(land_use.county_id, df.home_zone_id)",1
+local_dest_county,,"_DEST_COUNTY@reindex(land_use.county_id, df.alt_dest)",1
 util_dist_0_1,"Distance, piecewise linear from 0 to 1 miles","@_DIST.clip(0,1)",coef_dist_0_1
 util_dist_1_2,"Distance, piecewise linear from 1 to 2 miles","@(_DIST-1).clip(0,1)",coef_dist_1_2
 util_dist_2_5,"Distance, piecewise linear from 2 to 5 miles","@(_DIST-2).clip(0,3)",coef_dist_2_5
@@ -13,13 +14,13 @@ util_utility_adjustment,utility adjustment,@df['shadow_price_utility_adjustment'
 util_no_attractions,No attractions,@df['size_term']==0,-999
 util_mode_logsum,Mode choice logsum,mode_choice_logsum,coef_mode_logsum
 util_sample_of_corrections_factor,Sample of alternatives correction factor,"@np.minimum(np.log(df.pick_count/df.prob), 60)",1
-util_sf_to_sf,SF to SF,"@(_HOME_COUNTY == ID_SAN_FRANCISCO) & (df.county_id == ID_SAN_FRANCISCO)",coef_sf_to_sf
-util_sf_to_san_mateo,SF to San Mateo,"@(_HOME_COUNTY == ID_SAN_FRANCISCO) & (df.county_id == ID_SAN_MATEO)",coef_sf_to_san_mateo
-util_sf_to_santa_clara,SF to Santa Clara,"@(_HOME_COUNTY == ID_SAN_FRANCISCO) & (df.county_id == ID_SANTA_CLARA)",coef_sf_to_santa_clara
-util_san_mateo_to_santa_clara,San Mateo to Santa Clara,"@(_HOME_COUNTY == ID_SAN_MATEO) & (df.county_id == ID_SANTA_CLARA)",coef_san_mateo_to_santa_clara
-util_san_mateo_to_alameda,San Mateo to Alameda,"@(_HOME_COUNTY == ID_SAN_MATEO) & (df.county_id == ID_ALAMEDA)",coef_san_mateo_to_alameda
-util_santa_clara_to_sf,Santa Clara to SF,"@(_HOME_COUNTY == ID_SANTA_CLARA) & (df.county_id == ID_SAN_FRANCISCO)",coef_santa_clara_to_sf
-util_santa_clara_to_santa_clara,Santa Clara to Santa Clara,"@(_HOME_COUNTY == ID_SANTA_CLARA) & (df.county_id == ID_SANTA_CLARA)",coef_santa_clara_to_santa_clara
-util_alameda_to_santa_clara,Alameda to Santa Clara,"@(_HOME_COUNTY == ID_ALAMEDA) & (df.county_id == ID_SANTA_CLARA)",coef_alameda_to_santa_clara
-util_contra_costa_to_san_mateo,Contra Costa to San Mateo,"@(_HOME_COUNTY == ID_CONTRA_COSTA) & (df.county_id == ID_SAN_MATEO)",coef_contra_costa_to_san_mateo
-util_contra_costa_to_santa_clara,Contra Costa to Santa Clara,"@(_HOME_COUNTY == ID_CONTRA_COSTA) & (df.county_id == ID_SANTA_CLARA)",coef_contra_costa_to_santa_clara
+util_sf_to_sf,SF to SF,"@(_HOME_COUNTY == ID_SAN_FRANCISCO) & (_DEST_COUNTY == ID_SAN_FRANCISCO)",coef_sf_to_sf
+util_sf_to_san_mateo,SF to San Mateo,"@(_HOME_COUNTY == ID_SAN_FRANCISCO) & (_DEST_COUNTY == ID_SAN_MATEO)",coef_sf_to_san_mateo
+util_sf_to_santa_clara,SF to Santa Clara,"@(_HOME_COUNTY == ID_SAN_FRANCISCO) & (_DEST_COUNTY == ID_SANTA_CLARA)",coef_sf_to_santa_clara
+util_san_mateo_to_santa_clara,San Mateo to Santa Clara,"@(_HOME_COUNTY == ID_SAN_MATEO) & (_DEST_COUNTY == ID_SANTA_CLARA)",coef_san_mateo_to_santa_clara
+util_san_mateo_to_alameda,San Mateo to Alameda,"@(_HOME_COUNTY == ID_SAN_MATEO) & (_DEST_COUNTY == ID_ALAMEDA)",coef_san_mateo_to_alameda
+util_santa_clara_to_sf,Santa Clara to SF,"@(_HOME_COUNTY == ID_SANTA_CLARA) & (_DEST_COUNTY == ID_SAN_FRANCISCO)",coef_santa_clara_to_sf
+util_santa_clara_to_santa_clara,Santa Clara to Santa Clara,"@(_HOME_COUNTY == ID_SANTA_CLARA) & (_DEST_COUNTY == ID_SANTA_CLARA)",coef_santa_clara_to_santa_clara
+util_alameda_to_santa_clara,Alameda to Santa Clara,"@(_HOME_COUNTY == ID_ALAMEDA) & (_DEST_COUNTY == ID_SANTA_CLARA)",coef_alameda_to_santa_clara
+util_contra_costa_to_san_mateo,Contra Costa to San Mateo,"@(_HOME_COUNTY == ID_CONTRA_COSTA) & (_DEST_COUNTY == ID_SAN_MATEO)",coef_contra_costa_to_san_mateo
+util_contra_costa_to_santa_clara,Contra Costa to Santa Clara,"@(_HOME_COUNTY == ID_CONTRA_COSTA) & (_DEST_COUNTY == ID_SANTA_CLARA)",coef_contra_costa_to_santa_clara

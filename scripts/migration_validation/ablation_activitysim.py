@@ -18,8 +18,6 @@ from pathlib import Path
 
 import yaml
 
-from tm1.slack import notify
-
 log = logging.getLogger(__name__)
 
 CONFIG_PATH = Path(__file__).parent / "ablation_config.yaml"
@@ -131,6 +129,12 @@ def collect_outputs(src: Path, dst: Path) -> int:
 
 
 def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
+    if cfg.get("slack", False):
+        from tm1.slack import notify
+    else:
+        def notify(msg: str) -> None:  # noqa: ARG001
+            pass
+
     project_dir = Path(cfg["activitysim_project_dir"])
     repo_root = Path(cfg["repo_root"])
     config_dirs = cfg["asim_config_dirs"]
