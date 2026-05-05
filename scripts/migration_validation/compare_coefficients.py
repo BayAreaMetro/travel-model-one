@@ -19,7 +19,7 @@ from pathlib import Path
 import xlrd
 import yaml
 
-from uec_mappings import MAPPINGS
+from uec_mappings import MAPPINGS, NOTES
 
 log = logging.getLogger(__name__)
 
@@ -77,12 +77,21 @@ def read_uec_sheets(ctramp_dir: Path, filename: str, sheet_names: list[str]) -> 
 
 # -- ActivitySim reader --------------------------------------------------------
 
-def read_asim_spec(configs_dir: Path, spec_file: str, coeff_file: str) -> dict:  # noqa: C901
+def _resolve(dirs: list[Path], filename: str) -> Path | None:
+    """Find first occurrence of filename across config dirs (priority order)."""
+    for d in dirs:
+        p = d / filename
+        if p.exists():
+            return p
+    return None
+
+
+def read_asim_spec(configs_dirs: list[Path], spec_file: str, coeff_file: str) -> dict:  # noqa: C901
     """Parse spec + coefficients into {alt_names, rows: [{label, desc, expr, coeffs}]}."""
     # Coefficient lookup
-    coeff_path = configs_dir / coeff_file
+    coeff_path = _resolve(configs_dirs, coeff_file)
     coeffs: dict[str, float] = {}
-    if coeff_path.exists():
+    if coeff_path:
         with coeff_path.open(encoding="utf-8-sig") as f:
             for row in csv.DictReader(f):
                 try:
@@ -90,8 +99,8 @@ def read_asim_spec(configs_dir: Path, spec_file: str, coeff_file: str) -> dict: 
                 except (ValueError, KeyError):
                     coeffs[row["coefficient_name"].strip()] = row.get("value", "")
 
-    spec_path = configs_dir / spec_file
-    if not spec_path.exists():
+    spec_path = _resolve(configs_dirs, spec_file)
+    if not spec_path:
         return {"alt_names": [], "rows": []}
 
     with spec_path.open(encoding="utf-8-sig") as f:
@@ -134,10 +143,15 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
     if not crosswalk:
         return ""
 
-    # Index CTRAMP rows by row number (across all sheets)
+    # Detect multi-segment: sheets share the same row numbers
+    multi_seg = len(sheets) > 1 and len({r["no"] for s in sheets for r in s["rows"]}) < sum(len(s["rows"]) for s in sheets)
+
+    # Index CTRAMP rows by (sheet_name, no) for multi-seg, or just no for single-sheet
+    ctramp_by_sheet_no: dict[tuple[str, int], dict] = {}
     ctramp_by_no: dict[int, dict] = {}
     for s in sheets:
         for r in s["rows"]:
+            ctramp_by_sheet_no[(s["sheet_name"], r["no"])] = r
             ctramp_by_no[r["no"]] = r
 
     # Index ActivitySim rows by label
@@ -145,20 +159,19 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
     for r in spec["rows"]:
         asim_by_label[r["label"]] = r
 
+    asim_alts = spec.get("alt_names", [])
     used_ctramp: set[int] = set()
     used_asim: set[str] = set()
-
-    h = ("<table class='coeff mapped'><thead><tr>"
-         "<th>ASim Label</th><th>CTRAMP No.</th>"
-         "<th>CTRAMP Formula</th><th>ASim Expression</th>"
-         "<th>CTRAMP Coeff</th><th>ASim Coeff</th><th>Diff</th>"
-         "</tr></thead><tbody>")
-    body = ""
 
     def _coeff_val(row: dict) -> str:
         if not row or not row.get("coeffs"):
             return ""
         return next(iter(row["coeffs"].values()))
+
+    def _coeff_for_alt(row: dict, alt: str) -> str:
+        if not row or not row.get("coeffs"):
+            return ""
+        return row["coeffs"].get(alt, "")
 
     def _diff_cell(c_val, a_val) -> str:
         if c_val == "" or a_val == "":
@@ -170,67 +183,163 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
         except (ValueError, TypeError):
             return "<td></td>"
 
-    # Matched rows (driven by crosswalk: asim_label → ctramp_no)
-    for asim_label, ctramp_no in crosswalk.items():
-        cr = ctramp_by_no.get(ctramp_no)
-        ar = asim_by_label.get(asim_label)
-        used_ctramp.add(ctramp_no)
-        used_asim.add(asim_label)
+    body = ""
 
-        c_coeff = _coeff_val(cr)
-        a_coeff = _coeff_val(ar)
-
-        cls = ""
-        if cr and ar:
-            try:
-                cls = "match" if abs(float(c_coeff) - float(a_coeff)) < 1e-6 else "diff"
-            except (ValueError, TypeError):
-                cls = "diff"
-        elif cr:
-            cls = "ctramp-only"
-        elif ar:
-            cls = "asim-only"
-
-        body += (
-            f"<tr class='{cls}'>"
-            f"<td>{esc(asim_label)}</td>"
-            f"<td>{cr['no'] if cr else ''}</td>"
-            f"<td>{esc(cr['formula']) if cr else ''}</td>"
-            f"<td>{esc(ar['expr']) if ar else ''}</td>"
-            f"<td class='num'>{_fmt(c_coeff) if c_coeff != '' else ''}</td>"
-            f"<td class='num'>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
-            f"{_diff_cell(c_coeff, a_coeff)}"
-            "</tr>"
+    if multi_seg:
+        # Multi-segment table: one coeff column per segment
+        seg_names = [s["sheet_name"] for s in sheets]
+        coeff_hdrs = "".join(
+            f"<th>CTRAMP {esc(sn)}</th><th>ASim {esc(alt)}</th><th>Diff</th>"
+            for sn, alt in zip(seg_names, asim_alts)
         )
+        h = ("<table class='coeff mapped sortable'><thead><tr>"
+             "<th>ASim Label</th><th>CTRAMP No.</th><th>CTRAMP Description</th>"
+             f"<th>ASim Expression</th>{coeff_hdrs}"
+             "</tr></thead><tbody>")
 
-    # Unmatched CTRAMP rows
-    for s in sheets:
-        for r in s["rows"]:
-            if r["no"] not in used_ctramp:
-                c_coeff = _coeff_val(r)
+        for asim_label, ctramp_ref in crosswalk.items():
+            ctramp_nos = ctramp_ref if isinstance(ctramp_ref, list) else [ctramp_ref]
+            ar = asim_by_label.get(asim_label)
+            used_asim.add(asim_label)
+
+            for i, ctramp_no in enumerate(ctramp_nos):
+                used_ctramp.add(ctramp_no)
+                # Get description from first sheet that has this row
+                cr_any = ctramp_by_sheet_no.get((seg_names[0], ctramp_no))
+                show_asim = (i == 0)
+                rowspan = f" rowspan='{len(ctramp_nos)}'" if show_asim and len(ctramp_nos) > 1 else ""
+
+                body += "<tr>"
+                if show_asim:
+                    body += f"<td{rowspan}>{esc(asim_label)}</td>"
+                body += f"<td>{ctramp_no}</td>"
+                body += f"<td>{esc(cr_any['desc']) if cr_any else ''}</td>"
+                if show_asim:
+                    body += f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
+
+                # One pair of coeff columns per segment
+                for sn, alt in zip(seg_names, asim_alts):
+                    cr = ctramp_by_sheet_no.get((sn, ctramp_no))
+                    c_val = _coeff_val(cr)
+                    a_val = str(_coeff_for_alt(ar, alt)) if ar else ""
+                    body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td>"
+                    if show_asim:
+                        body += f"<td class='num'{rowspan}>{_fmt(a_val) if a_val != '' else ''}</td>"
+                    body += _diff_cell(c_val, a_val)
+                body += "</tr>"
+
+        # Unmatched CTRAMP rows (use first sheet as reference)
+        for s in sheets:
+            for r in s["rows"]:
+                if r["no"] not in used_ctramp:
+                    used_ctramp.add(r["no"])
+                    body += (
+                        f"<tr class='ctramp-only'><td></td><td>{r['no']}</td>"
+                        f"<td>{esc(r['desc'])}</td><td></td>"
+                    )
+                    for sn, alt in zip(seg_names, asim_alts):
+                        cr = ctramp_by_sheet_no.get((sn, r["no"]))
+                        c_val = _coeff_val(cr)
+                        body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td><td></td><td></td>"
+                    body += "</tr>"
+
+        # Unmatched ASim rows
+        for r in spec["rows"]:
+            if r["label"] not in used_asim:
+                body += f"<tr class='asim-only'><td>{esc(r['label'])}</td><td></td><td></td><td>{esc(r['expr'])}</td>"
+                for sn, alt in zip(seg_names, asim_alts):
+                    a_val = str(_coeff_for_alt(r, alt))
+                    body += f"<td></td><td class='num'>{_fmt(a_val) if a_val != '' else ''}</td><td></td>"
+                body += "</tr>"
+
+    else:
+        # Single-segment table (original logic)
+        h = ("<table class='coeff mapped sortable'><thead><tr>"
+             "<th>ASim Label</th><th>CTRAMP No.</th><th>CTRAMP Description</th>"
+             "<th>CTRAMP Filter</th><th>CTRAMP Formula</th>"
+             "<th>ASim Expression</th><th>ASim Coeff</th>"
+             "<th>CTRAMP Coeff</th><th>Diff</th>"
+             "</tr></thead><tbody>")
+
+        # Matched rows (driven by crosswalk: asim_label → ctramp_no or [ctramp_nos])
+        for asim_label, ctramp_ref in crosswalk.items():
+            ctramp_nos = ctramp_ref if isinstance(ctramp_ref, list) else [ctramp_ref]
+            ar = asim_by_label.get(asim_label)
+            used_asim.add(asim_label)
+
+            a_coeff = _coeff_val(ar)
+
+            for i, ctramp_no in enumerate(ctramp_nos):
+                cr = ctramp_by_no.get(ctramp_no)
+                used_ctramp.add(ctramp_no)
+
+                c_coeff = _coeff_val(cr)
+
+                cls = ""
+                if cr and ar:
+                    try:
+                        cls = "match" if abs(float(c_coeff) - float(a_coeff)) < 1e-6 else "diff"
+                    except (ValueError, TypeError):
+                        cls = "diff"
+                elif cr:
+                    cls = "ctramp-only"
+                elif ar:
+                    cls = "asim-only"
+
+                # Show ASim label/expr/coeff only on the first row of a group
+                show_asim = (i == 0)
+                rowspan = f" rowspan='{len(ctramp_nos)}'" if show_asim and len(ctramp_nos) > 1 else ""
+
+                body += f"<tr class='{cls}'>"
+                if show_asim:
+                    body += f"<td{rowspan}>{esc(asim_label)}</td>"
                 body += (
-                    f"<tr class='ctramp-only'>"
-                    f"<td></td>"
-                    f"<td>{r['no']}</td>"
-                    f"<td>{esc(r['formula'])}</td>"
-                    f"<td></td>"
+                    f"<td>{cr['no'] if cr else ''}</td>"
+                    f"<td>{esc(cr['desc']) if cr else ''}</td>"
+                    f"<td>{esc(cr['filter']) if cr else ''}</td>"
+                    f"<td>{esc(cr['formula']) if cr else ''}</td>"
+                )
+                if show_asim:
+                    body += (
+                        f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
+                        f"<td class='num'{rowspan}>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
+                    )
+                body += (
                     f"<td class='num'>{_fmt(c_coeff) if c_coeff != '' else ''}</td>"
-                    f"<td></td><td></td></tr>"
+                    f"{_diff_cell(c_coeff, a_coeff)}"
+                    "</tr>"
                 )
 
-    # Unmatched ActivitySim rows
-    for r in spec["rows"]:
-        if r["label"] not in used_asim:
-            a_coeff = _coeff_val(r)
-            body += (
-                f"<tr class='asim-only'>"
-                f"<td>{esc(r['label'])}</td>"
-                f"<td></td><td></td>"
-                f"<td>{esc(r['expr'])}</td>"
-                f"<td></td>"
-                f"<td class='num'>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
-                f"<td></td></tr>"
-            )
+        # Unmatched CTRAMP rows
+        for s in sheets:
+            for r in s["rows"]:
+                if r["no"] not in used_ctramp:
+                    c_coeff = _coeff_val(r)
+                    body += (
+                        f"<tr class='ctramp-only'>"
+                        f"<td></td>"
+                        f"<td>{r['no']}</td>"
+                        f"<td>{esc(r['desc'])}</td>"
+                        f"<td>{esc(r['filter'])}</td>"
+                        f"<td>{esc(r['formula'])}</td>"
+                        f"<td></td><td></td>"
+                        f"<td class='num'>{_fmt(c_coeff) if c_coeff != '' else ''}</td>"
+                        f"<td></td></tr>"
+                    )
+
+        # Unmatched ActivitySim rows
+        for r in spec["rows"]:
+            if r["label"] not in used_asim:
+                a_coeff = _coeff_val(r)
+                body += (
+                    f"<tr class='asim-only'>"
+                    f"<td>{esc(r['label'])}</td>"
+                    f"<td></td><td>{esc(r['desc'])}</td><td></td><td></td>"
+                    f"<td>{esc(r['expr'])}</td>"
+                    f"<td class='num'>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
+                    f"<td></td>"
+                    f"<td></td></tr>"
+                )
 
     legend = (
         "<div class='legend'>"
@@ -240,7 +349,17 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict) -> str:
         "<span class='swatch asim-only'></span> ASim only"
         "</div>"
     )
-    return f"<h3>Mapped Comparison</h3>{legend}{h}{body}</tbody></table>"
+
+    # Render explanatory notes for many-to-one or unmatched rows
+    notes_dict = NOTES.get(name, {})
+    notes_html = ""
+    if notes_dict:
+        notes_html = "<details class='mapping-notes'><summary>Mapping Notes</summary><dl>"
+        for label, note in notes_dict.items():
+            notes_html += f"<dt><code>{esc(label)}</code></dt><dd>{esc(note)}</dd>"
+        notes_html += "</dl></details>"
+
+    return f"<h3>Mapped Comparison</h3>{legend}{h}{body}</tbody></table>{notes_html}"
 
 
 # -- HTML rendering ------------------------------------------------------------
@@ -284,15 +403,15 @@ def _asim_table(spec: dict) -> str:
     return f"<h3>ActivitySim Spec</h3>{h}{body}</tbody></table>"
 
 
-def _size_terms_table(ctramp_dir: Path, asim_dir: Path, st_cfg: dict) -> str:
-    def _read(p: Path) -> list[dict]:
-        if not p.exists():
+def _size_terms_table(ctramp_dir: Path, asim_dirs: list[Path], st_cfg: dict) -> str:
+    def _read(p: Path | None) -> list[dict]:
+        if not p or not p.exists():
             return []
         with p.open(encoding="utf-8-sig") as f:
             return list(csv.DictReader(f))
 
     cr = _read(ctramp_dir / st_cfg["ctramp"])
-    ar = _read(asim_dir / st_cfg["asim"])
+    ar = _read(_resolve(asim_dirs, st_cfg["asim"]))
     if not cr and not ar:
         return "<p>No size-term data.</p>"
 
@@ -347,8 +466,12 @@ table.mapped tr.match td { background: #d4edda; }
 table.mapped tr.diff td { background: #f8d7da; }
 table.mapped tr.ctramp-only td { background: #d6eaf8; }
 table.mapped tr.asim-only td { background: #fdebd0; }
-table.mapped td { white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
-table.mapped td:nth-child(1) { font-family: Consolas, monospace; font-size: 12px; }
+table.mapped td { white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+table.mapped td:nth-child(1) { font-family: Consolas, monospace; }
+table.mapped th { font-size: 12px; }
+table.sortable th { cursor: pointer; user-select: none; }
+table.sortable th[data-dir='asc']::after { content: ' \\25B2'; font-size: 10px; }
+table.sortable th[data-dir='desc']::after { content: ' \\25BC'; font-size: 10px; }
 .legend { margin: 8px 0; font-size: 13px; }
 .legend .swatch { display: inline-block; width: 14px; height: 14px; vertical-align: middle;
   border: 1px solid #aaa; margin-right: 3px; margin-left: 10px; }
@@ -356,6 +479,11 @@ table.mapped td:nth-child(1) { font-family: Consolas, monospace; font-size: 12px
 .legend .swatch.diff { background: #f8d7da; }
 .legend .swatch.ctramp-only { background: #d6eaf8; }
 .legend .swatch.asim-only { background: #fdebd0; }
+.mapping-notes { margin: 10px 0; font-size: 13px; }
+.mapping-notes summary { cursor: pointer; font-weight: bold; color: #555; }
+.mapping-notes dl { margin: 8px 0 0 10px; }
+.mapping-notes dt { font-weight: bold; margin-top: 6px; }
+.mapping-notes dd { margin: 2px 0 0 20px; color: #555; }
 .file-paths { margin: 10px 0; padding: 10px 15px; background: #f5f5f5; border-radius: 4px;
   font-size: 13px; line-height: 1.6; border: 1px solid #ddd; }
 .file-paths code { background: #e8e8e8; padding: 2px 5px; border-radius: 3px; font-size: 12px; }
@@ -366,25 +494,47 @@ def build_report(cfg: dict) -> Path:
     repo = Path(cfg["repo_root"])
     cc = cfg["coefficient_comparison"]
     ctramp_dir = repo / cc["ctramp_model_dir"]
-    asim_dir = repo / cc["asim_configs_dir"]
+    # ActivitySim config dirs in priority order (scenario overrides first)
+    asim_dirs = [repo / d for d in cc["asim_configs_dirs"]]
     out = Path(cfg["output_dir"]) / "coefficient_comparison.html"
+
+    # Build submodel → stage mapping from stage definitions
+    stages = cfg.get("stages", [])
+    submodel_stages: dict[str, str] = {}
+    for i, st in enumerate(stages, 1):
+        for csm in st.get("calibration_submodels", []):
+            # Map calibration submodel names to coefficient comparison tab names
+            csm_to_tab = {
+                "work_school_location": ["Workplace Location", "School Location"],
+                "auto_ownership": ["Auto Ownership"],
+                "daily_activity_pattern": ["CDAP"],
+                "tour_mode_choice": ["Tour Mode Choice"],
+                "trip_mode_choice": ["Trip Mode Choice"],
+                "nonwork_dest_choice": [],
+            }
+            for tab_name in csm_to_tab.get(csm, []):
+                if tab_name not in submodel_stages:
+                    submodel_stages[tab_name] = f"Stage {i} ({st['name']})"
 
     tabs: list[tuple[str, str]] = []
     for sm in cc["submodels"]:
         log.info("Processing %s ...", sm["name"])
         sheets = read_uec_sheets(ctramp_dir, sm["ctramp_file"], sm["ctramp_sheets"])
-        spec = read_asim_spec(asim_dir, sm["asim_spec"], sm["asim_coefficients"])
+        spec = read_asim_spec(asim_dirs, sm["asim_spec"], sm["asim_coefficients"])
 
-        # File paths banner
+        # File paths banner — show which dir each file actually resolved from
+        spec_resolved = _resolve(asim_dirs, sm["asim_spec"])
+        coeff_resolved = _resolve(asim_dirs, sm["asim_coefficients"])
         ctramp_path = cc["ctramp_model_dir"] + "/" + sm["ctramp_file"]
-        asim_spec_path = cc["asim_configs_dir"] + "/" + sm["asim_spec"]
-        asim_coeff_path = cc["asim_configs_dir"] + "/" + sm["asim_coefficients"]
+        stage_info = submodel_stages.get(sm["name"], "")
+        stage_line = f"<br><b>Ablation impact:</b> Introduced at {esc(stage_info)}, affects all subsequent stages" if stage_info else ""
         paths_html = (
             f"<div class='file-paths'>"
             f"<b>CTRAMP:</b> <code>{esc(ctramp_path)}</code> "
             f"[{', '.join(sm['ctramp_sheets'])}]<br>"
-            f"<b>ActivitySim:</b> <code>{esc(asim_spec_path)}</code> + "
-            f"<code>{esc(asim_coeff_path)}</code>"
+            f"<b>ActivitySim spec:</b> <code>{esc(str(spec_resolved.relative_to(repo)) if spec_resolved else 'NOT FOUND')}</code><br>"
+            f"<b>ActivitySim coeff:</b> <code>{esc(str(coeff_resolved.relative_to(repo)) if coeff_resolved else 'NOT FOUND')}</code>"
+            f"{stage_line}"
             f"</div>"
         )
 
@@ -406,7 +556,7 @@ def build_report(cfg: dict) -> Path:
         tabs.append((sm["name"], tab_body))
 
     if "size_terms" in cc:
-        tabs.append(("Size Terms", _size_terms_table(ctramp_dir, asim_dir, cc["size_terms"])))
+        tabs.append(("Size Terms", _size_terms_table(ctramp_dir, asim_dirs, cc["size_terms"])))
 
     buttons, panels = [], []
     for i, (title, content) in enumerate(tabs):
@@ -428,6 +578,24 @@ function showTab(id){{
   document.getElementById(id).classList.add('active');
   event.target.classList.add('active');
 }}
+document.querySelectorAll('table.sortable th').forEach(th=>{{
+  th.style.cursor='pointer';
+  th.addEventListener('click',()=>{{
+    const table=th.closest('table'), tbody=table.querySelector('tbody');
+    const idx=[...th.parentNode.children].indexOf(th);
+    const rows=[...tbody.querySelectorAll('tr')];
+    const dir=th.dataset.dir==='asc'?'desc':'asc';
+    th.parentNode.querySelectorAll('th').forEach(h=>delete h.dataset.dir);
+    th.dataset.dir=dir;
+    rows.sort((a,b)=>{{
+      let av=a.children[idx]?.textContent||'', bv=b.children[idx]?.textContent||'';
+      let an=parseFloat(av), bn=parseFloat(bv);
+      if(!isNaN(an)&&!isNaN(bn)) return dir==='asc'?an-bn:bn-an;
+      return dir==='asc'?av.localeCompare(bv):bv.localeCompare(av);
+    }});
+    rows.forEach(r=>tbody.appendChild(r));
+  }});
+}});
 </script></body></html>"""
 
     out.parent.mkdir(parents=True, exist_ok=True)

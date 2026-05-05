@@ -20,8 +20,8 @@ seed: 42
 num_processes: 40
 
 # --- Which stages to run (1-based; comment out to skip) ---
-# active_stages: [1]  # [1,2,3,4,5,6,7,8]
-active_stages: [1,2,3,4,5,6,7,8]
+active_stages: [1]  # [1,2,3,4,5,6,7,8]
+# active_stages: [1,2,3,4,5,6,7,8]
 
 # --- Stage definitions (shared by both CTRAMP and ActivitySim ablation) ---
 # Each stage adds models cumulatively on top of all previous stages.
@@ -199,7 +199,9 @@ ctramp_output_files:
 # --- Coefficient comparison ---
 coefficient_comparison:
   ctramp_model_dir: "model-files/model"  # relative to repo_root
-  asim_configs_dir: "base-models/activity/configs"  # relative to repo_root
+  asim_configs_dirs:  # searched in priority order (first match wins)
+    - "scenarios/base_2023/configs"
+    - "base-models/activity/configs"
   submodels:
     - name: Workplace Location
       ctramp_file: DestinationChoice.xls
