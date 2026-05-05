@@ -7,13 +7,13 @@ import polars as pl
 from .helpers import (
     append_overall_fit,
     compute_fit_row,
-    delta_cell,
     esc,
     fit_table,
     load_template,
     normalise_shares,
-    pair_selector,
+    pct_change_cell,
     pick_datasets,
+    render_pairs,
     tlfd_traces_nway,
     wrap_chart,
 )
@@ -25,14 +25,13 @@ def render(
     *,
     survey_labels: set[str] | None = None,
 ) -> str:
-    """Return HTML fragment for the Work / School Location tab."""
     parts: list[str] = []
 
     # Average trip lengths table — pair-toggled
     avg_datasets = pick_datasets(per_label, labels, "avg_trip_lengths")
     if len(avg_datasets) >= 2:  # noqa: PLR2004
         parts.append("<h3>Average Trip Lengths (miles)</h3>")
-        parts.append(pair_selector(avg_datasets, "wsloc_avg", _render_avg_pair))
+        parts.append(render_pairs(avg_datasets, _render_avg_pair))
 
     # Fit metrics across all datasets
     fit_rows: list[dict] = []
@@ -45,31 +44,27 @@ def render(
         ds = pick_datasets(per_label, labels, trip_key)
         if len(ds) < 2:  # noqa: PLR2004
             continue
-        ref_label, ref_df = ds[0]
+        _idx0, _lbl0, ref_df = ds[0]
         _rb, ref_share, _rs = normalise_shares(ref_df)
-        for mod_label, mod_df in ds[1:]:
+        for _idx_m, mod_label, mod_df in ds[1:]:
             _mb, mod_share, _ms = normalise_shares(mod_df)
             row_label = (
                 trip_title if len(ds) == 2  # noqa: PLR2004
                 else f"{trip_title} ({mod_label})"
             )
-            fit_rows.append(
-                compute_fit_row(ref_share, mod_share, row_label, label_key="Purpose"),
-            )
+            fit_rows.append(compute_fit_row(ref_share, mod_share, row_label))
 
     if fit_rows:
         append_overall_fit(fit_rows)
         parts.append("<h3>Goodness of Fit — Trip Length</h3>")
-        parts.append(fit_table(fit_rows, label_key="Purpose"))
+        parts.append(fit_table(fit_rows))
 
-    # TLFD plots — all datasets overlaid
+    # TLFD plots — all datasets overlaid (not pair-toggled)
     for trip_key, trip_title in trip_purposes:
         ds = pick_datasets(per_label, labels, trip_key)
         if len(ds) < 2:  # noqa: PLR2004
             continue
-        parts.append(
-            f"<h3>Trip Length Frequency Distribution — {trip_title}</h3>",
-        )
+        parts.append(f"<h3>Trip Length Frequency Distribution — {trip_title}</h3>")
         parts.append(_tlfd_chart(ds, trip_key, survey_labels=survey_labels))
 
     return "\n".join(parts) if parts else "<p>Insufficient data for comparison.</p>"
@@ -84,13 +79,8 @@ def _render_avg_pair(
     return _avg_trip_table(obs, mod, obs_label, mod_label)
 
 
-# ---------------------------------------------------------------------------
-# TLFD chart with log-scale toggle — N-way overlay
-# ---------------------------------------------------------------------------
-
-
 def _tlfd_chart(
-    datasets: list[tuple[str, pl.DataFrame]],
+    datasets: list[tuple[int, str, pl.DataFrame]],
     key: str,
     *,
     survey_labels: set[str] | None = None,
@@ -103,16 +93,9 @@ def _tlfd_chart(
     return wrap_chart(div_id, js)
 
 
-# ---------------------------------------------------------------------------
-# Average trip lengths
-# ---------------------------------------------------------------------------
-
-
 def _avg_trip_table(
-    obs: pl.DataFrame,
-    mod: pl.DataFrame,
-    obs_label: str,
-    mod_label: str,
+    obs: pl.DataFrame, mod: pl.DataFrame,
+    obs_label: str, mod_label: str,
 ) -> str:
     trip_cols = [c for c in obs.columns if c != "county"]
     obs_rows = obs.sort("county").to_dicts()
@@ -125,7 +108,7 @@ def _avg_trip_table(
     header += "<th rowspan='2'>County</th>"
     header += f"<th colspan='{ncols}'>{esc(obs_label)}</th>"
     header += f"<th colspan='{ncols}'>{esc(mod_label)}</th>"
-    header += f"<th colspan='{ncols}'>Delta</th>"
+    header += f"<th colspan='{ncols}'>% Change</th>"
     header += "</tr><tr>"
     for _ in range(3):
         for tc in trip_cols:
@@ -146,7 +129,7 @@ def _avg_trip_table(
         for tc in trip_cols:
             obs_val = row.get(tc, 0) or 0
             mod_val = mr.get(tc, 0) or 0
-            body += delta_cell(mod_val - obs_val, fmt=".1f")
+            body += pct_change_cell(obs_val, mod_val)
         body += "</tr>"
 
     return header + body + "</tbody></table>"

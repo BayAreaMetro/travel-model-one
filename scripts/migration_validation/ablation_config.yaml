@@ -174,17 +174,27 @@ survey:
     indiv_trip_data: IndivTripData.csv
     joint_trip_data: JointTripData.csv
 
-# --- CTRAMP output file mapping (iteration 1) ---
+# --- CTRAMP output file mapping ---
+# NOTE: ActivitySim dataset config is not listed here — it is built dynamically
+# per-stage in evaluate_stages.py (see build_asim_dataset).
+#
+# Ablation runs use iteration 1 (single-iteration). A full re-run of core
+# (global iteration loop) would produce _3 suffixes instead.
+# But it uses the latest skims with no substantive demand changes, so it's basically a 3.
+# Some files (aoResults, cdapResults) have no iteration suffix in CTRAMP.
+#
+# Files are looked up ONLY in the stage directory. If a file doesn't exist
+# there, that table won't be loaded (and the pipeline will warn per-submodel).
 ctramp_output_files:
   wsloc_results: wsLocResults_1.csv
-  ao_results: aoResults_1.csv
-  cdap_results: cdapResults_1.csv
+  ao_results: aoResults.csv
+  cdap_results: cdapResults.csv
   indiv_tour_data: indivTourData_1.csv
   joint_tour_data: jointTourData_1.csv
   indiv_trip_data: indivTripData_1.csv
   joint_trip_data: jointTripData_1.csv
-  householdData: householdData_1.csv
-  personData: personData_1.csv
+  households: householdData_1.csv
+  persons: personData_1.csv
 
 # --- Coefficient comparison ---
 coefficient_comparison:

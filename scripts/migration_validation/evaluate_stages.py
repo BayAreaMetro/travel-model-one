@@ -70,7 +70,8 @@ def build_asim_dataset(stage_output: Path, data_dir: Path, sample_rate: float) -
 
 
 def build_ctramp_dataset(
-    ctramp_stage: Path, ctramp_dir: Path, ctramp_output_files: dict, sample_rate: float,
+    ctramp_stage: Path, ctramp_dir: Path,
+    ctramp_output_files: dict, sample_rate: float,
 ) -> dict | None:
     if not ctramp_stage.exists():
         return None
@@ -79,11 +80,11 @@ def build_ctramp_dataset(
         "dist_skim": str(ctramp_dir / "skims" / "nonmotskm.tpp"),
     }
     for table, fname in ctramp_output_files.items():
-        if (ctramp_stage / fname).exists():
-            paths[table] = str(ctramp_stage / fname)
-    hh = ctramp_dir / "popsyn" / "hhFile.csv"
-    if hh.exists():
-        paths["households"] = str(hh)
+        p = ctramp_stage / fname
+        if p.exists():
+            paths[table] = str(p)
+        else:
+            log.warning("CTRAMP stage %s missing %s (%s)", ctramp_stage.name, table, fname)
     return {"label": "CTRAMP", "format": "ctramp",
             "sampleshare": sample_rate, "paths": paths}
 
@@ -91,7 +92,8 @@ def build_ctramp_dataset(
 def evaluate_stage(  # noqa: PLR0913
     stage_output: Path, stage_num: int, stages: list[dict],
     project_dir: Path, ctramp_dir: Path, survey_dir: Path,
-    sample_rate: float, survey_cfg: dict, ctramp_output_files: dict,
+    sample_rate: float, survey_cfg: dict,
+    ctramp_output_files: dict,
 ) -> None:
     from tm1.steps.summaries.calibration import run as run_calib  # noqa: PLC0415
 
@@ -105,7 +107,9 @@ def evaluate_stage(  # noqa: PLR0913
 
     stage_name = stages[stage_num - 1]["name"]
     ctramp_stage = ctramp_dir / "ablation" / f"{stage_num:02d}_{stage_name}"
-    ctramp_ds = build_ctramp_dataset(ctramp_stage, ctramp_dir, ctramp_output_files, sample_rate)
+    ctramp_ds = build_ctramp_dataset(
+        ctramp_stage, ctramp_dir, ctramp_output_files, sample_rate,
+    )
     if ctramp_ds:
         datasets.append(ctramp_ds)
 
@@ -115,7 +119,7 @@ def evaluate_stage(  # noqa: PLR0913
 
     run_cfg = {"steps": {"summaries": {"calibration": {
         "output_dir": str(stage_output / "calibration"),
-        "write_csv": True, "datasets": datasets, "submodels": submodels,
+        "write_csv": False, "datasets": datasets, "submodels": submodels,
     }}}}
     run_calib(stage_output, run_cfg)
 
@@ -143,7 +147,8 @@ def evaluate_stages(cfg: dict) -> None:
             evaluate_stage(
                 stage_dir, stage_num, stages,
                 project_dir, ctramp_dir, survey_dir,
-                sample_rate, survey_cfg, ctramp_output_files,
+                sample_rate, survey_cfg,
+                ctramp_output_files,
             )
         except Exception:
             log.exception("Evaluation failed for stage %d (%s)", stage_num, stage_name)

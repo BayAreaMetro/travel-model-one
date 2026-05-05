@@ -34,12 +34,20 @@ SUBMODELS: dict[str, ModuleType] = {
 }
 
 
-def _bundle_has_inputs(bundle: ModelBundle, submodel: ModuleType) -> bool:
-    """Check whether *bundle* has the fields required by *submodel*."""
-    for field_name in submodel.REQUIRED_FIELDS:
-        if getattr(bundle, field_name, None) is None:
-            return False
-    return True
+def _check_bundle_inputs(bundle: ModelBundle, submodel: ModuleType, submodel_name: str) -> list[str]:
+    """Return missing field names. Logs a loud WARNING if any are missing."""
+    missing = [
+        f for f in submodel.REQUIRED_FIELDS
+        if getattr(bundle, f, None) is None
+    ]
+    if missing:
+        log.warning(
+            "MISSING INPUTS: %s for '%s' — fields %s are None. "
+            "Check dataset paths/config. This dataset will be OMITTED from "
+            "the %s comparison.",
+            submodel_name, bundle.label, missing, submodel_name,
+        )
+    return missing
 
 
 def _run_submodel(
@@ -193,12 +201,8 @@ def run(  # noqa: C901, PLR0912
             continue
 
         for bundle in bundles:
-            if not _bundle_has_inputs(bundle, mod):
-                log.info(
-                    "Skipping %s for %s (missing inputs)",
-                    submodel_name,
-                    bundle.label,
-                )
+            missing = _check_bundle_inputs(bundle, mod, submodel_name)
+            if missing:
                 continue
 
             t_sub = time.perf_counter()

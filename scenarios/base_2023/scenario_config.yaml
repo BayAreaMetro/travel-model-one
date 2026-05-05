@@ -6,7 +6,7 @@
 # │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
 # └─────────────────────────────────────────────────────────────────────────────┘
 reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
-proj_dir: "E:/tm1a_test"
+proj_dir: "E:/Tests/tm1a_test"
 
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  DERIVED PATHS — generally no need to change                               │

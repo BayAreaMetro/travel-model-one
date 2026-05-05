@@ -45,7 +45,6 @@ def write_report(
             for label in labels
         }
         if any(per_label.values()):
-            # Pass survey_labels to renderers that accept it (wsloc, nwdc)
             import inspect  # noqa: PLC0415
 
             sig = inspect.signature(renderer)
@@ -62,6 +61,21 @@ def write_report(
         return dest
 
     timestamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
+
+    # --- Global dataset toggle bar (only if 3+ datasets) ---
+    dataset_bar = ""
+    if len(labels) >= 3:  # noqa: PLR2004
+        buttons = []
+        for i, label in enumerate(labels):
+            active = " active" if i < 2 else ""  # noqa: PLR2004
+            buttons.append(
+                f"<button class='ds-btn{active}' data-idx='{i}' "
+                f"onclick='toggleDS({i})'>{esc(label)}</button>"
+            )
+        dataset_bar = "<div class='ds-bar'>" + "\n".join(buttons) + "</div>"
+    default_pair = "0, 1"
+
+    # --- Tab buttons + panes ---
     tab_buttons = ""
     tab_panes = ""
     for i, (title, content) in enumerate(tabs):
@@ -81,6 +95,8 @@ def write_report(
     page_tmpl = load_template("page.html")
     html_str = page_tmpl.substitute(
         timestamp=timestamp,
+        dataset_bar=dataset_bar,
+        default_pair=default_pair,
         tab_buttons=tab_buttons,
         tab_panes=tab_panes,
     )

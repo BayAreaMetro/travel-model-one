@@ -226,6 +226,9 @@ def load_bundle(dataset_cfg: object) -> object:
 
     for table_name, raw_path in cfg.paths.items():
         resolved = Path(raw_path)
+        if not resolved.exists():
+            msg = f"Dataset '{cfg.label}': file not found for '{table_name}': {resolved}"
+            raise FileNotFoundError(msg)
         t0 = time.perf_counter()
         if table_name == "dist_skim":
             lf = read_skim(resolved)
@@ -246,6 +249,19 @@ def load_bundle(dataset_cfg: object) -> object:
         if fmt == "activitysim":
             lf = _apply_asim_transforms(table_name, lf)
 
+        # Validate that table_name is a declared ModelBundle field
+        _known = {
+            "taz_data", "dist_skim", "persons", "households",
+            "wsloc_results", "ao_results", "cdap_results",
+            "indiv_tour_data", "joint_tour_data",
+            "indiv_trip_data", "joint_trip_data",
+        }
+        if table_name not in _known:
+            msg = (
+                f"Dataset '{cfg.label}' has path key '{table_name}' which is not "
+                f"a recognized ModelBundle field. Known fields: {sorted(_known)}"
+            )
+            raise ValueError(msg)
         setattr(bundle, table_name, lf)
 
     return bundle
@@ -255,8 +271,6 @@ def load_bundle(dataset_cfg: object) -> object:
 # ActivitySim post-rename transforms
 # ---------------------------------------------------------------------------
 
-# Invert MODE_TO_INT for integer→string lookups (not needed here, but
-# the forward dict maps string→int which is what we need).
 _PTYPE_TO_STUDENT_CAT: dict[int, str] = {
     3: "College or higher",         # University student
     6: "Grade or high school",      # Driving-age student

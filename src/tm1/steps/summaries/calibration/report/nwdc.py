@@ -11,8 +11,9 @@ from .helpers import (
     fit_table,
     load_template,
     normalise_shares,
-    pair_selector,
+    pct_change_cell,
     pick_datasets,
+    render_pairs,
     tlfd_traces_nway,
 )
 
@@ -23,7 +24,6 @@ def render(
     *,
     survey_labels: set[str] | None = None,
 ) -> str:
-    """Return HTML fragment for the Non-work Destination Choice tab."""
     parts: list[str] = []
 
     purposes = [
@@ -50,18 +50,16 @@ def render(
             "title": purpose_title,
             "traces": traces,
         })
-        # Fit metrics: one row per (ref, model_i) pair
-        ref_label, ref_df = datasets[0]
+        # Fit metrics: compare each model to the first (reference)
+        _idx0, _lbl0, ref_df = datasets[0]
         _rb, ref_share, _rs = normalise_shares(ref_df)
-        for mod_label, mod_df in datasets[1:]:
+        for _idx_m, mod_label, mod_df in datasets[1:]:
             _mb, mod_share, _ms = normalise_shares(mod_df)
             row_label = (
                 purpose_title if len(datasets) == 2  # noqa: PLR2004
                 else f"{purpose_title} ({mod_label})"
             )
-            fit_rows.append(
-                compute_fit_row(ref_share, mod_share, row_label, label_key="Purpose"),
-            )
+            fit_rows.append(compute_fit_row(ref_share, mod_share, row_label))
 
     # --- Average trip lengths table: pair-toggled ---
     avg_datasets = pick_datasets(per_label, labels, "nwdc_avg_trip_lengths")
@@ -72,12 +70,12 @@ def render(
         )
     if len(avg_datasets) >= 2:  # noqa: PLR2004
         parts.append("<div><h3>Average Trip Lengths (miles)</h3>")
-        parts.append(pair_selector(avg_datasets, "nwdc_avg", _render_avg_pair))
+        parts.append(render_pairs(avg_datasets, _render_avg_pair))
         parts.append("</div>")
     if fit_rows:
         append_overall_fit(fit_rows)
         parts.append("<div><h3>Goodness of Fit — Trip Length</h3>")
-        parts.append(fit_table(fit_rows, label_key="Purpose"))
+        parts.append(fit_table(fit_rows))
         parts.append("</div>")
     if has_tables:
         parts.append("</div>")
@@ -98,7 +96,6 @@ def _render_avg_pair(
 
 
 def _render_grid(items: list[dict]) -> str:
-    """Render a 2-column CSS grid of TLFD charts."""
     grid_html = (
         "<div style='display:grid;grid-template-columns:1fr 1fr;"
         "gap:8px;margin:12px 0;'>\n"
@@ -112,7 +109,6 @@ def _render_grid(items: list[dict]) -> str:
         )
     grid_html += "</div>\n"
 
-    # Single script block drives all plots
     tmpl = load_template("nwdc_grid.js")
     purposes_json = json.dumps(items)
     js = tmpl.substitute(purposes=purposes_json)
@@ -121,10 +117,8 @@ def _render_grid(items: list[dict]) -> str:
 
 
 def _avg_trip_table(
-    obs: pl.DataFrame,
-    mod: pl.DataFrame,
-    obs_label: str,
-    mod_label: str,
+    obs: pl.DataFrame, mod: pl.DataFrame,
+    obs_label: str, mod_label: str,
 ) -> str:
     obs_rows = {r["purpose"]: r["avg_trip_length"] for r in obs.to_dicts()}
     mod_rows = {r["purpose"]: r["avg_trip_length"] for r in mod.to_dicts()}
@@ -133,7 +127,7 @@ def _avg_trip_table(
     header = (
         "<table class='cal-table'><thead><tr>"
         f"<th>Purpose</th><th>{esc(obs_label)}</th>"
-        f"<th>{esc(mod_label)}</th><th>Delta</th>"
+        f"<th>{esc(mod_label)}</th><th>% Change</th>"
         "</tr></thead><tbody>"
     )
     body = ""
@@ -143,10 +137,9 @@ def _avg_trip_table(
         o_str = f"{o:.2f}" if o is not None else "—"
         m_str = f"{m:.2f}" if m is not None else "—"
         if o is not None and m is not None:
-            d = m - o
-            d_str = f"<td style='color:{'red' if abs(d)>2 else 'inherit'}'>{d:+.2f}</td>"
+            d_cell = pct_change_cell(o, m)
         else:
-            d_str = "<td>—</td>"
-        body += f"<tr><td>{esc(p)}</td><td>{o_str}</td><td>{m_str}</td>{d_str}</tr>"
+            d_cell = "<td>—</td>"
+        body += f"<tr><td>{esc(p)}</td><td>{o_str}</td><td>{m_str}</td>{d_cell}</tr>"
 
     return header + body + "</tbody></table>"

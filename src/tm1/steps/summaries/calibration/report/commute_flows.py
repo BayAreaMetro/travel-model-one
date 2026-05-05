@@ -6,13 +6,14 @@ from tm1.steps.summaries.calibration.enums import CTRAMPCounty
 
 from .helpers import (
     add_shares,
+    append_overall_fit,
     compute_fit_row,
-    delta_cell,
     esc,
     fit_table,
-    pair_selector,
     pct_cell,
     pick_datasets,
+    pp_delta_cell,
+    render_pairs,
 )
 
 _COUNTY_NAMES = [c.label for c in CTRAMPCounty]
@@ -22,12 +23,10 @@ def render(
     per_label: dict[str, dict[str, pl.DataFrame]],
     labels: list[str],
 ) -> str:
-    """Return HTML fragment for the Commuting Flows tab."""
     datasets = pick_datasets(per_label, labels, "county_summary")
     if len(datasets) < 2:  # noqa: PLR2004
         return "<p>Insufficient data for comparison.</p>"
-
-    return pair_selector(datasets, "cflow", _render_pair)
+    return render_pairs(datasets, _render_pair)
 
 
 def _render_pair(
@@ -44,26 +43,16 @@ def _render_pair(
     return "\n".join(parts)
 
 
-# ---------------------------------------------------------------------------
-# Flow matrices
-# ---------------------------------------------------------------------------
-
-
 def _flow_tables(
-    obs: pl.DataFrame,
-    mod: pl.DataFrame,
-    obs_label: str,
-    mod_label: str,
+    obs: pl.DataFrame, mod: pl.DataFrame,
+    obs_label: str, mod_label: str,
 ) -> str:
     county_col = "home_county_name"
-    # Use canonical county order for both rows and columns so the diagonal
-    # (home→same work county) is easy to read.
     value_cols = [c for c in _COUNTY_NAMES if c in obs.columns or c in mod.columns]
 
     obs_s = add_shares(obs, value_cols)
     mod_s = add_shares(mod, value_cols)
 
-    # Sort rows by canonical county order
     county_order = {name: i for i, name in enumerate(_COUNTY_NAMES)}
     obs_rows = sorted(obs_s.to_dicts(), key=lambda r: county_order.get(r[county_col], 99))
     mod_rows = sorted(mod_s.to_dicts(), key=lambda r: county_order.get(r[county_col], 99))
@@ -75,7 +64,7 @@ def _flow_tables(
     out += f"<h3>{esc(mod_label)} (Share)</h3>"
     out += _matrix_html(mod_rows, county_col, value_cols)
 
-    out += "<h3>Delta (Model &minus; Observed)</h3>"
+    out += "<h3>Delta (pp)</h3>"
     out += "<table class='cal-table'><thead><tr><th>Home County</th>"
     for vc in value_cols:
         out += f"<th>{esc(vc)}</th>"
@@ -87,17 +76,13 @@ def _flow_tables(
         for vc in value_cols:
             obs_val = row.get(f"{vc}_share", 0) or 0
             mod_val = mr.get(f"{vc}_share", 0) or 0
-            out += delta_cell(mod_val - obs_val)
+            out += pp_delta_cell(obs_val, mod_val)
         out += "</tr>"
     out += "</tbody></table>"
     return out
 
 
-def _matrix_html(
-    rows: list[dict],
-    county_col: str,
-    value_cols: list[str],
-) -> str:
+def _matrix_html(rows: list[dict], county_col: str, value_cols: list[str]) -> str:
     out = "<table class='cal-table'><thead><tr><th>Home County</th>"
     for vc in value_cols:
         out += f"<th>{esc(vc)}</th>"
@@ -111,13 +96,7 @@ def _matrix_html(
     return out
 
 
-# ---------------------------------------------------------------------------
-# Fit metrics
-# ---------------------------------------------------------------------------
-
-
 def _flows_fit_table(obs: pl.DataFrame, mod: pl.DataFrame) -> str:
-    """Fit metrics per home county comparing destination distributions."""
     county_col = "home_county_name"
     value_cols = [c for c in _COUNTY_NAMES if c in obs.columns or c in mod.columns]
 
@@ -134,18 +113,7 @@ def _flows_fit_table(obs: pl.DataFrame, mod: pl.DataFrame) -> str:
         mr = mod_by_hc.get(hc, {})
         obs_sh = [row.get(f"{vc}_share", 0) or 0 for vc in value_cols]
         mod_sh = [mr.get(f"{vc}_share", 0) or 0 for vc in value_cols]
-        fit_rows.append(
-            compute_fit_row(obs_sh, mod_sh, str(hc), label_key="Home County"),
-        )
+        fit_rows.append(compute_fit_row(obs_sh, mod_sh, str(hc)))
 
-    if fit_rows:
-        n = len(fit_rows)
-        fit_rows.append({
-            "Home County": "Overall",
-            "rmse": sum(r["rmse"] for r in fit_rows) / n,
-            "dissim": sum(r["dissim"] for r in fit_rows) / n,
-            "hellinger": sum(r["hellinger"] for r in fit_rows) / n,
-            "_bold": True,
-        })
-
-    return fit_table(fit_rows, label_key="Home County")
+    append_overall_fit(fit_rows)
+    return fit_table(fit_rows)
