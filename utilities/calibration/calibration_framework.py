@@ -135,6 +135,7 @@ class CalibrationBase(ABC):
         self.config = CalibrationConfig(config_file, submodel)
         self.submodel = submodel
         self.submodel_config = self.config.get_submodel_config(submodel)
+        self.excel_app = None
         
         # Set up parameters
         self.calib_iter = self.config.get('general', 'calib_iter')
@@ -239,18 +240,37 @@ class CalibrationBase(ABC):
 
         try: 
             self.logger.info(f"Loading Excel workbook from {self.workbook_blank}...")
-            self.calib_workbook = xw.Book(self.workbook_blank)
+            if USE_XLWINGS:
+                # Use a dedicated Excel instance so we do not attach to another open workbook.
+                self.excel_app = xw.App(visible=False, add_book=False)
+                self.excel_app.display_alerts = False
+                self.excel_app.screen_updating = False
+                self.calib_workbook = self.excel_app.books.open(
+                    self.workbook_blank,
+                    update_links=False,
+                    ignore_read_only_recommended=True,
+                )
+            else:
+                self.calib_workbook = load_workbook(self.workbook_blank)
             self.modeldata_sheet = self.calib_workbook.sheets['modeldata']
         except Exception as e:
             self.logger.warning(f"Skipping Excel workbook: {e}")
             self.calib_workbook = None
             self.modeldata_sheet = None
+            if self.excel_app:
+                try:
+                    self.excel_app.quit()
+                except Exception:
+                    pass
+                finally:
+                    self.excel_app = None
     
 
     def write_dataframe_to_sheet(self, df: pd.DataFrame, start_row: int, start_col: int, sheet_name: str ="modeldata",
                                 source_row: int = None, source_col: int = None, source_text: str = ""):
         """Write DataFrame to Excel sheet with optional source annotation."""
         if not self.calib_workbook:
+
             self.logger.warning(f"Warning: Calibration Workbook does not exist")
             return
 
@@ -283,6 +303,14 @@ class CalibrationBase(ABC):
             except Exception as e:
                 self.logger.info(f"Warning: Could not save Excel workbook: {e}")
                 self.calib_workbook.close()
+            finally:
+                if self.excel_app:
+                    try:
+                        self.excel_app.quit()
+                    except Exception:
+                        pass
+                    finally:
+                        self.excel_app = None
         else:
             self.logger.info("Did not save workbook")
     
