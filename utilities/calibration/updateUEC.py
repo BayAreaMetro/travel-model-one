@@ -9,6 +9,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 import xlrd
 from xlrd import open_workbook
+from xlwt import easyxf
 from xlutils.copy import copy as xl_copy
 import shutil
 
@@ -98,8 +99,8 @@ def get_config(submodel, version):
         
         
     elif submodel == "AutomobileOwnership":
-        calib_workbook = CALIB_DIR / "02 Automobile Ownership" / f"02_AutoOwnership_{version}.xlsx"
-        uec_src_workbook = UEC_DIR / "TM1.0 version" / "AutoOwnership_TM1.xls"
+        calib_workbook = CALIB_DIR / "02 Automobile Ownership" / f"02_AutoOwnership_2023_{version}.xlsx"
+        uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "AutoOwnership_TM1.6.1.xls"
         
         # sheet, column, startRow, endRow
         copy_src = {

@@ -24,7 +24,7 @@ calibration_01:
 
 calibration_02:
   name: Automobile Ownership
-  workbook_template: 02_AutoOwnership
+  workbook_template: 02_AutoOwnership_2023
   input_file: "{target_dir}/INPUT/popsyn/hhFile.2023_v12.csv"
   ao_results: "{target_dir}/OUTPUT_{calib_iter}/main/aoResults.csv"
 
