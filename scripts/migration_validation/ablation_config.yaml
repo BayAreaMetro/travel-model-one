@@ -221,7 +221,7 @@ coefficient_comparison:
       asim_coefficients: auto_ownership_coefficients.csv
     - name: CDAP
       ctramp_file: CoordinatedDailyActivityPattern.xls
-      ctramp_sheets: [OnePerson, TwoPeople, ThreePeople]
+      ctramp_sheets: [OnePerson]
       asim_spec: cdap_indiv_and_hhsize1.csv
       asim_coefficients: cdap_coefficients.csv
     - name: Tour Mode Choice
@@ -229,11 +229,13 @@ coefficient_comparison:
       ctramp_sheets: [Work, University, School, Escort, Shopping, EatOut, OthMaint, Social, OthDiscr, WorkBased]
       asim_spec: tour_mode_choice.csv
       asim_coefficients: tour_mode_choice_coefficients.csv
+      asim_coefficients_template: tour_mode_choice_coefficients_template.csv
     - name: Trip Mode Choice
       ctramp_file: TripModeChoice.xls
       ctramp_sheets: [Work, University, School, Escort, Shopping, EatOut, OthMaint, Social, OthDiscr, WorkBased]
       asim_spec: trip_mode_choice.csv
       asim_coefficients: trip_mode_choice_coefficients.csv
+      asim_coefficients_template: trip_mode_choice_coefficients_template.csv
   size_terms:
     ctramp: DestinationChoiceSizeCoefficients.csv
     asim: destination_choice_size_terms.csv

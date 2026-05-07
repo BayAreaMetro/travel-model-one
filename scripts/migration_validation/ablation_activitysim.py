@@ -17,6 +17,7 @@ import time
 from pathlib import Path
 
 import yaml
+from evaluate_stages import evaluate_stages
 
 log = logging.getLogger(__name__)
 
@@ -209,3 +210,4 @@ if __name__ == "__main__":
 
     config_path = Path(sys.argv[1]) if len(sys.argv) > 1 else CONFIG_PATH
     run_ablation(load_config(config_path))
+    evaluate_stages(load_config(config_path))
