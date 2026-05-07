@@ -154,17 +154,50 @@ TOKEN_TO_YAML: dict[str, str] = {
     "c_originDensityIndexMax": "origin_density_index_max",
 }
 
-# Known genuine coefficient differences between CTRAMP and ASim Trip MC.
-# These are NOT data bugs — the ASim migration intentionally changed these values.
-# Each entry: YAML constant name → (CTRAMP IVT mult, ASim IVT mult, explanation)
-KNOWN_TRIP_MC_DIFFS: dict[str, tuple[float, float, str]] = {
-    "density_index_multiplier": (-0.2, -5, "25x — same variable (density_index) and same data; intentional re-calibration for Trip MC"),
-    "origin_density_index_multiplier": (-0.6, -15, "25x — consistent with density_index_multiplier change"),
-    "walktimelong_multiplier": (10, 5, "0.5x — reduced walk-time penalty beyond threshold"),
-    "xfers_wlk_multiplier": (15, 5, "0.33x — reduced walk-transit transfer penalty"),
-    "xfers_drv_multiplier": (20, 15, "0.75x — reduced drive-transit transfer penalty"),
-    "ivt_exp_multiplier": (1.0, -0.0175, "LIKELY BUG: ASim=-0.0175 looks like an accidental paste of coef_ivt_othmaint_social; Tour MC correctly has 1.0"),
-    "ivt_cost_multiplier": (0.6, 0.6, "CTRAMP formula is (0.6*c_ivt)/vot; ASim uses ivt_cost_multiplier * df.ivot * coef_ivt — structurally equivalent"),
+# Mapping notes for the constants crosswalk, keyed by submodel name.
+# Each note is (asim_name_or_token, description).  Rendered as a collapsible
+# "Mapping Notes" section below the constants table.
+CONSTANTS_MAPPING_NOTES: dict[str, list[tuple[str, str]]] = {
+    "Tour Mode Choice": [
+        ("xfers_wlk_multiplier",
+         "Fixed 10 → 30 to match CTRAMP (30 × c_ivt)."),
+        ("xfers_drv_multiplier",
+         "Fixed 20 → 40 to match CTRAMP (40 × c_ivt)."),
+        ("coef_age1619_da_multiplier_atwork",
+         "Sign flip (base: +0.003 → fix: −0.172). "
+         "Base value near zero was likely an insignificant regression coefficient; "
+         "corrected to match CTRAMP pre-resolved value."),
+        ("coef_age010_trn_multiplier_atwork",
+         "Sign flip (base: +0.0007 → fix: −0.038). "
+         "Base value near zero was likely an insignificant regression coefficient; "
+         "corrected to match CTRAMP pre-resolved value."),
+        ("c_densityIndexOrigin",
+         "Missing from ASim Tour MC. CTRAMP WorkBased has "
+         "c_densityIndexOrigin = 0.00188 used as "
+         "max(c_densityIndexOrigin × originDensityIndex, originDensityIndexMax) "
+         "for walk/bike/transit. Needs to be added to ASim Tour MC spec and YAML."),
+    ],
+    "Trip Mode Choice": [
+        ("density_index_multiplier",
+         "25× difference (CTRAMP −0.2, ASim −5). Same variable and data; "
+         "intentional re-calibration for Trip MC."),
+        ("origin_density_index_multiplier",
+         "25× difference (CTRAMP −0.6, ASim −15). Consistent with density_index change."),
+        ("walktimelong_multiplier",
+         "0.5× (CTRAMP 10, ASim 5). Reduced walk-time penalty beyond threshold."),
+        ("xfers_wlk_multiplier",
+         "0.33× (CTRAMP 15, ASim 5). Reduced walk-transit transfer penalty."),
+        ("xfers_drv_multiplier",
+         "0.75× (CTRAMP 20, ASim 15). Reduced drive-transit transfer penalty."),
+        ("ivt_exp_multiplier",
+         "LIKELY BUG: ASim = −0.0175, should be 1.0. "
+         "Looks like an accidental paste of coef_ivt_othmaint_social; "
+         "Tour MC correctly has 1.0."),
+        ("ivt_cost_multiplier",
+         "Structurally equivalent. CTRAMP formula is (0.6 × c_ivt) / vot; "
+         "ASim uses ivt_cost_multiplier × df.ivot × coef_ivt. "
+         "The 0.6 multiplier matches."),
+    ],
 }
 
 
@@ -636,16 +669,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
         "</div>"
     )
 
-    # Render explanatory notes for many-to-one or unmatched rows
-    notes_dict = NOTES.get(name, {})
-    notes_html = ""
-    if notes_dict:
-        notes_html = "<details class='mapping-notes'><summary>Mapping Notes</summary><dl>"
-        for label, note in notes_dict.items():
-            notes_html += f"<dt><code>{esc(label)}</code></dt><dd>{esc(note)}</dd>"
-        notes_html += "</dl></details>"
-
-    return f"<h3>Mapped Comparison</h3>{legend}<div class='mapped-wrap'>{h}{body}</tbody></table></div>{notes_html}"
+    return f"<h3>Mapped Comparison</h3>{legend}<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
 
 
 def _constants_table(
@@ -654,6 +678,7 @@ def _constants_table(
     sheet_names: list[str],
     yaml_constants: dict[str, float] | None = None,
     asim_spec: dict | None = None,
+    submodel_name: str = "",
 ) -> str:
     """Render a constants crosswalk comparing CTRAMP token values to ASim coefficients.
 
@@ -895,16 +920,10 @@ def _constants_table(
                 indicator = "✓ (x IVT)" if is_mult else "✓ (YAML)"
             else:
                 indicator = "—"
-            # Check if this is a known genuine difference
+            # Check if this is a known genuine difference or has a note
             known_note = ""
-            if source == "yaml" and asim_name in KNOWN_TRIP_MC_DIFFS:
-                _, _, explanation = KNOWN_TRIP_MC_DIFFS[asim_name]
-                known_note = (
-                    f"<br><small style='color:#b45309' title='{esc(explanation)}'>"
-                    f"&#9888; {esc(explanation)}</small>"
-                )
             body += (
-                f"<tr><td><code>{esc(token)}</code>{known_note}</td>"
+                f"<tr><td><code>{esc(token)}</code></td>"
                 f"<td><code>{esc(asim_name)}</code> {indicator}</td>"
                 f"{row_cells}</tr>"
             )
@@ -933,43 +952,8 @@ def _constants_table(
         "</div>"
     )
 
-    # Build a known-differences annotation if any diffs match KNOWN_TRIP_MC_DIFFS
-    known_html = ""
-    any_known = any(
-        TOKEN_TO_YAML.get(t) in KNOWN_TRIP_MC_DIFFS
-        for t in all_tokens
-        if TOKEN_TO_YAML.get(t)
-    )
-    if any_known and n_diff > 0:
-        items = ""
-        for yaml_name, (c_mult, a_mult, explanation) in KNOWN_TRIP_MC_DIFFS.items():
-            ratio = a_mult / c_mult if c_mult != 0 else float("inf")
-            items += (
-                f"<tr><td><code>{esc(yaml_name)}</code></td>"
-                f"<td>{_fmt(c_mult)}</td><td>{_fmt(a_mult)}</td>"
-                f"<td>{ratio:.1f}x</td>"
-                f"<td>{esc(explanation)}</td></tr>"
-            )
-        known_html = (
-            "<details open style='margin:12px 0'>"
-            "<summary style='font-weight:bold;cursor:pointer'>"
-            "&#9888; Known Genuine Differences (Trip MC)</summary>"
-            "<div style='margin:8px 0;font-size:12px;color:#555'>"
-            "These IVT multipliers differ between CTRAMP and ASim Trip MC. "
-            "The variable definitions and input data are identical in both systems &mdash; "
-            "same formula, same tazData/land_use fields. "
-            "Both systems use NL=3 nested logit with identical nesting coefficients. "
-            "These are intentional re-calibrations in the ASim migration, NOT data-scaling artifacts."
-            "</div>"
-            "<table class='coeff' style='font-size:12px'>"
-            "<thead><tr><th>YAML Constant</th><th>CTRAMP</th><th>ASim</th>"
-            "<th>Ratio</th><th>Note</th></tr></thead><tbody>"
-            f"{items}</tbody></table></details>"
-        )
-
     return (f"<h3>Constants Crosswalk (Token Section)</h3>{legend}{summary}"
-            f"<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
-            f"{known_html}")
+            f"<div class='mapped-wrap'>{h}{body}</tbody></table></div>")
 
 
 # -- HTML rendering ------------------------------------------------------------
@@ -1145,6 +1129,11 @@ table.sortable th[data-dir='desc']::after { content: ' \\25BC'; font-size: 10px;
 .mapping-notes dl { margin: 8px 0 0 10px; }
 .mapping-notes dt { font-weight: bold; margin-top: 6px; }
 .mapping-notes dd { margin: 2px 0 0 20px; color: #555; }
+.mapping-notes-lg { font-size: 15px; padding: 10px 16px; background: #fffbe6;
+  border: 1px solid #ffe082; border-radius: 6px; }
+.mapping-notes-lg summary { font-size: 17px; color: #333; }
+.mapping-notes-lg dt { font-size: 14px; }
+.mapping-notes-lg dd { font-size: 14px; }
 .file-paths { margin: 10px 0; padding: 10px 15px; background: #f5f5f5; border-radius: 4px;
   font-size: 13px; line-height: 1.6; border: 1px solid #ddd; }
 .file-paths code { background: #e8e8e8; padding: 2px 5px; border-radius: 3px; font-size: 12px; }
@@ -1213,6 +1202,27 @@ def build_report(cfg: dict) -> Path:
             f"</div>"
         )
 
+        # Build unified Mapping Notes from both sources
+        all_notes: list[tuple[str, str]] = []
+        # Notes from uec_mappings.NOTES (mapped comparison notes)
+        mapped_notes = NOTES.get(sm["name"], {})
+        for label, note in mapped_notes.items():
+            all_notes.append((label, note))
+        # Notes from CONSTANTS_MAPPING_NOTES (constants crosswalk notes)
+        all_notes.extend(CONSTANTS_MAPPING_NOTES.get(sm["name"], []))
+
+        notes_html = ""
+        if all_notes:
+            items = ""
+            for coeff_name, description in all_notes:
+                items += f"<dt><code>{esc(coeff_name)}</code></dt><dd>{esc(description)}</dd>"
+            notes_html = (
+                "<details class='mapping-notes mapping-notes-lg'>"
+                "<summary>Mapping Notes</summary>"
+                f"<dl>{items}</dl>"
+                "</details>"
+            )
+
         # 1:1 mapped comparison
         tpl_file = sm.get("asim_coefficients_template")
         tpl_resolve = None
@@ -1231,6 +1241,7 @@ def build_report(cfg: dict) -> Path:
             constants_html = _constants_table(
                 tokens_by_sheet, tpl_resolve, sm["ctramp_sheets"], yaml_consts,
                 asim_spec=spec,
+                submodel_name=sm["name"],
             )
 
         # Original raw tables
@@ -1251,7 +1262,7 @@ def build_report(cfg: dict) -> Path:
             f"CTRAMP: {n_uec} rows / {len(sheets)} sheet(s) &bull; "
             f"ActivitySim: {len(spec['rows'])} rows</div>"
         )
-        return paths_html + constants_html + mapped_html + summary + "\n".join(parts)
+        return paths_html + notes_html + constants_html + mapped_html + summary + "\n".join(parts)
 
     # Determine overlay: first dir is the scenario overlay, rest are base.
     has_overlay = len(asim_dirs) > 1
