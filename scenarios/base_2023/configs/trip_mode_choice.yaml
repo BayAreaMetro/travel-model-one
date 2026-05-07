@@ -1,0 +1,24 @@
+# trip_mode_choice.yaml — overlay corrections
+# Fixes YAML constants to match CTRAMP Trip MC UEC values.
+
+CONSTANTS:
+  # FIX: was -0.0175 (accidental paste of coef_ivt_othmaint_social);
+  # CTRAMP has 1.00 * c_ivt on all sheets. Expression uses (M-1)*KEYIVT,
+  # so M=1.0 produces zero incremental IVT (correct: express = base IVT).
+  ivt_exp_multiplier: 1.0
+  # FIX: was 0.80; CTRAMP has 0.70 * c_ivt on all sheets
+  ivt_com_multiplier: 0.70
+  # FIX: was 5; CTRAMP has 15.00 * c_ivt on all sheets
+  xfers_wlk_multiplier: 15
+  # FIX: was 15; CTRAMP has 20.00 * c_ivt on all sheets
+  xfers_drv_multiplier: 20
+  # FIX: was 5; CTRAMP has 10.00 * c_ivt on all sheets
+  walktimelong_multiplier: 10
+  # FIX: was -5; CTRAMP has -0.20 * c_ivt on all sheets.
+  # Tour MC already has -0.2 (correct). The -5 in the upstream prototype_mtc
+  # Trip MC was a translation error from the same pass that produced the
+  # ivt_exp_multiplier and atwork bugs.
+  density_index_multiplier: -0.2
+  # FIX: was -15; CTRAMP has -0.60 * c_ivt on all sheets.
+  # Same provenance as density_index_multiplier above.
+  origin_density_index_multiplier: -0.6

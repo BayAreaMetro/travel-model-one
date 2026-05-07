@@ -178,38 +178,89 @@ CONSTANTS_MAPPING_NOTES: dict[str, list[tuple[str, str]]] = {
          "for walk/bike/transit. Needs to be added to ASim Tour MC spec and YAML."),
     ],
     "Trip Mode Choice": [
+        ("coef_ivt_othmaint_social",
+         "FIXED: ASim had −0.0175 (separate segment), CTRAMP has −0.0279 "
+         "(same as escort/shopping/etc). OthMaint and Social are not a distinct "
+         "IVT segment in CTRAMP Trip MC."),
         ("density_index_multiplier",
-         "25× difference (CTRAMP −0.2, ASim −5). Same variable and data; "
-         "intentional re-calibration for Trip MC."),
+         "BUG FIXED: was −5, corrected to −0.2 to match CTRAMP. "
+         "The upstream ActivitySim prototype_mtc had the same wrong value (−5), "
+         "copied from example_psrc — part of the same translation-error cluster "
+         "as ivt_exp_multiplier, ivt_com_multiplier, and the 11 atwork bugs.\n"
+         "\n"
+         "Tour MC already has density_index_multiplier = −0.2, matching CTRAMP. "
+         "CTRAMP stores c_densityIndex = c_ivt × (−0.2); the old −5 gave "
+         "a 25× over-weighting of the density bonus for walk/bike/transit."),
         ("origin_density_index_multiplier",
-         "25× difference (CTRAMP −0.6, ASim −15). Consistent with density_index change."),
+         "BUG FIXED: was −15, corrected to −0.6 to match CTRAMP. "
+         "Same provenance as density_index_multiplier.\n"
+         "\n"
+         "STRUCTURAL DIFFERENCES beyond the coefficient value:\n"
+         "1. ASim adds origin_density_applied template coefficient that gates this "
+         "term OFF for work/univ/school (=0) and ON for escort+ (=1). CTRAMP applies "
+         "it to ALL purposes via UEC alt columns.\n"
+         "2. ASim uses .clip(min) giving a gradual ramp to the cap; CTRAMP uses "
+         "max() which effectively returns a flat constant (the floor dominates)."),
+        ("origin_density_index_max — DIFFERENT UNITS, CAP MATCHES",
+         "The report shows e.g. CTRAMP = 0.33 (Work) vs ASim = −15. These are in "
+         "different units but produce the SAME effective utility cap:\n"
+         "\n"
+         "CTRAMP stores the final pre-resolved cap: 0.33 (Work), 0.4185 (Escort).\n"
+         "ASim stores −15 as a clip bound, multiplied by coef_ivt at runtime: "
+         "−0.022 × −15 = 0.33 (Work), −0.0279 × −15 = 0.4185 (Escort).\n"
+         "\n"
+         "The cap values match to machine precision for every purpose. "
+         "This token is correct and needs no fix."),
         ("walktimelong_multiplier",
-         "0.5× (CTRAMP 10, ASim 5). Reduced walk-time penalty beyond threshold."),
+         "FIXED: was 5, CTRAMP = 10. Corrected to match CTRAMP (10 × c_ivt)."),
         ("xfers_wlk_multiplier",
-         "0.33× (CTRAMP 15, ASim 5). Reduced walk-transit transfer penalty."),
+         "FIXED: was 5, CTRAMP = 15. Corrected to match CTRAMP (15 × c_ivt)."),
         ("xfers_drv_multiplier",
-         "0.75× (CTRAMP 20, ASim 15). Reduced drive-transit transfer penalty."),
+         "FIXED: was 15, CTRAMP = 20. Corrected to match CTRAMP (20 × c_ivt)."),
+        ("ivt_com_multiplier",
+         "FIXED: was 0.80, CTRAMP = 0.70. Corrected to match CTRAMP (0.70 × c_ivt)."),
         ("ivt_exp_multiplier",
-         "LIKELY BUG: ASim = −0.0175, should be 1.0. "
-         "Looks like an accidental paste of coef_ivt_othmaint_social; "
-         "Tour MC correctly has 1.0."),
+         "BUG FIXED: ASim had −0.0175, corrected to 1.0. "
+         "Accidental paste of coef_ivt_othmaint_social value; "
+         "Tour MC correctly has 1.0. Expression uses (M − 1) × KEYIVT, "
+         "so M=1.0 produces zero incremental IVT (correct: express = base IVT). "
+         "With −0.0175 it produced a massive spurious positive IVT penalty."),
         ("ivt_cost_multiplier",
          "Structurally equivalent. CTRAMP formula is (0.6 × c_ivt) / vot; "
          "ASim uses ivt_cost_multiplier × df.ivot × coef_ivt. "
          "The 0.6 multiplier matches."),
+        ("Atwork _multiplier coefficients (systematic)",
+         "BUG FIXED: All 11 atwork LOS multiplier coefficients were wrong by a factor "
+         "of 0.6738 (= 0.0188/0.0279). The ASim developer divided by the Tour MC "
+         "at-work c_ivt (−0.0188) instead of the Trip MC c_ivt (−0.0279). "
+         "In CTRAMP Trip MC, WorkBased tokens are IDENTICAL to Escort/Shopping/etc. "
+         "Fixed: coef_wacc_atwork (1.348→2.0), coef_walktimeshort_atwork (1.348→2.0), "
+         "coef_biketimeshort_atwork (2.695→4.0), coef_dtim_atwork (1.348→2.0), "
+         "coef_ivt_ferry_atwork (0.539→0.8), coef_ivt_lrt_atwork (0.606→0.9), "
+         "coef_long_iwait_atwork (0.674→1.0), coef_short_iwait_atwork (1.348→2.0), "
+         "coef_waux_atwork (1.348→2.0), coef_wegr_atwork (1.348→2.0), "
+         "coef_xwait_atwork (1.348→2.0)."),
     ],
 }
 
 
 def _read_yaml_constants(configs_dirs: list[Path], yaml_file: str) -> dict[str, float]:
-    """Read CONSTANTS section from an ActivitySim model YAML file."""
-    path = _resolve(configs_dirs, yaml_file)
-    if not path:
-        return {}
-    cfg = yaml.safe_load(path.read_text(encoding="utf-8"))
-    consts = cfg.get("CONSTANTS", {})
-    # Only keep scalar numeric values
-    return {k: v for k, v in consts.items() if isinstance(v, (int, float))}
+    """Read CONSTANTS section from an ActivitySim model YAML file.
+
+    Merges across all config dirs (base first, overlay wins), matching
+    ActivitySim's config override behavior.
+    """
+    merged: dict[str, float] = {}
+    # Read in reverse so overlay (first in list) wins
+    for d in reversed(configs_dirs):
+        p = d / yaml_file
+        if p.exists():
+            cfg = yaml.safe_load(p.read_text(encoding="utf-8"))
+            consts = cfg.get("CONSTANTS", {})
+            for k, v in consts.items():
+                if isinstance(v, (int, float)):
+                    merged[k] = v
+    return merged
 
 
 def _read_template(configs_dirs: list[Path], template_file: str, coeff_file: str) -> dict[str, dict[str, float]]:
@@ -265,7 +316,7 @@ def read_asim_spec(configs_dirs: list[Path], spec_file: str, coeff_file: str) ->
             for row in csv.DictReader(f):
                 try:
                     coeffs[row["coefficient_name"].strip()] = float(row["value"])
-                except (ValueError, KeyError):
+                except (ValueError, KeyError, TypeError):
                     coeffs[row["coefficient_name"].strip()] = row.get("value", "")
 
     spec_path = _resolve(configs_dirs, spec_file)
@@ -844,7 +895,10 @@ def _constants_table(
                     c_ivt_val = float(c_ivt_raw)
                     if abs(c_ivt_val) > 1e-10:
                         derived = val / c_ivt_val
-                        if abs(derived - a_float) < 1e-4:
+                        # Always show as multiplier for _multiplier coefficients
+                        # so both sides are in comparable units, even when
+                        # values don't match (e.g. atwork systematic bug).
+                        if asim_name_.endswith("_multiplier") or abs(derived - a_float) < 1e-4:
                             return derived
             except (ValueError, TypeError):
                 pass
@@ -1215,7 +1269,8 @@ def build_report(cfg: dict) -> Path:
         if all_notes:
             items = ""
             for coeff_name, description in all_notes:
-                items += f"<dt><code>{esc(coeff_name)}</code></dt><dd>{esc(description)}</dd>"
+                desc_html = esc(description).replace("\n", "<br>")
+                items += f"<dt><code>{esc(coeff_name)}</code></dt><dd>{desc_html}</dd>"
             notes_html = (
                 "<details class='mapping-notes mapping-notes-lg'>"
                 "<summary>Mapping Notes</summary>"
