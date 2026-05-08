@@ -1,0 +1,127 @@
+####################################################################
+# PopulationSim Settings — TM1a (Bay Area, TM1 variant)
+#
+# Ported from BayAreaMetro/populationsim bay_area/hh_gq/configs_TM1/
+# Stripped TM2/BAUS paths; data_dir is set at runtime by the
+# orchestrator (run_model.py) via command-line arguments.
+####################################################################
+
+# Algorithm / Software Configuration
+# ------------------------------------------------------------------
+INTEGERIZE_WITH_BACKSTOPPED_CONTROLS: True
+SUB_BALANCE_WITH_FLOAT_SEED_WEIGHTS: False
+GROUP_BY_INCIDENCE_SIGNATURE: True
+USE_SIMUL_INTEGERIZER: True
+INTEGERIZER_TIMEOUT: 300 # seconds
+USE_CVXPY: False
+max_expansion_factor: 30
+
+USE_NUMBA: True
+NUMBA_PRECISION: 'float32'
+
+# Geographic Settings
+# ------------------------------------------------------------------
+geographies: [COUNTY, PUMA, TAZ]
+seed_geography: PUMA
+
+# Tracing
+# ------------------------------------------------------------------
+trace_geography:
+  TAZ: 56
+  MAZ: 10001
+
+# Data Directory
+# ------------------------------------------------------------------
+# Set via command line: python run_populationsim.py --data <path>
+data_dir: data
+
+# Input Data Tables
+# ------------------------------------------------------------------
+input_table_list:
+  - tablename: households
+    filename: seed_households.csv
+    index_col: household_id
+  - tablename: persons
+    filename: seed_persons.csv
+  - tablename: geo_cross_walk
+    filename: geo_cross_walk.csv
+  - tablename: TAZ_control_data
+    filename: taz_summaries_hhgq.csv
+  - tablename: COUNTY_control_data
+    filename: county_controls.csv
+  - tablename: REGION_control_data
+    filename: region_controls.csv
+
+# Reserved Column Names
+# ------------------------------------------------------------------
+household_weight_col: WGTP
+household_id_col: household_id
+total_hh_control: num_hh
+
+# Control Specification File Name
+# ------------------------------------------------------------------
+control_file_name: controls.csv
+
+# Output Tables
+# ------------------------------------------------------------------
+output_tables:
+  action: include
+  tables:
+    - summary_TAZ
+    - summary_COUNTY_1
+    - summary_COUNTY_2
+    - summary_COUNTY_3
+    - summary_COUNTY_4
+    - summary_COUNTY_5
+    - summary_COUNTY_6
+    - summary_COUNTY_7
+    - summary_COUNTY_8
+    - summary_COUNTY_9
+    - expanded_household_ids
+
+# Synthetic Population Output Specification
+# ------------------------------------------------------------------
+# Column names are chosen to minimize renaming downstream.
+# ActivitySim settings.yaml renames HHID→household_id, PERSONS→hhsize, etc.
+output_synthetic_population:
+  household_id: household_id
+  households:
+    filename: synthetic_households.csv
+    columns:
+      - TAZ
+      - NP
+      - HHT
+      - VEH
+      - BLD
+      - TEN
+      - TYPEHUGQ
+      - num_workers
+      - income
+      - hh_income_2021
+  persons:
+    filename: synthetic_persons.csv
+    columns:
+      - SPORDER
+      - AGEP
+      - SEX
+      - pemploy
+      - pstudent
+      - ptype
+      - occupation
+      - gqtype
+
+# Run Steps
+# ------------------------------------------------------------------
+run_list:
+  steps:
+    - input_pre_processor
+    - setup_data_structures
+    - initial_seed_balancing
+    - meta_control_factoring
+    - final_seed_balancing
+    - integerize_final_seed_weights
+    - sub_balancing.geography=TAZ
+    - expand_households
+    - summarize
+    - write_tables
+    - write_synthetic_population

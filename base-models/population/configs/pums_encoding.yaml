@@ -1,0 +1,74 @@
+# Seed population configuration for TM1a
+# Controls how raw PUMS data is processed into PopulationSim seed files.
+
+# Income deflation: 2021 dollars → 2000 dollars
+# Source: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
+income_deflator_2021_to_2000: 0.5525  # 1 / 1.81
+
+# Employment status recode (ESR field)
+# ESR values: 0=N/A (<16), 1=employed at work, 2=employed not at work,
+#             3=unemployed, 4=armed forces at work, 5=armed forces not at work,
+#             6=not in labor force
+employed_esr_codes: [1, 2, 4, 5]
+
+# TM1 employment status encoding
+# 1=full-time, 2=part-time, 3=not in labor force, 4=student under 16
+fulltime_min_wkhp: 35               # minimum usual hours/week
+fulltime_wkw_codes: [1, 2, 3, 4]    # weeks-worked codes (50-52, 48-49, 40-47, 27-39)
+
+# TM1 student status encoding
+# SCHG: 1-14 = K-12 grades, 15 = college undergrad, 16 = grad/professional
+grade_school_schg: [1, 14]   # range inclusive
+university_schg: [15, 16]
+
+# Group quarters classification
+# TYPEHUGQ: 1=housing unit, 2=institutional GQ (dropped), 3=non-institutional GQ
+# For TYPEHUGQ==3: college student if SCHG in [15,16], military if MIL==1, else other
+gq_college_schg: [15, 16]
+gq_military_mil: 1
+
+# ESR not-applicable sentinel (after fillna for under-16 records)
+esr_under_16: 0
+# ESR codes for unemployed / not in labor force
+unemployed_esr_codes: [6, 3]
+
+# ADJINC scaling factor (Census uses 7-digit adjustment factor / 1,000,000)
+adjinc_scale: 1000000
+
+# Person type age thresholds
+preschool_max_age: 5          # AGEP < 6  → preschooler (if not student)
+school_max_age: 15            # AGEP <= 15 → school child
+university_adult_min_age: 20  # grade-school student >= 20 → treat as university
+retiree_min_age: 65           # non-working, >= 65 → retiree
+
+# Output encoding values (must match ActivitySim constants.yaml)
+pemploy:
+  full_time: 1
+  part_time: 2
+  not_employed: 3
+  child: 4
+
+pstudent:
+  grade_or_high: 1
+  university: 2
+  not_student: 3
+
+ptype:
+  full_time_worker: 1
+  part_time_worker: 2
+  university_student: 3
+  non_working_adult: 4
+  retired: 5
+  driving_age_student: 6
+  school_age_child: 7
+  preschool: 8
+
+# TYPEHUGQ code values
+gq_institutional: 2      # dropped during filtering
+gq_non_institutional: 3  # kept (college, military, other)
+
+gqtype:
+  not_gq: 0
+  college: 1
+  military: 2
+  other: 3
