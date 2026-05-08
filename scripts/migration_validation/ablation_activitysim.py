@@ -94,7 +94,10 @@ def clean_output(output_dir: Path) -> None:
             f.unlink()
     log_f = output_dir / "activitysim.log"
     if log_f.exists():
-        log_f.unlink()
+        try:
+            log_f.unlink()
+        except PermissionError:
+            log.warning("Could not delete %s (file locked) — continuing", log_f)
 
 
 def run_activitysim(

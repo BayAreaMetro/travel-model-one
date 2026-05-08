@@ -19,3 +19,31 @@ Any other branches are exploratory and not used in our planning work.
 Please find a detailed User's Guide [here](https://github.com/BayAreaMetro/modeling-website/wiki/UsersGuide). 
 
 Other documentation is available on the [Travel Model wiki](https://github.com/BayAreaMetro/modeling-website/wiki/TravelModel), including the [Travel Model User's Guide](https://github.com/BayAreaMetro/modeling-website/wiki/UsersGuide) and the page on [Setup and Configuration](https://github.com/BayAreaMetro/modeling-website/wiki/SetupConfiguration).
+
+
+
+## Nick's Quickstart and migration notes
+
+### Key Principles:
+- Python First
+- One Stop Shop
+- Configuration Driven Overlays
+- Modular and Reusable
+- Trunk Driven Development (TDD)
+
+
+
+The model is developed in a single branch, with regular commits and merges to ensure stability and avoid long-lived feature branches. Projects *should* be deployable via the scenario configuration, and not require code changes. This allows for more frequent releases and easier collaboration among developers.
+
+
+- The model is now python driven --- This applies to both future ActivitySim, but also has python-runner scripts for legacy Java-based CTRAMP.
+
+
+### Hints
+- Configs are inherited, meaning [config_1, config_2, config_3] will apply config_3, then config_2, then config_1 in that order, allowing for easy overlays and modifications. But note that:
+    - YAMLS merge, CSVs replace! Meaning a CSV overlay you need to copy-paste the entire file and make your modifications there but YAML overlays you can just specify the differences. This is a key point to understand when making modifications.
+
+
+
+### Quickstart:
+1. Clone the repository and navigate to the desired branch

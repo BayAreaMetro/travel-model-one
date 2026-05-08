@@ -719,6 +719,89 @@ MAPPINGS: dict[str, dict[str, int | list[int]]] = {
 
 }
 
+# CTRAMP token → ActivitySim coefficient crosswalk for constants tables.
+# Each entry: ctramp_token → (asim_name, source).
+#   source="yaml"     → asim_name is a YAML CONSTANTS key (IVT multiplier space)
+#   source="template" → asim_name is a template coefficient name
+# Shared entries apply to both Tour MC and Trip MC unless overridden
+# per-submodel below.
+_SHARED_TOKEN_MAP: dict[str, tuple[str, str]] = {
+    "c_ivt":              ("coef_ivt",                        "template"),
+    "c_ivt_lrt":          ("ivt_lrt_multiplier",              "yaml"),
+    "c_ivt_ferry":        ("ivt_ferry_multiplier",            "yaml"),
+    "c_ivt_exp":          ("ivt_exp_multiplier",              "yaml"),
+    "c_ivt_hvy":          ("ivt_hvy_multiplier",              "yaml"),
+    "c_ivt_com":          ("ivt_com_multiplier",              "yaml"),
+    "c_cost":             ("ivt_cost_multiplier",             "yaml"),
+    "c_shortiWait":       ("short_i_wait_multiplier",         "yaml"),
+    "c_longiWait":        ("long_i_wait_multiplier",          "yaml"),
+    "c_wacc":             ("wacc_multiplier",                 "yaml"),
+    "c_wegr":             ("wegr_multiplier",                 "yaml"),
+    "c_waux":             ("waux_multiplier",                 "yaml"),
+    "c_dtim":             ("dtim_multiplier",                 "yaml"),
+    "c_xwait":            ("xwait_multiplier",                "yaml"),
+    "c_dacc_ratio":       ("dacc_ratio",                      "yaml"),
+    "c_xfers_wlk":        ("xfers_wlk_multiplier",           "yaml"),
+    "c_xfers_drv":        ("xfers_drv_multiplier",            "yaml"),
+    "c_walkTimeShort":    ("walktimeshort_multiplier",        "yaml"),
+    "c_walkTimeLong":     ("walktimelong_multiplier",         "yaml"),
+    "c_bikeTimeShort":    ("biketimeshort_multiplier",        "yaml"),
+    "c_bikeTimeLong":     ("biketimelong_multiplier",         "yaml"),
+    "c_topology_walk":    ("topology_walk_multiplier",        "yaml"),
+    "c_topology_bike":    ("topology_bike_multiplier",        "yaml"),
+    "c_topology_trn":     ("topology_trn_multiplier",         "yaml"),
+    "c_densityIndex":     ("density_index_multiplier",        "yaml"),
+    "c_age1619_da":       ("coef_age1619_da_multiplier",      "template"),
+    "c_age010_trn":       ("coef_age010_trn_multiplier",      "template"),
+    "c_age16p_sr":        ("coef_age16p_sr_multiplier",       "template"),
+    "c_hhsize1_sr":       ("coef_hhsize1_sr_multiplier",      "template"),
+    "c_hhsize2_sr":       ("coef_hhsize2_sr_multiplier",      "template"),
+}
+
+# Per-submodel overrides / additions.  Merged on top of _SHARED_TOKEN_MAP.
+_TOKEN_MAP_OVERRIDES: dict[str, dict[str, tuple[str, str]]] = {
+    "Trip Mode Choice": {
+        # Trip MC uses template coefficients for these (not YAML)
+        "c_ivt_lrt":              ("coef_ivt_lrt_multiplier",           "template"),
+        "c_ivt_ferry":            ("coef_ivt_ferry_multiplier",         "template"),
+        "c_shortiWait":           ("coef_short_iwait_multiplier",       "template"),
+        "c_longiWait":            ("coef_long_iwait_multiplier",        "template"),
+        "c_wacc":                 ("coef_wacc_multiplier",              "template"),
+        "c_wegr":                 ("coef_wegr_multiplier",              "template"),
+        "c_waux":                 ("coef_waux_multiplier",              "template"),
+        "c_dtim":                 ("coef_dtim_multiplier",              "template"),
+        "c_xwait":                ("coef_xwait_multiplier",             "template"),
+        "c_walkTimeShort":        ("coef_walktimeshort_multiplier",     "template"),
+        "c_bikeTimeShort":        ("coef_biketimeshort_multiplier",     "template"),
+        "c_age1619_da":           ("coef_age1619_da",                   "template"),
+        "c_age010_trn":           ("coef_age010_trn",                   "template"),
+        "c_age16p_sr":            ("coef_age16p_sr",                    "template"),
+        "c_hhsize1_sr":           ("coef_hhsize1_sr",                   "template"),
+        "c_hhsize2_sr":           ("coef_hhsize2_sr",                   "template"),
+        "c_dacc_ratio":           ("dacc_ratio_multiplier",             "yaml"),
+        # Trip MC only tokens
+        "c_originDensityIndex":   ("origin_density_index_multiplier",   "yaml"),
+        "c_originDensityIndexMax": ("origin_density_index_max",         "yaml"),
+    },
+    "Tour Mode Choice": {
+        # Tour MC uses template coefficients for topology (not YAML)
+        "c_topology_walk":        ("coef_topology_walk_multiplier",     "template"),
+        "c_topology_bike":        ("coef_topology_bike_multiplier",     "template"),
+        "c_topology_trn":         ("coef_topology_trn_multiplier",      "template"),
+        # Tour MC only tokens (WorkBased sheet only)
+        "c_densityIndexOrigin":   ("origin_density_index_multiplier",   "yaml"),
+        "c_drvtrn_distpen_0":     ("drvtrn_distpen_0_multiplier",       "yaml"),
+        "c_drvtrn_distpen_max":   ("drvtrn_distpen_max",                "yaml"),
+    },
+}
+
+
+def get_token_map(submodel_name: str) -> dict[str, tuple[str, str]]:
+    """Return the merged CTRAMP-token → (asim_name, source) map for a submodel."""
+    merged = dict(_SHARED_TOKEN_MAP)
+    merged.update(_TOKEN_MAP_OVERRIDES.get(submodel_name, {}))
+    return merged
+
 # Explanatory notes for rows that appear on only one side or as many-to-one.
 # {submodel: {label_or_"row_N": note_text}}
 NOTES: dict[str, dict[str, str]] = {
@@ -762,6 +845,99 @@ NOTES: dict[str, dict[str, str]] = {
             "shadow pricing implementation outside the UEC."
         ),
     },
+}
+
+# Mapping notes for the constants crosswalk, keyed by submodel name.
+# Each note is (asim_name_or_token, description).  Rendered as a collapsible
+# "Mapping Notes" section below the constants table.
+CONSTANTS_NOTES: dict[str, list[tuple[str, str]]] = {
+    "Tour Mode Choice": [
+        ("xfers_wlk_multiplier",
+         "Fixed 10 → 30 to match CTRAMP (30 × c_ivt)."),
+        ("xfers_drv_multiplier",
+         "Fixed 20 → 40 to match CTRAMP (40 × c_ivt)."),
+        ("coef_age1619_da_multiplier_atwork",
+         "Sign flip (base: +0.003 → fix: −0.172). "
+         "Base value near zero was likely an insignificant regression coefficient; "
+         "corrected to match CTRAMP pre-resolved value."),
+        ("coef_age010_trn_multiplier_atwork",
+         "Sign flip (base: +0.0007 → fix: −0.038). "
+         "Base value near zero was likely an insignificant regression coefficient; "
+         "corrected to match CTRAMP pre-resolved value."),
+        ("c_densityIndexOrigin",
+         "FIXED: was missing from ASim Tour MC. CTRAMP WorkBased has "
+         "c_densityIndexOrigin = 0.00188 (= −0.1 × c_ivt_atwork) used as "
+         "max(c_densityIndexOrigin × originDensityIndex, originDensityIndexMax=0.282) "
+         "for walk/bike/transit. Added to ASim Tour MC spec with "
+         "origin_density_index_multiplier = −0.1, origin_density_index_max = −15, "
+         "gated by is_atwork_subtour preprocessor variable."),
+    ],
+    "Trip Mode Choice": [
+        ("coef_ivt_othmaint_social",
+         "FIXED: ASim had −0.0175 (separate segment), CTRAMP has −0.0279 "
+         "(same as escort/shopping/etc). OthMaint and Social are not a distinct "
+         "IVT segment in CTRAMP Trip MC."),
+        ("density_index_multiplier",
+         "BUG FIXED: was −5, corrected to −0.2 to match CTRAMP. "
+         "The upstream ActivitySim prototype_mtc had the same wrong value (−5), "
+         "copied from example_psrc — part of the same translation-error cluster "
+         "as ivt_exp_multiplier, ivt_com_multiplier, and the 11 atwork bugs.\n"
+         "\n"
+         "Tour MC already has density_index_multiplier = −0.2, matching CTRAMP. "
+         "CTRAMP stores c_densityIndex = c_ivt × (−0.2); the old −5 gave "
+         "a 25× over-weighting of the density bonus for walk/bike/transit."),
+        ("origin_density_index_multiplier",
+         "BUG FIXED: was −15, corrected to −0.6 to match CTRAMP. "
+         "Same provenance as density_index_multiplier.\n"
+         "\n"
+         "STRUCTURAL DIFFERENCES beyond the coefficient value:\n"
+         "1. ASim adds origin_density_applied template coefficient that gates this "
+         "term OFF for work/univ/school (=0) and ON for escort+ (=1). CTRAMP applies "
+         "it to ALL purposes via UEC alt columns.\n"
+         "2. ASim uses .clip(min) giving a gradual ramp to the cap; CTRAMP uses "
+         "max() which effectively returns a flat constant (the floor dominates)."),
+        ("origin_density_index_max",
+         "BUG FIXED: Expression used .clip(origin_density_index_max) which sets a "
+         "LOWER bound (floor in negative space → ceiling in utility space). "
+         "CTRAMP uses max(positive_product, positive_floor) which is a FLOOR in "
+         "utility space. These are opposite behaviors.\n"
+         "\n"
+         "Fix: changed to .clip(upper=origin_density_index_max). In the negative "
+         "domain, clip(upper=-15) prevents values from exceeding -15 (i.e. they "
+         "stay at -15 or more negative), which after multiplication by negative "
+         "coef_ivt produces a utility floor — matching CTRAMP.\n"
+         "\n"
+         "YAML value -15 is correct: -15 × coef_ivt = 0.33 (Work), 0.4185 (Escort)."),
+        ("walktimelong_multiplier",
+         "FIXED: was 5, CTRAMP = 10. Corrected to match CTRAMP (10 × c_ivt)."),
+        ("xfers_wlk_multiplier",
+         "FIXED: was 5, CTRAMP = 15. Corrected to match CTRAMP (15 × c_ivt)."),
+        ("xfers_drv_multiplier",
+         "FIXED: was 15, CTRAMP = 20. Corrected to match CTRAMP (20 × c_ivt)."),
+        ("ivt_com_multiplier",
+         "FIXED: was 0.80, CTRAMP = 0.70. Corrected to match CTRAMP (0.70 × c_ivt)."),
+        ("ivt_exp_multiplier",
+         "BUG FIXED: ASim had −0.0175, corrected to 1.0. "
+         "Accidental paste of coef_ivt_othmaint_social value; "
+         "Tour MC correctly has 1.0. Expression uses (M − 1) × KEYIVT, "
+         "so M=1.0 produces zero incremental IVT (correct: express = base IVT). "
+         "With −0.0175 it produced a massive spurious positive IVT penalty."),
+        ("ivt_cost_multiplier",
+         "Structurally equivalent. CTRAMP formula is (0.6 × c_ivt) / vot; "
+         "ASim uses ivt_cost_multiplier × df.ivot × coef_ivt. "
+         "The 0.6 multiplier matches."),
+        ("Atwork _multiplier coefficients (systematic)",
+         "BUG FIXED: All 11 atwork LOS multiplier coefficients were wrong by a factor "
+         "of 0.6738 (= 0.0188/0.0279). The ASim developer divided by the Tour MC "
+         "at-work c_ivt (−0.0188) instead of the Trip MC c_ivt (−0.0279). "
+         "In CTRAMP Trip MC, WorkBased tokens are IDENTICAL to Escort/Shopping/etc. "
+         "Fixed: coef_wacc_atwork (1.348→2.0), coef_walktimeshort_atwork (1.348→2.0), "
+         "coef_biketimeshort_atwork (2.695→4.0), coef_dtim_atwork (1.348→2.0), "
+         "coef_ivt_ferry_atwork (0.539→0.8), coef_ivt_lrt_atwork (0.606→0.9), "
+         "coef_long_iwait_atwork (0.674→1.0), coef_short_iwait_atwork (1.348→2.0), "
+         "coef_waux_atwork (1.348→2.0), coef_wegr_atwork (1.348→2.0), "
+         "coef_xwait_atwork (1.348→2.0)."),
+    ],
 }
 
 # Crosswalk for size-terms: CTRAMP (purpose, segment) → ASim (model_selector, segment)

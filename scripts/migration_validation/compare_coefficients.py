@@ -12,12 +12,13 @@ import csv
 import html
 import logging
 import re
+import string
 import sys
 from pathlib import Path
 
 import xlrd
 import yaml
-from uec_mappings import MAPPINGS, NOTES, SIZE_TERMS_CROSSWALK
+from uec_mappings import MAPPINGS, NOTES, CONSTANTS_NOTES, SIZE_TERMS_CROSSWALK, get_token_map
 
 log = logging.getLogger(__name__)
 
@@ -28,6 +29,21 @@ ALT_NAMES_ROW = 3
 FIRST_ALT_COL = 6
 
 esc = html.escape
+
+LEGEND_FULL = (
+    "<div class='legend'>"
+    "<span class='swatch match'></span> Match "
+    "<span class='swatch diff'></span> Differs "
+    "<span class='swatch ctramp-only'></span> CTRAMP only "
+    "<span class='swatch asim-only'></span> ASim only"
+    "</div>"
+)
+LEGEND_MATCH_DIFF = (
+    "<div class='legend'>"
+    "<span class='swatch match'></span> Match "
+    "<span class='swatch diff'></span> Differs"
+    "</div>"
+)
 
 
 # -- UEC reader ---------------------------------------------------------------
@@ -118,129 +134,6 @@ SHEET_TO_PURPOSE: dict[str, str] = {
     "Escort": "escort", "Shopping": "shopping", "EatOut": "eatout",
     "OthMaint": "othmaint", "Social": "social", "OthDiscr": "othdiscr",
     "WorkBased": "atwork",
-}
-
-# CTRAMP token → ASim YAML constant name (for tokens that use YAML CONSTANTS
-# instead of template coefficients). The comparison extracts the multiplier from
-# the CTRAMP formula "M * c_ivt" and compares it to the YAML constant value.
-TOKEN_TO_YAML: dict[str, str] = {
-    "c_ivt_lrt": "ivt_lrt_multiplier",
-    "c_ivt_ferry": "ivt_ferry_multiplier",
-    "c_ivt_exp": "ivt_exp_multiplier",
-    "c_ivt_hvy": "ivt_hvy_multiplier",
-    "c_ivt_com": "ivt_com_multiplier",
-    "c_walkTimeShort": "walktimeshort_multiplier",
-    "c_walkTimeLong": "walktimelong_multiplier",
-    "c_bikeTimeShort": "biketimeshort_multiplier",
-    "c_bikeTimeLong": "biketimelong_multiplier",
-    "c_cost": "ivt_cost_multiplier",
-    "c_shortiWait": "short_i_wait_multiplier",
-    "c_longiWait": "long_i_wait_multiplier",
-    "c_wacc": "wacc_multiplier",
-    "c_wegr": "wegr_multiplier",
-    "c_waux": "waux_multiplier",
-    "c_dtim": "dtim_multiplier",
-    "c_xwait": "xwait_multiplier",
-    "c_dacc_ratio": "dacc_ratio",
-    "c_xfers_wlk": "xfers_wlk_multiplier",
-    "c_xfers_drv": "xfers_drv_multiplier",
-    "c_drvtrn_distpen_0": "drvtrn_distpen_0_multiplier",
-    "c_drvtrn_distpen_max": "drvtrn_distpen_max",
-    "c_densityIndex": "density_index_multiplier",
-    "c_topology_walk": "topology_walk_multiplier",
-    "c_topology_bike": "topology_bike_multiplier",
-    "c_topology_trn": "topology_trn_multiplier",
-    "c_originDensityIndex": "origin_density_index_multiplier",
-    "c_originDensityIndexMax": "origin_density_index_max",
-}
-
-# Mapping notes for the constants crosswalk, keyed by submodel name.
-# Each note is (asim_name_or_token, description).  Rendered as a collapsible
-# "Mapping Notes" section below the constants table.
-CONSTANTS_MAPPING_NOTES: dict[str, list[tuple[str, str]]] = {
-    "Tour Mode Choice": [
-        ("xfers_wlk_multiplier",
-         "Fixed 10 → 30 to match CTRAMP (30 × c_ivt)."),
-        ("xfers_drv_multiplier",
-         "Fixed 20 → 40 to match CTRAMP (40 × c_ivt)."),
-        ("coef_age1619_da_multiplier_atwork",
-         "Sign flip (base: +0.003 → fix: −0.172). "
-         "Base value near zero was likely an insignificant regression coefficient; "
-         "corrected to match CTRAMP pre-resolved value."),
-        ("coef_age010_trn_multiplier_atwork",
-         "Sign flip (base: +0.0007 → fix: −0.038). "
-         "Base value near zero was likely an insignificant regression coefficient; "
-         "corrected to match CTRAMP pre-resolved value."),
-        ("c_densityIndexOrigin",
-         "Missing from ASim Tour MC. CTRAMP WorkBased has "
-         "c_densityIndexOrigin = 0.00188 used as "
-         "max(c_densityIndexOrigin × originDensityIndex, originDensityIndexMax) "
-         "for walk/bike/transit. Needs to be added to ASim Tour MC spec and YAML."),
-    ],
-    "Trip Mode Choice": [
-        ("coef_ivt_othmaint_social",
-         "FIXED: ASim had −0.0175 (separate segment), CTRAMP has −0.0279 "
-         "(same as escort/shopping/etc). OthMaint and Social are not a distinct "
-         "IVT segment in CTRAMP Trip MC."),
-        ("density_index_multiplier",
-         "BUG FIXED: was −5, corrected to −0.2 to match CTRAMP. "
-         "The upstream ActivitySim prototype_mtc had the same wrong value (−5), "
-         "copied from example_psrc — part of the same translation-error cluster "
-         "as ivt_exp_multiplier, ivt_com_multiplier, and the 11 atwork bugs.\n"
-         "\n"
-         "Tour MC already has density_index_multiplier = −0.2, matching CTRAMP. "
-         "CTRAMP stores c_densityIndex = c_ivt × (−0.2); the old −5 gave "
-         "a 25× over-weighting of the density bonus for walk/bike/transit."),
-        ("origin_density_index_multiplier",
-         "BUG FIXED: was −15, corrected to −0.6 to match CTRAMP. "
-         "Same provenance as density_index_multiplier.\n"
-         "\n"
-         "STRUCTURAL DIFFERENCES beyond the coefficient value:\n"
-         "1. ASim adds origin_density_applied template coefficient that gates this "
-         "term OFF for work/univ/school (=0) and ON for escort+ (=1). CTRAMP applies "
-         "it to ALL purposes via UEC alt columns.\n"
-         "2. ASim uses .clip(min) giving a gradual ramp to the cap; CTRAMP uses "
-         "max() which effectively returns a flat constant (the floor dominates)."),
-        ("origin_density_index_max — DIFFERENT UNITS, CAP MATCHES",
-         "The report shows e.g. CTRAMP = 0.33 (Work) vs ASim = −15. These are in "
-         "different units but produce the SAME effective utility cap:\n"
-         "\n"
-         "CTRAMP stores the final pre-resolved cap: 0.33 (Work), 0.4185 (Escort).\n"
-         "ASim stores −15 as a clip bound, multiplied by coef_ivt at runtime: "
-         "−0.022 × −15 = 0.33 (Work), −0.0279 × −15 = 0.4185 (Escort).\n"
-         "\n"
-         "The cap values match to machine precision for every purpose. "
-         "This token is correct and needs no fix."),
-        ("walktimelong_multiplier",
-         "FIXED: was 5, CTRAMP = 10. Corrected to match CTRAMP (10 × c_ivt)."),
-        ("xfers_wlk_multiplier",
-         "FIXED: was 5, CTRAMP = 15. Corrected to match CTRAMP (15 × c_ivt)."),
-        ("xfers_drv_multiplier",
-         "FIXED: was 15, CTRAMP = 20. Corrected to match CTRAMP (20 × c_ivt)."),
-        ("ivt_com_multiplier",
-         "FIXED: was 0.80, CTRAMP = 0.70. Corrected to match CTRAMP (0.70 × c_ivt)."),
-        ("ivt_exp_multiplier",
-         "BUG FIXED: ASim had −0.0175, corrected to 1.0. "
-         "Accidental paste of coef_ivt_othmaint_social value; "
-         "Tour MC correctly has 1.0. Expression uses (M − 1) × KEYIVT, "
-         "so M=1.0 produces zero incremental IVT (correct: express = base IVT). "
-         "With −0.0175 it produced a massive spurious positive IVT penalty."),
-        ("ivt_cost_multiplier",
-         "Structurally equivalent. CTRAMP formula is (0.6 × c_ivt) / vot; "
-         "ASim uses ivt_cost_multiplier × df.ivot × coef_ivt. "
-         "The 0.6 multiplier matches."),
-        ("Atwork _multiplier coefficients (systematic)",
-         "BUG FIXED: All 11 atwork LOS multiplier coefficients were wrong by a factor "
-         "of 0.6738 (= 0.0188/0.0279). The ASim developer divided by the Tour MC "
-         "at-work c_ivt (−0.0188) instead of the Trip MC c_ivt (−0.0279). "
-         "In CTRAMP Trip MC, WorkBased tokens are IDENTICAL to Escort/Shopping/etc. "
-         "Fixed: coef_wacc_atwork (1.348→2.0), coef_walktimeshort_atwork (1.348→2.0), "
-         "coef_biketimeshort_atwork (2.695→4.0), coef_dtim_atwork (1.348→2.0), "
-         "coef_ivt_ferry_atwork (0.539→0.8), coef_ivt_lrt_atwork (0.606→0.9), "
-         "coef_long_iwait_atwork (0.674→1.0), coef_short_iwait_atwork (1.348→2.0), "
-         "coef_waux_atwork (1.348→2.0), coef_wegr_atwork (1.348→2.0), "
-         "coef_xwait_atwork (1.348→2.0)."),
-    ],
 }
 
 
@@ -711,16 +604,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     f"<td></td></tr>"
                 )
 
-    legend = (
-        "<div class='legend'>"
-        "<span class='swatch match'></span> Match "
-        "<span class='swatch diff'></span> Differs "
-        "<span class='swatch ctramp-only'></span> CTRAMP only "
-        "<span class='swatch asim-only'></span> ASim only"
-        "</div>"
-    )
-
-    return f"<h3>Mapped Comparison</h3>{legend}<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
+    return f"<h3>Mapped Comparison</h3>{LEGEND_FULL}<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
 
 
 def _constants_table(
@@ -746,6 +630,10 @@ def _constants_table(
     purposes = [SHEET_TO_PURPOSE.get(sn, sn.lower()) for sn in sheet_names]
     yaml_constants = yaml_constants or {}
     asim_spec = asim_spec or {}
+
+    # CTRAMP tokens stored as M × c_ivt whose YAML name doesn't end in
+    # "_multiplier" but should still be compared in IVT-multiplier space.
+    _yaml_ivt_space: set[str] = {"origin_density_index_max"}
 
     # -- Pre-scan ASim expressions to find buried template coefficient factors --
     # For each YAML constant referenced in an expression, find any co-multiplied
@@ -775,24 +663,32 @@ def _constants_table(
             if any(abs(v - 1.0) > 1e-10 for v in factors_for_purpose.values()):
                 extra_factors[yaml_name] = factors_for_purpose
 
-    # Map CTRAMP token names to ASim coefficient names.
-    # Priority: template coef_xxx > template coef_xxx_multiplier > YAML constant
+    # Map CTRAMP token names to ASim coefficient names using explicit crosswalk.
+    token_map = get_token_map(submodel_name)
+
     def _find_asim(token: str) -> tuple[str, str, float | None]:
         """Return (asim_name, source, yaml_value_or_None).
 
         source is 'template', 'yaml', or 'none'.
         """
-        base = "coef_" + token[2:]
-        if base in template_resolve:
-            return base, "template", None
-        mult = base + "_multiplier"
-        if mult in template_resolve:
-            return mult, "template", None
-        # Check YAML constants mapping
-        yaml_name = TOKEN_TO_YAML.get(token)
-        if yaml_name and yaml_name in yaml_constants:
-            return yaml_name, "yaml", yaml_constants[yaml_name]
-        return base, "none", None
+        entry = token_map.get(token)
+        if entry is None:
+            # Unmapped token — fall back to auto-derivation as safety net
+            base = "coef_" + token[2:]
+            if base in template_resolve:
+                log.warning("Token %r resolved by auto-derivation — add to TOKEN_MAP", token)
+                return base, "template", None
+            return base, "none", None
+
+        asim_name, source = entry
+        if source == "template":
+            if asim_name in template_resolve:
+                return asim_name, "template", None
+            return asim_name, "none", None
+        else:  # source == "yaml"
+            if asim_name in yaml_constants:
+                return asim_name, "yaml", yaml_constants[asim_name]
+            return asim_name, "none", None
 
     # Collect all token names across sheets (union)
     all_tokens: list[str] = []
@@ -922,7 +818,9 @@ def _constants_table(
     for token in all_tokens:
         asim_name, source, yaml_val = _find_asim(token)
         asim_map = template_resolve.get(asim_name, {})
-        is_mult = source == "yaml" and asim_name.endswith("_multiplier")
+        is_mult = source == "yaml" and (
+            asim_name.endswith("_multiplier") or asim_name in _yaml_ivt_space
+        )
         row_cells = ""
         any_val = False
         for sn, purpose in zip(sheet_names, purposes):
@@ -949,6 +847,11 @@ def _constants_table(
                 row_cells += "<td class='num'></td><td class='num'></td>"
                 continue
             any_val = True
+            if c_val == "":
+                # Token not present in this CTRAMP sheet — skip ASim side too
+                # (the ASim value isn't purpose-specific for this token)
+                row_cells += "<td class='num'></td><td class='num'></td>"
+                continue
             if a_val == "":
                 # No ASim equivalent — show CTRAMP value as informational (neutral styling)
                 c_str = _fmt(c_val) if c_val != "" else ""
@@ -999,14 +902,7 @@ def _constants_table(
         f"</div>"
     )
 
-    legend = (
-        "<div class='legend'>"
-        "<span class='swatch match'></span> Match "
-        "<span class='swatch diff'></span> Differs"
-        "</div>"
-    )
-
-    return (f"<h3>Constants Crosswalk (Token Section)</h3>{legend}{summary}"
+    return (f"<h3>Constants Crosswalk (Token Section)</h3>{LEGEND_MATCH_DIFF}{summary}"
             f"<div class='mapped-wrap'>{h}{body}</tbody></table></div>")
 
 
@@ -1123,81 +1019,16 @@ def _size_terms_table(ctramp_dir: Path, asim_dirs: list[Path], st_cfg: dict) -> 
             cls = " class='asim-only'"
         body += f"<tr{cls}><td>{esc(c_label)}</td><td>{esc(a_label)}</td>{cells}</tr>"
 
-    legend = (
-        "<div class='legend'>"
-        "<span class='swatch match'></span> Match "
-        "<span class='swatch diff'></span> Differs "
-        "<span class='swatch ctramp-only'></span> CTRAMP only "
-        "<span class='swatch asim-only'></span> ASim only"
-        "</div>"
-    )
     note = (
         "<p class='mapping-note'><em>Note:</em> ASim-only <code>trip/*</code> rows are used by "
         "ActivitySim's <code>trip_destination</code> model. CTRAMP handles intermediate stop "
         "locations via a separate mechanism outside the size terms CSV.</p>"
     )
-    return f"<h3>Size Terms Comparison</h3>{legend}{note}<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
+    return f"<h3>Size Terms Comparison</h3>{LEGEND_FULL}{note}<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
 
 
-CSS = """\
-<style>
-body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f8f9fa; }
-h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
-h3 { color: #5a6c7d; margin-top: 25px; }
-.tab-bar { display: flex; flex-wrap: wrap; gap: 4px; }
-.tab-bar button { padding: 8px 16px; border: 1px solid #ccc; border-bottom: none;
-  background: #e8e8e8; cursor: pointer; border-radius: 4px 4px 0 0; font-size: 14px; }
-.tab-bar button.active { background: #fff; font-weight: bold; }
-.tab-content { display: none; padding: 20px; border: 1px solid #ccc; background: #fff; }
-.tab-content.active { display: block; }
-table.coeff { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
-table.coeff th, table.coeff td { border: 1px solid #ddd; padding: 4px 8px; }
-table.coeff th { background: #f0f0f0; position: sticky; top: 0; }
-table.coeff tr:nth-child(even) { background: #fafafa; }
-table.coeff td.num { text-align: right; font-family: Consolas, monospace; }
-table.coeff td.match { background: #d4edda; }
-table.coeff td.diff { background: #f8d7da; }
-table.mapped tr.match td { background: #d4edda; }
-table.mapped tr.diff td { background: #f8d7da; }
-table.mapped tr.ctramp-only td { background: #d6eaf8; }
-table.mapped tr.asim-only td { background: #fdebd0; }
-.mapped-wrap { overflow-x: auto; max-width: 100%; }
-table.mapped td { white-space: nowrap; font-size: 12px; max-width: 180px;
-  overflow: hidden; text-overflow: ellipsis; }
-table.mapped td:nth-child(1) { font-family: Consolas, monospace; max-width: 260px; }
-table.mapped td:nth-child(3), table.mapped td:nth-child(4),
-table.mapped td:nth-child(5) { max-width: 200px; }
-table.mapped th { font-size: 12px; white-space: nowrap; }
-table.sortable th { cursor: pointer; user-select: none; }
-table.sortable th[data-dir='asc']::after { content: ' \\25B2'; font-size: 10px; }
-table.sortable th[data-dir='desc']::after { content: ' \\25BC'; font-size: 10px; }
-.legend { margin: 8px 0; font-size: 13px; }
-.legend .swatch { display: inline-block; width: 14px; height: 14px; vertical-align: middle;
-  border: 1px solid #aaa; margin-right: 3px; margin-left: 10px; }
-.legend .swatch.match { background: #d4edda; }
-.legend .swatch.diff { background: #f8d7da; }
-.legend .swatch.ctramp-only { background: #d6eaf8; }
-.legend .swatch.asim-only { background: #fdebd0; }
-.mapping-notes { margin: 10px 0; font-size: 13px; }
-.mapping-notes summary { cursor: pointer; font-weight: bold; color: #555; }
-.mapping-notes dl { margin: 8px 0 0 10px; }
-.mapping-notes dt { font-weight: bold; margin-top: 6px; }
-.mapping-notes dd { margin: 2px 0 0 20px; color: #555; }
-.mapping-notes-lg { font-size: 15px; padding: 10px 16px; background: #fffbe6;
-  border: 1px solid #ffe082; border-radius: 6px; }
-.mapping-notes-lg summary { font-size: 17px; color: #333; }
-.mapping-notes-lg dt { font-size: 14px; }
-.mapping-notes-lg dd { font-size: 14px; }
-.file-paths { margin: 10px 0; padding: 10px 15px; background: #f5f5f5; border-radius: 4px;
-  font-size: 13px; line-height: 1.6; border: 1px solid #ddd; }
-.file-paths code { background: #e8e8e8; padding: 2px 5px; border-radius: 3px; font-size: 12px; }
-.toggle-bar { display: flex; align-items: center; gap: 12px; margin: 12px 0;
-  padding: 8px 16px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;
-  font-size: 14px; }
-.toggle-bar label { cursor: pointer; display: flex; align-items: center; gap: 6px; }
-.toggle-bar input[type=checkbox] { width: 18px; height: 18px; }
-.toggle-bar .overlay-path { font-family: Consolas, monospace; font-size: 12px; color: #856404; }
-</style>"""
+_TEMPLATE_PATH = Path(__file__).parent / "compare_template.html"
+_TEMPLATE = string.Template(_TEMPLATE_PATH.read_text(encoding="utf-8"))
 
 
 def build_report(cfg: dict) -> Path:
@@ -1262,8 +1093,8 @@ def build_report(cfg: dict) -> Path:
         mapped_notes = NOTES.get(sm["name"], {})
         for label, note in mapped_notes.items():
             all_notes.append((label, note))
-        # Notes from CONSTANTS_MAPPING_NOTES (constants crosswalk notes)
-        all_notes.extend(CONSTANTS_MAPPING_NOTES.get(sm["name"], []))
+        # Notes from CONSTANTS_NOTES (constants crosswalk notes)
+        all_notes.extend(CONSTANTS_NOTES.get(sm["name"], []))
 
         notes_html = ""
         if all_notes:
@@ -1386,47 +1217,11 @@ def build_report(cfg: dict) -> Path:
             f"</div>"
         )
 
-    html_doc = f"""\
-<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>CTRAMP vs ActivitySim Coefficients</title>{CSS}</head><body>
-<h1>CTRAMP vs ActivitySim Coefficient Comparison</h1>
-{toggle_html}
-<div class="tab-bar">{"".join(buttons)}</div>
-{"".join(panels)}
-<script>
-function showTab(id){{
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-bar button').forEach(b=>b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  event.target.classList.add('active');
-}}
-function toggleOverlay(on){{
-  document.querySelectorAll('.layer-overlay').forEach(el=>{{
-    el.style.display=on?'':'none';
-  }});
-  document.querySelectorAll('.layer-base').forEach(el=>{{
-    el.style.display=on?'none':'';
-  }});
-}}
-document.querySelectorAll('table.sortable th').forEach(th=>{{
-  th.style.cursor='pointer';
-  th.addEventListener('click',()=>{{
-    const table=th.closest('table'), tbody=table.querySelector('tbody');
-    const idx=[...th.parentNode.children].indexOf(th);
-    const rows=[...tbody.querySelectorAll('tr')];
-    const dir=th.dataset.dir==='asc'?'desc':'asc';
-    th.parentNode.querySelectorAll('th').forEach(h=>delete h.dataset.dir);
-    th.dataset.dir=dir;
-    rows.sort((a,b)=>{{
-      let av=a.children[idx]?.textContent||'', bv=b.children[idx]?.textContent||'';
-      let an=parseFloat(av), bn=parseFloat(bv);
-      if(!isNaN(an)&&!isNaN(bn)) return dir==='asc'?an-bn:bn-an;
-      return dir==='asc'?av.localeCompare(bv):bv.localeCompare(av);
-    }});
-    rows.forEach(r=>tbody.appendChild(r));
-  }});
-}});
-</script></body></html>"""
+    html_doc = _TEMPLATE.safe_substitute(
+        TOGGLE_BAR=toggle_html,
+        TAB_BUTTONS="".join(buttons),
+        TAB_PANELS="".join(panels),
+    )
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html_doc, encoding="utf-8")
