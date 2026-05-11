@@ -60,14 +60,24 @@ steps:
         to: "{proj_dir}/CTRAMP/runtime"
 
   # --- 2. Simulate: run CTRAMP Java demand model ---
+  #
+  # Iteration modes:
+  #   iterations: 3        — full loop: iters 1→3 with sample ramp (0.15, 0.30, 0.50)
+  #   iteration: 3         — single run at iter 3 (e.g. for quick testing)
+  #
+  # If sample_rate is set, it overrides the default per-iteration ramp.
+  # Shadow pricing is auto-configured per iteration when enabled.
+  #
   simulate_ctramp:
     project_dir: "{proj_dir}"
     runtime_dir: "{proj_dir}/CTRAMP/runtime"
     host_ip: "localhost"
     threads: 48 # It will reserve 2 threads for infrastructure to leave some headroom.
-    iteration: 3
-    sample_rate: 0.05
+    iterations: 3          # full 3-iteration loop (sample ramp: 0.15 → 0.30 → 0.50)
+    # iteration: 3         # single iteration (uncomment to skip the loop) and just run one "iteration 3"
+    # sample_rate: 0.50    # uncomment to override the default per-iteration ramp
     seed: 0
+    shadow_pricing: true   # set false to disable shadow pricing
     # All components enabled for full model run.
     # Set individual components to false to disable them.
     components:

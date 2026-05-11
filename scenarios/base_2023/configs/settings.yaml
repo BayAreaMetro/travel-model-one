@@ -10,7 +10,7 @@ multiprocess: True
 num_processes: 40
 households_sample_size: 0        # 0 = full population
 chunk_size: 0                    # 0 = no chunking (requires sufficient RAM)
-use_shadow_pricing: False        # Enable after initial calibration converges
+use_shadow_pricing: True         # CTRAMP ran with shadow pricing; keep on for migration validation
 
 # --- Development/debugging ---
 # Uncomment below for a quick single-process test run:

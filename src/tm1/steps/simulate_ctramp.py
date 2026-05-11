@@ -129,19 +129,73 @@ def components_to_flags(components: dict[str, bool]) -> dict[str, str]:
     return flags
 
 
+# Default sample rates per global iteration, matching legacy RunModel.bat.
+DEFAULT_SAMPLE_RATES: dict[int, float] = {1: 0.15, 2: 0.30, 3: 0.50}
+
+
+def shadow_pricing_flags(
+    iteration: int,
+    *,
+    shadow_pricing: bool = True,
+) -> dict[str, str]:
+    """Return properties flags for shadow pricing at a given iteration.
+
+    Matches the logic from legacy RuntimeConfiguration.py::
+
+        Iteration 1:  no input file,                    MaximumIterations = 4
+        Iteration 2:  input = main/ShadowPricing_3.csv, MaximumIterations = 2
+        Iteration n:  input = main/ShadowPricing_{2n-1}.csv, MaxIter = 2
+
+    When *shadow_pricing* is False, forces MaximumIterations = 1 and comments
+    out the input file (effectively disabling shadow pricing).
+    """
+    prefix = "UsualWorkAndSchoolLocationChoice"
+    flags: dict[str, str] = {}
+
+    if not shadow_pricing:
+        flags[f"{prefix}.ShadowPricing.MaximumIterations"] = "1"
+        flags[f"{prefix}.ShadowPrice.Input.File"] = ""
+        return flags
+
+    if iteration == 1:
+        flags[f"{prefix}.ShadowPricing.MaximumIterations"] = "4"
+        flags[f"{prefix}.ShadowPrice.Input.File"] = ""
+    else:
+        sp_input = 2 * iteration - 1
+        flags[f"{prefix}.ShadowPrice.Input.File"] = f"main/ShadowPricing_{sp_input}.csv"
+        flags[f"{prefix}.ShadowPricing.MaximumIterations"] = "2"
+
+    return flags
+
+
 def patch_properties(props_path: Path, flags: dict[str, str]) -> None:
-    """Patch mtcTourBased.properties in-place. Backs up on first call."""
+    """Patch mtcTourBased.properties in-place. Backs up on first call.
+
+    If a flag value is the empty string, the property line is commented out.
+    """
     backup = props_path.with_suffix(".properties.backup")
     if not backup.exists():
         shutil.copy2(props_path, backup)
 
     content = props_path.read_text(encoding="utf-8")
     for key, value in flags.items():
-        pattern = rf"(^{re.escape(key)}\s*=\s*)(\S+)"
-        content, n = re.subn(pattern, rf"\g<1>{value}", content, flags=re.MULTILINE)
+        if value == "":
+            # Comment out the property (whether already commented or not)
+            pattern = rf"(^)(#?)\s*({re.escape(key)}\s*=\s*)(\S*)"
+            content, n = re.subn(
+                pattern, r"#\g<3>\g<4>", content, flags=re.MULTILINE,
+            )
+        else:
+            pattern = rf"(^)(#?\s*)({re.escape(key)}\s*=\s*)(\S*)"
+            content, n = re.subn(
+                pattern, rf"\g<3>{value}", content, flags=re.MULTILINE,
+            )
         if n == 0:
+            if value == "":
+                content += f"\n#{key} =\n"
+            else:
+                content += f"\n{key} = {value}\n"
             log.warning("Property %s not found — appending", key)
-            content += f"\n{key} = {value}\n"
 
     props_path.write_text(content, encoding="utf-8")
     log.info("Patched %d flags in %s", len(flags), props_path.name)
@@ -698,29 +752,46 @@ def run_model(
 def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
     """Run CTRAMP with the component flags specified in scenario config.
 
+    Supports two modes:
+
+    * **Single iteration** (``iteration: 3``): run just that iteration with
+      the given ``sample_rate``.  Shadow pricing input is derived from the
+      iteration number (see :func:`shadow_pricing_flags`).
+    * **Multi-iteration loop** (``iterations: 3``): run iterations 1 through N,
+      ramping the sample rate per :data:`DEFAULT_SAMPLE_RATES`.  Infrastructure
+      is started once and kept alive across iterations.  A per-iteration
+      ``sample_rate`` key can override the default ramp.
+
     Config structure::
 
         steps:
           simulate_ctramp:
-            project_dir: "//MODEL3-C/..."
+            project_dir: "E:/Projects/..."
             host_ip: "localhost"
-            iteration: 3
-            sample_rate: 0.5
+            iterations: 3              # loop 1..3 (or "iteration: 3" for single)
+            sample_rate: 0.5           # override per-iter default
+            shadow_pricing: true       # set false to disable
             seed: 0
             components:
               UsualWorkAndSchoolLocationChoice: true
-              AutoOwnership: true
-              FreeParking: true
-              CoordinatedDailyActivityPattern: false
               ...
     """
     step_cfg = cfg["steps"]["simulate_ctramp"]
     project_dir = Path(step_cfg["project_dir"])
     runtime_dir = Path(step_cfg.get("runtime_dir", str(project_dir / "CTRAMP" / "runtime")))
     host_ip = step_cfg.get("host_ip", "localhost")
-    iteration = step_cfg.get("iteration", 3)
-    sample_rate = step_cfg.get("sample_rate", 0.5)
     seed = step_cfg.get("seed", 0)
+    do_shadow_pricing = step_cfg.get("shadow_pricing", True)
+
+    # Determine iteration plan: loop vs single.
+    if "iterations" in step_cfg:
+        n_iters = int(step_cfg["iterations"])
+        iter_plan = list(range(1, n_iters + 1))
+    else:
+        iter_plan = [int(step_cfg.get("iteration", 3))]
+
+    # Per-iteration sample rate: explicit value overrides the default ramp.
+    explicit_rate = step_cfg.get("sample_rate")
 
     # The Java model treats "localhost" specially by starting an in-process
     # MatrixDataServer.  We always start the server externally (separate 14GB
@@ -747,11 +818,13 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
 
     threads = step_cfg.get("threads", max(1, (os.cpu_count() or 4) - 2))
 
-    patch_properties(runtime_dir / "mtcTourBased.properties", flags)
+    props_path = runtime_dir / "mtcTourBased.properties"
+    patch_properties(props_path, flags)
     patch_jppf_configs(runtime_dir / "config", host_ip, threads=threads)
 
     enabled = sum(1 for v in components.values() if v)
     log.info("Components enabled: %d/%d", enabled, len(COMPONENTS))
+    log.info("Iteration plan: %s  shadow_pricing=%s", iter_plan, do_shadow_pricing)
 
     # Kill any orphaned java from a previous aborted run
     kill_infrastructure([])
@@ -763,7 +836,15 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     interactive = _preflight_license()
 
     if not interactive:
-        # SSH/remote session: run everything via schtasks in interactive session
+        # SSH/remote session: schtasks path (single iteration only for now;
+        # looping would need a multi-step .bat — left as future work).
+        if len(iter_plan) > 1:
+            msg = "Multi-iteration loop is not yet supported via schtasks (SSH session)"
+            raise NotImplementedError(msg)
+        iteration = iter_plan[0]
+        sample_rate = explicit_rate or DEFAULT_SAMPLE_RATES.get(iteration, 0.50)
+        sp_flags = shadow_pricing_flags(iteration, shadow_pricing=do_shadow_pricing)
+        patch_properties(props_path, sp_flags)
         try:
             _run_via_schtasks(
                 project_dir, runtime_dir, host_ip,
@@ -772,12 +853,23 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
         finally:
             _recover_license()
     else:
-        # Interactive session: direct subprocess execution (original path)
+        # Interactive session: direct subprocess execution.
+        # Start infrastructure once, run all iterations.
         procs = start_infrastructure(runtime_dir, project_dir, host_ip)
         try:
-            run_model(
-                project_dir, runtime_dir,
-                iteration=iteration, sample_rate=sample_rate, seed=seed,
-            )
+            for iteration in iter_plan:
+                sample_rate = explicit_rate or DEFAULT_SAMPLE_RATES.get(iteration, 0.50)
+                log.info(
+                    "--- Iteration %d/%d  sample_rate=%.2f ---",
+                    iteration, iter_plan[-1], sample_rate,
+                )
+                sp_flags = shadow_pricing_flags(
+                    iteration, shadow_pricing=do_shadow_pricing,
+                )
+                patch_properties(props_path, sp_flags)
+                run_model(
+                    project_dir, runtime_dir,
+                    iteration=iteration, sample_rate=sample_rate, seed=seed,
+                )
         finally:
             kill_infrastructure(procs)

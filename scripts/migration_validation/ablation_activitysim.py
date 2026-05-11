@@ -45,7 +45,8 @@ def build_models_list(stages: list[dict], up_to: int) -> list[str]:
 
 
 def write_stage_settings(
-    stage_dir: Path, models: list[str], *, sample_size: int, seed: int, num_processes: int,
+    stage_dir: Path, models: list[str], *, sample_size: int, seed: int,
+    num_processes: int, shadow_pricing: bool = False,
 ) -> Path:
     cfg_dir = stage_dir / "_ablation_configs"
     cfg_dir.mkdir(parents=True, exist_ok=True)
@@ -75,7 +76,7 @@ def write_stage_settings(
         "multiprocess": num_processes > 1,
         "multiprocess_steps": mp_steps,
         "chunk_size": 0,
-        "use_shadow_pricing": False,
+        "use_shadow_pricing": shadow_pricing,
         "checkpointing": False,
         "resume_after": None,
     }
@@ -148,6 +149,7 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
     num_processes = cfg["num_processes"]
     stages = cfg["stages"]
     active = cfg["active_stages"]
+    do_shadow_pricing = cfg.get("shadow_pricing", False)
 
     hh_file = project_dir / "data" / "households.csv"
     total_hh = sum(1 for _ in hh_file.open()) - 1
@@ -181,7 +183,8 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
         clean_output(asim_output)
 
         override_dir = write_stage_settings(
-            stage_dir, models, sample_size=sample_size, seed=seed, num_processes=num_processes,
+            stage_dir, models, sample_size=sample_size, seed=seed,
+            num_processes=num_processes, shadow_pricing=do_shadow_pricing,
         )
 
         t0 = time.time()

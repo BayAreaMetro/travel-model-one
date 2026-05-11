@@ -86,6 +86,7 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
     seed = cfg["seed"]
     stages = cfg["stages"]
     active = cfg["active_stages"]
+    do_shadow_pricing = cfg.get("shadow_pricing", True)
 
     hh_file = project_dir / "popsyn" / "hhFile.csv"
     total_hh = sum(1 for _ in hh_file.open()) - 1
@@ -109,6 +110,8 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
 
     notify(f":test_tube: Starting CTRAMP {label}\n{plan}")
     log.info("Ablation plan:\n%s", plan)
+    if not do_shadow_pricing:
+        log.info("Shadow pricing DISABLED for this run")
 
     t_total = time.time()
     any_failed = False
@@ -134,7 +137,8 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
         run_cfg = {"steps": {"simulate_ctramp": {
             "project_dir": str(project_dir), "host_ip": "localhost",
             "iteration": DEFAULT_ITERATION, "sample_rate": sample_rate,
-            "seed": seed, "components": components,
+            "seed": seed, "shadow_pricing": do_shadow_pricing,
+            "components": components,
         }}}
 
         t0 = time.time()
