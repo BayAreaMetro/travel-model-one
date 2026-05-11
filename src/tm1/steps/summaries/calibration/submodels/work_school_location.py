@@ -115,12 +115,35 @@ def summarize(
     else:
         avg_trip_lengths = pl.DataFrame({"county": [], "work": [], "univ": [], "school": []})
 
+    # -- raw distance samples for violin / CDF plots ----------------------
+    dist_samples: dict[str, pl.DataFrame] = {}
+    max_violin = 100.0  # cap for display
+    max_sample = 5000   # per county, for browser performance
+    for trip_type, dist_col, filter_expr in _trip_type_filters():
+        subset = (
+            wsloc.filter(filter_expr & pl.col(dist_col).is_not_null())
+            .with_columns(
+                pl.col("home_county")
+                .replace_strict(COUNTY_LOOKUP, default="Unknown")
+                .alias("county"),
+            )
+            .select("county", pl.col(dist_col).clip(0, max_violin).alias("dist"))
+        )
+        # Subsample per county to keep payload manageable
+        sampled = subset.group_by("county").map_groups(
+            lambda g: g.sample(min(len(g), max_sample), seed=42)
+        )
+        dist_samples[trip_type] = sampled
+
     return {
         "county_summary": county_summary,
         "trip_tlfd_work": trip_tlfds.get("work"),
         "trip_tlfd_univ": trip_tlfds.get("univ"),
         "trip_tlfd_school": trip_tlfds.get("school"),
         "avg_trip_lengths": avg_trip_lengths,
+        "dist_samples_work": dist_samples.get("work"),
+        "dist_samples_univ": dist_samples.get("univ"),
+        "dist_samples_school": dist_samples.get("school"),
     }
 
 

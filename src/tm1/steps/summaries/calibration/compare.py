@@ -53,8 +53,14 @@ def _compare_submodel(
         if sub:
             table_names.update(sub)
 
+    # Tables containing raw samples should not be merged (they are used
+    # directly by renderers, not compared side-by-side).
+    _SKIP_PREFIXES = ("dist_samples",)
+
     out: dict[str, pl.DataFrame] = {}
     for table_name in sorted(table_names):
+        if any(table_name.startswith(p) for p in _SKIP_PREFIXES):
+            continue
         frames: list[tuple[str, pl.DataFrame]] = []
         for label in labels:
             df = results.get(label, {}).get(submodel, {}).get(table_name)

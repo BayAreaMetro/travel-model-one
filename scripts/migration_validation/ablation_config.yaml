@@ -5,7 +5,7 @@
 activitysim_project_dir: "E:/Tests/tm1a_test"
 ctramp_project_dir: "E:/Tests/tm1_ctramp_test"
 survey_dir: "E:/Tests/tm1a_test/survey/ctramp_2023"
-output_dir: "E:/Tests"
+output_dir: "E:/Tests/ablation_calibration"
 
 # --- ActivitySim model configs (relative to repo root) ---
 repo_root: "E:/GitHub/travel-model-one"
@@ -25,8 +25,8 @@ slack: false
 shadow_pricing: false
 
 # --- Which stages to run (1-based; comment out to skip) ---
-active_stages: [1]  # [1,2,3,4,5,6,7,8]
 # active_stages: [1,2,3,4,5,6,7,8]
+active_stages: [2]
 
 # --- Stage definitions (shared by both CTRAMP and ActivitySim ablation) ---
 # Each stage adds models cumulatively on top of all previous stages.

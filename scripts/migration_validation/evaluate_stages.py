@@ -94,6 +94,8 @@ def evaluate_stage(  # noqa: PLR0913
     project_dir: Path, ctramp_dir: Path, survey_dir: Path,
     sample_rate: float, survey_cfg: dict,
     ctramp_output_files: dict,
+    *,
+    output_dir: Path,
 ) -> None:
     from tm1.steps.summaries.calibration import run as run_calib  # noqa: PLC0415
 
@@ -118,7 +120,7 @@ def evaluate_stage(  # noqa: PLR0913
              stage_num, stage_name, submodels, len(datasets))
 
     run_cfg = {"steps": {"summaries": {"calibration": {
-        "output_dir": str(stage_output / "calibration"),
+        "output_dir": str(output_dir),
         "write_csv": False, "datasets": datasets, "submodels": submodels,
     }}}}
     run_calib(stage_output, run_cfg)
@@ -128,6 +130,7 @@ def evaluate_stages(cfg: dict) -> None:
     project_dir = Path(cfg["activitysim_project_dir"])
     ctramp_dir = Path(cfg["ctramp_project_dir"])
     survey_dir = Path(cfg["survey_dir"])
+    output_base = Path(cfg["output_dir"])
     ablation_dir = project_dir / "ablation"
     stages = cfg["stages"]
     active = cfg["active_stages"]
@@ -143,12 +146,14 @@ def evaluate_stages(cfg: dict) -> None:
             log.info("Stage %d (%s) has no output — skipping", stage_num, stage_name)
             continue
 
+        stage_output_dir = output_base / f"{stage_num:02d}_{stage_name}"
         try:
             evaluate_stage(
                 stage_dir, stage_num, stages,
                 project_dir, ctramp_dir, survey_dir,
                 sample_rate, survey_cfg,
                 ctramp_output_files,
+                output_dir=stage_output_dir,
             )
         except Exception:
             log.exception("Evaluation failed for stage %d (%s)", stage_num, stage_name)

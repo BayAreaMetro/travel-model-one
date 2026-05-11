@@ -138,6 +138,30 @@ Stages are cumulative — each includes all models from prior stages.
 - Shadow pricing (stage 1) shifts zone attractiveness → all downstream tour destinations and modes.
 - CDAP (stage 3) determines who travels at all — M/N/H share drift propagates to stages 4–8.
 
+##### Known Gaps
+
+**Work From Home (WFH) model — deferred.**
+CTRAMP has a WFH sub-model embedded inside the CDAP model class
+(`WorkFromHome` sheet in `CoordinatedDailyActivityPattern.xls`). It runs a
+binary logit (WFH vs DoesNotWFH) per worker using income, industry, home/work
+county, distance, and 34 superdistrict-level calibration constants. Workers
+chosen as WFH have Mandatory blocked (`-999` on OnePerson row 85); remaining
+FT/PT workers get compensating M boosts (rows 86–87: `+0.5638`, `+0.6822`).
+
+ActivitySim has an equivalent `work_from_home` model in the package (also binary
+logit, with built-in iterative calibration to a target WFH percent), but it is
+**not yet added to the pipeline**. To close this gap:
+1. Add `work_from_home` to `settings.yaml` between `workplace_location` and
+   `cdap_simulate`.
+2. Create `work_from_home.yaml` / `work_from_home.csv` / coefficients with
+   equivalent terms from the CTRAMP UEC.
+3. Add CDAP spec rows for the WFH→CDAP interaction (block M for WFH workers,
+   boost M for remaining workers).
+
+Note: CTRAMP OnePerson rows 77–82 use tokens (`usualWorkLocationIsHome`,
+`noUsualWorkLocation`, `noUsualSchoolLocation`) that always return 0 in the MTC
+implementation — effectively dead code. No ActivitySim equivalent needed.
+
 **Validation artifacts:**
 - `coefficient_comparison.html` — tabs: Workplace Location, School Location, Auto Ownership, CDAP, Tour Mode Choice, Trip Mode Choice, Size Terms.
 - `ablation_report.html` — per-stage TLFD plots, mode share tables, AO distributions.

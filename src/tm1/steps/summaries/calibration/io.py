@@ -275,7 +275,9 @@ _PTYPE_TO_STUDENT_CAT: dict[int, str] = {
     3: "College or higher",         # University student
     6: "Grade or high school",      # Driving-age student
     7: "Grade or high school",      # Non-driving-age student
-    8: "Grade or high school",      # Pre-school (young child)
+    # ptype 8 (preschool) excluded: CTRAMP labels them "Not student" even
+    # though they receive a SchoolLocation.  Omitting keeps comparison
+    # apples-to-apples.
 }
 
 
