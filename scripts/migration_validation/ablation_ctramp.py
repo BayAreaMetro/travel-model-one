@@ -17,7 +17,6 @@ from pathlib import Path
 
 import yaml
 
-from tm1.slack import notify
 from tm1.steps.simulate_ctramp import COMPONENTS, run
 
 log = logging.getLogger(__name__)
@@ -80,8 +79,14 @@ def clean_outputs(project_dir: Path) -> None:
 
 
 def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
+    if cfg.get("slack", False):
+        from tm1.slack import notify
+    else:
+        def notify(msg: str) -> None:  # noqa: ARG001
+            pass
+
     project_dir = Path(cfg["ctramp_project_dir"])
-    output_base = Path(cfg["output_dir"]) / "ctramp_ablation"
+    output_base = project_dir / "ablation"
     sample_rate = cfg["sample_rate"]
     seed = cfg["seed"]
     stages = cfg["stages"]

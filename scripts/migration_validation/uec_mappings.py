@@ -46,6 +46,57 @@ MAPPINGS: dict[str, dict[str, int | list[int]]] = {
         "util_no_attractions":                 15,
     },
 
+    "CDAP": {
+        "Full-time worker alternative-specific constants":           29,
+        "Part-time worker alternative-specific constants":           30,
+        "University student alternative-specific constants":         31,
+        "Non-working adult alternative-specific constants":          32,
+        "Retired alternative-specific constants":                    33,
+        "Driving-age child who is in school alternative-specific constants": 34,
+        "Pre-driving-age child who is in school alternative-specific constants": 35,
+        "Pre-driving-age child who is too young for school alternative-specific constants": 36,
+        "Pre-driving-age child who is too young for school interaction with age 0 to 1": 37,
+        "Pre-driving-age child who is too young for school interaction with age 4 to 5": 38,
+        "Pre-driving-age child who is in school interaction with age 6 to 9": 39,
+        "Pre-driving-age child who is in school interaction with age 13 to 15": 40,
+        "Full-time worker interaction with age less than 40":       41,
+        "Retired interaction with age more than 80":                42,
+        "Full-time worker interaction with female gender":          43,
+        "Non-working adult interaction with female gender":         44,
+        "Retired interaction with female":                          45,
+        "Non-working adult interaction with more cars than workers": 46,
+        "Retired interaction with more cars than workers":          47,
+        "Pre-driving-age child who is too young for school interaction with more cars than workers": 48,
+        "Full-time worker interaction with fewer cars than workers": 49,
+        "Non-working adult interaction with fewer cars than workers": 50,
+        "Retired interaction with fewer cars than workers":         51,
+        "Driving-age child who is in school interaction with fewer cars than workers": 52,
+        "Pre-driving-age child who is in school interaction with fewer cars than workers": 53,
+        "Pre-driving-age child who is too young for school interaction with fewer cars than workers": 54,
+        "Full-time worker interaction with income less than $20k":  55,
+        "Retired interaction with income less than $20k":           56,
+        "Part-time worker interaction with income less than $20k":  57,
+        "Part-time worker interaction with income between $50k and $100k": 58,
+        "Part-time worker interaction with income more than $100k": 59,
+        "Non-working adult interaction with income between $50k and $100k": 60,
+        "Non-working adult interaction with income more than $100k": 61,
+        "Driving-age child who is in school interaction with less than $20k": 62,
+        "Driving-age child who is in school interaction income between $50k and $100k": 63,
+        "Driving-age child who is in school interaction with income more than $100k": 64,
+        "Pre-driving-age child who is too young for school interaction with income between $50k and $100k": 65,
+        "Pre-driving-age child who is too young for school interaction with income more than $100k": 66,
+        "Full-time worker intraction with peak accessibility to all employment": 67,
+        "Part-time worker interaction with peak accessibility to all employment": 68,
+        "Non-working adult interaction with peak accessibility to all employment": 69,
+        "Retired interaction with peak accessibility to all employment": 70,
+        "Non-working adult interaction with off-peak accessibility to retail": 71,
+        "Retired interaction with off-peak accessibility to retail": 72,
+        "University student interaction with off-peak accessibility to retail": 73,
+        "Driving-age child who is in school interaction with off-peak accessibility to retail": 74,
+        "Pre-driving-age child who is in school interaction with off-peak accessibility to retail": 75,
+        "Pre-driving-age child who is too young for school interaction with off-peak accessibility to retail": 76,
+    },
+
     "Tour Mode Choice": {
         "util_DRIVEALONEFREE_Unavailable": 157,
         "util_DRIVEALONEFREE_Unavailable_for_zero_auto_households": 158,
@@ -843,6 +894,28 @@ NOTES: dict[str, dict[str, str]] = {
             "ActivitySim shadow pricing mechanism — iteratively adjusts zone "
             "attractiveness to match aggregate targets. CTRAMP uses a different "
             "shadow pricing implementation outside the UEC."
+        ),
+    },
+
+    "CDAP": {
+        "row_77": (
+            "CTRAMP rows 77-78: Work-from-home interaction (M penalty + H bonus). "
+            "ActivitySim handles work-from-home in a separate pre-processor step "
+            "(work_from_home model) rather than embedding it in the CDAP UEC."
+        ),
+        "row_79": (
+            "CTRAMP rows 79-82: No usual work/school location interactions. "
+            "ActivitySim does not penalize mandatory pattern when work/school "
+            "location is missing — this is handled upstream by person type assignment."
+        ),
+        "row_83": (
+            "CTRAMP rows 83-85: Mandatory pattern unavailable for retired/non-working "
+            "adults and simple WFH model (-999). In ActivitySim, ptype-based unavailability "
+            "is handled by coef_UNAVAILABLE in the ASC rows (rows 32-33 map to this)."
+        ),
+        "row_86": (
+            "CTRAMP rows 86-87: Post-WFH adjustments to FT/PT worker mandatory ASCs. "
+            "ActivitySim handles this via the separate work_from_home model."
         ),
     },
 }

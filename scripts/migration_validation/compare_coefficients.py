@@ -391,7 +391,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
         # Multi-segment table: one coeff column per segment
         seg_names = [s["sheet_name"] for s in sheets]
         coeff_hdrs = "".join(
-            f"<th>CTRAMP {esc(sn)}</th><th>ASim {esc(alt)}</th><th>Diff</th>"
+            f"<th>CTRAMP {esc(sn)}</th><th>ASim {esc(alt)}</th>"
             for sn, alt in zip(seg_names, asim_alts)
         )
         h = ("<table class='coeff mapped sortable'><thead><tr>"
@@ -424,10 +424,17 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     cr = ctramp_by_sheet_no.get((sn, ctramp_no))
                     c_val = _coeff_val(cr)
                     a_val = _coeff_for_alt(ar, alt) if ar else ""
-                    body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td>"
                     if show_asim:
-                        body += f"<td class='num'{rowspan}>{_fmt(a_val) if a_val != '' else ''}</td>"
-                    body += _diff_cell(c_val, a_val)
+                        body += _pair_cells(c_val, a_val, rowspan)
+                    else:
+                        # Only CTRAMP cell — ASim cell spans from first row
+                        try:
+                            match = abs(float(a_val) - float(c_val)) < 1e-6
+                        except (ValueError, TypeError):
+                            match = str(c_val) == str(a_val) if c_val != "" else c_val == ""
+                        cls = f" {'match' if match else 'diff'}" if c_val != "" else ""
+                        c_str = _fmt(c_val) if c_val != "" else ""
+                        body += f"<td class='num{cls}'>{c_str}</td>"
                 body += "</tr>"
 
         # Unmatched CTRAMP rows (use first sheet as reference)
@@ -442,7 +449,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     for sn, alt in zip(seg_names, asim_alts):
                         cr = ctramp_by_sheet_no.get((sn, r["no"]))
                         c_val = _coeff_val(cr)
-                        body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td><td></td><td></td>"
+                        body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td><td></td>"
                     body += "</tr>"
 
         # Unmatched ASim rows
@@ -451,14 +458,14 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 body += f"<tr class='asim-only'><td>{esc(r['label'])}</td><td></td><td></td><td></td><td>{esc(r['expr'])}</td>"
                 for sn, alt in zip(seg_names, asim_alts):
                     a_val = _coeff_for_alt(r, alt)
-                    body += f"<td></td><td class='num'>{_fmt(a_val) if a_val != '' else ''}</td><td></td>"
+                    body += f"<td></td><td class='num'>{_fmt(a_val) if a_val != '' else ''}</td>"
                 body += "</tr>"
 
     elif multi_alt:
         # Multi-alt table: single sheet with per-alt coefficient columns
         alt_pairs = list(zip(ctramp_alts, asim_alts))
         coeff_hdrs = "".join(
-            f"<th>CTRAMP {esc(a_alt)}</th><th>ASim {esc(a_alt)}</th><th>Diff</th>"
+            f"<th>CTRAMP {esc(a_alt)}</th><th>ASim {esc(a_alt)}</th>"
             for _, a_alt in alt_pairs
         )
         h = ("<table class='coeff mapped sortable'><thead><tr>"
@@ -489,10 +496,17 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 for c_alt, a_alt in alt_pairs:
                     c_val = _coeff_for_alt(cr, c_alt)
                     a_val = _coeff_for_alt(ar, a_alt) if ar else ""
-                    body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td>"
                     if show_asim:
-                        body += f"<td class='num'{rowspan}>{_fmt(a_val) if a_val != '' else ''}</td>"
-                    body += _diff_cell(c_val, a_val)
+                        body += _pair_cells(c_val, a_val, rowspan)
+                    else:
+                        # Only CTRAMP cell — ASim cell spans from first row
+                        try:
+                            match = abs(float(a_val) - float(c_val)) < 1e-6
+                        except (ValueError, TypeError):
+                            match = str(c_val) == str(a_val) if c_val != "" else c_val == ""
+                        cls = f" {'match' if match else 'diff'}" if c_val != "" else ""
+                        c_str = _fmt(c_val) if c_val != "" else ""
+                        body += f"<td class='num{cls}'>{c_str}</td>"
                 body += "</tr>"
 
         # Unmatched CTRAMP rows
@@ -505,7 +519,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 )
                 for c_alt, a_alt in alt_pairs:
                     c_val = _coeff_for_alt(r, c_alt)
-                    body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td><td></td><td></td>"
+                    body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td><td></td>"
                 body += "</tr>"
 
         # Unmatched ASim rows
@@ -514,7 +528,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 body += f"<tr class='asim-only'><td>{esc(r['label'])}</td><td></td><td></td><td></td><td>{esc(r['expr'])}</td>"
                 for c_alt, a_alt in alt_pairs:
                     a_val = _coeff_for_alt(r, a_alt)
-                    body += f"<td></td><td class='num'>{_fmt(a_val) if a_val != '' else ''}</td><td></td>"
+                    body += f"<td></td><td class='num'>{_fmt(a_val) if a_val != '' else ''}</td>"
                 body += "</tr>"
 
     else:
@@ -522,7 +536,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
         h = ("<table class='coeff mapped sortable'><thead><tr>"
              "<th>ASim Label</th><th>No.</th><th>Description</th>"
              "<th>CTRAMP Expression</th><th>ASim Expression</th>"
-             "<th>CTRAMP Coeff</th><th>ASim Coeff</th><th>Diff</th>"
+             "<th>CTRAMP Coeff</th><th>ASim Coeff</th>"
              "</tr></thead><tbody>")
 
         # Matched rows (driven by crosswalk: asim_label → ctramp_no or [ctramp_nos])
@@ -539,22 +553,11 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
 
                 c_coeff = _coeff_val(cr)
 
-                cls = ""
-                if cr and ar:
-                    try:
-                        cls = "match" if abs(float(c_coeff) - float(a_coeff)) < 1e-6 else "diff"
-                    except (ValueError, TypeError):
-                        cls = "diff"
-                elif cr:
-                    cls = "ctramp-only"
-                elif ar:
-                    cls = "asim-only"
-
                 # Show ASim label/expr/coeff only on the first row of a group
                 show_asim = (i == 0)
                 rowspan = f" rowspan='{len(ctramp_nos)}'" if show_asim and len(ctramp_nos) > 1 else ""
 
-                body += f"<tr class='{cls}'>"
+                body += "<tr>"
                 if show_asim:
                     body += f"<td{rowspan}>{esc(asim_label)}</td>"
                 body += (
@@ -564,15 +567,18 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 )
                 if show_asim:
                     body += f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
-                body += (
-                    f"<td class='num'>{_fmt(c_coeff) if c_coeff != '' else ''}</td>"
-                )
                 if show_asim:
-                    body += f"<td class='num'{rowspan}>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
-                body += (
-                    f"{_diff_cell(c_coeff, a_coeff)}"
-                    "</tr>"
-                )
+                    body += _pair_cells(c_coeff, a_coeff, rowspan)
+                else:
+                    # Only CTRAMP cell — ASim cell spans from first row
+                    try:
+                        match = abs(float(a_coeff) - float(c_coeff)) < 1e-6
+                    except (ValueError, TypeError):
+                        match = str(c_coeff) == str(a_coeff) if c_coeff != "" else c_coeff == ""
+                    cls = f" {'match' if match else 'diff'}" if c_coeff != "" else ""
+                    c_str = _fmt(c_coeff) if c_coeff != "" else ""
+                    body += f"<td class='num{cls}'>{c_str}</td>"
+                body += "</tr>"
 
         # Unmatched CTRAMP rows
         for s in sheets:
@@ -587,7 +593,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                         f"<td>{esc(_ctramp_expr(r))}</td>"
                         f"<td></td>"
                         f"<td class='num'>{_fmt(c_coeff) if c_coeff != '' else ''}</td>"
-                        f"<td></td><td></td></tr>"
+                        f"<td></td></tr>"
                     )
 
         # Unmatched ActivitySim rows
@@ -601,7 +607,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     f"<td>{esc(r['expr'])}</td>"
                     f"<td></td>"
                     f"<td class='num'>{_fmt(a_coeff) if a_coeff != '' else ''}</td>"
-                    f"<td></td></tr>"
+                    f"</tr>"
                 )
 
     return f"<h3>Mapped Comparison</h3>{LEGEND_FULL}<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
