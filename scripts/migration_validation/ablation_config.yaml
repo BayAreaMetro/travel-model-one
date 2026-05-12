@@ -18,7 +18,7 @@ asim_config_dirs:
 sample_rate: 0.15
 seed: 42
 num_processes: 40
-slack: false
+slack: true
 
 # Shadow pricing: true = normal (CTRAMP: iter-dependent, ASim: use_shadow_pricing)
 #                 false = disabled for both (apples-to-apples UEC comparison)

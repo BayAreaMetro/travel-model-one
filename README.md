@@ -22,28 +22,59 @@ Other documentation is available on the [Travel Model wiki](https://github.com/B
 
 
 
-## Nick's Quickstart and migration notes
+## ActivitySim Migration — Quickstart
 
-### Key Principles:
-- Python First
-- One Stop Shop
-- Configuration Driven Overlays
-- Modular and Reusable
-- Trunk Driven Development (TDD)
+This branch (`activitysim_revival`) replaces the Java-based CTRAMP demand model with [ActivitySim](https://activitysim.github.io/). The network assignment and skimming steps remain unchanged.
 
+### What Changed from Legacy
 
+| Legacy (CTRAMP)            | New (ActivitySim)                         |
+|----------------------------|-------------------------------------------|
+| Java + Cube scripts        | Python (`uv` managed)                     |
+| UEC workbooks (`.xls`)     | CSV specs + YAML configs                  |
+| Properties files           | `settings.yaml` + `constants.yaml`        |
+| `model-files/RunModel.bat` | `tm1 run --scenario base_2023`            |
 
-The model is developed in a single branch, with regular commits and merges to ensure stability and avoid long-lived feature branches. Projects *should* be deployable via the scenario configuration, and not require code changes. This allows for more frequent releases and easier collaboration among developers.
+### Repository Layout
 
+```
+base-models/activity/configs/    # Canonical ActivitySim configs (specs, coefficients, YAML)
+scenarios/base_2023/configs/     # Scenario overrides ONLY (inherits from base-models)
+src/tm1/                         # Python package (CLI, runner)
+src/cubeio/                      # Cube skim/matrix I/O
+scripts/                         # Utility and launch scripts
+model-files/                     # Legacy CTRAMP batch files (retained for reference)
+```
 
-- The model is now python driven --- This applies to both future ActivitySim, but also has python-runner scripts for legacy Java-based CTRAMP.
+### Key Concept: Config Inheritance
 
+ActivitySim resolves configs in directory order. The scenario `settings.yaml` sets `inherit_settings: True`, so only files you **override** need to exist in the scenario folder. Everything else falls through to `base-models/activity/configs/`.
 
-### Hints
-- Configs are inherited, meaning [config_1, config_2, config_3] will apply config_3, then config_2, then config_1 in that order, allowing for easy overlays and modifications. But note that:
-    - YAMLS merge, CSVs replace! Meaning a CSV overlay you need to copy-paste the entire file and make your modifications there but YAML overlays you can just specify the differences. This is a key point to understand when making modifications.
+- **YAMLs merge** — you only specify the keys that differ.
+- **CSVs replace** — you must copy the entire file and modify it in place.
 
+### Setup
 
+```bash
+# Install uv (one-time)
+pip install uv
 
-### Quickstart:
-1. Clone the repository and navigate to the desired branch
+# Install project in dev mode
+uv sync
+
+# Verify
+uv run tm1 --help
+```
+
+### Running a Scenario
+
+```bash
+uv run tm1 run --scenario base_2023
+```
+
+### Creating a New Scenario
+
+1. Create `scenarios/<name>/configs/settings.yaml` with `inherit_settings: True`
+2. Add only the config files that *differ* from the base
+3. Point input tables at your land-use / skims data
+4. Run with `uv run tm1 run --scenario <name>`
