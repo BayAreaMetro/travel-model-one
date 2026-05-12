@@ -71,7 +71,7 @@ def validate_one(tpp_path: Path, csv_path: Path) -> tuple[int, int, list[str]]:
 
 def main() -> None:
     """Validate TPP reader against Cube CSV dumps."""
-    if len(sys.argv) < 2:  # noqa: PLR2004
+    if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <skims_dir>")
         sys.exit(1)
 
@@ -102,7 +102,7 @@ def main() -> None:
         t1 = time.perf_counter()
         try:
             cells, bad, errors = validate_one(tpp_path, csv_path)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             print(f"  CRASH  {stem}: {e}")
             failures.append(stem)
             continue

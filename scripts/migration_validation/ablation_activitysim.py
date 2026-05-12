@@ -164,7 +164,7 @@ def run_activitysim(
         cmd.extend(["-c", c])
 
     log.info("Running: %s", " ".join(cmd))
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)  # noqa: S603
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     for line in proc.stdout:  # pyright: ignore[reportOptionalIterable]
         sys.stdout.write(line)
     if proc.wait() != 0:
@@ -185,11 +185,11 @@ def collect_outputs(src: Path, dst: Path) -> int:
     return n
 
 
-def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
+def run_ablation(cfg: dict) -> None:
     if cfg.get("slack", False):
         from tm1.slack import notify
     else:
-        def notify(msg: str) -> None:  # noqa: ARG001
+        def notify(msg: str) -> None:
             pass
 
     project_dir = Path(cfg["activitysim_project_dir"])

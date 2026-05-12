@@ -78,11 +78,11 @@ def clean_outputs(project_dir: Path) -> None:
             f.write_text("")
 
 
-def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
+def run_ablation(cfg: dict) -> None:
     if cfg.get("slack", False):
         from tm1.slack import notify
     else:
-        def notify(msg: str) -> None:  # noqa: ARG001
+        def notify(msg: str) -> None:
             pass
 
     project_dir = Path(cfg["ctramp_project_dir"])

@@ -18,7 +18,15 @@ from pathlib import Path
 
 import xlrd
 import yaml
-from uec_mappings import MAPPINGS, NOTES, CONSTANTS_NOTES, COEFF_OVERRIDES, ALT_MAPPINGS, SIZE_TERMS_CROSSWALK, get_token_map
+from uec_mappings import (
+    ALT_MAPPINGS,
+    COEFF_OVERRIDES,
+    CONSTANTS_NOTES,
+    MAPPINGS,
+    NOTES,
+    SIZE_TERMS_CROSSWALK,
+    get_token_map,
+)
 
 log = logging.getLogger(__name__)
 
@@ -191,15 +199,14 @@ def _read_template(configs_dirs: list[Path], template_file: str, coeff_file: str
                     # Empty cell = use generic name directly
                     if generic in coeffs:
                         purpose_map[p] = coeffs[generic]
-                else:
-                    if specific in coeffs:
-                        purpose_map[p] = coeffs[specific]
+                elif specific in coeffs:
+                    purpose_map[p] = coeffs[specific]
             if purpose_map:
                 result[generic] = purpose_map
     return result
 
 
-def read_asim_spec(configs_dirs: list[Path], spec_file: str, coeff_file: str) -> dict:  # noqa: C901
+def read_asim_spec(configs_dirs: list[Path], spec_file: str, coeff_file: str) -> dict:
     """Parse spec + coefficients into {alt_names, rows: [{label, desc, expr, coeffs}]}."""
     # Coefficient lookup
     coeff_path = _resolve(configs_dirs, coeff_file)
@@ -480,7 +487,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
 
     elif multi_alt:
         # Multi-alt table: single sheet with per-alt coefficient columns
-        alt_pairs = alt_pairs_override if alt_pairs_override else list(zip(ctramp_alts, asim_alts))
+        alt_pairs = alt_pairs_override or list(zip(ctramp_alts, asim_alts))
         coeff_hdrs = "".join(
             f"<th class='num'>CTRAMP {esc(a_alt)}</th><th class='num'>ASim {esc(a_alt)}</th>"
             for _, a_alt in alt_pairs
@@ -672,7 +679,7 @@ def _constants_table(
             if yaml_name not in expr:
                 continue
             # Find co-multiplied template coefficients (coef_* patterns)
-            coef_refs = re.findall(r'\bcoef_\w+', expr)
+            coef_refs = re.findall(r"\bcoef_\w+", expr)
             coef_refs = [c for c in coef_refs if c != yaml_name]
             if not coef_refs:
                 continue
@@ -710,10 +717,10 @@ def _constants_table(
             if asim_name in template_resolve:
                 return asim_name, "template", None
             return asim_name, "none", None
-        else:  # source == "yaml"
-            if asim_name in yaml_constants:
-                return asim_name, "yaml", yaml_constants[asim_name]
-            return asim_name, "none", None
+        # source == "yaml"
+        if asim_name in yaml_constants:
+            return asim_name, "yaml", yaml_constants[asim_name]
+        return asim_name, "none", None
 
     # Collect all token names across sheets (union)
     all_tokens: list[str] = []
@@ -902,8 +909,6 @@ def _constants_table(
                 indicator = "✓ (x IVT)" if is_mult else "✓ (YAML)"
             else:
                 indicator = "—"
-            # Check if this is a known genuine difference or has a note
-            known_note = ""
             body += (
                 f"<tr><td><code>{esc(token)}</code></td>"
                 f"<td><code>{esc(asim_name)}</code> {indicator}</td>"
@@ -935,7 +940,7 @@ def _constants_table(
 
 def _fmt(v: float | str) -> str:
     if isinstance(v, float):
-        if v == int(v) and abs(v) < 1000:  # noqa: PLR2004
+        if v == int(v) and abs(v) < 1000:
             return f"{int(v)}"
         return f"{v:.4f}"
     return esc(str(v))

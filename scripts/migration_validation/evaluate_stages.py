@@ -89,7 +89,7 @@ def build_ctramp_dataset(
             "sampleshare": sample_rate, "paths": paths}
 
 
-def evaluate_stage(  # noqa: PLR0913
+def evaluate_stage(
     stage_output: Path, stage_num: int, stages: list[dict],
     project_dir: Path, ctramp_dir: Path, survey_dir: Path,
     sample_rate: float, survey_cfg: dict,
@@ -97,7 +97,7 @@ def evaluate_stage(  # noqa: PLR0913
     *,
     output_dir: Path,
 ) -> None:
-    from tm1.steps.summaries.calibration import run as run_calib  # noqa: PLC0415
+    from tm1.steps.summaries.calibration import run as run_calib
 
     datasets: list[dict] = []
 
