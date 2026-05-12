@@ -246,15 +246,19 @@ def run_ablation(cfg: dict) -> None:
         except Exception:
             failed = any_failed = True
             log.exception("STAGE %d FAILED", stage_num)
-            notify(f":boom: ActivitySim stage {stage_num} ({stage_name}) crashed")
 
         elapsed = time.time() - t0
         n = collect_outputs(asim_output, stage_dir)
         log.info("Stage %d: %.1f min, %d files → %s", stage_num, elapsed / 60, n, stage_dir)
 
-        if not failed:
-            notify(f":white_check_mark: ActivitySim stage {stage_num}/{len(stages)} "
-                   f"({stage_name}) done in {elapsed / 60:.1f} min, {n} files")
+        if failed:
+            # Later stages depend on this one — no point continuing.
+            notify(f":boom: ActivitySim stage {stage_num} ({stage_name}) failed "
+                   f"after {elapsed / 60:.1f} min — aborting remaining stages")
+            break
+
+        notify(f":white_check_mark: ActivitySim stage {stage_num}/{len(stages)} "
+               f"({stage_name}) done in {elapsed / 60:.1f} min, {n} files")
 
     total_min = (time.time() - t_total) / 60
     status = ":warning: finished with failures" if any_failed else ":white_check_mark: Finished"

@@ -29,8 +29,8 @@ Description,Target,Expression
 ,ind_RETEMP,((_rng >= _cum_mwt) & (_rng < _cum_ret)).astype(int)
 #,,
 #,, Geography variables
-,home_county,"reindex(land_use.county_id, df.home_zone_id)"
-,work_county,"np.where(df.workplace_zone_id > 0, reindex(land_use.county_id, df.workplace_zone_id), 0)"
+,home_county,"reindex(land_use.COUNTY, df.home_zone_id)"
+,work_county,"np.where(df.workplace_zone_id > 0, reindex(land_use.COUNTY, df.workplace_zone_id), 0)"
 ,work_sd,"np.where(df.workplace_zone_id > 0, reindex(land_use.SD, df.workplace_zone_id), 0)"
 #,,
 #,, East Bay (Alameda=4/Contra Costa=5/Solano=6) <-> SF (1) dummy

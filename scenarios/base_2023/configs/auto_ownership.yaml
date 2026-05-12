@@ -14,3 +14,11 @@ CONSTANTS:
   ID_SONOMA: 8
   ID_MARIN: 9
   Mobility_AV_Share: 0.0
+
+# Remap 11-alt choice index (0-10) to vehicle count (0-4).
+# Alt order: 0_car, 1_car_1HV, 1_car_1AV, 2_cars_2HV, 2_cars_2AV,
+#            2_cars_1HV1AV, 3_cars_3HV, 3_cars_3AV, 3_cars_2HV1AV,
+#            3_cars_1HV2AV, 4+_cars_4HV
+annotate_households:
+  SPEC: auto_ownership_annotate_households
+  DF: households
