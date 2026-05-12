@@ -46,6 +46,55 @@ MAPPINGS: dict[str, dict[str, int | list[int]]] = {
         "util_no_attractions":                 15,
     },
 
+    "Auto Ownership": {
+        "util_drivers_2":                      21,
+        "util_drivers_3":                      22,
+        "util_drivers_4_up":                   23,
+        "util_persons_16_17":                  24,
+        "util_persons_18_24":                  25,
+        "util_persons_25_34":                  26,
+        "util_presence_children_0_4":          27,
+        "util_presence_children_5_17":         28,
+        "util_num_workers_clip_3":             29,
+        "util_hh_income_0_30k":               30,
+        "util_hh_income_30_75k":              31,
+        "util_hh_income_75k_up":              32,
+        "util_density_0_10_no_workers":        33,
+        "util_density_10_up_no_workers":       34,
+        "util_density_0_10_workers":           35,
+        "util_density_10_up_workers":          36,
+        "util_retail_auto_no_workers":         37,
+        "util_retail_auto_workers":            38,
+        "util_retail_transit_no_workers":      39,
+        "util_retail_transit_workers":         40,
+        "util_retail_non_motor_no_workers":    41,
+        "util_retail_non_motor_workers":       42,
+        "util_auto_time_saving_per_worker":    43,
+        "util_asc":                            44,
+        "util_asc_san_francisco":              45,
+        "util_asc_solano":                     46,
+        "util_asc_napa":                       47,
+        "util_asc_sonoma":                     48,
+        "util_asc_marin":                      49,
+        "util_asc_santa_clara":                50,
+        # AV rows (rows 51-65) — only affect AV alts
+        "util_av_asc_income_under_50k":        51,
+        "util_av_asc_income_100k_up":          52,
+        "util_av_auto_time_per_worker":        53,
+        "util_av_asc_100pct":                  54,
+        "util_av_asc_95pct":                   55,
+        "util_av_asc_75pct":                   56,
+        "util_av_asc_50pct":                   57,
+        "util_av_asc_30pct":                   58,
+        "util_av_asc_25pct":                   59,
+        "util_av_asc_20pct":                   60,
+        "util_av_asc_15pct":                   61,
+        "util_av_asc_10pct":                   62,
+        "util_av_asc_5pct":                    63,
+        "util_av_asc_3pct":                    64,
+        "util_av_asc_0pct":                    65,
+    },
+
     "CDAP": {
         "Full-time worker alternative-specific constants":           29,
         "Part-time worker alternative-specific constants":           30,
@@ -936,6 +985,15 @@ COEFF_OVERRIDES: dict[str, dict[int, float]] = {
 }
 
 
+# Alt-level mapping for submodels where CTRAMP has more alts than ASim.
+# {submodel: {ctramp_alt: asim_alt}}
+# When present, the comparison shows one column pair per CTRAMP alt,
+# with each paired to its corresponding ASim alt.
+ALT_MAPPINGS: dict[str, dict[str, str]] = {
+    # Now that ASim has the full 11-alt spec, AO is a 1:1 match — no alt mapping needed.
+}
+
+
 # Explanatory notes for rows that appear on only one side or as many-to-one.
 # {submodel: {label_or_"row_N": note_text}}
 NOTES: dict[str, dict[str, str]] = {
@@ -967,6 +1025,8 @@ NOTES: dict[str, dict[str, str]] = {
             "shadow pricing implementation outside the UEC."
         ),
     },
+
+    "Auto Ownership": {},
 
     "School Location": {
         "local_dist": (

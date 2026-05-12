@@ -18,7 +18,7 @@ from pathlib import Path
 
 import xlrd
 import yaml
-from uec_mappings import MAPPINGS, NOTES, CONSTANTS_NOTES, COEFF_OVERRIDES, SIZE_TERMS_CROSSWALK, get_token_map
+from uec_mappings import MAPPINGS, NOTES, CONSTANTS_NOTES, COEFF_OVERRIDES, ALT_MAPPINGS, SIZE_TERMS_CROSSWALK, get_token_map
 
 log = logging.getLogger(__name__)
 
@@ -313,6 +313,15 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
     ctramp_alts = sheets[0].get("alt_names", []) if len(sheets) == 1 else []
     multi_alt = not multi_seg and len(asim_alts) > 1 and len(ctramp_alts) > 1
 
+    # Alt-level mapping override (e.g. CTRAMP has 11 HV/AV alts, ASim has 5)
+    alt_map = ALT_MAPPINGS.get(name)
+    if alt_map and multi_alt:
+        # Build alt_pairs: one entry per CTRAMP alt, each mapped to its ASim alt
+        # Shows all CTRAMP alts with the corresponding ASim alt repeated
+        alt_pairs_override = [(c_alt, alt_map[c_alt]) for c_alt in ctramp_alts if c_alt in alt_map]
+    else:
+        alt_pairs_override = None
+
     body = ""
 
     def _resolve_for_purpose(row: dict, purpose: str) -> float | str:
@@ -332,8 +341,13 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
         """Render a CTRAMP/ASim value pair with match/diff highlighting."""
         if c_val == "" and a_val == "":
             return f"<td class='num'></td><td class='num'{rowspan}></td>"
+        # Treat blank as 0 for numeric comparison (e.g. ASim omits zero-valued coefficients)
+        c_num = 0.0 if c_val == "" else None
+        a_num = 0.0 if a_val == "" else None
         try:
-            match = abs(float(a_val) - float(c_val)) < 1e-6
+            c_num = c_num if c_num is not None else float(c_val)
+            a_num = a_num if a_num is not None else float(a_val)
+            match = abs(a_num - c_num) < 1e-6
         except (ValueError, TypeError):
             match = str(c_val) == str(a_val)
         cls = "match" if match else "diff"
@@ -394,7 +408,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
         # Multi-segment table: one coeff column per segment
         seg_names = [s["sheet_name"] for s in sheets]
         coeff_hdrs = "".join(
-            f"<th>CTRAMP {esc(sn)}</th><th>ASim {esc(alt)}</th>"
+            f"<th class='num'>CTRAMP {esc(sn)}</th><th class='num'>ASim {esc(alt)}</th>"
             for sn, alt in zip(seg_names, asim_alts)
         )
         h = ("<table class='coeff mapped sortable'><thead><tr>"
@@ -466,9 +480,9 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
 
     elif multi_alt:
         # Multi-alt table: single sheet with per-alt coefficient columns
-        alt_pairs = list(zip(ctramp_alts, asim_alts))
+        alt_pairs = alt_pairs_override if alt_pairs_override else list(zip(ctramp_alts, asim_alts))
         coeff_hdrs = "".join(
-            f"<th>CTRAMP {esc(a_alt)}</th><th>ASim {esc(a_alt)}</th>"
+            f"<th class='num'>CTRAMP {esc(a_alt)}</th><th class='num'>ASim {esc(a_alt)}</th>"
             for _, a_alt in alt_pairs
         )
         h = ("<table class='coeff mapped sortable'><thead><tr>"

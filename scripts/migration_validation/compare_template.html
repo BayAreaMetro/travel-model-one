@@ -31,6 +31,8 @@ table.mapped td:nth-child(1) { font-family: Consolas, monospace; max-width: 260p
 table.mapped td:nth-child(3), table.mapped td:nth-child(4),
 table.mapped td:nth-child(5) { max-width: 200px; }
 table.mapped th { font-size: 12px; white-space: nowrap; }
+table.mapped thead th.num { writing-mode: vertical-rl; transform: rotate(180deg);
+  vertical-align: bottom; padding: 6px 4px; max-width: 2em; height: 8em; }
 table.sortable th { cursor: pointer; user-select: none; }
 table.sortable th[data-dir='asc']::after { content: ' \25B2'; font-size: 10px; }
 table.sortable th[data-dir='desc']::after { content: ' \25BC'; font-size: 10px; }

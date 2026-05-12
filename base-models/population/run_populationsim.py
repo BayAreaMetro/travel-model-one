@@ -1,11 +1,6 @@
-"""PopulationSim runner for TM1a.
+"""TEMPORARY RUNNER FOR POPULATIONSIM SYNTHESIS STEP."""
+# TODO: Plan to eliminate this and incorporate into src as a reusable module.
 
-Orchestrates the full pipeline: seed creation → control prep → synthesis →
-final CSV output. Can be run standalone or as a Prefect task via run_model.py.
-
-All paths are explicit arguments to run(). Callers are responsible for
-resolving them — see __main__ block (local dev) and run_model.py (Prefect).
-"""
 
 import argparse
 import logging
@@ -15,7 +10,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-
 from travel_model_application.config import load_scenario_config, resolve_path
 
 logger = logging.getLogger(__name__)
