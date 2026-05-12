@@ -40,9 +40,9 @@ def _render_pair(
     mod_label: str,
     mod: pl.DataFrame,
 ) -> str:
-    obs_rows = obs.sort("county").to_dicts()
+    obs_rows = obs.sort("county_name").to_dicts()
     mod_by_county: dict[str, dict] = {
-        r["county_name"]: r for r in mod.sort("county").to_dicts()
+        r["county_name"]: r for r in mod.sort("county_name").to_dicts()
     }
 
     header = (
@@ -124,7 +124,7 @@ def _overall_table(
 
 def _nway_chart(datasets: list[tuple[int, str, pl.DataFrame]]) -> str:
     """Grouped bar chart of WFH rate by county, one bar per dataset."""
-    counties = datasets[0][2].sort("county")["county_name"].to_list()
+    counties = datasets[0][2].sort("county_name")["county_name"].to_list()
 
     traces = []
     for i, (gi, label, df) in enumerate(datasets):

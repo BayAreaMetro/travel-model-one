@@ -9,6 +9,7 @@ Usage:
 """
 
 import logging
+import os
 import shutil
 import socket
 import subprocess
@@ -86,19 +87,70 @@ def write_stage_settings(
     return cfg_dir
 
 
+def _kill_stale_activitysim(output_dir: Path) -> None:
+    """Kill leftover activitysim processes whose ``-o`` points at *output_dir*.
+
+    On Windows a crashed subprocess can leave a zombie python.exe that keeps
+    log-file handles (e.g. ``settings_checker.log``) locked, blocking the
+    next run.  Unix doesn't enforce mandatory file locks, so this is a no-op
+    there.
+    """
+    if sys.platform != "win32":
+        return
+    try:
+        import psutil
+    except ImportError:
+        return
+    our_pid = os.getpid()
+    target = str(output_dir.resolve()).lower()
+    for proc in psutil.process_iter(["pid", "cmdline"]):
+        if proc.info["pid"] == our_pid:
+            continue
+        try:
+            cmdline = proc.info["cmdline"] or []
+            # Match: python -m activitysim run … -o <output_dir>
+            if "activitysim" not in " ".join(cmdline).lower():
+                continue
+            for i, arg in enumerate(cmdline):
+                if arg == "-o" and i + 1 < len(cmdline):
+                    if cmdline[i + 1].lower() == target:
+                        log.warning("Killing stale activitysim pid %d", proc.pid)
+                        proc.kill()
+                        proc.wait(timeout=5)
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
+
+def _force_remove(path: Path) -> None:
+    """Remove a file, falling back to truncation if a zombie process holds it."""
+    try:
+        path.unlink()
+    except PermissionError:
+        import gc
+        gc.collect()
+        try:
+            path.unlink()
+        except PermissionError:
+            log.warning("Could not delete %s — truncating instead", path)
+            path.write_text("")
+
+
 def clean_output(output_dir: Path) -> None:
-    pipe = output_dir / "pipeline.parquetpipeline"
-    if pipe.exists():
-        shutil.rmtree(pipe)
+    _kill_stale_activitysim(output_dir)
+    # Remove all pipeline dirs (main + per-process mp_*-pipeline dirs)
+    for pipe in output_dir.glob("*pipeline.parquetpipeline"):
+        shutil.rmtree(pipe, ignore_errors=True)
     for pat in OUTPUT_FILES:
         for f in output_dir.glob(pat):
-            f.unlink()
-    log_f = output_dir / "activitysim.log"
-    if log_f.exists():
-        try:
-            log_f.unlink()
-        except PermissionError:
-            log.warning("Could not delete %s (file locked) — continuing", log_f)
+            _force_remove(f)
+    # Log / state files that ActivitySim may hold open via FileHandlers
+    for name in (
+        "activitysim.log", "settings_checker.log", "input_checker.log",
+        "mem.csv", "memory_profile.csv", "breadcrumbs.yaml",
+    ):
+        lf = output_dir / name
+        if lf.exists():
+            _force_remove(lf)
 
 
 def run_activitysim(
@@ -158,7 +210,7 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
     names = [stages[s - 1]["name"] for s in active]
     label = f"ablation [{','.join(names)}] HH={sample_size:,} ({sample_rate:.0%})"
 
-    notify(f":microscope: Starting ActivitySim {label} on {socket.gethostname()}")
+    notify(f"Starting ActivitySim {label} on {socket.gethostname()}")
     log.info("Active stages: %s", names)
 
     asim_output = project_dir / "output"

@@ -45,7 +45,7 @@ def summarize(
     if "work_from_home" not in workers.columns:
         # No WFH data available — return empty summaries
         return {
-            "county_summary": pl.DataFrame(schema={"county_name": pl.Utf8, "workers": pl.Float64, "wfh": pl.Float64, "wfh_rate": pl.Float64}),
+            "county_summary": pl.DataFrame(schema={"county": pl.Int64, "county_name": pl.Utf8, "workers": pl.Float64, "wfh": pl.Float64, "wfh_rate": pl.Float64}),
             "overall_summary": pl.DataFrame(schema={"category": pl.Utf8, "workers": pl.Float64, "wfh": pl.Float64, "wfh_rate": pl.Float64}),
         }
 
@@ -121,7 +121,8 @@ def summarize(
 
 def _worker_filter(ptype_col: str) -> pl.Expr:
     """Return filter expression for workers (FT=1, PT=2 or string labels)."""
+    col = pl.col(ptype_col)
     return (
-        pl.col(ptype_col).is_in([1, 2])
-        | pl.col(ptype_col).cast(pl.Utf8).str.contains("(?i)worker")
+        col.cast(pl.Utf8).is_in(["1", "2"])
+        | col.cast(pl.Utf8).str.contains("(?i)worker")
     )

@@ -18,6 +18,7 @@ asim_config_dirs:
 sample_rate: 0.15
 seed: 42
 num_processes: 40
+# Set to true to enable Slack notifications (requires env var SLACK_WEBHOOK_URL)
 slack: true
 
 # Shadow pricing: true = normal (CTRAMP: iter-dependent, ASim: use_shadow_pricing)

@@ -98,23 +98,10 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
     hh_count = int(total_hh * sample_rate)
 
     names = [stages[s - 1]["name"] for s in active]
-    label = (
-        f"ablation [{','.join(names)}] "
-        f"HH={hh_count:,} ({sample_rate:.0%}) on {socket.gethostname()}"
-    )
+    label = f"ablation [{','.join(names)}] HH={hh_count:,} ({sample_rate:.0%})"
 
-    # Plan
-    lines = []
-    cum: list[str] = []
-    for i, s in enumerate(stages, 1):
-        cum.extend(s["ctramp_components"])
-        if i in active:
-            added = ", ".join(s["ctramp_components"])
-            lines.append(f"\u2022 Stage {i} \u2014 *{s['name']}*: +{added} ({len(cum)} total)")
-    plan = "\n".join(lines)
-
-    notify(f":test_tube: Starting CTRAMP {label}\n{plan}")
-    log.info("Ablation plan:\n%s", plan)
+    notify(f"Starting CTRAMP {label} on {socket.gethostname()}")
+    log.info("Active stages: %s", names)
     if not do_shadow_pricing:
         log.info("Shadow pricing DISABLED for this run")
 
@@ -129,6 +116,7 @@ def run_ablation(cfg: dict) -> None:  # noqa: PLR0915
         # Skip if stage already has output
         if stage_dir.exists() and any(stage_dir.glob("*.csv")):
             log.info("Stage %d (%s) already exists — skipping", stage_num, stage_name)
+            notify(f":fast_forward: Stage {stage_num} ({stage_name}) already done — skipping")
             continue
 
         components = build_components(stages, stage_num)
