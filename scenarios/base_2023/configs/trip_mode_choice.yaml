@@ -1,5 +1,8 @@
-# trip_mode_choice.yaml — overlay corrections
+# trip_mode_choice.yaml — overlay corrections 
 # Fixes YAML constants to match CTRAMP Trip MC UEC values.
+
+SPEC: trip_mode_choice.csv
+COEFFICIENTS: trip_mode_choice_coefficients.csv
 
 CONSTANTS:
   # FIX: was -0.0175 (accidental paste of coef_ivt_othmaint_social);

@@ -7,7 +7,7 @@ Description,Target,Expression
 #,,
 #,, Employment shares at work TAZ for stochastic industry assignment
 ,_work_totemp,"np.where(persons.workplace_zone_id > 0, reindex(land_use.TOTEMP, persons.workplace_zone_id), 0)"
-,_work_totemp_safe,np.where(_work_totemp > 0, _work_totemp, 1)
+,_work_totemp_safe,"np.where(_work_totemp > 0, _work_totemp, 1)"
 ,_share_agr,"np.where(persons.workplace_zone_id > 0, reindex(land_use.AGREMPN, persons.workplace_zone_id) / _work_totemp_safe, 0)"
 ,_share_fps,"np.where(persons.workplace_zone_id > 0, reindex(land_use.FPSEMPN, persons.workplace_zone_id) / _work_totemp_safe, 0)"
 ,_share_her,"np.where(persons.workplace_zone_id > 0, reindex(land_use.HEREMPN, persons.workplace_zone_id) / _work_totemp_safe, 0)"
