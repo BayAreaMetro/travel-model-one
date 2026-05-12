@@ -1,0 +1,25 @@
+# Work From Home model settings
+# Ported from CTRAMP CoordinatedDailyActivityPattern.xls, WorkFromHome sheet.
+# Binary logit: Alt 1 = WFH, Alt 2 = Does not WFH.
+
+LOGIT_TYPE: MNL
+
+SPEC: work_from_home.csv
+COEFFICIENTS: work_from_home_coefficients.csv
+
+# Alt 1 = WFH (the model outputs 1-based alternative indices)
+WORK_FROM_HOME_ALT: 1
+
+# Filter to workers only
+CHOOSER_FILTER_COLUMN_NAME: is_worker
+
+DEST_CHOICE_COLUMN_NAME: workplace_zone_id
+
+CONSTANTS:
+  eastbay_sf_calibration: 5.0  # CDAP.WFH.Calibration.eastbay_SF from RuntimeConfiguration.py
+
+preprocessor:
+  TABLES:
+    - land_use
+  DF: persons_merged
+  SPEC: work_from_home_annotate_persons_preprocessor.csv

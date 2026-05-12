@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 CONFIG_PATH = Path(__file__).parent / "ablation_config.yaml"
 
 OUTPUT_PATTERNS = [
-    "wsLocResults_*.csv", "aoResults_*.csv", "fpResults_*.csv",
+    "wsLocResults_*.csv", "aoResults*.csv", "fpResults*.csv",
     "cdapResults*.csv", "indivTourData_*.csv", "jointTourData_*.csv",
     "indivTripData_*.csv", "jointTripData_*.csv", "ShadowPricing_*.csv",
     "householdData_*.csv", "personData_*.csv",

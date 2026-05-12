@@ -1,0 +1,37 @@
+Description,Target,Expression
+#,, Work From Home preprocessor — compute variables needed by the WFH spec
+#,, Mirrors CTRAMP MtcCoordinatedDailyActivityPatternDMU.java
+#,,
+#,, Income in 2023 dollars (CTRAMP inflates by 1.88)
+,income_2023d,persons.income * 1.88
+#,,
+#,, Employment shares at work TAZ for stochastic industry assignment
+,_work_totemp,"np.where(persons.workplace_zone_id > 0, reindex(land_use.TOTEMP, persons.workplace_zone_id), 0)"
+,_work_totemp_safe,np.where(_work_totemp > 0, _work_totemp, 1)
+,_share_agr,"np.where(persons.workplace_zone_id > 0, reindex(land_use.AGREMPN, persons.workplace_zone_id) / _work_totemp_safe, 0)"
+,_share_fps,"np.where(persons.workplace_zone_id > 0, reindex(land_use.FPSEMPN, persons.workplace_zone_id) / _work_totemp_safe, 0)"
+,_share_her,"np.where(persons.workplace_zone_id > 0, reindex(land_use.HEREMPN, persons.workplace_zone_id) / _work_totemp_safe, 0)"
+,_share_mwt,"np.where(persons.workplace_zone_id > 0, reindex(land_use.MWTEMPN, persons.workplace_zone_id) / _work_totemp_safe, 0)"
+,_share_ret,"np.where(persons.workplace_zone_id > 0, reindex(land_use.RETEMPN, persons.workplace_zone_id) / _work_totemp_safe, 0)"
+#,, _share_oth is the remainder (1 - sum of others)
+#,,
+#,, Stochastic industry draw using cumulative shares
+,_rng,np.random.random(len(persons))
+,_cum_agr,_share_agr
+,_cum_fps,_cum_agr + _share_fps
+,_cum_her,_cum_fps + _share_her
+,_cum_mwt,_cum_her + _share_mwt
+,_cum_ret,_cum_mwt + _share_ret
+#,, Industry dummies (1 if person drawn into that category)
+,ind_AGREMP,(_rng < _cum_agr).astype(int)
+,ind_HEREMP,((_rng >= _cum_fps) & (_rng < _cum_her)).astype(int)
+,ind_MWTEMP,((_rng >= _cum_her) & (_rng < _cum_mwt)).astype(int)
+,ind_RETEMP,((_rng >= _cum_mwt) & (_rng < _cum_ret)).astype(int)
+#,,
+#,, Geography variables
+,home_county,"reindex(land_use.COUNTY, persons.home_zone_id)"
+,work_county,"np.where(persons.workplace_zone_id > 0, reindex(land_use.COUNTY, persons.workplace_zone_id), 0)"
+,work_sd,"np.where(persons.workplace_zone_id > 0, reindex(land_use.SD, persons.workplace_zone_id), 0)"
+#,,
+#,, East Bay (Alameda=4/Contra Costa=5/Solano=6) <-> SF (1) dummy
+,eastbay_sf,"(((home_county == 1) & ((work_county == 4) | (work_county == 5) | (work_county == 6))) | ((work_county == 1) & ((home_county == 4) | (home_county == 5) | (home_county == 6)))).astype(int)"

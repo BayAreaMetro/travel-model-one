@@ -18,6 +18,7 @@ from .submodels import (
     nonwork_dest_choice,
     tour_mode_choice,
     trip_mode_choice,
+    work_from_home,
     work_school_location,
 )
 
@@ -27,6 +28,7 @@ log = logging.getLogger(__name__)
 SUBMODELS: dict[str, ModuleType] = {
     "work_school_location": work_school_location,
     "auto_ownership": auto_ownership,
+    "work_from_home": work_from_home,
     "daily_activity_pattern": daily_activity_pattern,
     "nonwork_dest_choice": nonwork_dest_choice,
     "tour_mode_choice": tour_mode_choice,
@@ -84,6 +86,13 @@ def _run_submodel(
         return submodel.summarize(
             households=bundle.households.collect(),
             ao_results=bundle.ao_results.collect(),
+            taz_data=bundle.taz_data.collect(),
+            sampleshare=bundle.sampleshare,
+        )
+    if submodel is work_from_home:
+        return submodel.summarize(
+            cdap_results=bundle.cdap_results.collect(),
+            households=bundle.households.collect(),
             taz_data=bundle.taz_data.collect(),
             sampleshare=bundle.sampleshare,
         )

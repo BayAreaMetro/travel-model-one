@@ -95,6 +95,65 @@ MAPPINGS: dict[str, dict[str, int | list[int]]] = {
         "Driving-age child who is in school interaction with off-peak accessibility to retail": 74,
         "Pre-driving-age child who is in school interaction with off-peak accessibility to retail": 75,
         "Pre-driving-age child who is too young for school interaction with off-peak accessibility to retail": 76,
+        # WFH interaction rows (CTRAMP rows 77-87)
+        "WFH worker interaction (FT)":                             77,
+        "WFH worker interaction (PT)":                             78,
+        # Rows 79-82: no-usual-location penalties — dead code in MTC (tokens always 0)
+        # Rows 83-84: retired/non-working M unavailable — covered by ptype ASC rows 32-33
+        "Mandatory unavailable for WFH workers":                   85,
+        "FT worker M-pattern boost (post-WFH extraction)":         86,
+        "PT worker M-pattern boost (post-WFH extraction)":         87,
+    },
+
+    "Work From Home": {
+        "Estimated constant":                    12,
+        "HH income 75-100k (2023$)":             13,
+        "HH income 100-200k (2023$)":            14,
+        "HH income 200k+ (2023$)":               15,
+        "Industry: Agriculture/natural resources": 16,
+        "Industry: Health/education/recreation":  17,
+        "Industry: Manufacturing/wholesale/transport": 18,
+        "Industry: Retail trade":                19,
+        "Home county is North Bay":              20,
+        "Work county is San Francisco":          21,
+        "East Bay to/from SF commute":           22,
+        "Distance home to work":                 23,
+        "Calibration constant":                  24,
+        # EN7 superdistrict-level calibration boosts (rows 25-58)
+        "EN7 Boost for Superdistrict 01":        25,
+        "EN7 Boost for Superdistrict 02":        26,
+        "EN7 Boost for Superdistrict 03":        27,
+        "EN7 Boost for Superdistrict 04":        28,
+        "EN7 Boost for Superdistrict 05":        29,
+        "EN7 Boost for Superdistrict 06":        30,
+        "EN7 Boost for Superdistrict 07":        31,
+        "EN7 Boost for Superdistrict 08":        32,
+        "EN7 Boost for Superdistrict 09":        33,
+        "EN7 Boost for Superdistrict 10":        34,
+        "EN7 Boost for Superdistrict 11":        35,
+        "EN7 Boost for Superdistrict 12":        36,
+        "EN7 Boost for Superdistrict 13":        37,
+        "EN7 Boost for Superdistrict 14":        38,
+        "EN7 Boost for Superdistrict 15":        39,
+        "EN7 Boost for Superdistrict 16":        40,
+        "EN7 Boost for Superdistrict 17":        41,
+        "EN7 Boost for Superdistrict 18":        42,
+        "EN7 Boost for Superdistrict 19":        43,
+        "EN7 Boost for Superdistrict 20":        44,
+        "EN7 Boost for Superdistrict 21":        45,
+        "EN7 Boost for Superdistrict 22":        46,
+        "EN7 Boost for Superdistrict 23":        47,
+        "EN7 Boost for Superdistrict 24":        48,
+        "EN7 Boost for Superdistrict 25":        49,
+        "EN7 Boost for Superdistrict 26":        50,
+        "EN7 Boost for Superdistrict 27":        51,
+        "EN7 Boost for Superdistrict 28":        52,
+        "EN7 Boost for Superdistrict 29":        53,
+        "EN7 Boost for Superdistrict 30":        54,
+        "EN7 Boost for Superdistrict 31":        55,
+        "EN7 Boost for Superdistrict 32":        56,
+        "EN7 Boost for Superdistrict 33":        57,
+        "EN7 Boost for Superdistrict 34":        58,
     },
 
     "Tour Mode Choice": {
@@ -853,6 +912,30 @@ def get_token_map(submodel_name: str) -> dict[str, tuple[str, str]]:
     merged.update(_TOKEN_MAP_OVERRIDES.get(submodel_name, {}))
     return merged
 
+
+# Effective coefficient overrides for CTRAMP UEC rows where the displayed
+# coefficient (from the alt column) is a multiplier on a property/token that
+# resolves to a different numeric value.  The table will show the resolved
+# effective value instead of the raw UEC coefficient.
+# {submodel: {row_no: effective_value}}
+COEFF_OVERRIDES: dict[str, dict[int, float]] = {
+    "Work From Home": {
+        # Row 24: coeff=1.0 × %CDAP.WFH.CalibrationConstant% = -0.340
+        24: -0.340,
+        # Row 22: coeff=0.2437 × %CDAP.WFH.Calibration.eastbay_SF% (=5.0)
+        # Effective = 0.2437 * 5.0 = 1.2185 — but ASim uses coef × @constant
+        # so the coefficient IS 0.2437 (matching). No override needed.
+    },
+    "CDAP": {
+        # Rows 77-78: CTRAMP applies -1.758 on M alt (penalty to workers who WFH).
+        # ASim uses +0.1813 on H alt (bonus). These are NOT equivalent:
+        #   -1.758 on M = +1.758 on H AND +1.758 on N (relative)
+        #   +0.1813 on H only affects H vs {M,N}
+        # Leave raw values — shows as diff intentionally.
+    },
+}
+
+
 # Explanatory notes for rows that appear on only one side or as many-to-one.
 # {submodel: {label_or_"row_N": note_text}}
 NOTES: dict[str, dict[str, str]] = {
@@ -898,32 +981,41 @@ NOTES: dict[str, dict[str, str]] = {
     },
 
     "CDAP": {
-        "row_77": (
-            "CTRAMP rows 77-78: Work-from-home interaction (M penalty + H bonus). "
-            "ActivitySim handles work-from-home in a separate pre-processor step "
-            "(work_from_home model) rather than embedding it in the CDAP UEC."
-        ),
         "row_79": (
             "CTRAMP rows 79-82: No usual work/school location interactions. "
-            "ActivitySim does not penalize mandatory pattern when work/school "
-            "location is missing — this is handled upstream by person type assignment."
+            "These tokens (noUsualWorkLocation, noUsualSchoolLocation) always "
+            "return 0 in the MTC implementation — effectively dead code. "
+            "No ActivitySim equivalent needed."
         ),
         "row_83": (
-            "CTRAMP rows 83-85: Mandatory pattern unavailable for retired/non-working "
-            "adults and simple WFH model (-999). In ActivitySim, ptype-based unavailability "
-            "is handled by coef_UNAVAILABLE in the ASC rows (rows 32-33 map to this)."
-        ),
-        "row_86": (
-            "CTRAMP rows 86-87: Post-WFH adjustments to FT/PT worker mandatory ASCs. "
-            "ActivitySim handles this via the separate work_from_home model."
+            "CTRAMP rows 83-84: Mandatory pattern unavailable for retired/non-working "
+            "adults (-999). In ActivitySim, ptype-based unavailability "
+            "is handled by coef_UNAVAILABLE in the ASC rows (rows 32-33)."
         ),
     },
+    "Work From Home": {},
 }
 
 # Mapping notes for the constants crosswalk, keyed by submodel name.
 # Each note is (asim_name_or_token, description).  Rendered as a collapsible
 # "Mapping Notes" section below the constants table.
 CONSTANTS_NOTES: dict[str, list[tuple[str, str]]] = {
+    "CDAP": [
+        ("WFH worker M-penalty & H-bonus (rows 77-78)",
+         "CTRAMP rows 77-78 apply both −1.758 on M and +0.1813 on H in a single row. "
+         "ASim mirrors this with coef_wfh_worker_m_penalty (−1.758) on M and "
+         "coef_wfh_worker_h_bonus (+0.1813) on H in a single spec row with "
+         "coefficients on both alt columns."),
+    ],
+    "Work From Home": [
+        ("Calibration constant (row 24)",
+         "CTRAMP: UEC coefficient column is 1.0 (multiplier) × property token "
+         "%CDAP.WFH.CalibrationConstant% = −0.340. Effective value = 1.0 × −0.340 = −0.340. "
+         "ActivitySim: −0.340 directly in coefficients file. Values are identical."),
+        ("EN7 Superdistrict boosts (rows 25-58)",
+         "Both CTRAMP and ASim have 34 superdistrict-level calibration rows. "
+         "All are 0.0 in the base 2023 model; used for EN7 scenario runs."),
+    ],
     "Tour Mode Choice": [
         ("xfers_wlk_multiplier",
          "Fixed 10 → 30 to match CTRAMP (30 × c_ivt)."),

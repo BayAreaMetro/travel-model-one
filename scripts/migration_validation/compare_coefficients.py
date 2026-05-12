@@ -18,7 +18,7 @@ from pathlib import Path
 
 import xlrd
 import yaml
-from uec_mappings import MAPPINGS, NOTES, CONSTANTS_NOTES, SIZE_TERMS_CROSSWALK, get_token_map
+from uec_mappings import MAPPINGS, NOTES, CONSTANTS_NOTES, COEFF_OVERRIDES, SIZE_TERMS_CROSSWALK, get_token_map
 
 log = logging.getLogger(__name__)
 
@@ -257,6 +257,9 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
     if not crosswalk:
         return ""
 
+    # Effective coefficient overrides (property-resolved values)
+    overrides = COEFF_OVERRIDES.get(name, {})
+
     # Detect multi-segment: sheets share the same row numbers
     multi_seg = len(sheets) > 1 and len({r["no"] for s in sheets for r in s["rows"]}) < sum(len(s["rows"]) for s in sheets)
 
@@ -494,7 +497,9 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     body += f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
 
                 for c_alt, a_alt in alt_pairs:
-                    c_val = _coeff_for_alt(cr, c_alt)
+                    raw_c = _coeff_for_alt(cr, c_alt)
+                    # Apply override only when the alt has a coefficient
+                    c_val = overrides.get(ctramp_no, raw_c) if raw_c != "" else raw_c
                     a_val = _coeff_for_alt(ar, a_alt) if ar else ""
                     if show_asim:
                         body += _pair_cells(c_val, a_val, rowspan)
@@ -551,7 +556,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 cr = ctramp_by_no.get(ctramp_no)
                 used_ctramp.add(ctramp_no)
 
-                c_coeff = _coeff_val(cr)
+                c_coeff = overrides.get(ctramp_no, _coeff_val(cr))
 
                 # Show ASim label/expr/coeff only on the first row of a group
                 show_asim = (i == 0)
@@ -1054,7 +1059,7 @@ def build_report(cfg: dict) -> Path:
             csm_to_tab = {
                 "work_school_location": ["Workplace Location", "School Location"],
                 "auto_ownership": ["Auto Ownership"],
-                "daily_activity_pattern": ["CDAP"],
+                "daily_activity_pattern": ["CDAP", "Work From Home"],
                 "tour_mode_choice": ["Tour Mode Choice"],
                 "trip_mode_choice": ["Trip Mode Choice"],
                 "nonwork_dest_choice": [],

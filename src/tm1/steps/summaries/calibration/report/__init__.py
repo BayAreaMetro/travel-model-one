@@ -11,13 +11,14 @@ from pathlib import Path
 
 import polars as pl
 
-from . import ao, cdap, commute_flows, nwdc, tour_mode, trip_mode, wsloc
+from . import ao, cdap, commute_flows, nwdc, tour_mode, trip_mode, wfh, wsloc
 from .helpers import esc, load_template
 
 # (submodel_key, tab_title, render_function)
 _RENDERERS: list[tuple[str, str, object]] = [
     ("daily_activity_pattern", "Daily Activity Pattern", cdap.render),
     ("auto_ownership", "Auto Ownership", ao.render),
+    ("work_from_home", "Work From Home", wfh.render),
     ("work_school_location", "Work / School Location", wsloc.render),
     ("work_school_location", "Commuting Flows", commute_flows.render),
     ("nonwork_dest_choice", "Non-Work Dest Choice", nwdc.render),

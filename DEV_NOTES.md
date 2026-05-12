@@ -90,6 +90,7 @@ The last CTRAMP model run, used as the benchmark for validation:
 | `DestinationChoice.xls` | (non-work) | `non_mandatory_tour_destination.csv` | — | Shared size terms |
 | `AutoOwnership.xls` | Auto ownership | `auto_ownership.csv` | `auto_ownership_coefficients.csv` | |
 | `FreeParkingEligibility.xls` | — | `free_parking.csv` | `free_parking_coefficients.csv` | |
+| `CoordinatedDailyActivityPattern.xls` | WorkFromHome | `work_from_home.csv` | `work_from_home_coefficients.csv` | Binary logit; EN7 SD boosts as placeholders |
 | `CoordinatedDailyActivityPattern.xls` | OnePerson | `cdap_indiv_and_hhsize1.csv` | `cdap_coefficients.csv` | + interaction CSVs |
 | `IndividualMandatoryTourFrequency.xls` | — | `mandatory_tour_frequency.csv` | `mandatory_tour_frequency_coefficients.csv` | |
 | `TourDepartureAndDuration.xls` | (per purpose) | `tour_scheduling_*.csv` | `tour_scheduling_coefficients.csv` | |
@@ -111,6 +112,7 @@ Stages are cumulative — each includes all models from prior stages.
 | `school_location` | ✓ | | | | | | | |
 | `auto_ownership` | | ✓ | | | | | | |
 | `free_parking` | | ✓ | | | | | | |
+| `work_from_home` | | | ✓ | | | | | |
 | `cdap_simulate` | | | ✓ | | | | | |
 | `mandatory_tour_frequency` | | | | ✓ | | | | |
 | `mandatory_tour_scheduling` | | | | ✓ | | | | |
@@ -138,9 +140,9 @@ Stages are cumulative — each includes all models from prior stages.
 - Shadow pricing (stage 1) shifts zone attractiveness → all downstream tour destinations and modes.
 - CDAP (stage 3) determines who travels at all — M/N/H share drift propagates to stages 4–8.
 
-##### Known Gaps
+##### Ported Submodels
 
-**Work From Home (WFH) model — deferred.**
+**Work From Home (WFH) model — migrated.**
 CTRAMP has a WFH sub-model embedded inside the CDAP model class
 (`WorkFromHome` sheet in `CoordinatedDailyActivityPattern.xls`). It runs a
 binary logit (WFH vs DoesNotWFH) per worker using income, industry, home/work
@@ -148,23 +150,27 @@ county, distance, and 34 superdistrict-level calibration constants. Workers
 chosen as WFH have Mandatory blocked (`-999` on OnePerson row 85); remaining
 FT/PT workers get compensating M boosts (rows 86–87: `+0.5638`, `+0.6822`).
 
-ActivitySim has an equivalent `work_from_home` model in the package (also binary
-logit, with built-in iterative calibration to a target WFH percent), but it is
-**not yet added to the pipeline**. To close this gap:
-1. Add `work_from_home` to `settings.yaml` between `workplace_location` and
-   `cdap_simulate`.
-2. Create `work_from_home.yaml` / `work_from_home.csv` / coefficients with
-   equivalent terms from the CTRAMP UEC.
-3. Add CDAP spec rows for the WFH→CDAP interaction (block M for WFH workers,
-   boost M for remaining workers).
+ActivitySim port:
+- `work_from_home.yaml` / `work_from_home.csv` / `work_from_home_coefficients.csv`
+  in `base-models/activity/configs/` implement the same binary logit with all
+  12 estimated coefficients plus the calibration constant (−0.340).
+- `work_from_home_annotate_persons_preprocessor.csv` computes industry dummies
+  (stochastic draw from employment mix at work TAZ, matching CTRAMP's Java),
+  county/superdistrict lookups, and the eastbay↔SF dummy.
+- `settings.yaml` pipeline: `work_from_home` inserted between `free_parking`
+  and `cdap_simulate`.
+- `cdap_indiv_and_hhsize1.csv` has 3 new rows: M unavailable for WFH workers
+  (`-999`), FT worker M boost (`+0.5638`), PT worker M boost (`+0.6822`).
+- EN7 superdistrict boosts (34 constants, all 0.0 in base) are present as
+  commented-out placeholders in `work_from_home.csv`, ready for EN7 scenarios.
 
 Note: CTRAMP OnePerson rows 77–82 use tokens (`usualWorkLocationIsHome`,
 `noUsualWorkLocation`, `noUsualSchoolLocation`) that always return 0 in the MTC
 implementation — effectively dead code. No ActivitySim equivalent needed.
 
 **Validation artifacts:**
-- `coefficient_comparison.html` — tabs: Workplace Location, School Location, Auto Ownership, CDAP, Tour Mode Choice, Trip Mode Choice, Size Terms.
-- `ablation_report.html` — per-stage TLFD plots, mode share tables, AO distributions.
+- `coefficient_comparison.html` — tabs: Workplace Location, School Location, Auto Ownership, CDAP, Work From Home, Tour Mode Choice, Trip Mode Choice, Size Terms.
+- `ablation_report.html` — per-stage calibration: TLFD plots, mode share tables, AO distributions, WFH rates by county (stage 3+).
 
 
 

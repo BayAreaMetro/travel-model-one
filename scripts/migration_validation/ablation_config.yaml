@@ -26,7 +26,7 @@ shadow_pricing: false
 
 # --- Which stages to run (1-based; comment out to skip) ---
 # active_stages: [1,2,3,4,5,6,7,8]
-active_stages: [2]
+active_stages: [3]
 
 # --- Stage definitions (shared by both CTRAMP and ActivitySim ablation) ---
 # Each stage adds models cumulatively on top of all previous stages.
@@ -56,15 +56,18 @@ stages:
     calibration_submodels:
       - auto_ownership
 
-  # Stage 3: Coordinated daily activity pattern.
-  # Each person is assigned M (mandatory), N (non-mandatory), or H (home)
-  # with intra-household coordination constraints.
+  # Stage 3: Work From Home + Coordinated daily activity pattern.
+  # WFH runs first (binary logit per worker), then CDAP assigns
+  # M (mandatory), N (non-mandatory), or H (home) with WFH workers
+  # blocked from M pattern.
   - name: cdap
     activitysim_models:
+      - work_from_home
       - cdap_simulate
     ctramp_components:
       - CoordinatedDailyActivityPattern
     calibration_submodels:
+      - work_from_home
       - daily_activity_pattern
 
   # Stage 4: Mandatory tours — frequency, scheduling, and mode choice.
@@ -228,6 +231,11 @@ coefficient_comparison:
       ctramp_sheets: [OnePerson]
       asim_spec: cdap_indiv_and_hhsize1.csv
       asim_coefficients: cdap_coefficients.csv
+    - name: Work From Home
+      ctramp_file: CoordinatedDailyActivityPattern.xls
+      ctramp_sheets: [WorkFromHome]
+      asim_spec: work_from_home.csv
+      asim_coefficients: work_from_home_coefficients.csv
     - name: Tour Mode Choice
       ctramp_file: ModeChoice.xls
       ctramp_sheets: [Work, University, School, Escort, Shopping, EatOut, OthMaint, Social, OthDiscr, WorkBased]

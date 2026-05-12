@@ -104,6 +104,10 @@ def evaluate_stage(  # noqa: PLR0913
     survey_ds = build_survey_dataset(survey_dir, ctramp_dir, survey_cfg)
     if survey_ds:
         datasets.append(survey_ds)
+    else:
+        raise FileNotFoundError(
+            f"Survey directory not found: {survey_dir}"
+        )
 
     datasets.append(build_asim_dataset(stage_output, project_dir / "data", sample_rate))
 
@@ -114,6 +118,10 @@ def evaluate_stage(  # noqa: PLR0913
     )
     if ctramp_ds:
         datasets.append(ctramp_ds)
+    else:
+        raise FileNotFoundError(
+            f"CTRAMP stage {stage_num} output not found: {ctramp_stage}"
+        )
 
     submodels = get_calibration_submodels(stages, stage_num)
     log.info("Stage %d (%s): submodels=%s, datasets=%d",

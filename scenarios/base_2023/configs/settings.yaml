@@ -1,20 +1,195 @@
-# Scenario-specific ActivitySim settings for base_2023
+# ActivitySim settings for base_2023 scenario
 #
-# This file overrides settings from base-models/activity/configs_mp/settings.yaml.
-# Only include settings you want to CHANGE — everything else is inherited.
-
+# Full copy of base-models/activity/configs/settings.yaml with scenario overrides:
+#   - work_from_home model added before cdap_simulate
+#   - multiprocess: True, num_processes: 40
+#   - households_sample_size: 0 (full population)
+#   - use_shadow_pricing: True
+#   - chunk_training_mode: disabled
+#
+# inherit_settings pulls in multiprocess_steps from configs_mp/settings.yaml
 inherit_settings: True
 
+# input tables
+input_table_list:
+  - tablename: households
+    filename: households.csv
+    index_col: household_id
+    rename_columns:
+      HHID: household_id
+      PERSONS: hhsize
+      hworkers: num_workers
+      VEHICL: auto_ownership
+      TAZ: home_zone_id
+      HINC: income
+    recode_columns:
+      home_zone_id: land_use.zone_id
+    keep_columns:
+      - home_zone_id
+      - income
+      - hhsize
+      - HHT
+      - auto_ownership
+      - num_workers
+
+  - tablename: persons
+    filename: persons.csv
+    index_col: person_id
+    rename_columns:
+      PERID: person_id
+      HHID: household_id
+      AGE: age
+      SEX: sex
+    keep_columns:
+      - household_id
+      - age
+      - sex
+      - pemploy
+      - pstudent
+      - ptype
+
+  - tablename: land_use
+    filename: land_use.csv
+    index_col: zone_id
+    rename_columns:
+      ZONE: zone_id
+      COUNTY: county_id
+      AREATYPE: area_type
+    recode_columns:
+      zone_id: zero-based
+    keep_columns:
+      - DISTRICT
+      - SD
+      - county_id
+      - TOTHH
+      - TOTPOP
+      - TOTACRE
+      - RESACRE
+      - CIACRE
+      - TOTEMP
+      - AGE0519
+      - RETEMPN
+      - FPSEMPN
+      - HEREMPN
+      - OTHEMPN
+      - AGREMPN
+      - MWTEMPN
+      - PRKCST
+      - OPRKCST
+      - area_type
+      - HSENROLL
+      - COLLFTE
+      - COLLPTE
+      - TOPOLOGY
+      - TERMINAL
+
 # --- Run configuration ---
+households_sample_size: 0
+check_for_variability: False
+use_shadow_pricing: True
+want_dest_choice_sample_tables: False
+log_alt_losers: False
+
+# --- Chunking ---
+chunk_size: 0
+min_available_chunk_ratio: 0.05
+default_initial_rows_per_chunk: 500
+chunk_method: hybrid_uss
+chunk_training_mode: disabled
+keep_chunk_logs: True
+keep_mem_logs: True
+
+# --- Multiprocessing ---
 multiprocess: True
 num_processes: 40
-households_sample_size: 0        # 0 = full population
-chunk_size: 0                    # 0 = no chunking (requires sufficient RAM)
-use_shadow_pricing: True         # CTRAMP ran with shadow pricing; keep on for migration validation
 
-# --- Development/debugging ---
-# Uncomment below for a quick single-process test run:
-# multiprocess: False
-# num_processes: 1
-# households_sample_size: 1000
-# chunk_training_mode: disabled
+# --- Tracing ---
+trace_hh_id:
+trace_od:
+
+# --- Resume / checkpoints ---
+resume_after:
+checkpoints: True
+
+# --- Models ---
+models:
+  - initialize_landuse
+  - initialize_households
+  - compute_accessibility
+  - school_location
+  - workplace_location
+  - auto_ownership_simulate
+  - free_parking
+  - work_from_home
+  - cdap_simulate
+  - mandatory_tour_frequency
+  - mandatory_tour_scheduling
+  - joint_tour_frequency
+  - joint_tour_composition
+  - joint_tour_participation
+  - joint_tour_destination
+  - joint_tour_scheduling
+  - non_mandatory_tour_frequency
+  - non_mandatory_tour_destination
+  - non_mandatory_tour_scheduling
+  - tour_mode_choice_simulate
+  - atwork_subtour_frequency
+  - atwork_subtour_destination
+  - atwork_subtour_scheduling
+  - atwork_subtour_mode_choice
+  - stop_frequency
+  - trip_purpose
+  - trip_destination
+  - trip_purpose_and_destination
+  - trip_scheduling
+  - trip_mode_choice
+  - write_data_dictionary
+  - track_skim_usage
+  - write_trip_matrices
+  - write_tables
+  - summarize
+
+# --- Output tables ---
+output_tables:
+  h5_store: False
+  action: include
+  prefix: final_
+  tables:
+    - checkpoints
+    - accessibility
+    - tablename: land_use
+      decode_columns:
+        zone_id: land_use.zone_id
+    - tablename: households
+      decode_columns:
+        home_zone_id: land_use.zone_id
+    - tablename: persons
+      decode_columns:
+        home_zone_id: land_use.zone_id
+        school_zone_id: nonnegative | land_use.zone_id
+        workplace_zone_id: nonnegative | land_use.zone_id
+    - tablename: tours
+      decode_columns:
+        origin: land_use.zone_id
+        destination: land_use.zone_id
+    - tablename: trips
+      decode_columns:
+        origin: land_use.zone_id
+        destination: land_use.zone_id
+    - joint_tour_participants
+
+# --- Constants ---
+urban_threshold: 4
+cbd_threshold: 2
+rural_threshold: 6
+
+min_value_of_time: 1
+max_value_of_time: 50
+distributed_vot_mu: 0.684
+distributed_vot_sigma: 0.85
+
+household_median_value_of_time:
+  1: 6.01
+  2: 8.81
+  3: 10.44
+  4: 12.86

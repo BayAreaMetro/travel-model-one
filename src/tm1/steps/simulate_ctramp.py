@@ -833,11 +833,15 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
 
     # Preflight: determine if we can access the Bentley license from this
     # session, or if we need to launch via schtasks in the interactive session.
+    # NOTE: we ALWAYS use schtasks for the single-iteration ablation case,
+    # even from an interactive RDP session, because schtasks survives RDP
+    # disconnect (Windows throttles direct subprocesses when the session
+    # disconnects).  Direct subprocess is only used for multi-iteration runs
+    # which require the looping infrastructure.
     interactive = _preflight_license()
 
-    if not interactive:
-        # SSH/remote session: schtasks path (single iteration only for now;
-        # looping would need a multi-step .bat — left as future work).
+    if not interactive or len(iter_plan) == 1:
+        # schtasks path — works from any session and survives RDP disconnect.
         if len(iter_plan) > 1:
             msg = "Multi-iteration loop is not yet supported via schtasks (SSH session)"
             raise NotImplementedError(msg)
