@@ -1,5 +1,7 @@
 """County-to-County Commuting Flows tab renderer."""
 
+import json
+
 import polars as pl
 
 from tm1.steps.summaries.calibration.enums import CTRAMPCounty
@@ -36,11 +38,82 @@ def _render_pair(
     mod_df: pl.DataFrame,
 ) -> str:
     parts: list[str] = [
+        _scatter_chart(obs_df, mod_df, obs_label, mod_label),
         _flow_tables(obs_df, mod_df, obs_label, mod_label),
         "<h3>Goodness of Fit</h3>",
         _flows_fit_table(obs_df, mod_df),
     ]
     return "\n".join(parts)
+
+
+def _scatter_chart(
+    obs: pl.DataFrame, mod: pl.DataFrame,
+    obs_label: str, mod_label: str,
+) -> str:
+    """Scatter plot of observed vs modeled commute flow shares per county pair."""
+    county_col = "home_county_name"
+    value_cols = [c for c in _COUNTY_NAMES if c in obs.columns or c in mod.columns]
+
+    if not value_cols:
+        return ""
+
+    obs_s = add_shares(obs, value_cols)
+    mod_s = add_shares(mod, value_cols)
+    mod_by_hc = {r[county_col]: r for r in mod_s.to_dicts()}
+
+    x_vals: list[float] = []
+    y_vals: list[float] = []
+    hover: list[str] = []
+
+    for row in obs_s.to_dicts():
+        hc = row[county_col]
+        mr = mod_by_hc.get(hc, {})
+        for vc in value_cols:
+            obs_val = row.get(f"{vc}_share", 0) or 0
+            mod_val = mr.get(f"{vc}_share", 0) or 0
+            x_vals.append(round(obs_val * 100, 3))
+            y_vals.append(round(mod_val * 100, 3))
+            hover.append(f"{hc} → {vc}")
+
+    if not x_vals:
+        return ""
+
+    # Diagonal reference line
+    max_val = max(max(x_vals, default=1), max(y_vals, default=1))
+    traces = [
+        {
+            "x": [0, max_val],
+            "y": [0, max_val],
+            "mode": "lines",
+            "line": {"dash": "dash", "color": "#999", "width": 1},
+            "showlegend": False,
+            "hoverinfo": "skip",
+        },
+        {
+            "x": x_vals,
+            "y": y_vals,
+            "mode": "markers",
+            "marker": {"size": 7, "color": "#2196F3", "opacity": 0.7},
+            "text": hover,
+            "hovertemplate": "%{text}<br>Obs: %{x:.1f}%<br>Mod: %{y:.1f}%<extra></extra>",
+            "showlegend": False,
+        },
+    ]
+    layout = {
+        "title": {"text": "Commute Flow Shares: Observed vs Modeled", "font": {"size": 14}},
+        "xaxis": {"title": f"{obs_label} (%)", "rangemode": "tozero"},
+        "yaxis": {"title": f"{mod_label} (%)", "rangemode": "tozero", "scaleanchor": "x"},
+        "margin": {"l": 55, "r": 20, "t": 40, "b": 50},
+        "width": 520,
+        "height": 520,
+    }
+    div_id = "commute_scatter_" + "".join(c for c in f"{obs_label}_{mod_label}" if c.isalnum() or c == "_")
+    js = f"Plotly.newPlot('{div_id}', {json.dumps(traces)}, {json.dumps(layout)}, {{responsive:true}});"
+    return (
+        f"<h3>Observed vs Modeled Flow Shares</h3>"
+        f"<div id='{div_id}' style='width:540px;height:540px;margin:0 auto;'></div>"
+        f"<script>{js}</script>"
+    )
 
 
 def _flow_tables(

@@ -69,6 +69,18 @@ def render(
 
     if tlfd_items:
         parts.append("<h3>Trip Length Frequency Distribution</h3>")
+        parts.append(
+            "<button id='tlfd_log_toggle' style='margin:4px 0;padding:3px 8px;"
+            "font-size:11px;cursor:pointer;' onclick=\""
+            "var ids=[" + ",".join(
+                f"'tlfd_{k}'" for k, _, _ in tlfd_items
+            ) + "];"
+            "var btn=this;var cur=(btn.textContent==='Log Scale')?'log':'linear';"
+            "var fmt=(cur==='log')?'.1e':'.1%';"
+            "ids.forEach(function(id){Plotly.relayout(id,{'yaxis.type':cur,'yaxis.tickformat':fmt});});"
+            "btn.textContent=(cur==='log')?'Linear Scale':'Log Scale';"
+            "\">Log Scale</button>"
+        )
         parts.append(_tlfd_grid(tlfd_items, survey_labels=survey_labels))
         parts.append(
             "<p class='note'>* School comparisons exclude preschool-age "
@@ -116,23 +128,23 @@ def _tlfd_grid(
     *,
     survey_labels: set[str] | None = None,
 ) -> str:
-    """Render TLFD charts in a responsive row grid."""
-    ncols = len(items)
-    parts = [f"<div style='display:grid;grid-template-columns:repeat({ncols},1fr);gap:12px;'>"]
+    """Render TLFD charts in a 2-column grid."""
+    parts = ["<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:100%;'>"]
     for trip_key, trip_title, ds in items:
         _bins, traces = tlfd_traces_nway(ds, survey_labels=survey_labels)
         div_id = f"tlfd_{trip_key}"
         layout = {
-            "title": trip_title,
+            "title": {"text": trip_title, "font": {"size": 13}},
             "xaxis": {"title": "Distance (mi)"},
             "yaxis": {"title": "Share", "tickformat": ".1%"},
-            "legend": {"orientation": "h", "y": -0.25, "x": 0.5, "xanchor": "center"},
-            "margin": {"l": 50, "r": 20, "t": 40, "b": 60},
+            "legend": {"orientation": "h", "y": -0.3, "x": 0.5, "xanchor": "center"},
+            "margin": {"l": 45, "r": 10, "t": 30, "b": 55},
+            "height": 320,
         }
         js = f"Plotly.newPlot('{div_id}', {json.dumps(traces)}, {json.dumps(layout)}, {{responsive:true}});"
         parts.append(
-            f"<div>"
-            f"<div id='{div_id}' style='width:100%;height:380px;'></div>"
+            f"<div style='min-width:0;overflow:hidden;'>"
+            f"<div id='{div_id}' style='width:100%;height:320px;'></div>"
             f"<script>{js}</script>"
             f"</div>"
         )
@@ -279,20 +291,20 @@ def _cdf_grid(
             })
         items.append({"div_id": div_id, "title": county, "traces": traces})
 
-    # Render as a 3-column grid
-    ncols = 3
-    parts = ["<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;'>"]
+    # Render as a 2-column grid
+    parts = ["<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:100%;'>"]
     for item in items:
         did = item["div_id"]
         parts.append(
-            f"<div>"
-            f"<div id='{did}' style='width:100%;height:300px;'></div>"
+            f"<div style='min-width:0;overflow:hidden;'>"
+            f"<div id='{did}' style='width:100%;height:320px;'></div>"
             f"<script>Plotly.newPlot('{did}', {json.dumps(item['traces'])}, {{"
-            f"title:'{esc(item['title'])}', "
+            f"title:{{text:'{esc(item['title'])}',font:{{size:13}}}},"
             f"xaxis:{{title:'Distance (mi)',range:[0,80]}}, "
             f"yaxis:{{title:'CDF',range:[0,1],tickformat:'.0%'}}, "
-            f"legend:{{orientation:'h',y:-0.25,x:0.5,xanchor:'center'}}, "
-            f"margin:{{l:50,r:20,t:30,b:60}}"
+            f"legend:{{orientation:'h',y:-0.3,x:0.5,xanchor:'center'}}, "
+            f"margin:{{l:45,r:10,t:30,b:55}},"
+            f"height:320"
             f"}}, {{responsive:true}});</script>"
             f"</div>"
         )

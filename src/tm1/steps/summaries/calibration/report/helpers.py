@@ -168,7 +168,7 @@ def render_pairs(
         for b in range(a + 1, n):
             gi, gj = datasets[a][0], datasets[b][0]
             key = f"{min(gi, gj)}_{max(gi, gj)}"
-            display = "" if (a == 0 and b == 1) else "display:none"
+            display = "" if (a == 1 and b == 2) else "display:none"
             content = render_pair(
                 datasets[a][1], datasets[a][2],
                 datasets[b][1], datasets[b][2],

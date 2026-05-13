@@ -44,6 +44,7 @@ class CalibrationRunConfig:
     """
 
     output_dir: Path
+    report_name: str = "calibration_report.html"
     datasets: list[DatasetConfig] = field(default_factory=list)
     submodels: list[str] = field(default_factory=list)
     write_csv: bool = True
@@ -111,6 +112,7 @@ def parse_config(cfg: dict) -> CalibrationRunConfig:
 
     return CalibrationRunConfig(
         output_dir=output_dir,
+        report_name=calib.get("report_name", "calibration_report.html"),
         datasets=datasets,
         submodels=submodels,
         write_csv=write_csv,

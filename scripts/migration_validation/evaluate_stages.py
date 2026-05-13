@@ -129,6 +129,7 @@ def evaluate_stage(
 
     run_cfg = {"steps": {"summaries": {"calibration": {
         "output_dir": str(output_dir),
+        "report_name": f"ablation_{stage_num:02d}_{stage_name}.html",
         "write_csv": False, "datasets": datasets, "submodels": submodels,
     }}}}
     run_calib(stage_output, run_cfg)
@@ -154,7 +155,7 @@ def evaluate_stages(cfg: dict) -> None:
             log.info("Stage %d (%s) has no output — skipping", stage_num, stage_name)
             continue
 
-        stage_output_dir = output_base / f"{stage_num:02d}_{stage_name}"
+        stage_output_dir = output_base
         try:
             evaluate_stage(
                 stage_dir, stage_num, stages,

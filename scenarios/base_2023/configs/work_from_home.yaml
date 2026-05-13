@@ -7,8 +7,8 @@ LOGIT_TYPE: MNL
 SPEC: work_from_home.csv
 COEFFICIENTS: work_from_home_coefficients.csv
 
-# Alt 1 = WFH (the model outputs 1-based alternative indices)
-WORK_FROM_HOME_ALT: 1
+# Alt 1 = WFH (0-based column index in spec: WFH is column 0)
+WORK_FROM_HOME_ALT: 0
 
 # Filter to workers only
 CHOOSER_FILTER_COLUMN_NAME: is_worker
@@ -16,7 +16,7 @@ CHOOSER_FILTER_COLUMN_NAME: is_worker
 DEST_CHOICE_COLUMN_NAME: workplace_zone_id
 
 CONSTANTS:
-  eastbay_sf_calibration: 5.0  # CDAP.WFH.Calibration.eastbay_SF from RuntimeConfiguration.py
+  eastbay_sf_calibration: 5.0  # CDAP.WFH.Calibration.eastbay_SF
 
 preprocessor:
   TABLES:

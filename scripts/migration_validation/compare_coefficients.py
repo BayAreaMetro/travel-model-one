@@ -54,6 +54,59 @@ LEGEND_MATCH_DIFF = (
 )
 
 
+# -- CTRAMP properties reader -------------------------------------------------
+
+_PROP_PATTERN = re.compile(r"%([^%]+)%")
+
+
+def read_ctramp_properties(filepath: Path) -> dict[str, str]:
+    """Read a Java-style .properties file into a dict."""
+    props: dict[str, str] = {}
+    if not filepath.exists():
+        log.warning("Properties file not found: %s", filepath)
+        return props
+    with filepath.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                k, v = line.split("=", 1)
+                props[k.strip()] = v.strip()
+    return props
+
+
+def resolve_ctramp_formula(formula: str, props: dict[str, str]) -> tuple[str, float | None]:
+    """Resolve %property% references in a CTRAMP formula.
+
+    Returns (resolved_display_string, numeric_property_product_or_None).
+    The numeric product is the multiplication of all resolved %prop% values
+    (used to compute the effective coefficient = UEC_coeff * product).
+    If any property is non-numeric or unresolvable, returns None for the product.
+    """
+    if "%" not in formula:
+        return formula, None
+
+    product = 1.0
+    has_props = False
+
+    def _replacer(m: re.Match) -> str:
+        nonlocal product, has_props
+        prop_name = m.group(1)
+        val = props.get(prop_name)
+        if val is None:
+            return m.group(0)  # Leave unresolved
+        has_props = True
+        try:
+            product *= float(val)
+        except ValueError:
+            pass
+        return val
+
+    resolved = _PROP_PATTERN.sub(_replacer, formula)
+    return resolved, product if has_props else None
+
+
 # -- UEC reader ---------------------------------------------------------------
 
 def read_uec_sheets(ctramp_dir: Path, filename: str, sheet_names: list[str]) -> list[dict]:
@@ -258,11 +311,13 @@ def read_asim_spec(configs_dirs: list[Path], spec_file: str, coeff_file: str) ->
 
 # -- Mapped comparison table ---------------------------------------------------
 
-def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: dict[str, dict[str, float]] | None = None) -> str:
+def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: dict[str, dict[str, float]] | None = None, ctramp_props: dict[str, str] | None = None) -> str:
     """Render an outer-join comparison table if a mapping exists for this submodel."""
     crosswalk = MAPPINGS.get(name)
     if not crosswalk:
         return ""
+
+    props = ctramp_props or {}
 
     # Effective coefficient overrides (property-resolved values)
     overrides = COEFF_OVERRIDES.get(name, {})
@@ -308,13 +363,56 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
             return "<td></td>"
 
     def _ctramp_expr(row: dict) -> str:
-        """Combine CTRAMP filter + formula into a single expression string."""
+        """Combine CTRAMP filter + formula into a single expression string.
+
+        Resolves %property% references to show actual runtime values.
+        """
         if not row:
             return ""
         f, e = row.get("filter", ""), row.get("formula", "")
         if f and e:
-            return f"[{f}] {e}"
-        return e or f
+            raw = f"[{f}] {e}"
+        else:
+            raw = e or f
+        if props and "%" in raw:
+            resolved, _ = resolve_ctramp_formula(raw, props)
+            return resolved
+        return raw
+
+    def _effective_coeff(row: dict, alt: str | None = None) -> float | str:
+        """Get effective CTRAMP coefficient, resolving %property% in formula.
+
+        When the UEC coefficient is 1.0 (passthrough) and the formula contains
+        %property% references, the effective coefficient equals the resolved
+        property product. This matches cases where CTRAMP uses:
+            coeff=1 × expression=[filter] %PropertyValue%
+
+        When the UEC coefficient is NOT 1.0, it's the estimated parameter and
+        the %property% is a scaling factor in the expression (handled identically
+        in ActivitySim via CONSTANTS). In that case, return the raw coefficient.
+        """
+        if not row:
+            return ""
+        # Get the raw UEC coefficient
+        if alt:
+            raw_coeff = row["coeffs"].get(alt, "")
+        else:
+            raw_coeff = next(iter(row["coeffs"].values()), "") if row.get("coeffs") else ""
+        if raw_coeff == "":
+            return ""
+        # Check if formula has %property% references
+        formula = row.get("formula", "")
+        if props and "%" in formula:
+            _, prop_product = resolve_ctramp_formula(formula, props)
+            if prop_product is not None:
+                try:
+                    coeff_num = float(raw_coeff)
+                    # Only fold in property product when coeff is a passthrough (1.0)
+                    if abs(coeff_num - 1.0) < 1e-6:
+                        return coeff_num * prop_product
+                except (ValueError, TypeError):
+                    pass
+        return raw_coeff
 
     # Detect multi-alt: single sheet with multiple CTRAMP alts matching ASim alts by position
     ctramp_alts = sheets[0].get("alt_names", []) if len(sheets) == 1 else []
@@ -446,7 +544,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 # One pair of coeff columns per segment
                 for sn, alt in zip(seg_names, asim_alts):
                     cr = ctramp_by_sheet_no.get((sn, ctramp_no))
-                    c_val = _coeff_val(cr)
+                    c_val = _effective_coeff(cr)
                     a_val = _coeff_for_alt(ar, alt) if ar else ""
                     if show_asim:
                         body += _pair_cells(c_val, a_val, rowspan)
@@ -518,7 +616,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     body += f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
 
                 for c_alt, a_alt in alt_pairs:
-                    raw_c = _coeff_for_alt(cr, c_alt)
+                    raw_c = _effective_coeff(cr, c_alt) if cr else ""
                     # Apply override only when the alt has a coefficient
                     c_val = overrides.get(ctramp_no, raw_c) if raw_c != "" else raw_c
                     a_val = _coeff_for_alt(ar, a_alt) if ar else ""
@@ -577,7 +675,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 cr = ctramp_by_no.get(ctramp_no)
                 used_ctramp.add(ctramp_no)
 
-                c_coeff = overrides.get(ctramp_no, _coeff_val(cr))
+                c_coeff = overrides.get(ctramp_no, _effective_coeff(cr))
 
                 # Show ASim label/expr/coeff only on the first row of a group
                 show_asim = (i == 0)
@@ -1065,6 +1163,20 @@ def build_report(cfg: dict) -> Path:
     repo = Path(cfg["repo_root"])
     cc = cfg["coefficient_comparison"]
     ctramp_dir = repo / cc["ctramp_model_dir"]
+    # Load CTRAMP runtime properties for resolving %property% references in UEC formulas.
+    # Prefer the ctramp_project_dir copy (has RuntimeConfiguration.py-resolved values),
+    # fall back to repo copy (may have placeholders for some values).
+    props_rel = cc.get("ctramp_properties_file", "model-files/runtime/mtcTourBased.properties")
+    ctramp_project_dir = cfg.get("ctramp_project_dir")
+    if ctramp_project_dir:
+        project_props = Path(ctramp_project_dir) / "CTRAMP" / "runtime" / "mtcTourBased.properties"
+        if project_props.exists():
+            props_path = project_props
+        else:
+            props_path = repo / props_rel
+    else:
+        props_path = repo / props_rel
+    ctramp_props = read_ctramp_properties(props_path)
     # ActivitySim config dirs in priority order (scenario overrides first)
     asim_dirs = [repo / d for d in cc["asim_configs_dirs"]]
     out = Path(cfg["output_dir"]) / "coefficient_comparison.html"
@@ -1144,7 +1256,7 @@ def build_report(cfg: dict) -> Path:
         tpl_resolve = None
         if tpl_file:
             tpl_resolve = _read_template(dirs, tpl_file, sm["asim_coefficients"])
-        mapped_html = _mapped_table(sm["name"], sheets, spec, template_resolve=tpl_resolve)
+        mapped_html = _mapped_table(sm["name"], sheets, spec, template_resolve=tpl_resolve, ctramp_props=ctramp_props)
 
         # Constants crosswalk for template-based models
         constants_html = ""

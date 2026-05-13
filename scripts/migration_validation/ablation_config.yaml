@@ -11,13 +11,13 @@ output_dir: "E:/Tests/ablation_calibration"
 repo_root: "E:/GitHub/travel-model-one"
 asim_config_dirs:
   - "scenarios/base_2023/configs"
-  - "base-models/activity/configs_mp"
+  # - "base-models/activity/configs_mp"
   - "base-models/activity/configs"
 
 # --- Run parameters ---
 sample_rate: 0.15
 seed: 42
-num_processes: 40
+# num_processes: 44
 # Set to true to enable Slack notifications (requires env var SLACK_WEBHOOK_URL)
 slack: true
 
@@ -26,8 +26,8 @@ slack: true
 shadow_pricing: false
 
 # --- Which stages to run (1-based; comment out to skip) ---
-active_stages: [1,2,3,4,5,6,7,8]
-# active_stages: [3]
+# active_stages: [1,2,3,4,5,6,7,8]
+active_stages: [3]
 
 # --- Stage definitions (shared by both CTRAMP and ActivitySim ablation) ---
 # Each stage adds models cumulatively on top of all previous stages.
@@ -208,6 +208,7 @@ ctramp_output_files:
 # --- Coefficient comparison ---
 coefficient_comparison:
   ctramp_model_dir: "model-files/model"  # relative to repo_root
+  ctramp_properties_file: "model-files/runtime/mtcTourBased.properties"  # relative to repo_root; use ctramp_project_dir override for resolved values
   asim_configs_dirs:  # searched in priority order (first match wins)
     - "scenarios/base_2023/configs"
     - "base-models/activity/configs"

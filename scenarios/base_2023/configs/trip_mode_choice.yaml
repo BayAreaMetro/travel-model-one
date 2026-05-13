@@ -3,6 +3,7 @@
 
 SPEC: trip_mode_choice.csv
 COEFFICIENTS: trip_mode_choice_coefficients.csv
+COEFFICIENT_TEMPLATE: trip_mode_choice_coefficients_template.csv
 
 CONSTANTS:
   # FIX: was -0.0175 (accidental paste of coef_ivt_othmaint_social);

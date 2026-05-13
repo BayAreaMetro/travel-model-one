@@ -239,7 +239,9 @@ def run(  # noqa: C901, PLR0912
     # HTML calibration report
     t_rpt = time.perf_counter()
     report_path = write_report(
-        all_results, run_cfg.output_dir, survey_labels=survey_labels,
+        all_results, run_cfg.output_dir,
+        survey_labels=survey_labels,
+        report_name=run_cfg.report_name,
     )
     log.info("Wrote calibration report: %s (%.1fs)", report_path, time.perf_counter() - t_rpt)
     log.info("Calibration complete (%.1fs total)", time.perf_counter() - t_total)

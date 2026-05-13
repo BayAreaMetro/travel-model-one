@@ -259,6 +259,12 @@ def run_ablation(cfg: dict) -> None:
 
         notify(f":white_check_mark: ActivitySim stage {stage_num}/{len(stages)} "
                f"({stage_name}) done in {elapsed / 60:.1f} min, {n} files")
+        
+        # Run evaluation for this stage immediately after completion, so that we have results even if later stages fail.
+        try:
+            evaluate_stages(cfg)
+        except Exception:
+            log.exception("Evaluation failed for stage %d (%s)", stage_num, stage_name)
 
     total_min = (time.time() - t_total) / 60
     status = ":warning: finished with failures" if any_failed else ":white_check_mark: Finished"
@@ -272,4 +278,3 @@ if __name__ == "__main__":
 
     config_path = Path(sys.argv[1]) if len(sys.argv) > 1 else CONFIG_PATH
     run_ablation(load_config(config_path))
-    evaluate_stages(load_config(config_path))

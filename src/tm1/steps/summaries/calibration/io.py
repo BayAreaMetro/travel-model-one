@@ -59,6 +59,12 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
             "PersonID": "person_id",
             "PersonType": "person_type",
             "ActivityString": "activity_pattern",
+        },
+        "persons": {
+            "HHID": "hh_id",
+            "PersonID": "person_id",
+            "PersonType": "person_type",
+            "ActivityString": "activity_pattern",
             "wfh_choice": "work_from_home",
         },
         "indiv_tour_data": {},
@@ -89,7 +95,7 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
             "household_id": "hh_id",
             "person_id": "person_id",
             "home_zone_id": "home_taz",
-            "workplace_zone_id": "work_location",
+            "assigned_workplace_zone_id": "work_location",
             "school_zone_id": "school_location",
         },
         "indiv_tour_data": {
@@ -266,6 +272,17 @@ def load_bundle(dataset_cfg: object) -> object:
             )
             raise ValueError(msg)
         setattr(bundle, table_name, lf)
+
+    # Post-load: merge WFH from persons onto cdap_results if missing
+    if bundle.cdap_results is not None and bundle.persons is not None:
+        cdap_cols = set(bundle.cdap_results.collect_schema().names())
+        persons_cols = set(bundle.persons.collect_schema().names())
+        if "work_from_home" not in cdap_cols and "work_from_home" in persons_cols:
+            bundle.cdap_results = bundle.cdap_results.join(
+                bundle.persons.select("person_id", "work_from_home"),
+                on="person_id",
+                how="left",
+            )
 
     return bundle
 

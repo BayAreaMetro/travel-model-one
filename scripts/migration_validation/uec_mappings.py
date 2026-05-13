@@ -968,13 +968,9 @@ def get_token_map(submodel_name: str) -> dict[str, tuple[str, str]]:
 # effective value instead of the raw UEC coefficient.
 # {submodel: {row_no: effective_value}}
 COEFF_OVERRIDES: dict[str, dict[int, float]] = {
-    "Work From Home": {
-        # Row 24: coeff=1.0 × %CDAP.WFH.CalibrationConstant% = -0.340
-        24: -0.340,
-        # Row 22: coeff=0.2437 × %CDAP.WFH.Calibration.eastbay_SF% (=5.0)
-        # Effective = 0.2437 * 5.0 = 1.2185 — but ASim uses coef × @constant
-        # so the coefficient IS 0.2437 (matching). No override needed.
-    },
+    # Property-resolved coefficients are now handled automatically by
+    # resolve_ctramp_formula() in compare_coefficients.py.
+    # Only add manual overrides here for cases that can't be auto-resolved.
     "CDAP": {
         # Rows 77-78: CTRAMP applies -1.758 on M alt (penalty to workers who WFH).
         # ASim uses +0.1813 on H alt (bonus). These are NOT equivalent:

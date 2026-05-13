@@ -32,8 +32,9 @@ def write_report(
     output_dir: Path,
     *,
     survey_labels: set[str] | None = None,
+    report_name: str = "calibration_report.html",
 ) -> Path:
-    """Write ``calibration_report.html`` to *output_dir* and return the path."""
+    """Write calibration report HTML to *output_dir* and return the path."""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -57,7 +58,7 @@ def write_report(
             else:
                 tabs.append((title, renderer(per_label, labels)))
 
-    dest = output_dir / "calibration_report.html"
+    dest = output_dir / report_name
     if not tabs:
         return dest
 
@@ -68,13 +69,13 @@ def write_report(
     if len(labels) >= 3:  # noqa: PLR2004
         buttons = []
         for i, label in enumerate(labels):
-            active = " active" if i < 2 else ""  # noqa: PLR2004
+            active = " active" if i in (1, 2) else ""
             buttons.append(
                 f"<button class='ds-btn{active}' data-idx='{i}' "
                 f"onclick='toggleDS({i})'>{esc(label)}</button>"
             )
         dataset_bar = "<div class='ds-bar'>" + "\n".join(buttons) + "</div>"
-    default_pair = "0, 1"
+    default_pair = "1, 2"
 
     # --- Tab buttons + panes ---
     tab_buttons = ""

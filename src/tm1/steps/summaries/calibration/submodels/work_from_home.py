@@ -104,6 +104,12 @@ def summarize(
         .sort("category")
     )
 
+    # Normalize category labels to consistent names
+    _PTYPE_LABELS = {"1": "Full-time worker", "2": "Part-time worker"}
+    overall_summary = overall_summary.with_columns(
+        pl.col("category").replace_strict(_PTYPE_LABELS, default=pl.col("category")).alias("category"),
+    )
+
     # Add total row
     total = pl.DataFrame({
         "category": ["Total"],
@@ -124,5 +130,5 @@ def _worker_filter(ptype_col: str) -> pl.Expr:
     col = pl.col(ptype_col)
     return (
         col.cast(pl.Utf8).is_in(["1", "2"])
-        | col.cast(pl.Utf8).str.contains("(?i)worker")
+        | col.cast(pl.Utf8).str.contains("(?i)^(full-time|part-time) worker$")
     )
