@@ -1,7 +1,19 @@
 
-# Model Suite Runner
+# Truck Generation Estimation
 
-This script runs a suite of OLS regression models defined in a YAML configuration file using a specified dataset. It supports flexible output management, reproducibility tracking, and optional aggregation for validation.
+This module is an engine for executing OLS regression defined via YAML configurations. It serves as the core estimation logic for updating the TM-1.7 Travel Demand Model truck generation equations.
+
+### Usage
+Run the estimation script as a module from this directory (`utils/truck_updates/`):
+
+```bash
+python -m src.models.estimate \
+  --specs path/to/model_specs.yaml \
+  --data path/to/data.csv \
+  --output path/to/output_dir \
+  --geo-cols col1 col2 \
+  --agg-cols col3 col4
+```
 
 ---
 
@@ -26,19 +38,6 @@ Required packages:
 - `pyarrow` (for Parquet support)
 
 ---
-
-## Usage
-
-Run the script from the command line:
-
-```bash
-python -m src.models.estimate \
-  --specs path/to/model_specs.yaml \
-  --data path/to/data.csv \
-  --output path/to/output_dir \
-  --geo-cols col1 col2 \  # TODO 
-  --agg-cols col3 col4  # TODO
-```
 
 ## Model Specification (YAML)
 
