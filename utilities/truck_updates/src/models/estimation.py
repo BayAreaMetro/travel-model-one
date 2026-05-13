@@ -26,7 +26,7 @@ def fit_model(
     """
     model_df = df[spec.required_columns()].dropna().copy()
 
-    y = model_df[spec.target]
+    y = model_df.eval(spec.target)
     X = model_df[spec.features]
     # X = sm.add_constant(X, has_constant="add")
 

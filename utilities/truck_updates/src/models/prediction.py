@@ -22,7 +22,7 @@ def make_predictions(
     X = model_df[spec.features]
     # X = sm.add_constant(X, has_constant="add")
 
-    observed = model_df[spec.target].to_numpy()
+    observed = y = model_df.eval(spec.target).to_numpy()
     predicted = model.predict(X)
 
     output = model_df[[spec.geography_id_col, *extra_cols]].copy()
