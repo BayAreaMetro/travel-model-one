@@ -10,11 +10,21 @@ Run the estimation script as a module from this directory (`utils/truck_updates/
 python -m src.models.estimate \
   --specs path/to/model_specs.yaml \
   --data path/to/data.csv \
-  --output path/to/output_dir \
-  --geo-cols col1 col2 \
-  --agg-cols col3 col4
+  [--output path/to/output_dir] \
+  [--geo-cols col1 col2] \
+  [--agg-cols col3 col4]
 ```
 
+### Arguments
+
+
+| Argument | Requirement | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--specs` | **Required** | N/A | Path to YAML file with model specifications. |
+| `--data` | **Required** | N/A | Path to modeling dataset (parquet or csv). |
+| `--output` | Optional | `data/outputs` | Base output directory. |
+| `--geo-cols` | Optional | `[]` | Extra columns to include in prediction output (e.g., county, district). |
+| `--agg-cols` | Optional | `[]` | Columns to aggregate validation on (e.g., county, district). |
 ---
 
 ## Overview
@@ -27,17 +37,6 @@ The script performs the following steps:
 4. Saves outputs (predictions, diagnostics, etc.) to a timestamped directory  
 5. Copies input files for reproducibility  
 
----
-
-## Requirements
-Required packages:
-- `pandas`
-- `numpy`
-- `PyYaml`
-- `statsmodels`
-- `pyarrow` (for Parquet support)
-
----
 
 ## Model Specification (YAML)
 
