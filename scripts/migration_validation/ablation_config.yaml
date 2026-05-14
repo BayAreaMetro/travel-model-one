@@ -10,7 +10,7 @@ output_dir: "E:/Tests/ablation_calibration"
 # --- ActivitySim model configs (relative to repo root) ---
 repo_root: "E:/GitHub/travel-model-one"
 asim_config_dirs:
-  # - "scenarios/base_2023/configs_mp"
+  - "scenarios/base_2023/configs_mp"
   - "scenarios/base_2023/configs"
   # - "base-models/activity/configs_mp"
   - "base-models/activity/configs"
@@ -18,8 +18,9 @@ asim_config_dirs:
 # --- Run parameters ---
 sample_rate: 0.15
 seed: 42
+num_processes: 46
 # Set to true to enable Slack notifications (requires env var SLACK_WEBHOOK_URL)
-slack: false
+slack: true
 
 # Shadow pricing: true = normal (CTRAMP: iter-dependent, ASim: use_shadow_pricing)
 #                 false = disabled for both (apples-to-apples UEC comparison)

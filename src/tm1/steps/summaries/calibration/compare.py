@@ -108,6 +108,8 @@ def _merge_frames(
 
     # Find common non-float columns to use as join keys
     first_label, first_df = frames[0]
+    if first_df.width == 0:
+        return None
     index_cols = [
         c
         for c in first_df.columns
@@ -123,6 +125,8 @@ def _merge_frames(
     merged = first_df.rename({vc: f"{vc}_{first_label}" for vc in value_cols})
 
     for label, df in frames[1:]:
+        if df.width == 0:
+            continue
         renamed = df.rename({vc: f"{vc}_{label}" for vc in value_cols if vc in df.columns})
         merged = merged.join(renamed, on=index_cols, how="full", coalesce=True)
 

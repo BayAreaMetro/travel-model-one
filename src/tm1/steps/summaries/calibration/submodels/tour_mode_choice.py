@@ -81,7 +81,7 @@ def summarize(
         pl.lit(1).cast(pl.UInt32).alias("num_participants"),
     )
 
-    if joint_tour_data is not None:
+    if joint_tour_data is not None and len(joint_tour_data) > 0:
         jcols = ["hh_id", "tour_purpose", "tour_mode"]
         if weight_col is not None:
             if weight_col not in joint_tour_data.columns:

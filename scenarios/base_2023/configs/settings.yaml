@@ -253,6 +253,7 @@ output_tables:
         home_zone_id: land_use.zone_id
         school_zone_id: nonnegative | land_use.zone_id
         workplace_zone_id: nonnegative | land_use.zone_id
+        assigned_workplace_zone_id: nonnegative | land_use.zone_id
     - tablename: tours
       decode_columns:
         origin: land_use.zone_id

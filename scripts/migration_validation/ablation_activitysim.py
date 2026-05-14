@@ -210,7 +210,7 @@ def run_ablation(cfg: dict) -> None:
     names = [stages[s - 1]["name"] for s in active]
     label = f"ablation [{','.join(names)}] HH={sample_size:,} ({sample_rate:.0%})"
 
-    notify(f"Starting ActivitySim {label} on {socket.gethostname()}")
+    notify(f"Starting ActivitySim {label} on {socket.gethostname()} with {num_processes} processes")
     log.info("Active stages: %s", names)
 
     asim_output = project_dir / "output"

@@ -102,22 +102,26 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
         "indiv_tour_data": {
             "household_id": "hh_id",
             "primary_purpose": "tour_purpose",
+            "tour_type": "tour_purpose",
             "origin": "orig_taz",
             "destination": "dest_taz",
         },
         "joint_tour_data": {
             "household_id": "hh_id",
             "primary_purpose": "tour_purpose",
+            "tour_type": "tour_purpose",
             "origin": "orig_taz",
             "destination": "dest_taz",
         },
         "indiv_trip_data": {
             "household_id": "hh_id",
             "primary_purpose": "tour_purpose",
+            "tour_type": "tour_purpose",
         },
         "joint_trip_data": {
             "household_id": "hh_id",
             "primary_purpose": "tour_purpose",
+            "tour_type": "tour_purpose",
         },
     },
 }

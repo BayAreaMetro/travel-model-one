@@ -92,6 +92,7 @@ def run_ablation(cfg: dict) -> None:
     stages = cfg["stages"]
     active = cfg["active_stages"]
     do_shadow_pricing = cfg.get("shadow_pricing", True)
+    num_processes = cfg.get("num_processes", 1)
 
     hh_file = project_dir / "popsyn" / "hhFile.csv"
     total_hh = sum(1 for _ in hh_file.open()) - 1
@@ -100,7 +101,7 @@ def run_ablation(cfg: dict) -> None:
     names = [stages[s - 1]["name"] for s in active]
     label = f"ablation [{','.join(names)}] HH={hh_count:,} ({sample_rate:.0%})"
 
-    notify(f"Starting CTRAMP {label} on {socket.gethostname()}")
+    notify(f"Starting CTRAMP {label} on {socket.gethostname()} with {num_processes} processes")
     log.info("Active stages: %s", names)
     if not do_shadow_pricing:
         log.info("Shadow pricing DISABLED for this run")

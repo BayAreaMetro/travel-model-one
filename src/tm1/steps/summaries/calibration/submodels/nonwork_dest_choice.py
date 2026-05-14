@@ -44,7 +44,7 @@ def _combine_tours(
         keep.append(weight_col)
 
     tours = indiv.select(keep)
-    if joint is not None:
+    if joint is not None and len(joint) > 0:
         if weight_col is not None and weight_col not in joint.columns:
             msg = (
                 f"weight_col {weight_col!r} not found in joint_tour_data "
