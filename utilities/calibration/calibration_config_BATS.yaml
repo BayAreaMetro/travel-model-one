@@ -2,7 +2,7 @@ general:
   # Root of the BATS pipeline output (the ctramp_2023 folder). Used to:
   #   - locate input files via {target_dir} substitution in submodel configs
   #   - set the output directory: {target_dir}/BATS_Summaries/
-  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_lmz_20260501/ctramp_2023"
+  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_yq_20260514/ctramp_2023"
   # Not used in BATS mode: output goes to BATS_Summaries/ regardless of this
   # value, and no iteration-stamped workbook is written.
   calib_iter: "00"
@@ -11,7 +11,7 @@ general:
   iter: "00"
   # Not used in BATS mode: survey-target runs save directly back to the
   # workbook_templates/ folder inside the calibration scripts directory.
-  workbook_base_path: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_lmz_20260501/ctramp_2023"
+  workbook_base_path: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_yq_20260514/ctramp_2023"
 
 data_sources:
   taz_data: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_00_Cube6/INPUT/landuse/tazData.csv"
@@ -20,9 +20,9 @@ data_sources:
 calibration_01:
   name: Usual Work and School Location
   workbook_template: 01_UsualWorkAndSchoolLocation_2023
-  input_file: "{target_dir}/MandatoryLocationData.csv"
+  input_file: "{target_dir}/wsLocResults_BATS2023.csv"
   bats_data: true
-  bats_person_data: "{target_dir}/PersonData.csv"  # path to PersonData.csv with person_weight column for BATS survey mode
+  bats_person_data: "{target_dir}/personData_BATS2023.csv"  # path to PersonData.csv with person_weight column for BATS survey mode
 
 # Auto Ownership relies on ACS data and not BATS
 
@@ -30,7 +30,7 @@ calibration_04:
   name: Coordinated Daily Activity Pattern
   workbook_template: 04_CoordinatedDailyActivityPattern_2023
   #input_file: "{target_dir}/OUTPUT_{calib_iter}/main/cdapResults.csv"
-  input_file: "{target_dir}//PersonData.csv"
+  input_file: "{target_dir}/personData_BATS2023.csv"
   bats_data: true
 
 # calibration_09:
