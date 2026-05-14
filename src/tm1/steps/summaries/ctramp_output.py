@@ -1,5 +1,7 @@
 """ActivitySim → CTRAMP output converter.
 
+Temporary shim converter.
+
 Shared by core_summaries and calibration_summaries.  Reads ActivitySim
 ``final_*.csv`` outputs and writes CTRAMP-format CSVs into a ``main/``
 directory that downstream R (or Python) summaries expect.
@@ -19,10 +21,10 @@ PTYPE_LABELS = {
     1: "Full-time worker",
     2: "Part-time worker",
     3: "University student",
-    4: "Non-worker",
+    4: "Nonworker",
     5: "Retired",
-    6: "Student of driving age",
-    7: "Student of non-driving age",
+    6: "Driving-age child",
+    7: "Pre-driving-age child",
     8: "Child too young for school",
 }
 

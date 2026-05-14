@@ -139,10 +139,13 @@ def _nway_chart(datasets: list[tuple[int, str, pl.DataFrame]]) -> str:
             f"type: 'bar', marker: {{color: '{colour}'}}}}"
         )
 
+    div_id = "wfh_county_chart"
     data_js = ",\n".join(traces)
-    layout = (
-        "{barmode:'group', title:'WFH Rate by County',"
-        " yaxis:{title:'WFH Rate (%)', rangemode:'tozero'},"
-        " margin:{t:40,b:80}}"
+    js = (
+        f"Plotly.newPlot('{div_id}', [{data_js}], "
+        f"{{barmode:'group', title:'WFH Rate by County',"
+        f" yaxis:{{title:'WFH Rate (%)', rangemode:'tozero'}},"
+        f" legend:{{orientation:'h', y:-0.25, x:0.5, xanchor:'center'}},"
+        f" margin:{{t:40,b:80}}}}, {{responsive:true}});"
     )
-    return wrap_chart(data_js, layout, height=350)
+    return wrap_chart(div_id, js, height=350)

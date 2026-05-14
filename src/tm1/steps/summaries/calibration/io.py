@@ -96,6 +96,7 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
             "person_id": "person_id",
             "home_zone_id": "home_taz",
             "assigned_workplace_zone_id": "work_location",
+            "workplace_zone_id": "_workplace_zone_id_raw",
             "school_zone_id": "school_location",
         },
         "indiv_tour_data": {
@@ -315,6 +316,13 @@ def _apply_asim_transforms(table_name: str, lf: pl.LazyFrame) -> pl.LazyFrame:
             )
 
     elif table_name == "wsloc_results":
+        # Prefer assigned_workplace_zone_id (post-WFH); fall back to
+        # workplace_zone_id for pre-WFH stages where the assigned col
+        # doesn't exist yet.
+        if "work_location" not in cols and "_workplace_zone_id_raw" in cols:
+            lf = lf.rename({"_workplace_zone_id_raw": "work_location"})
+        elif "_workplace_zone_id_raw" in cols:
+            lf = lf.drop("_workplace_zone_id_raw")
         # Derive student_category from ptype
         if "ptype" in cols:
             lf = lf.with_columns(

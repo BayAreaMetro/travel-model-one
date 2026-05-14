@@ -205,19 +205,26 @@ def _chart(
     obs: pl.DataFrame, mod: pl.DataFrame,
     obs_label: str, mod_label: str, chart_id: str,
 ) -> str:
-    obs_sorted = obs.sort("person_type")
-    mod_sorted = mod.sort("person_type")
-    pt_labels = obs_sorted["person_type_label"].to_list()
+    # Use a canonical set of all person types present in either dataset
+    all_pts = sorted(
+        set(obs["person_type"].to_list()) | set(mod["person_type"].to_list())
+    )
+    pt_labels = [
+        PERSON_TYPE_LABELS.get(pt, f"Type {pt}") for pt in all_pts
+    ]
+
+    obs_by_pt = {r["person_type"]: r for r in obs.to_dicts()}
+    mod_by_pt = {r["person_type"]: r for r in mod.to_dicts()}
 
     traces: list[str] = []
     for p in PATTERNS:
         colour = PATTERN_COLOURS[p]
-        for source, df, opacity in [
-            (obs_label, obs_sorted, 0.55),
-            (mod_label, mod_sorted, 1.0),
+        for source, by_pt, opacity in [
+            (obs_label, obs_by_pt, 0.55),
+            (mod_label, mod_by_pt, 1.0),
         ]:
-            shares = df[f"{p}_share"].to_list()
-            counts = df[p].to_list()
+            shares = [by_pt.get(pt, {}).get(f"{p}_share", 0) or 0 for pt in all_pts]
+            counts = [by_pt.get(pt, {}).get(p, 0) or 0 for pt in all_pts]
             hover = [
                 f"{p}: {s:.1%} ({c:,.0f})"
                 for s, c in zip(shares, counts, strict=True)

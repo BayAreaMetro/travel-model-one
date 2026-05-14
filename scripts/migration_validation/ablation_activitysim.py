@@ -198,7 +198,7 @@ def run_ablation(cfg: dict) -> None:
     output_base = project_dir / "ablation"
     sample_rate = cfg["sample_rate"]
     seed = cfg["seed"]
-    num_processes = cfg["num_processes"]
+    num_processes = cfg.get("num_processes", 1)
     stages = cfg["stages"]
     active = cfg["active_stages"]
     do_shadow_pricing = cfg.get("shadow_pricing", False)
