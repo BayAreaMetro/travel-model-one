@@ -152,6 +152,12 @@ CONSTANTS:
     drvtrn_distpen_0_multiplier: 270
     drvtrn_distpen_max: 15
     density_index_multiplier: -0.2
+    # Transit hesitance: policy lever penalizing transit for work tours.
+    # CTRAMP: c_ivt_mode * %Work_Transit_Hesitance% (work only) + c_ivt_mode * %Rail_Transit_Hesitance% (HVY/COM only)
+    # Non-work hesitance is 0 (no effect).
+    work_transit_hesitance: 55.0
+    nonwork_transit_hesitance: 0.0
+    rail_transit_hesitance: 108.0
     # Origin density index for atwork sub-tours (CTRAMP WorkBased only).
     # c_densityIndexOrigin = -0.1 * c_ivt; originDensityIndexMax = -15 * c_ivt.
     origin_density_index_multiplier: -0.1

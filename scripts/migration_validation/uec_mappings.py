@@ -2,13 +2,15 @@
 
 Each submodel maps asim_label → ctramp_row_number (int) or list of row numbers
 when multiple CTRAMP rows collapse to a single ActivitySim row (many-to-one).
+When row numbers differ across purpose sheets, use a dict with "*" as default
+and sheet names as overrides: {"*": 463, "OthMaint": 461, "WorkBased": 466}.
 Rows that appear on only one side (unmapped) show up automatically via outer join.
 """
 
 # fmt: off
 
-# {submodel_name: {asim_label: ctramp_row_no | [ctramp_row_nos]}}
-MAPPINGS: dict[str, dict[str, int | list[int]]] = {
+# {submodel_name: {asim_label: ctramp_row_no | [ctramp_row_nos] | {"*": default, "SheetName": override}}}
+MAPPINGS: dict[str, dict[str, int | list[int] | dict[str, int]]] = {
 
     "Workplace Location": {
         "util_dist_0_1":                       18,
@@ -507,16 +509,17 @@ MAPPINGS: dict[str, dict[str, int | list[int]]] = {
         "util_Joint_TNC_Shared_Zero_auto": 455,
         "util_Joint_TNC_Shared_Auto_deficient": 456,
         "util_Joint_TNC_Shared_Auto_sufficient": 457,
-        "util_Local_bus_ASC": 458,
-        "util_Walk_to_Light_Rail_ASC": 459,
-        "util_Drive_to_Light_Rail_ASC": 460,
-        "util_Walk_to_Ferry_ASC": 461,
-        "util_Drive_to_Ferry_ASC": 462,
-        "util_Express_Bus_ASC": 463,
-        "util_Heavy_Rail_ASC": 464,
-        "util_Commuter_Rail": 37,
-        "util_Walk_to_Transit_dest_CBD": 466,
-        "util_Drive_to_Transit_dest_CBD": 467,
+        # Transit ASCs: row numbers differ on OthMaint (-2) and WorkBased (+3)
+        "util_Local_bus_ASC": {"*": 458, "OthMaint": 456, "WorkBased": 461},
+        "util_Walk_to_Light_Rail_ASC": {"*": 459, "OthMaint": 457, "WorkBased": 462},
+        "util_Drive_to_Light_Rail_ASC": {"*": 460, "OthMaint": 458, "WorkBased": 463},
+        "util_Walk_to_Ferry_ASC": {"*": 461, "OthMaint": 459, "WorkBased": 464},
+        "util_Drive_to_Ferry_ASC": {"*": 462, "OthMaint": 460, "WorkBased": 465},
+        "util_Express_Bus_ASC": {"*": 463, "OthMaint": 461, "WorkBased": 466},
+        "util_Heavy_Rail_ASC": {"*": 464, "OthMaint": 462, "WorkBased": 467},
+        "util_Commuter_Rail": {"*": 465, "OthMaint": 463, "WorkBased": 468},
+        "util_Walk_to_Transit_dest_CBD": {"*": 466, "OthMaint": 464, "WorkBased": 469},
+        "util_Drive_to_Transit_dest_CBD": {"*": 467, "OthMaint": 465, "WorkBased": 470},
         "util_Drive_to_Transit_distance_penalty": 474,
         "util_Walk_not_available_for_long_distances": 475,
         "util_Bike_not_available_for_long_distances": 476,
@@ -826,12 +829,12 @@ MAPPINGS: dict[str, dict[str, int | list[int]]] = {
         "util_TNC_Shared_Tolls": 494,
         "util_TNC_Shared_Bridge_toll": 495,
         "util_TNC_Shared_Cost": 496,
-        "util_tour_mode_is_auto": 69,
-        "util_tour_mode_is_walk": 71,
-        "util_tour_mode_is_bike": 72,
-        "util_tour_mode_is_walk_transit": 73,
-        "util_tour_mode_is_drive_transit": 74,
-        "util_tour_mode_is_ride_hail": 75,
+        "util_tour_mode_is_auto": 497,
+        "util_tour_mode_is_walk": 498,
+        "util_tour_mode_is_bike": 499,
+        "util_tour_mode_is_walk_transit": 500,
+        "util_tour_mode_is_drive_transit": 501,
+        "util_tour_mode_is_ride_hail": 502,
         "util_Drive_Alone_tour_mode_ASC_shared_ride_2_df_is_indiv": 503,
         "util_Drive_Alone_tour_mode_ASC_shared_ride_3_plus": 504,
         "util_Drive_Alone_tour_mode_ASC_walk": 505,
@@ -871,7 +874,7 @@ MAPPINGS: dict[str, dict[str, int | list[int]]] = {
         "util_Ride_Hail_tour_mode_ASC_ride_hail_shared": 539,
         "util_Walk_not_available_for_long_distances": 540,
         "util_Bike_not_available_for_long_distances": 541,
-        "util_origin_density_index": 27,
+        "util_origin_density_index": 542,
         "util_walk_express_penalty": 543,
         "util_adjust_tnc_shared": 555,
     },
@@ -960,6 +963,18 @@ def get_token_map(submodel_name: str) -> dict[str, tuple[str, str]]:
     merged = dict(_SHARED_TOKEN_MAP)
     merged.update(_TOKEN_MAP_OVERRIDES.get(submodel_name, {}))
     return merged
+
+
+# Explicit row-number offsets for UEC sheets where rows don't align with the
+# reference sheet (the first sheet listed in ctramp_sheets).  The crosswalk in
+# MAPPINGS uses row numbers from the reference sheet.  For other sheets:
+#   actual_row = crosswalk_row + offset  (unless overridden in _exceptions)
+#
+# Format: {submodel: {sheet_name: {"_offset": int, "_exceptions": {ref_row: actual_row_or_None}}}}
+#
+# _exceptions entries:
+#   ref_row: actual_row  — use this specific row instead of ref_row + offset
+#   ref_row: None        — row doesn't exist in this sheet (skip)
 
 
 # Effective coefficient overrides for CTRAMP UEC rows where the displayed
