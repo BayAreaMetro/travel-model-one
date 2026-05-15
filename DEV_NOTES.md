@@ -221,3 +221,98 @@ common_overrides:
 ```
 
 For AWS/parallel: one `tm1 run` per machine, parallelism is infrastructure not CLI.
+
+
+## Migration Fixes Log
+
+Fixes applied during the CTRAMP → ActivitySim migration that address runtime
+crashes or incorrect model behavior. Each fix is in `scenarios/base_2023/configs/`
+as a scenario override — the base model configs in `base-models/` are unchanged.
+
+### Fix 1: CDAP M-pattern leak → invalid mandatory tours
+
+**Problem:** `mandatory_tour_scheduling` crashes with "probabilities do not add
+up to 1" for ~600 work tours and ~30 school tours.
+
+**Root cause:** ActivitySim's `cdap_fixed_relative_proportions.csv` assigns
+activity patterns to persons in households with 5+ members using fixed
+proportions based only on `ptype`. It ignores whether the person has a valid
+mandatory destination. Additionally, in rare smaller-household edge cases, CDAP
+assigns M pattern to persons with no valid workplace or school.
+
+When such a person reaches `mandatory_tour_frequency`, all 5 alternatives
+(work1, work2, school1, school2, work_and_school) receive the `-999`
+unavailability penalty simultaneously:
+- Work alts blocked because `workplace_zone_id = -1`
+- School alts blocked because `school_zone_id = -1`
+
+Since `exp(-999)` is identical for all alternatives, the penalties cancel in the
+softmax denominator and MTF picks an alternative based on residual utility. The
+resulting tour has `destination = -1`, causing NaN skim lookups in scheduling.
+
+**Fix:** `annotate_persons_cdap.csv` — post-CDAP annotation resets
+`cdap_activity` from 'M' to 'N' for persons where
+`workplace_zone_id < 0 AND school_zone_id < 0`. These persons cannot make any
+mandatory tour, so non-mandatory is the correct pattern.
+
+**Impact:** ~600 persons (~0.04% of population) get N instead of M. No effect
+on CTRAMP comparison since CTRAMP doesn't have this edge case (its CDAP
+implementation handles availability differently).
+
+---
+
+### Fix 2: Tour mode choice density preprocessor NaN crash
+
+**Problem:** `tour_mode_choice_simulate` crashes in stage 4+ when computing
+origin/destination density categories. The `pd.cut()` call fails with
+"cannot convert float NaN to integer" for tours whose origin or destination
+zone is -1 (invalid).
+
+**Root cause:** A small number of tours (from the same M-pattern leak above)
+have `destination = -1`. When the preprocessor does
+`reindex(land_use.density_measure, tour.destination)`, zone -1 isn't in the
+land_use index → NaN → `pd.cut(...).astype(int)` fails.
+
+**Fix:** `tour_mode_choice_annotate_choosers_preprocessor.csv` — the `pd.cut()`
+expressions use `.cat.add_categories(0).fillna(0).astype(int)` to defensively
+handle NaN density values by assigning density category 0. With Fix 1 in place,
+this code path should no longer be triggered, but the defensive handling remains
+as a safety net.
+
+---
+
+### Fix 3: Person type label alignment (calibration reporting)
+
+**Problem:** The CDAP calibration report was silently dropping person types 4
+(Nonworker), 6 (Driving-age child), and 7 (Pre-driving-age child) — the bar
+chart showed only 5 of 8 person types.
+
+**Root cause:** Two label dictionaries were inconsistent:
+- `PTYPE_LABELS` in `ctramp_output.py` used "Non-working adult" / "Child of
+  driving age" / "Child of non-driving age"
+- `CTRAMPPersonType` enum in `enums.py` used different strings
+
+When ActivitySim integer ptypes were converted to strings via `PTYPE_LABELS`,
+then looked up in `PERSON_TYPE_LOOKUP` (built from enum labels), the mismatch
+caused `null` → rows filtered out.
+
+Additionally, the enum had ptypes 6 and 7 **swapped** (6 was "non-driving",
+7 was "driving") — backwards from both CTRAMP and ActivitySim conventions.
+
+**Fix:** Aligned all labels to: "Driving-age child" (6), "Pre-driving-age
+child" (7), "Nonworker" (4) across both `PTYPE_LABELS` and `CTRAMPPersonType`.
+
+---
+
+### Fix 4: Calibration report `work_location` column mapping
+
+**Problem:** `evaluate_stages.py` crashed with `ColumnNotFoundError:
+work_location` when generating the stage 1 calibration report.
+
+**Root cause:** The ActivitySim column map in `io.py` mapped
+`assigned_workplace_zone_id` → `work_location`, but stage 1 output
+(pre-WFH) only has `workplace_zone_id`. Post-WFH stages have both.
+
+**Fix:** `io.py` now maps both columns and prefers
+`assigned_workplace_zone_id` when present, falling back to
+`workplace_zone_id` for pre-WFH stages.

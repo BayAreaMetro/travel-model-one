@@ -311,13 +311,14 @@ def read_asim_spec(configs_dirs: list[Path], spec_file: str, coeff_file: str) ->
 
 # -- Mapped comparison table ---------------------------------------------------
 
-def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: dict[str, dict[str, float]] | None = None, ctramp_props: dict[str, str] | None = None) -> str:
+def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: dict[str, dict[str, float]] | None = None, ctramp_props: dict[str, str] | None = None, tokens_by_sheet: dict[str, dict[str, str]] | None = None) -> str:
     """Render an outer-join comparison table if a mapping exists for this submodel."""
     crosswalk = MAPPINGS.get(name)
     if not crosswalk:
         return ""
 
     props = ctramp_props or {}
+    tokens_by_sheet = tokens_by_sheet or {}
 
     # Effective coefficient overrides (property-resolved values)
     overrides = COEFF_OVERRIDES.get(name, {})
@@ -460,15 +461,117 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
         a_str = _fmt(a_val) if a_val != "" else ""
         return f"<td class='num {cls}'>{c_str}</td><td class='num {cls}'{rowspan}>{a_str}</td>"
 
+    coeff_summary = ""
+
     if multi_seg and template_resolve:
-        # Template-based multi-segment (Mode Choice): structural mapping only.
-        # Coefficient comparison is done in the separate constants crosswalk table
-        # because CTRAMP embeds coefficients in formulas (alt column is always 1.0).
+        # Template-based multi-segment (Mode Choice): structural mapping with
+        # per-purpose numeric comparison.  CTRAMP embeds coefficients as inline
+        # numeric literals in the formula column (alt column is always 1.0).
+        # We resolve the ASim template coefficient per purpose and compare.
         seg_names = [s["sheet_name"] for s in sheets]
+        purposes = [SHEET_TO_PURPOSE.get(sn, sn.lower()) for sn in seg_names]
+
+        # Header: structural columns + one CTRAMP/ASim pair per purpose
+        coeff_hdrs = "".join(
+            f"<th class='num'>CTRAMP {esc(sn)}</th><th class='num'>ASim {esc(sn)}</th>"
+            for sn in seg_names
+        )
         h = ("<table class='coeff mapped sortable'><thead><tr>"
              "<th>ASim Label</th><th>No.</th><th>Description</th>"
-             "<th>CTRAMP Expression</th><th>ASim Expression</th>"
+             f"<th>CTRAMP Expression</th><th>ASim Expression</th>{coeff_hdrs}"
              "</tr></thead><tbody>")
+
+        n_match = 0
+        n_diff = 0
+        n_total = 0
+
+        def _resolve_ctramp_formula_val(row: dict, sheet_name: str = "") -> float | str:
+            """Extract the effective numeric coefficient from a CTRAMP UEC row.
+
+            In CTRAMP mode choice UECs, the utility contribution for an alt is:
+                formula_value * alt_column_value  (when filter passes)
+
+            Four patterns:
+            1. formula is the coefficient (e.g. -1.5593), alt column = 1.0
+               → return formula (ASC rows, demographic coefficients)
+            2. formula is a passthrough (1.0), alt column is the coefficient (e.g. -999)
+               → return the alt column value (unavailability rows)
+            3. formula is a token expression (c_ivt*...), alt column = 1.0
+               → resolve the leading token to its numeric value for this sheet
+            4. formula is unresolvable → return ""
+            """
+            if not row:
+                return ""
+            formula = row.get("formula", "")
+            coeffs = row.get("coeffs", {})
+
+            # Get the first alt column value (all should be the same for a given row)
+            alt_vals = [v for v in coeffs.values() if isinstance(v, (int, float))]
+            alt_val = alt_vals[0] if alt_vals else None
+
+            try:
+                f_val = float(formula)
+            except (ValueError, TypeError):
+                # Formula is a complex expression — try to resolve token references
+                if sheet_name and tokens_by_sheet:
+                    tokens = tokens_by_sheet.get(sheet_name, {})
+                    # Pattern A: "c_xxx * (skim_expression)" or "c_xxx*(...)"
+                    # The coefficient contribution is the token value.
+                    token_match = re.match(r'\s*(c_\w+)\s*[*(/]', formula)
+                    if token_match:
+                        token_name = token_match.group(1)
+                        token_raw = tokens.get(token_name, "")
+                        if token_raw:
+                            try:
+                                return float(token_raw)
+                            except (ValueError, TypeError):
+                                pass
+                    # Pattern B: formula is exactly a bare token name (e.g. "c_age1619_da")
+                    # The token resolves to the coefficient value, alt col = 1.0
+                    bare_match = re.match(r'\s*(c_\w+)\s*$', formula)
+                    if bare_match:
+                        token_name = bare_match.group(1)
+                        token_raw = tokens.get(token_name, "")
+                        if token_raw:
+                            try:
+                                tok_val = float(token_raw)
+                                # Multiply by the alt column value if present
+                                if alt_val is not None and abs(alt_val - 1.0) > 1e-10:
+                                    return tok_val * alt_val
+                                return tok_val
+                            except (ValueError, TypeError):
+                                pass
+                # Pattern C: availability checks (e.g. "sovAvailable==0")
+                # These produce -999 in the alt column — that IS the effective value
+                if alt_val is not None and "==" in formula:
+                    return alt_val
+                return ""
+
+            if alt_val is None:
+                return ""
+
+            # Case 1: formula is the coefficient, alt column is passthrough (1.0)
+            if abs(alt_val - 1.0) < 1e-10:
+                return f_val
+            # Case 2: formula is a passthrough (1.0), alt column is the coefficient
+            if abs(f_val - 1.0) < 1e-10:
+                return alt_val
+            # Case 3: both are non-trivial — return the product
+            return f_val * alt_val
+
+        def _resolve_asim_for_purpose(ar: dict | None, purpose: str) -> float | str:
+            """Resolve the ASim coefficient for a given purpose via template."""
+            if not ar or not ar.get("coeffs"):
+                return ""
+            # Get any coefficient name from the row (all alts share same generic name for ASCs)
+            for _alt, val in ar["coeffs"].items():
+                if isinstance(val, (int, float)):
+                    return val  # Already resolved numeric
+                # Unresolved string — look up in template
+                if val in template_resolve:
+                    return template_resolve[val].get(purpose, "")
+                return ""
+            return ""
 
         for asim_label, ctramp_ref in crosswalk.items():
             ctramp_nos = ctramp_ref if isinstance(ctramp_ref, list) else [ctramp_ref]
@@ -481,6 +584,31 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 show_asim = (i == 0)
                 rowspan = f" rowspan='{len(ctramp_nos)}'" if show_asim and len(ctramp_nos) > 1 else ""
 
+                # Per-purpose numeric comparison
+                val_cells = ""
+                for sn, purpose in zip(seg_names, purposes):
+                    cr = ctramp_by_sheet_no.get((sn, ctramp_no))
+                    c_val = _resolve_ctramp_formula_val(cr, sheet_name=sn)
+                    a_val = _resolve_asim_for_purpose(ar, purpose) if show_asim else ""
+                    if c_val == "" and a_val == "":
+                        val_cells += "<td class='num'></td><td class='num'></td>"
+                    elif c_val != "" and a_val != "":
+                        n_total += 1
+                        try:
+                            match = abs(float(c_val) - float(a_val)) < 1e-4
+                        except (ValueError, TypeError):
+                            match = False
+                        cls = "match" if match else "diff"
+                        if match:
+                            n_match += 1
+                        else:
+                            n_diff += 1
+                        val_cells += f"<td class='num {cls}'>{_fmt(c_val)}</td><td class='num {cls}'>{_fmt(a_val)}</td>"
+                    else:
+                        c_str = _fmt(c_val) if c_val != "" else ""
+                        a_str = _fmt(a_val) if a_val != "" else ""
+                        val_cells += f"<td class='num'>{c_str}</td><td class='num'>{a_str}</td>"
+
                 body += "<tr>"
                 if show_asim:
                     body += f"<td{rowspan}>{esc(asim_label)}</td>"
@@ -489,16 +617,19 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 body += f"<td>{esc(_ctramp_expr(cr_any))}</td>"
                 if show_asim:
                     body += f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
+                body += val_cells
                 body += "</tr>"
 
         # Unmatched CTRAMP rows
+        empty_val_cells = "<td class='num'></td><td class='num'></td>" * len(seg_names)
         for s in sheets:
             for r in s["rows"]:
                 if r["no"] not in used_ctramp:
                     used_ctramp.add(r["no"])
                     body += (
                         f"<tr class='ctramp-only'><td></td><td>{r['no']}</td>"
-                        f"<td>{esc(r['desc'])}</td><td>{esc(_ctramp_expr(r))}</td><td></td></tr>"
+                        f"<td>{esc(r['desc'])}</td><td>{esc(_ctramp_expr(r))}</td>"
+                        f"<td></td>{empty_val_cells}</tr>"
                     )
 
         # Unmatched ASim rows
@@ -506,8 +637,20 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
             if r["label"] not in used_asim:
                 body += (
                     f"<tr class='asim-only'><td>{esc(r['label'])}</td><td></td>"
-                    f"<td></td><td></td><td>{esc(r['expr'])}</td></tr>"
+                    f"<td></td><td></td><td>{esc(r['expr'])}</td>{empty_val_cells}</tr>"
                 )
+
+        # Summary for this section
+        if n_total > 0:
+            coeff_summary = (
+                f"<div style='margin:8px 0;font-size:13px'>"
+                f"Inline coefficients compared: {n_total} cells &bull; "
+                f"<span style='color:green'>{n_match} match</span> &bull; "
+                f"<span style='color:red'>{n_diff} differ</span>"
+                f"</div>"
+            )
+        else:
+            coeff_summary = ""
 
     elif multi_seg:
         # Multi-segment table: one coeff column per segment
@@ -734,7 +877,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     f"</tr>"
                 )
 
-    return f"<h3>Mapped Comparison</h3>{LEGEND_FULL}<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
+    return f"<h3>Mapped Comparison</h3>{LEGEND_FULL}{coeff_summary}<div class='mapped-wrap'>{h}{body}</tbody></table></div>"
 
 
 def _constants_table(
@@ -1256,14 +1399,19 @@ def build_report(cfg: dict) -> Path:
         tpl_resolve = None
         if tpl_file:
             tpl_resolve = _read_template(dirs, tpl_file, sm["asim_coefficients"])
-        mapped_html = _mapped_table(sm["name"], sheets, spec, template_resolve=tpl_resolve, ctramp_props=ctramp_props)
 
-        # Constants crosswalk for template-based models
-        constants_html = ""
+        # Read tokens early so _mapped_table can resolve expression rows
+        tokens_by_sheet = None
         if tpl_file and tpl_resolve:
             tokens_by_sheet = read_uec_tokens(
                 ctramp_dir, sm["ctramp_file"], sm["ctramp_sheets"]
             )
+
+        mapped_html = _mapped_table(sm["name"], sheets, spec, template_resolve=tpl_resolve, ctramp_props=ctramp_props, tokens_by_sheet=tokens_by_sheet)
+
+        # Constants crosswalk for template-based models
+        constants_html = ""
+        if tpl_file and tpl_resolve:
             yaml_file = sm["asim_spec"].replace(".csv", ".yaml")
             yaml_consts = _read_yaml_constants(dirs, yaml_file)
             constants_html = _constants_table(

@@ -27,8 +27,8 @@ slack: true
 shadow_pricing: false
 
 # --- Which stages to run (1-based; comment out to skip) ---
-active_stages: [1,2,3,4,5,6,7,8]
-# active_stages: [1,2,3,4]
+# active_stages: [1,2,3,4,5,6,7,8]
+active_stages: [1,2,3,4]
 
 # --- Stage definitions (shared by both CTRAMP and ActivitySim ablation) ---
 # Each stage adds models cumulatively on top of all previous stages.
@@ -86,7 +86,6 @@ stages:
       - MandatoryTourModeChoice
     calibration_submodels:
       - tour_mode_choice
-      - nonwork_dest_choice
 
   # Stage 5: Joint tours (household-level non-mandatory travel).
   # Determines if household members travel together for shopping, social,

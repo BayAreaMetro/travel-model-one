@@ -21,6 +21,7 @@ CONFIG_PATH = Path(__file__).parent / "ablation_config.yaml"
 ASIM_TABLE_MAP = [
     ("households", "final_households.csv"),
     ("ao_results", "final_households.csv"),
+    ("persons", "final_persons.csv"),
     ("wsloc_results", "final_persons.csv"),
     ("cdap_results", "final_persons.csv"),
     ("indiv_tour_data", "final_tours.csv"),

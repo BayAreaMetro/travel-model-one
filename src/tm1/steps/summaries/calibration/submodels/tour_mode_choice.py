@@ -54,6 +54,7 @@ def summarize(
     ao_results: pl.DataFrame,
     households: pl.DataFrame,
     *,
+    persons: pl.DataFrame | None = None,
     joint_tour_data: pl.DataFrame | None = None,
     weight_col: str | None = None,
     sampleshare: float = 1.0,
@@ -64,6 +65,24 @@ def summarize(
         Columns: simple_purpose, tour_mode, tour_mode_label, auto_suff, num_tours.
     """
     weight = 1.0 / sampleshare
+
+    # Reclassify ActivitySim "school" tours for university students (ptype 3)
+    # CTRAMP has separate purposes (school_grade, school_high, university) but
+    # ActivitySim labels all as "school" regardless of person type.
+    if (
+        persons is not None
+        and "person_id" in indiv_tour_data.columns
+        and "ptype" in persons.columns
+        and "person_id" in persons.columns
+    ):
+        ptype_map = persons.select("person_id", "ptype")
+        indiv_tour_data = indiv_tour_data.join(ptype_map, on="person_id", how="left")
+        indiv_tour_data = indiv_tour_data.with_columns(
+            pl.when((pl.col("tour_purpose") == "school") & (pl.col("ptype") == 3))
+            .then(pl.lit("univ"))
+            .otherwise(pl.col("tour_purpose"))
+            .alias("tour_purpose"),
+        ).drop("ptype")
 
     # Validate weight_col up front if specified
     if weight_col is not None and weight_col not in indiv_tour_data.columns:

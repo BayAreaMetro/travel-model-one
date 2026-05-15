@@ -119,6 +119,11 @@ def _run_submodel(
             indiv_tour_data=bundle.indiv_tour_data.collect(),
             ao_results=bundle.ao_results.collect(),
             households=bundle.households.collect(),
+            persons=(
+                bundle.persons.collect()
+                if bundle.persons is not None
+                else None
+            ),
             joint_tour_data=(
                 bundle.joint_tour_data.collect()
                 if bundle.joint_tour_data is not None
