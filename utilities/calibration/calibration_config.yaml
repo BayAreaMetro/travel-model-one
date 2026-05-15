@@ -3,7 +3,7 @@ general:
   #   - locate input files via {target_dir} substitution in submodel configs
   #   - set the output directory: {target_dir}/Output_{calib_iter}/calibration/
   target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_00_Cube6"
-  calib_iter: "05"
+  calib_iter: "06_test"
   iter: "1"
   # Root directory for calibration Excel workbooks (model run mode).
   # Each submodel's workbook is saved under:
@@ -19,6 +19,7 @@ calibration_01:
   name: Usual Work and School Location
   workbook_template: 01_UsualWorkAndSchoolLocation_2023
   input_file: "{target_dir}/OUTPUT_{calib_iter}/main/wsLocResults_{iter}.csv"
+  uec_src_file: "{target_dir}/OUTPUT_{calib_iter}/UEC/DestinationChoice.xls"
   bats_data: false
   bats_person_data: ""  # path to PersonData.csv with person_weight column for BATS survey mode
 

@@ -641,6 +641,21 @@ class CalibrationBase(ABC):
         """
         pass
 
+    @abstractmethod
+    def validate_uec_values(self):
+        """Check that UEC values in the generated workbook are consistent with model input.
+
+        This method is a placeholder for any submodel-specific checks that may
+        be needed to confirm that the UEC values (coefficients and constants)
+        in the calibration workbook match the expected values based on the model input data.  The exact checks
+        will depend on the submodel and the structure of the UECs.
+
+        The method should raise an exception if any validation check fails,
+        which will be logged by :meth:`run` and halt the calibration process
+        before saving the workbook.
+        """
+        pass
+
     def run(self):
         """Run the complete calibration pipeline for this submodel.
 
@@ -651,6 +666,7 @@ class CalibrationBase(ABC):
         3. :meth:`setup_workbook` — open the Excel template.
         4. :meth:`generate_outputs` — write CSVs and populate the workbook.
         5. :meth:`save_workbook` — persist the workbook to disk.
+        6. :meth:`validate_uec_values` — optional post-save UEC consistency checks.
 
         Any unhandled exception is logged before being re-raised so that the
         error appears in the log file as well as the console.
@@ -661,6 +677,7 @@ class CalibrationBase(ABC):
             self.setup_workbook()
             self.generate_outputs(results)
             self.save_workbook()
+            self.validate_uec_values()
         except Exception as e:
             self.logger.info(f"Error during calibration processing: {e}")
             raise

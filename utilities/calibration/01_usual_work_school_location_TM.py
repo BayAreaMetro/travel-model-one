@@ -24,12 +24,14 @@ Arguments:
                 ``calibration_config.yaml`` in the same directory as this script.
 """
 import argparse
+import math
 import pandas as pd
 import numpy as np
 import os
 import sys
 from pathlib import Path
-import logging
+from openpyxl import load_workbook
+from xlrd import open_workbook
 
 # Import the calibration framework
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -64,6 +66,24 @@ class WorkSchoolLocationCalibration(CalibrationBase):
       ``<target_dir>/Output_<calib_iter>/calibration/`` for comparison.
     """
 
+    # sheet, column, startRow, endRow
+    # used for validating UEC values in calibration workbook against model input
+    UEC_SOURCE_RANGES = {
+        "work": ("Work", 7, 22, 26),
+        "work_county": ("Work", 7, 38, 47),
+        "university": ("University", 7, 12, 16),
+        "highschool": ("HighSchool", 7, 12, 16),
+        "gradeschool": ("GradeSchool", 7, 12, 16),
+    }
+
+    CALIBRATION_DESTINATION_RANGES = {
+        "work": ("calibration", 3, 4, 8),
+        "work_county": ("calibration", 9, 4, 13),
+        "university": ("calibration", 15, 4, 8),
+        "highschool": ("calibration", 31, 4, 8),
+        "gradeschool": ("calibration", 32, 4, 8),
+    }
+
     def __init__(self, config_file: str = None):
         """Initialise the calibration processor.
 
@@ -74,6 +94,97 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         """
         super().__init__("01", config_file)
         self.bats_data = self.submodel_config.get("bats_data", False)
+
+    @staticmethod
+    def _read_xls_range(worksheet, column: int, start_row: int, end_row: int) -> list:
+        """Read a 1-based row/column slice from an xlrd worksheet."""
+        values = []
+        for row in range(start_row, end_row + 1):
+            values.append(worksheet.cell_value(row - 1, column - 1))
+        return values
+
+    @staticmethod
+    def _read_xlsx_range(worksheet, column: int, start_row: int, end_row: int) -> list:
+        """Read a 1-based row/column slice from an openpyxl worksheet."""
+        values = []
+        for row in range(start_row, end_row + 1):
+            values.append(worksheet.cell(row=row, column=column).value)
+        return values
+
+    @staticmethod
+    def _values_match(src_value, dst_value) -> bool:
+        """Compare Excel values while tolerating numeric type differences."""
+        if isinstance(src_value, str) or isinstance(dst_value, str):
+            return str(src_value).strip() == str(dst_value).strip()
+
+        if isinstance(src_value, bool) or isinstance(dst_value, bool):
+            return src_value == dst_value
+
+        if isinstance(src_value, (int, float)) and isinstance(dst_value, (int, float)):
+            return math.isclose(float(src_value), float(dst_value), rel_tol=1e-9, abs_tol=1e-9)
+
+        return src_value == dst_value
+
+    def validate_uec_values(self, src_workbook: str | Path | None = None,
+                            dst_workbook: str | Path | None = None) -> None:
+        """Validate that mapped UEC source values match the saved calibration workbook."""
+        if self.bats_data:
+            self.logger.info("Skipping UEC value validation for BATS mode.")
+            return
+
+        src_path = Path(src_workbook) if src_workbook else Path(self.submodel_config["uec_src_file"])
+        dst_path = Path(dst_workbook) if dst_workbook else Path(self.workbook_iter)
+
+        if not src_path.exists():
+            raise FileNotFoundError(f"UEC source workbook not found: {src_path}")
+        if not dst_path.exists():
+            raise FileNotFoundError(f"Calibration destination workbook not found: {dst_path}")
+
+        sep = "=" * 80
+        self.logger.info(f"\n{sep}\nUEC VALUE VALIDATION\n{sep}")
+        self.logger.info(f"Source workbook: {src_path}")
+        self.logger.info(f"Destination workbook: {dst_path}")
+
+        src_workbook_obj = open_workbook(src_path)
+        dst_workbook_obj = load_workbook(dst_path, data_only=True)
+        mismatches = []
+
+        for name, (src_sheet_name, src_column, src_start_row, src_end_row) in self.UEC_SOURCE_RANGES.items():
+            dst_sheet_name, dst_column, dst_start_row, dst_end_row = self.CALIBRATION_DESTINATION_RANGES[name]
+            src_values = self._read_xls_range(
+                src_workbook_obj.sheet_by_name(src_sheet_name),
+                src_column,
+                src_start_row,
+                src_end_row,
+            )
+            dst_values = self._read_xlsx_range(
+                dst_workbook_obj[dst_sheet_name],
+                dst_column,
+                dst_start_row,
+                dst_end_row,
+            )
+
+            if len(src_values) != len(dst_values):
+                raise ValueError(
+                    f"Validation length mismatch for {name}: "
+                    f"source has {len(src_values)} values and destination has {len(dst_values)} values"
+                )
+
+            for offset, (src_value, dst_value) in enumerate(zip(src_values, dst_values)):
+                if not self._values_match(src_value, dst_value):
+                    mismatches.append(
+                        f"{name}: {src_sheet_name}!R{src_start_row + offset}C{src_column}={src_value!r} "
+                        f"!= {dst_sheet_name}!R{dst_start_row + offset}C{dst_column}={dst_value!r}"
+                    )
+
+        if mismatches:
+            mismatch_preview = "\n".join(mismatches[:10])
+            extra_count = len(mismatches) - 10
+            if extra_count > 0:
+                mismatch_preview += f"\n... and {extra_count} more mismatches"
+            raise ValueError(f"UEC value validation failed:\n{mismatch_preview}")
+
+        self.logger.info("Validated UEC source values against the calibration workbook.")
     
     def process_data(self) -> dict:
         """Load inputs, merge spatial attributes, and compute summary statistics.
@@ -413,7 +524,7 @@ def main():
 
     Constructs a :class:`WorkSchoolLocationCalibration` instance, then calls
     its :meth:`~CalibrationBase.run` method which executes the
-    ``process_data → validate_outputs → generate_outputs`` pipeline.
+    ``process_data → validate_outputs → generate_outputs → validate UECs`` pipeline.
     """
     parser = argparse.ArgumentParser(description="Usual work and school location calibration")
     parser.add_argument("--config", default=None, help="Path to calibration_config.yaml (default: same directory as this script)")

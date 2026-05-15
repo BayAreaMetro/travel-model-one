@@ -1,10 +1,10 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=\\MODEL3-B\Model3B-Share\Projects\2023_TM170_IPA_00_calib_05
+set MODEL_DIR=\\MODEL3-B\Model3B-Share\Projects\2023_TM170_IPA_00_calib_06
 set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.7\2023_TM170_IPA_00_Cube6
 set CODE_DIR=E:\Github\travel-model-one\utilities\calibration
 rem start at 00 when INPUT or skims are updated
-set CALIB_ITER=05
+set CALIB_ITER=06_test
 
 echo CALIB_ITER=%CALIB_ITER%
 
@@ -61,7 +61,11 @@ cd ..\..
 :: goto here for just a calib iteration
 :do_calib_iter
 
+::make a copy of UEC
 mkdir OUTPUT_%CALIB_ITER%
+mkdir OUTPUT_%CALIB_ITER%\UEC
+robocopy "%MODEL_DIR%\CTRAMP\model" "OUTPUT_%CALIB_ITER%\UEC" *.xls *.csv
+
 mkdir OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\aoResults.csv            OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\wsLocResults_%ITER%.csv  OUTPUT_%CALIB_ITER%\main
