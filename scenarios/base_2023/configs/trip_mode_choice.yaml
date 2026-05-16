@@ -26,3 +26,10 @@ CONSTANTS:
   # FIX: was -15; CTRAMP has -0.60 * c_ivt on all sheets.
   # Same provenance as density_index_multiplier above.
   origin_density_index_multiplier: -0.6
+  # Transit hesitance constants (work purpose only, from CTRAMP properties)
+  # CTRAMP: c_ivt * %Work_Transit_Hesitance% for all transit modes
+  # CTRAMP: c_ivt * %Rail_Transit_Hesitance% additional for HVY/COM
+  ivt_lrt_multiplier: 0.9
+  ivt_ferry_multiplier: 0.8
+  work_transit_hesitance: 55.0
+  rail_transit_hesitance: 108.0

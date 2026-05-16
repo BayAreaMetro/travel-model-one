@@ -252,7 +252,7 @@ def _read_template(configs_dirs: list[Path], template_file: str, coeff_file: str
             for row in csv.DictReader(f):
                 try:
                     coeffs[row["coefficient_name"].strip()] = float(row["value"])
-                except (ValueError, KeyError):
+                except (ValueError, KeyError, TypeError):
                     pass
 
     # Read the template
@@ -356,6 +356,11 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
             ctramp_by_sheet_no[(s["sheet_name"], r["no"])] = r
             ctramp_by_no[r["no"]] = r
 
+    # Preserve raw row data (before desc-matching) so that per-sheet dict
+    # lookups always hit the actual row, even when desc-matching overwrites
+    # ctramp_by_sheet_no at the same key.
+    _raw_by_sheet_no: dict[tuple[str, int], dict] = dict(ctramp_by_sheet_no)
+
     # For multi-sheet models, rows may have different row numbers across sheets
     # but the same description. Build a desc-based index so the crosswalk
     # (keyed to reference sheet row numbers) resolves correctly in all sheets.
@@ -363,25 +368,6 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
     if multi_seg and len(sheets) > 1:
         ref_sheet = sheets[0]
         ref_by_no = {r["no"]: r for r in ref_sheet["rows"]}
-        # Collect (sheet, row_no) pairs explicitly specified by per-sheet crosswalk dicts.
-        # The desc-based code must not store at these keys because the per-sheet
-        # dispatch uses them for direct row lookups.
-        _explicit_sheet_rows: set[tuple[str, int]] = set()
-        for ctramp_ref in crosswalk.values():
-            refs = ctramp_ref if isinstance(ctramp_ref, list) else [ctramp_ref]
-            for ref in refs:
-                if isinstance(ref, dict):
-                    for k, v in ref.items():
-                        if k != "*":
-                            _explicit_sheet_rows.add((k, v))
-        # Also collect ref row numbers that have per-sheet dicts (their desc-based
-        # matching is unreliable when multiple rows share the same description).
-        _ref_rows_with_overrides: set[int] = set()
-        for ctramp_ref in crosswalk.values():
-            refs = ctramp_ref if isinstance(ctramp_ref, list) else [ctramp_ref]
-            for ref in refs:
-                if isinstance(ref, dict) and "*" in ref:
-                    _ref_rows_with_overrides.add(ref["*"])
         for s in sheets[1:]:
             sn = s["sheet_name"]
             desc_to_row = {r["desc"].strip().lower(): r for r in s["rows"]}
@@ -389,18 +375,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 ref_desc = ref_row["desc"].strip().lower()
                 matched = desc_to_row.get(ref_desc)
                 if matched:
-                    # Don't store if either:
-                    # 1) The key (sn, ref_no) collides with a per-sheet dispatch target
-                    # 2) The matched row's actual number is a per-sheet dispatch target
-                    # 3) The ref_no already has a per-sheet dict (explicit dispatch)
-                    key = (sn, ref_no)
-                    if key in _explicit_sheet_rows:
-                        continue
-                    if (sn, matched["no"]) in _explicit_sheet_rows:
-                        continue
-                    if ref_no in _ref_rows_with_overrides:
-                        continue
-                    ctramp_by_sheet_no[key] = matched
+                    ctramp_by_sheet_no[(sn, ref_no)] = matched
 
     # Index ActivitySim rows by label
     asim_by_label: dict[str, dict] = {}
@@ -625,6 +600,12 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 return ""
             formula = row.get("formula", "")
             coeffs = row.get("coeffs", {})
+            _filter = row.get("filter", "")
+
+            # If the filter restricts to sub-tours (subtour==1) and the sheet
+            # is not WorkBased, the row never fires — effective value is 0.
+            if _filter and "subtour==1" in _filter.replace(" ", "") and sheet_name != "WorkBased":
+                return 0.0
 
             # Get the first alt column value (all should be the same for a given row)
             alt_vals = [v for v in coeffs.values() if isinstance(v, (int, float))]
@@ -642,15 +623,19 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     # multiplies by a %Property% that resolves to 0, or by a
                     # literal zero (e.g. "c_ivt*0.00").  If so the entire
                     # expression is effectively zero.
+                    # Also track non-zero property products to apply later.
                     _prop_zero = False
+                    _prop_product = 1.0
                     if props:
                         for _pm in re.finditer(r'%(\w+)%', formula):
                             pname = _pm.group(1)
                             pval_str = props.get(pname, "")
                             try:
-                                if float(pval_str) == 0.0:
+                                pval = float(pval_str)
+                                if pval == 0.0:
                                     _prop_zero = True
                                     break
+                                _prop_product *= pval
                             except (ValueError, TypeError):
                                 pass
                     # Also catch literal zero multiplier: "c_xxx*0.00" or "c_xxx * 0"
@@ -665,20 +650,24 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     # multiplier into the expression. This is provably equivalent:
                     #   CTRAMP: (MULT * c_ivt) * skim
                     #   ASim:   c_ivt * (MULT * skim)  [MULT verified in constants crosswalk]
+                    # NOTE: _prop_product is NOT applied here because when ASim has a
+                    # matching row, the property constant appears in the ASim expression
+                    # and the comparison is coefficient-to-coefficient. For ONE_SIDE_MISSING
+                    # cases, the full product is applied at the comparison level.
                     token_match = re.match(r'\s*(c_\w+)\s*[*(/]', formula)
                     if token_match:
                         token_name = token_match.group(1)
                         tk_lower = token_name.lower()
-                        # If token is derived from c_ivt, return c_ivt (the base coeff)
-                        if token_name in ivt_derived or tk_lower in ivt_derived:
+                        # If token IS c_ivt or is derived from c_ivt, return c_ivt (the base coeff)
+                        if token_name == "c_ivt" or token_name in ivt_derived or tk_lower in ivt_derived:
                             c_ivt_val = resolved.get("c_ivt")
                             if c_ivt_val is not None:
                                 return c_ivt_val
                         # Otherwise return the token's resolved value directly
                         if token_name in resolved:
-                            return resolved[token_name]
+                            return resolved[token_name] * _prop_product
                         if tk_lower in resolved:
-                            return resolved[tk_lower]
+                            return resolved[tk_lower] * _prop_product
                     # Pattern A2: "(c_xxx - c_yyy) * skim" or "(c_xxx+c_yyy)*(...)"
                     # If ALL tokens in the prefix are ivt-derived (or c_ivt itself),
                     # the arithmetic is just a multiplier verified in constants crosswalk,
@@ -752,15 +741,38 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
             """Resolve the ASim coefficient for a given purpose via template."""
             if not ar or not ar.get("coeffs"):
                 return ""
-            # Check if the expression multiplies by a YAML constant that equals 0.
-            # If so, the entire utility row contributes nothing regardless of the
-            # alt column value.
+            # Check if the expression multiplies by a YAML/coefficient constant
+            # that equals 0.  If so, the entire utility row contributes nothing
+            # regardless of the alt column value.
+            # Also detect non-zero expression multipliers for simple patterns:
+            #   @constant (entire expression) or @constant * ~(boolean)
+            expr_multiplier = 1.0
             if yaml_constants and ar.get("expr"):
-                expr = ar["expr"]
-                if '*' in expr and '==' not in expr:
-                    for cname, cval in yaml_constants.items():
-                        if cval == 0 and re.search(r'\b' + re.escape(cname) + r'\b', expr):
-                            return 0.0
+                expr = ar["expr"].strip()
+                if '==' not in expr:
+                    # Zero detection: any zero-valued constant appearing anywhere
+                    # in a multiplicative expression means the row is zero.
+                    if '*' in expr or re.match(r'^@\w+$', expr):
+                        for cname, cval in yaml_constants.items():
+                            if cval == 0 and re.search(r'\b' + re.escape(cname) + r'\b', expr):
+                                return 0.0
+                    # Non-zero multiplier detection: only for specific patterns
+                    # where the constant IS the effective coefficient value.
+                    # Case 1: expression IS just @constant_name
+                    just_const = re.match(r'^@(\w+)$', expr)
+                    if just_const:
+                        cname = just_const.group(1)
+                        if cname in yaml_constants and yaml_constants[cname] != 0:
+                            expr_multiplier = yaml_constants[cname]
+                    # Case 2: @constant * ~(boolean_filter)
+                    # The constant multiplies a boolean (0/1), so effective coef
+                    # = constant * alt_coef when the filter is True.
+                    if not just_const:
+                        const_bool = re.match(r'^@(\w+)\s*\*\s*~\(', expr)
+                        if const_bool:
+                            cname = const_bool.group(1)
+                            if cname in yaml_constants and yaml_constants[cname] != 0:
+                                expr_multiplier = yaml_constants[cname]
             # Check if expression filters by tour_type — if the current purpose
             # doesn't match the filter, the effective coefficient is 0.
             if ar.get("expr"):
@@ -777,13 +789,20 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     excluded_purpose = neq_match.group(1)
                     if purpose == excluded_purpose:
                         return 0.0
+                # Pattern: is_atwork_subtour — only applies to atwork purpose
+                if re.search(r'\bis_atwork_subtour\b', expr):
+                    if purpose != "atwork":
+                        return 0.0
             # Get any coefficient name from the row (all alts share same generic name for ASCs)
             for _alt, val in ar["coeffs"].items():
                 if isinstance(val, (int, float)):
-                    return val  # Already resolved numeric
+                    return val * expr_multiplier  # Already resolved numeric
                 # Unresolved string — look up in template
                 if val in template_resolve:
-                    return template_resolve[val].get(purpose, "")
+                    resolved = template_resolve[val].get(purpose, "")
+                    if resolved != "" and expr_multiplier != 1.0:
+                        return resolved * expr_multiplier
+                    return resolved
                 return ""
             return ""
 
@@ -818,7 +837,9 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 val_cells = ""
                 for sn, purpose in zip(seg_names, purposes):
                     sheet_row = _row_for_sheet(sn)
-                    cr = ctramp_by_sheet_no.get((sn, sheet_row)) if sheet_row else None
+                    # Per-sheet dicts use raw row data (unmodified by desc-matching)
+                    _lookup = _raw_by_sheet_no if isinstance(ctramp_no_spec, dict) else ctramp_by_sheet_no
+                    cr = _lookup.get((sn, sheet_row)) if sheet_row else None
                     # Mark the actual resolved row number as used (may differ from sheet_row due to desc-matching)
                     if cr is not None:
                         used_ctramp.add(cr["no"])
@@ -855,6 +876,23 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                         val_cells += f"<td class='num {cls}'>{_fmt(c_val)}</td><td class='num {cls}'>{_fmt(a_val)}</td>"
                     else:
                         # One side blank (no row exists), other has value
+                        # For CTRAMP-only rows with %Property% in the formula,
+                        # apply the property product to show the full effective value.
+                        if c_val != "" and a_val == "" and cr:
+                            _formula = cr.get("formula", "")
+                            _pp = 1.0
+                            for _pm in re.finditer(r'%(\w+)%', _formula):
+                                pname = _pm.group(1)
+                                pval_str = (props or {}).get(pname, "")
+                                try:
+                                    _pp *= float(pval_str)
+                                except (ValueError, TypeError):
+                                    pass
+                            if _pp != 1.0:
+                                try:
+                                    c_val = float(c_val) * _pp
+                                except (ValueError, TypeError):
+                                    pass
                         # Treat zero vs absent as a match (zero contribution = no row)
                         try:
                             _present = float(c_val) if c_val != "" else float(a_val)
@@ -959,7 +997,8 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 # One pair of coeff columns per segment
                 for sn, alt in zip(seg_names, asim_alts):
                     sheet_row = _row_for_sheet2(sn)
-                    cr = ctramp_by_sheet_no.get((sn, sheet_row)) if sheet_row else None
+                    _lookup2 = _raw_by_sheet_no if isinstance(ctramp_no_spec, dict) else ctramp_by_sheet_no
+                    cr = _lookup2.get((sn, sheet_row)) if sheet_row else None
                     # Mark actual resolved row as used
                     if cr is not None:
                         used_ctramp.add(cr["no"])
@@ -1686,6 +1725,39 @@ def build_report(cfg: dict) -> Path:
         # Read YAML constants early so _mapped_table can detect zero-valued expressions
         yaml_file = sm["asim_spec"].replace(".csv", ".yaml") if tpl_file else ""
         yaml_consts = _read_yaml_constants(dirs, yaml_file) if yaml_file else {}
+
+        # Also include coefficient values that appear as @name in spec expressions
+        # so expression multiplier detection works (e.g., @adjust_tnc_shared = 0,
+        # @walk_express_penalty = 10).  Only include coefficients that are NOT
+        # used in alt columns (i.e., they are expression-level constants, not
+        # the alt-column coefficient itself).
+        if tpl_file:
+            coeff_path = _resolve(dirs, sm["asim_coefficients"])
+            if coeff_path:
+                # Collect all coefficient names used in alt columns
+                alt_coef_names = set()
+                for row in spec.get("rows", []):
+                    for v in row.get("coeffs", {}).values():
+                        if isinstance(v, str):
+                            alt_coef_names.add(v)
+                # Collect coefficient names referenced in expressions (@name)
+                expr_coef_names = set()
+                for row in spec.get("rows", []):
+                    expr = row.get("expr", "")
+                    if expr:
+                        for m in re.finditer(r'@(\w+)', expr):
+                            expr_coef_names.add(m.group(1))
+                # Only inject coefficients that appear in expressions but NOT in alt columns
+                expr_only = expr_coef_names - alt_coef_names
+                with coeff_path.open(encoding="utf-8-sig") as _cf:
+                    for _crow in csv.DictReader(_cf):
+                        try:
+                            _cname = _crow["coefficient_name"].strip()
+                            _cval = float(_crow["value"])
+                            if _cname in expr_only and _cname not in yaml_consts:
+                                yaml_consts[_cname] = _cval
+                        except (ValueError, KeyError, TypeError):
+                            pass
 
         mapped_html = _mapped_table(sm["name"], sheets, spec, template_resolve=tpl_resolve, ctramp_props=ctramp_props, tokens_by_sheet=tokens_by_sheet, yaml_constants=yaml_consts)
 
