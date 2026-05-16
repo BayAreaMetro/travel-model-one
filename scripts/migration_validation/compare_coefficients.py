@@ -363,7 +363,9 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
     if multi_seg and len(sheets) > 1:
         ref_sheet = sheets[0]
         ref_by_no = {r["no"]: r for r in ref_sheet["rows"]}
-        # Collect (sheet, row_no) pairs explicitly specified by per-sheet crosswalk dicts
+        # Collect (sheet, row_no) pairs explicitly specified by per-sheet crosswalk dicts.
+        # The desc-based code must not store at these keys because the per-sheet
+        # dispatch uses them for direct row lookups.
         _explicit_sheet_rows: set[tuple[str, int]] = set()
         for ctramp_ref in crosswalk.values():
             refs = ctramp_ref if isinstance(ctramp_ref, list) else [ctramp_ref]
@@ -372,6 +374,14 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     for k, v in ref.items():
                         if k != "*":
                             _explicit_sheet_rows.add((k, v))
+        # Also collect ref row numbers that have per-sheet dicts (their desc-based
+        # matching is unreliable when multiple rows share the same description).
+        _ref_rows_with_overrides: set[int] = set()
+        for ctramp_ref in crosswalk.values():
+            refs = ctramp_ref if isinstance(ctramp_ref, list) else [ctramp_ref]
+            for ref in refs:
+                if isinstance(ref, dict) and "*" in ref:
+                    _ref_rows_with_overrides.add(ref["*"])
         for s in sheets[1:]:
             sn = s["sheet_name"]
             desc_to_row = {r["desc"].strip().lower(): r for r in s["rows"]}
@@ -379,9 +389,16 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 ref_desc = ref_row["desc"].strip().lower()
                 matched = desc_to_row.get(ref_desc)
                 if matched:
-                    # Don't overwrite entries for rows explicitly targeted by per-sheet overrides
+                    # Don't store if either:
+                    # 1) The key (sn, ref_no) collides with a per-sheet dispatch target
+                    # 2) The matched row's actual number is a per-sheet dispatch target
+                    # 3) The ref_no already has a per-sheet dict (explicit dispatch)
                     key = (sn, ref_no)
                     if key in _explicit_sheet_rows:
+                        continue
+                    if (sn, matched["no"]) in _explicit_sheet_rows:
+                        continue
+                    if ref_no in _ref_rows_with_overrides:
                         continue
                     ctramp_by_sheet_no[key] = matched
 
@@ -582,8 +599,8 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     if not _tk.startswith("c_") or abs(_tv) < 1e-10:
                         continue
                     ratio = _tv / c_ivt_val
-                    # Check if ratio is a "clean" multiplier (e.g. -0.2, 0.3, 2.0)
-                    if abs(ratio - round(ratio, 1)) < 1e-6 and abs(ratio) < 50:
+                    # Check if ratio is a "clean" multiplier (e.g. -0.2, 2.0, 270.0)
+                    if abs(ratio - round(ratio, 1)) < 1e-6 and abs(ratio) < 300:
                         ivt_derived.add(_tk)
                         ivt_derived.add(_tk.lower())
             _resolved_tokens[_sn] = resolved
@@ -620,6 +637,28 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 if sheet_name and _resolved_tokens:
                     resolved = _resolved_tokens.get(sheet_name, {})
                     ivt_derived = _ivt_derived.get(sheet_name, set())
+
+                    # Before pattern-matching tokens, check if the formula
+                    # multiplies by a %Property% that resolves to 0, or by a
+                    # literal zero (e.g. "c_ivt*0.00").  If so the entire
+                    # expression is effectively zero.
+                    _prop_zero = False
+                    if props:
+                        for _pm in re.finditer(r'%(\w+)%', formula):
+                            pname = _pm.group(1)
+                            pval_str = props.get(pname, "")
+                            try:
+                                if float(pval_str) == 0.0:
+                                    _prop_zero = True
+                                    break
+                            except (ValueError, TypeError):
+                                pass
+                    # Also catch literal zero multiplier: "c_xxx*0.00" or "c_xxx * 0"
+                    if not _prop_zero and re.search(r'[*]\s*0+(\.0+)?\s*$', formula):
+                        _prop_zero = True
+                    if _prop_zero:
+                        return 0.0
+
                     # Pattern A: "c_xxx * (skim_expression)" or "c_xxx*(...)"
                     # If c_xxx is derived from c_ivt (e.g. c_walkTimeShort = 2*c_ivt),
                     # the comparable coefficient is c_ivt because ASim separates the
@@ -722,6 +761,22 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     for cname, cval in yaml_constants.items():
                         if cval == 0 and re.search(r'\b' + re.escape(cname) + r'\b', expr):
                             return 0.0
+            # Check if expression filters by tour_type — if the current purpose
+            # doesn't match the filter, the effective coefficient is 0.
+            if ar.get("expr"):
+                expr = ar["expr"]
+                # Pattern: df.tour_type == 'X' — only applies to purpose X
+                eq_match = re.search(r"df\.tour_type\s*==\s*'(\w+)'", expr)
+                if eq_match:
+                    allowed_purpose = eq_match.group(1)
+                    if purpose != allowed_purpose:
+                        return 0.0
+                # Pattern: df.tour_type != 'X' — applies to all except X
+                neq_match = re.search(r"df\.tour_type\s*!=\s*'(\w+)'", expr)
+                if neq_match:
+                    excluded_purpose = neq_match.group(1)
+                    if purpose == excluded_purpose:
+                        return 0.0
             # Get any coefficient name from the row (all alts share same generic name for ASCs)
             for _alt, val in ar["coeffs"].items():
                 if isinstance(val, (int, float)):
@@ -764,10 +819,17 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 for sn, purpose in zip(seg_names, purposes):
                     sheet_row = _row_for_sheet(sn)
                     cr = ctramp_by_sheet_no.get((sn, sheet_row)) if sheet_row else None
+                    # Mark the actual resolved row number as used (may differ from sheet_row due to desc-matching)
+                    if cr is not None:
+                        used_ctramp.add(cr["no"])
                     c_val = _resolve_ctramp_formula_val(cr, sheet_name=sn)
                     a_val = _resolve_asim_for_purpose(ar, purpose) if show_asim else ""
                     c_is_unresolved = isinstance(c_val, str) and "UNRESOLVED" in c_val
                     a_is_unresolved = isinstance(a_val, str) and "UNRESOLVED" in a_val
+                    # If crosswalk explicitly sets None for this sheet, CTRAMP
+                    # intentionally omits this row — treat CTRAMP value as 0.
+                    if sheet_row is None and isinstance(ctramp_no_spec, dict):
+                        c_val = 0.0
                     if c_val == "" and a_val == "":
                         val_cells += "<td class='num'></td><td class='num'></td>"
                     elif c_is_unresolved or a_is_unresolved:
@@ -793,12 +855,22 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                         val_cells += f"<td class='num {cls}'>{_fmt(c_val)}</td><td class='num {cls}'>{_fmt(a_val)}</td>"
                     else:
                         # One side blank (no row exists), other has value
-                        n_total += 1
-                        n_diff += 1
-                        c_str = _fmt(c_val) if c_val != "" else "—"
-                        a_str = _fmt(a_val) if a_val != "" else "—"
-                        val_cells += f"<td class='num diff'>{c_str}</td><td class='num diff'>{a_str}</td>"
-                        _DIFF_RECORDS.append((name, asim_label, display_no, purpose, c_val, a_val, "ONE_SIDE_MISSING"))
+                        # Treat zero vs absent as a match (zero contribution = no row)
+                        try:
+                            _present = float(c_val) if c_val != "" else float(a_val)
+                        except (ValueError, TypeError):
+                            _present = None
+                        if _present is not None and abs(_present) < 1e-10:
+                            n_total += 1
+                            n_match += 1
+                            val_cells += f"<td class='num match'>{_fmt(c_val) if c_val != '' else '—'}</td><td class='num match'>{_fmt(a_val) if a_val != '' else '—'}</td>"
+                        else:
+                            n_total += 1
+                            n_diff += 1
+                            c_str = _fmt(c_val) if c_val != "" else "—"
+                            a_str = _fmt(a_val) if a_val != "" else "—"
+                            val_cells += f"<td class='num diff'>{c_str}</td><td class='num diff'>{a_str}</td>"
+                            _DIFF_RECORDS.append((name, asim_label, display_no, purpose, c_val, a_val, "ONE_SIDE_MISSING"))
 
                 body += "<tr>"
                 if show_asim:
@@ -888,6 +960,9 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                 for sn, alt in zip(seg_names, asim_alts):
                     sheet_row = _row_for_sheet2(sn)
                     cr = ctramp_by_sheet_no.get((sn, sheet_row)) if sheet_row else None
+                    # Mark actual resolved row as used
+                    if cr is not None:
+                        used_ctramp.add(cr["no"])
                     c_val = _effective_coeff(cr)
                     a_val = _coeff_for_alt(ar, alt) if ar else ""
                     if show_asim:
