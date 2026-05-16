@@ -172,7 +172,78 @@ implementation — effectively dead code. No ActivitySim equivalent needed.
 - `coefficient_comparison.html` — tabs: Workplace Location, School Location, Auto Ownership, CDAP, Work From Home, Tour Mode Choice, Trip Mode Choice, Size Terms.
 - `ablation_report.html` — per-stage calibration: TLFD plots, mode share tables, AO distributions, WFH rates by county (stage 3+).
 
+##### Coefficient Alignment Status
 
+Automated comparison (`scripts/migration_validation/compare_coefficients.py`)
+reads CTRAMP UEC `.xls` sheets and ASim spec CSVs side-by-side, using a
+crosswalk (`scripts/migration_validation/uec_mappings.py`) to match CTRAMP row
+numbers to ASim expression labels. Final status across all submodels:
+
+| Submodel | Diffs | Notes |
+|----------|------:|-------|
+| Workplace Location | 0 | |
+| School Location | 0 | |
+| Auto Ownership | 0 | |
+| CDAP | 0 | See "CDAP dead-code rows" below |
+| Work From Home | 0 | |
+| Tour Mode Choice | 0 | |
+| Trip Mode Choice | 1 | Accepted structural diff (see below) |
+| **Total** | **1** | |
+
+**Trip MC accepted diff — DA_FREE Unavailable on at-work sub-tours:**
+CTRAMP's WorkBased sheet has no generic "DA Unavailable" row (the concept is
+handled elsewhere in CTRAMP for sub-tours). ASim's `sov_available == False →
+-999` is an extra safety net that fires for the `atwork` purpose. This is
+harmless and intentional — accepted as a structural difference.
+
+**CDAP dead-code rows (79–84):**
+CTRAMP `CoordinatedDailyActivityPattern.xls` rows 79–84 are not ported to
+ActivitySim. Disposition:
+
+- **Rows 79–80** (FT/PT worker × `noUsualWorkLocation`, coef −0.5935):
+  Dead code in MTC — the token `noUsualWorkLocation` is always 0 in the MTC
+  implementation, so these rows never fire. No ASim equivalent needed.
+- **Rows 81–82** (school child × `noUsualSchoolLocation`, coef −0.8660):
+  Dead code in MTC — the token `noUsualSchoolLocation` is always 0 in the MTC
+  implementation, so these rows never fire. No ASim equivalent needed.
+- **Rows 83–84** (retired/non-working adult → M unavailable, coef −999):
+  Functionally present in ASim — absorbed into the person-type ASC rows in
+  `cdap_indiv_and_hhsize1.csv` which apply `coef_UNAVAILABLE` (−999) to the M
+  column for ptypes 4 and 5.
+
+The crosswalk in `uec_mappings.py` documents these exclusions with comments
+explaining the rationale.
+
+##### Key fixes applied during coefficient alignment
+
+1. **Trip MC Transit ASC coefficient swap:** Several `heavy_rail` and
+   `express_bus` per-purpose ASC coefficients were pulled from the wrong CTRAMP
+   row (`light_rail`) during the original migration. Fixed in
+   `trip_mode_choice_coefficients.csv`.
+
+2. **Trip MC "didn't drive to work" dead code:** CTRAMP WorkBased sheet has
+   `didn't_drive_to_work` rows with coeff 0.0 (dead code), but ASim had −999.
+   Changed ASim to 0 to match. Fixed in `trip_mode_choice.csv`.
+
+3. **Per-sheet crosswalk dicts:** Many CTRAMP expressions have different row
+   numbers across purpose sheets (e.g., Walk Time is row 233 on Work, 235 on
+   WorkBased, 236 on others). The crosswalk uses per-sheet dicts like
+   `{"Work": 233, "WorkBased": 235, "*": 236}` with `None` meaning the row
+   doesn't exist on that sheet.
+
+4. **Tour MC per-sheet dict collision fix:** Adding per-sheet dicts broke
+   desc-matching when dict target row numbers collided with other entries on
+   different sheets. Fixed by introducing `_raw_by_sheet_no` to preserve raw
+   row data before desc-matching.
+
+5. **Trip MC hesitance rows:** 10 hesitance constant rows added to
+   `trip_mode_choice.csv` with supporting coefficients in
+   `trip_mode_choice.yaml` (IVT multipliers for LRT/ferry, work transit
+   hesitance, rail transit hesitance).
+
+6. **Trip MC joint ride-hail zeroing:** `joint_ride_hail_ASC_walk_transit`
+   template row zeroed for non-joint purposes in
+   `trip_mode_choice_coefficients_template.csv`.
 
 
 ### Step 2: Pythonify summarizers (OMX-native)
@@ -222,6 +293,69 @@ common_overrides:
 
 For AWS/parallel: one `tm1 run` per machine, parallelism is infrastructure not CLI.
 
+
+## Migration Notes Summary
+
+Detailed migration notes live in `docs/`:
+- [`docs/ACTIVITYSIM_MIGRATION_NOTES.md`](docs/ACTIVITYSIM_MIGRATION_NOTES.md) — input/output column mapping, pandas fixes, package structure
+- [`docs/OUTPUT_MAPPING.md`](docs/OUTPUT_MAPPING.md) — ActivitySim → CTRAMP output column mapping for legacy R summaries
+- [`docs/skim_conversion_mapping.md`](docs/skim_conversion_mapping.md) — Cube TPP → OMX skim key mapping
+
+### Input table remapping
+
+PopulationSim outputs (`personFile.csv`, `hhFile.csv`, `tazData.csv`) need
+column renames and case fixes to match ActivitySim expectations. Key changes:
+- `HHID` → `household_id`, `PERID` → `person_id`, `TAZ` → `home_zone_id`
+- `HINC` → `income`, `PERSONS` → `hhsize`, `VEHICL` → `auto_ownership`
+- `PNUM` removed from `keep_columns` — ActivitySim derives it internally
+- Full mapping in `docs/ACTIVITYSIM_MIGRATION_NOTES.md`
+
+### Skim conversion decisions
+
+Highway, transit, and non-motorized skims are converted from Cube TPP to a
+single `skims.omx` via `scripts/build_omx_skims.py`. Notable decisions:
+- **`wacc`/`wegr`** (walk access/egress time) added to transit mapping — the
+  prototype configs omitted these but `accessibility.csv` references them.
+- **`WLK_TRN_WLK_IVT` → `TOTIVT`**: The prototype used `_IVT` for aggregate
+  transit but `_TOTIVT` for all 15 mode-specific keys. Fixed to use `TOTIVT`
+  everywhere.
+- **Aggregate `trn` skims excluded** from OMX — used only for accessibility,
+  not by mode choice UECs. Mode-specific (`loc`, `lrf`, `exp`, `hvy`, `com`)
+  are included.
+- External zones (1455–1475) included in matrix but unused by ActivitySim.
+- Full mapping in `docs/skim_conversion_mapping.md`
+
+### Output shimming (ActivitySim → CTRAMP format)
+
+`tm1.steps.summarize` converts ActivitySim outputs to CTRAMP-format CSVs so
+legacy `CoreSummaries.R` can consume them. Full column mapping in
+`docs/OUTPUT_MAPPING.md`. Eventually deprecated when R summaries are replaced.
+
+### `write_trip_matrices` duplicate `tour_id` fix
+
+Joint tours share a `tour_id` across participants, creating duplicates in the
+tours index. pandas 2.x rejects `.map()` on non-unique indexes (pandas 1.x
+silently used the first match). Fixed with `drop_duplicates(subset='tour_id')`
+before mapping. Upstream `prototype_mtc` has the same bug.
+
+### Slack notifications
+
+Migrated from `model-files/scripts/notify_slack.py` → `src/tm1/slack.py`.
+Webhook URL from `SLACK_WEBHOOK_URL` env var or MTC default file. Notifications
+at setup, ActivitySim start, pipeline milestones, and finish/error. Disable
+with `--no-slack`.
+
+### Package structure
+
+| Package | Purpose |
+|---|---|
+| `src/cubeio` | Generic Cube Voyager I/O (TPP reader, OMX converter) |
+| `src/tm1` | TM1-specific utilities (config loading, Slack, output shimming) |
+| `scripts/run_model.py` | Orchestrator — setup + launch ActivitySim |
+| `scripts/build_omx_skims.py` | One-time TPP → OMX conversion |
+| `scripts/migration_validation/` | Coefficient comparison, ablation, calibration tools |
+
+---
 
 ## Migration Fixes Log
 
