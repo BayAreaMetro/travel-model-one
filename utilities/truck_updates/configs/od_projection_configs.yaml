@@ -1,0 +1,127 @@
+# ── File paths ────────────────────────────────────────────────────────────────
+input:
+  from_shapefile:      "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/external/caltrans/CSF2TDM_TAZs.shp"  
+  from_network_nodes:  "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/interim/cube_io/from_cube/statewide_net/HwyNetwork_Loaded_ADT_2020_Daily_nodes.shp"                                               
+  from_omx:            "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/interim/cube_io/from_cube/statewide_od_matrices/TRIPS_FFM_2020.omx"  # matrices to project
+  to_shapefile:        "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/external/mtc/MTC_TAZ/Travel Analysis Zones.shp"                                                
+  to_network_nodes:    "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/interim/cube_io/from_cube/mtc_net/mtc_nodes.shp"  
+  tm_land_use:         "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/external/mtc/2023_TM161_IPA_35/INPUT/landuse/tazData.csv"  
+  
+output:
+  output_dir: data/interim/matrix_projection
+  files:
+    truck_trip_gen_tm16: truck_trip_generation_tm16.csv  
+    zone_classification: zone_classification.csv
+    crosswalk:           crosswalk.csv
+    omx_zone_and_gates:   SwTazTln_to_TMTaz_TRIPS_FFM_2020.omx
+    omx_only_zones:       SwTAZ_to_TMTaz_TRIPS_FFM_2020.omx
+    omx_only_gates:       SwTLN_to_TMTaz_TRIPS_FFM_2020.omx
+
+zones:
+  from_zone_id: TAZ12            # zone ID field in the FROM shapefile
+  to_zone_id: TAZ1454            # zone ID field in the TO shapefiles (internal + gateways)
+  from_matrix_size:   7000       # total size of FROM OMX matrices 
+  to_matrix_size: 1475           # TM-1.6 Total: TAZ1454 + Gateways 
+  offset: 1                      # matrix index = zone_id − offset  (Most of the times this is 1)
+  to_taz_range:  [1, 1454]       # inclusive  (real: [1, 1454])
+  to_gate_range:   [1455, 1475]  # inclusive  (real: [1455, 1475])
+
+
+# ── Crosswalk weight variables ────────────────────────────────────────────────
+weights:
+  variables:
+    production: all_trucks_production   # column name in to_variables_csv for weights
+    attraction: all_trucks_attraction   # column name in to_variables_csv for weights
+
+# ── Sliver removal ────────────────────────────────────────────────────────────
+# After overlay, tiny imprecision polygons ("slivers") are filtered out.
+# A polygon is removed if it fails ANY of the three tests below.
+slivers:
+  min_area_m2:       50.0    # absolute area floor (projected CRS units, i.e. m²)
+  min_area_fraction: 0.001   # fraction of the parent FROM-zone area  (0.1%)
+  min_compactness:   0.02    # isoperimetric ratio 4π·A/P²; 0=infinitely thin, 1=circle
+
+# ── Spatial ───────────────────────────────────────────────────────────────────
+spatial:
+  projected_crs: "EPSG:3310"   # California Albers (units: meters)
+
+
+# ── MTC output formatting ─────────────────────────────────────────────────────
+# After projection, matrices are re-packaged into the five MTC TOD files.
+mtc_format:
+  input_omx_pattern:  "data/interim/cube_io/from_cube/mtc_truck_od_trips/tripstrk{tod}x.omx"
+  output_omx_pattern: "data/interim/matrix_projection/outputs/od_matrices_for_tm/tripstrk{tod}x.omx"
+
+  mtc_tods: [EA, AM, MD, PM, EV]
+  
+  tod_mapping:
+    AM:
+      mtc_tods: [AM]
+    MID:
+      mtc_tods: [MD]
+    PM:
+      mtc_tods: [PM]
+    "OFF": # Make sure to quote keys that would otherwise be read as bool (OFF, ON).
+      mtc_tods: [EA, EV]
+      split_reference_types: [struck, mtruck, ctruck]
+
+  truck_type_mapping:
+    vstruck:
+      from_types: null              # no statewide equivalent; preserve the original MTC matrix.
+    struck:
+      from_types: [LT]              # LT        (light trucks)     → struck
+    mtruck:
+      from_types: [MT1, MT2]        # MT1 + MT2 (medium trucks)    → mtruck
+    ctruck:
+      from_types: [HT]              # HT        (heavy trucks)     → ctruck
+
+# ── Matrix names ──────────────────────────────────────────────────────────────
+projection:
+  # Which crosswalk weight column to use for rows and columns.
+  row_weight:    all_trucks_production_weight   # rows    = trip origins
+  column_weight: all_trucks_attraction_weight   # columns = trip destinations
+  from_matrices_to_project:
+    - LT_FR_CA_OFF
+    - LT_FR_CA_AM
+    - LT_FR_CA_MID
+    - LT_FR_CA_PM
+    - MT1_FR_CA_OFF
+    - MT1_FR_CA_AM
+    - MT1_FR_CA_MID
+    - MT1_FR_CA_PM
+    - MT2_FR_CA_OFF
+    - MT2_FR_CA_AM
+    - MT2_FR_CA_MID
+    - MT2_FR_CA_PM
+    - HT_FR_CA_OFF
+    - HT_FR_CA_AM
+    - HT_FR_CA_MID
+    - HT_FR_CA_PM
+    - MT1_FR_EXT_OFF
+    - MT1_FR_EXT_AM
+    - MT1_FR_EXT_MID
+    - MT1_FR_EXT_PM
+    - MT2_FR_EXT_OFF
+    - MT2_FR_EXT_AM
+    - MT2_FR_EXT_MID
+    - MT2_FR_EXT_PM
+    - HT_FR_EXT_OFF
+    - HT_FR_EXT_AM
+    - HT_FR_EXT_MID
+    - HT_FR_EXT_PM
+    - LT_NF_CA_OFF
+    - LT_NF_CA_AM
+    - LT_NF_CA_MID
+    - LT_NF_CA_PM
+    - MT1_NF_CA_OFF
+    - MT1_NF_CA_AM
+    - MT1_NF_CA_MID
+    - MT1_NF_CA_PM
+    - MT2_NF_CA_OFF
+    - MT2_NF_CA_AM
+    - MT2_NF_CA_MID
+    - MT2_NF_CA_PM
+    - HT_NF_CA_OFF
+    - HT_NF_CA_AM
+    - HT_NF_CA_MID
+    - HT_NF_CA_PM
