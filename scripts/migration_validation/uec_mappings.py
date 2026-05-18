@@ -48,6 +48,30 @@ MAPPINGS: dict[str, dict[str, int | list[int] | dict[str, int]]] = {
         "util_no_attractions":                 15,
     },
 
+    "Nonwork Destination Choice": {
+        "Distance, piecewise linear from 0 to 1 miles":    8,
+        "Distance, piecewise linear from 1 to 2 miles":    9,
+        "Distance, piecewise linear from 2 to 5 miles":   10,
+        "Distance, piecewise linear from 5 to 15 miles":  11,
+        "Distance, piecewise linear for 15+ miles":       12,
+        "Mode choice logsum":                             13,
+        "Size variable":                                  14,
+        "No attractions":                                 15,
+        "Sample of alternatives correction factor":        7,
+    },
+
+    "At-Work Subtour Destination Choice": {
+        "util_distance_piecewise_linear_from_0_to_1_miles":    8,
+        "util_distance_piecewise_linear_from_1_to_2_miles":    9,
+        "util_distance_piecewise_linear_from_2_to_5_miles":   10,
+        "util_distance_piecewise_linear_from_5_to_15_miles":  11,
+        "util_distance_piecewise_linear_for_15_plus_miles":   12,
+        "util_mode_choice_logsum":                            13,
+        "util_size_variable_atwork":                          14,
+        "util_no_attractions_atwork_size_variable_is_0":      15,
+        "util_sample_of_alternatives_correction_factor":       7,
+    },
+
     "Auto Ownership": {
         "util_drivers_2":                      21,
         "util_drivers_3":                      22,

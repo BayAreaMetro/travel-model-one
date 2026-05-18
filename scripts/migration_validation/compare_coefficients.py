@@ -214,7 +214,8 @@ def _resolve(dirs: list[Path], filename: str) -> Path | None:
 # Sheet name → template purpose column mapping (for Mode Choice models)
 SHEET_TO_PURPOSE: dict[str, str] = {
     "Work": "work", "University": "univ", "School": "school",
-    "Escort": "escort", "Shopping": "shopping", "EatOut": "eatout",
+    "Escort": "escort", "EscortKids": "escortkids", "EscortNoKids": "escortnokids",
+    "Shopping": "shopping", "EatOut": "eatout",
     "OthMaint": "othmaint", "Social": "social", "OthDiscr": "othdiscr",
     "WorkBased": "atwork",
 }
@@ -956,9 +957,10 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
     elif multi_seg:
         # Multi-segment table: one coeff column per segment
         seg_names = [s["sheet_name"] for s in sheets]
+        purposes = [SHEET_TO_PURPOSE.get(sn, sn.lower()) for sn in seg_names]
         coeff_hdrs = "".join(
             f"<th class='num'>CTRAMP {esc(sn)}</th><th class='num'>ASim {esc(alt)}</th>"
-            for sn, alt in zip(seg_names, asim_alts)
+            for sn, alt in zip(seg_names, purposes)
         )
         h = ("<table class='coeff mapped sortable'><thead><tr>"
              "<th>ASim Label</th><th>No.</th><th>Description</th>"
@@ -995,7 +997,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     body += f"<td{rowspan}>{esc(ar['expr']) if ar else ''}</td>"
 
                 # One pair of coeff columns per segment
-                for sn, alt in zip(seg_names, asim_alts):
+                for sn, alt in zip(seg_names, purposes):
                     sheet_row = _row_for_sheet2(sn)
                     _lookup2 = _raw_by_sheet_no if isinstance(ctramp_no_spec, dict) else ctramp_by_sheet_no
                     cr = _lookup2.get((sn, sheet_row)) if sheet_row else None
@@ -1026,7 +1028,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                         f"<tr class='ctramp-only'><td></td><td>{r['no']}</td>"
                         f"<td>{esc(r['desc'])}</td><td>{esc(_ctramp_expr(r))}</td><td></td>"
                     )
-                    for sn, alt in zip(seg_names, asim_alts):
+                    for sn, alt in zip(seg_names, purposes):
                         cr = ctramp_by_sheet_no.get((sn, r["no"]))
                         c_val = _coeff_val(cr)
                         body += f"<td class='num'>{_fmt(c_val) if c_val != '' else ''}</td><td></td>"
@@ -1036,7 +1038,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
         for r in spec["rows"]:
             if r["label"] not in used_asim:
                 body += f"<tr class='asim-only'><td>{esc(r['label'])}</td><td></td><td></td><td></td><td>{esc(r['expr'])}</td>"
-                for sn, alt in zip(seg_names, asim_alts):
+                for sn, alt in zip(seg_names, purposes):
                     a_val = _coeff_for_alt(r, alt)
                     body += f"<td></td><td class='num'>{_fmt(a_val) if a_val != '' else ''}</td>"
                 body += "</tr>"
