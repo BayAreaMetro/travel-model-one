@@ -156,6 +156,16 @@ def evaluate_stages(cfg: dict) -> None:
             log.info("Stage %d (%s) has no output — skipping", stage_num, stage_name)
             continue
 
+        # Skip if HTML report is already newer than the ablation results
+        report_path = output_base / f"ablation_{stage_num:02d}_{stage_name}.html"
+        if report_path.exists():
+            result_mtime = (stage_dir / "final_households.csv").stat().st_mtime
+            report_mtime = report_path.stat().st_mtime
+            if report_mtime > result_mtime:
+                log.info("Stage %d (%s) report is up-to-date — skipping",
+                         stage_num, stage_name)
+                continue
+
         stage_output_dir = output_base
         try:
             evaluate_stage(

@@ -40,6 +40,16 @@ def build_models_list(stages: list[dict], up_to: int) -> list[str]:
     models = list(INIT_MODELS)
     for s in stages[:up_to]:
         models.extend(s["activitysim_models"])
+    # Deduplicate: keep only the LAST occurrence of each model.
+    # tour_mode_choice_simulate appears in every tour stage but should only
+    # run once — after all tours for the current ablation level exist.
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for m in reversed(models):
+        if m not in seen:
+            seen.add(m)
+            deduped.append(m)
+    models = list(reversed(deduped))
     if "write_tables" not in models:
         models.append("write_tables")
     return models
