@@ -1,6 +1,6 @@
 models:
   - name: Heavy Truck - Non-Freight - Production
-    target: HT_NF_production
+    target: HT_NF_production + HT_FR_production
     features:
       - TOTEMP
     description: Large non-garage TM1.6 model specs. Line 74 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job

@@ -1,11 +1,11 @@
 # ── File paths ────────────────────────────────────────────────────────────────
 input:
-  from_shapefile:      "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/external/caltrans/CSF2TDM_TAZs.shp"  
-  from_network_nodes:  "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/interim/cube_io/from_cube/statewide_net/HwyNetwork_Loaded_ADT_2020_Daily_nodes.shp"                                               
-  from_omx:            "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/interim/cube_io/from_cube/statewide_od_matrices/TRIPS_FFM_2020.omx"  # matrices to project
-  to_shapefile:        "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/external/mtc/MTC_TAZ/Travel Analysis Zones.shp"                                                
-  to_network_nodes:    "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/interim/cube_io/from_cube/mtc_net/mtc_nodes.shp"  
-  tm_land_use:         "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/data/external/mtc/2023_TM161_IPA_35/INPUT/landuse/tazData.csv"  
+  from_shapefile:      "data/external/caltrans/CSF2TDM_TAZs.shp"  
+  from_network_nodes:  "data/interim/cube_io/from_cube/statewide_net/HwyNetwork_Loaded_ADT_2020_Daily_nodes.shp"                                               
+  from_omx:            "data/interim/cube_io/from_cube/statewide_od_matrices/TRIPS_FFM_2020.omx"  # matrices to project
+  to_shapefile:        "data/external/mtc/MTC_TAZ/Travel Analysis Zones.shp"                                                
+  to_network_nodes:    "data/interim/cube_io/from_cube/mtc_net/mtc_nodes.shp"  
+  tm_land_use:         "data/external/mtc/2023_TM161_IPA_35/INPUT/landuse/tazData.csv"  
   
 output:
   output_dir: data/interim/matrix_projection
