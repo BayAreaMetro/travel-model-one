@@ -103,7 +103,7 @@ def _counts_table(obs: pl.DataFrame, mod: pl.DataFrame, obs_label: str, mod_labe
     mod_by_pt = {r["person_type"]: r for r in mod.sort("person_type").to_dicts()}
 
     out = _open_table()
-    out += _two_row_header(obs_label, mod_label, "% Change")
+    out += _two_row_header(obs_label, mod_label, "Delta (pp)")
     out += "<tbody>"
 
     for row in rows_obs:
@@ -115,33 +115,22 @@ def _counts_table(obs: pl.DataFrame, mod: pl.DataFrame, obs_label: str, mod_labe
             cls = " class='group-sep'" if i == 0 else ""
             val = mr.get(p)
             out += f"<td{cls}>{val:,.0f}</td>" if val is not None else f"<td{cls}>—</td>"
+        # Delta column: use share-based pp difference (less sensitive than % change on counts)
         for i, p in enumerate(PATTERNS):
-            obs_val = row.get(p, 0) or 0
-            mod_val = mr.get(p, 0) or 0
+            obs_share = row.get(f"{p}_share", 0) or 0
+            mod_share = mr.get(f"{p}_share", 0) or 0
             if i == 0:
-                out += f"<td class='group-sep'>"
-            else:
-                out += "<td"
-            # Use pct_change style for count deltas
-            if abs(obs_val) < _NEAR_ZERO:
-                out += ">—</td>" if i > 0 else "—</td>"
-            else:
-                diff_pct = (mod_val - obs_val) / obs_val * 100
-                mag = abs(diff_pct)
-                cls_extra = ""
+                diff = (mod_share - obs_share) * 100
+                mag = abs(diff)
+                cls = "group-sep"
                 if mag > 10:
-                    cls_extra = " err-bad"
+                    cls += " err-bad"
                 elif mag > 5:
-                    cls_extra = " err-warn"
-                sign = "+" if diff_pct >= 0 else ""
-                if i == 0:
-                    out = out.rstrip(">")
-                    if cls_extra:
-                        out = out.replace("class='group-sep'", f"class='group-sep{cls_extra}'")
-                    out += f">{sign}{diff_pct:.1f}%</td>"
-                else:
-                    cls_attr = f" class='{cls_extra.strip()}'" if cls_extra else ""
-                    out += f"{cls_attr}>{sign}{diff_pct:.1f}%</td>"
+                    cls += " err-warn"
+                sign = "+" if diff >= 0 else ""
+                out += f"<td class='{cls}'>{sign}{diff:.1f} pp</td>"
+            else:
+                out += pp_delta_cell(obs_share, mod_share)
         out += "</tr>"
     return out + "</tbody></table>"
 
