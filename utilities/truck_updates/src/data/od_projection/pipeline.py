@@ -1,26 +1,3 @@
-"""
-Full ETL pipeline: project FROM-model matrices into the TO-model zoning system.
-
-Runs the four steps in order:
-    1. classify_zones  – label every FROM zone (internal / boundary / external / TLN point)
-    2. build_crosswalk – compute origin + destination weight tables
-    3. project_matrix  – apply crosswalk to all configured matrices via JAX
-
-Step 0 (make_mock_data) is intentionally excluded — it is only for development
-and should not be part of a production run.
-
-Usage
-─────
-From the command line (project root):
-    python -m src.data.pipeline
-    python -m src.data.pipeline --config config/config.yaml  # explicit config
-
-From Python (e.g. another model or notebook):
-    from src.data.pipeline import run_pipeline
-    run_pipeline()                                  # uses default config
-    run_pipeline("path/to/other_config.yaml")       # custom config
-"""
-
 import argparse
 import logging
 import time
@@ -146,8 +123,8 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
 
     # # ───── END OF PIPELINE ───────────────────────────────────────────────────────
 
-    # logger.info("=" * 60)
-    # logger.info("Pipeline complete in %.1fs", time.perf_counter() - t0)
+    logger.info("=" * 60)
+    logger.info("Pipeline complete in %.1fs", time.perf_counter() - t0)
     # logger.info(
     #     "Projected OMX : %s", cfg["paths"]["output_omx"]
     # )
@@ -155,7 +132,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     #     "MTC format    : %s",
     #     cfg["mtc_format"]["output_omx_pattern"].replace("{tod}", "*"),
     # )
-    # logger.info("=" * 60)
+    logger.info("=" * 60)
 
 
 # ── CLI entry point ────────────────────────────────────────────────────────────
