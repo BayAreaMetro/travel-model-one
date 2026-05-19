@@ -1,43 +1,49 @@
-"""Shared utilities for the CSF-to-MTC pipeline."""
-
 import logging
-import os
 import sys
 import yaml
 import time
 import functools
-from typing import Any, Callable, Optional
+from typing import Callable
+from datetime import datetime
+from pathlib import Path
 
-import pandas as pd
-import geopandas as gpd
 
-def save_shapefile(
-    gdf: gpd.GeoDataFrame,
-    path: str,
-    crs: Optional[str] = None,
-) -> None:
+def setup_logging(
+    level: int = logging.INFO,
+    log_dir: str | None = None,
+    log_name: str = "pipeline",
+) -> Path | None:
     """
-    Save a shapefile to disk.
+    Configure root logger with a consistent format for all pipeline scripts.
+
+    If log_dir is provided, logs are written to both stdout and a timestamped
+    log file. Otherwise, logs are written only to stdout.
     """
-    folder = os.path.dirname(path)
-    os.makedirs(folder, exist_ok=True)
-    if crs is not None:
-        if gdf.crs is None:
-            gdf = gdf.set_crs(crs)
-        else:
-            gdf = gdf.to_crs(crs)
-    gdf.to_file(path)
+    handlers: list[logging.Handler] = [
+        logging.StreamHandler(sys.stdout)
+    ]
 
+    log_path = None
 
-def setup_logging(level: int = logging.INFO) -> None:
-    """Configure root logger with a consistent format for all pipeline scripts."""
+    if log_dir is not None:
+        Path(log_dir).mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = Path(log_dir) / f"{log_name}_{timestamp}.log"
+
+        handlers.append(
+            logging.FileHandler(log_path, mode="w", encoding="utf-8")
+        )
+
     logging.basicConfig(
         level=level,
         format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
         datefmt="%H:%M:%S",
-        stream=sys.stdout,
+        handlers=handlers,
         force=True,
     )
+
+    return log_path
 
 
 def load_config(config_path: str = "configs/config.yaml") -> dict:

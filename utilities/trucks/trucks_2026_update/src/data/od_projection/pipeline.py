@@ -27,13 +27,17 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     config_path : str
         Path to the YAML configuration file.
     """
-    setup_logging()
+    log_path = setup_logging(log_dir="data/logs", log_name="od_projection")
     cfg = load_config(config_path)
     t0 = time.perf_counter()
     logger.info("=" * 60)
     logger.info("Starting matrix projection pipeline")
     logger.info("Config: %s", config_path)
     logger.info("=" * 60)
+    
+    if log_path:
+        logger.info("Log file: %s", log_path)
+
 
     # Load data 
     data = {
@@ -72,6 +76,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     # ── Step 3: project matrices ───────────────────────────────────────────────
     logger.info("[3/5] Projecting matrices …")
     t3 = time.perf_counter()
+    logger.info("[3/5] Projecting Zones & Gates …")
     data["projected_zones_and_gates"]  = project_matrices(
         source_matrices = data["from_omx"],
         target_matrices = data["projected_zones_and_gates"],
@@ -85,6 +90,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         zone_types = ["internal_gate", "internal_zone"],
     )
 
+    logger.info("[3/5] Projecting Zones only …")
     data["projected_zones"]  = project_matrices(
         source_matrices = data["from_omx"],
         target_matrices = data["projected_zones_only"],
@@ -98,6 +104,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         zone_types = ["internal_zone"]
     )
 
+    logger.info("[3/5] Projecting Gates only …")
     data["projected_gates"]  = project_matrices(
         source_matrices = data["from_omx"],
         target_matrices = data["projected_gates_only"],
