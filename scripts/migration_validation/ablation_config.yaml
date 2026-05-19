@@ -27,8 +27,8 @@ slack: true
 shadow_pricing: false
 
 # --- Which stages to run (1-based; comment out to skip) ---
-active_stages: [1,2,3,4,5,6,7,8]
-# active_stages: [1,2,3,4,5]
+# active_stages: [1,2,3,4,5,6,7,8]
+active_stages: [1,2,3,4,5,6,7]
 
 # --- Stage definitions (shared by both CTRAMP and ActivitySim ablation) ---
 # Each stage adds models cumulatively on top of all previous stages.
@@ -104,7 +104,15 @@ stages:
       - JointTourDepartureTimeAndDuration
       - JointTourModeChoice
     calibration_submodels:
+      - tour_mode_choice
       - nonwork_dest_choice
+    calibration_notes: >
+      Non-Work Dest Choice: average trip lengths appear off because only
+      joint (household) tours exist at this stage — individual NM tours
+      (which dominate the distance distribution) are not yet generated.
+      Tour Mode Choice: Shared Ride 2 and 3+ shares are elevated because
+      joint tours are by definition multi-person shared rides. Both issues
+      resolve in Stage 6 when individual non-mandatory tours are added.
 
   # Stage 6: Individual non-mandatory tours.
   # Generates solo discretionary tours (shopping, eating out, social, etc.)
@@ -139,8 +147,12 @@ stages:
       - AtWorkSubTourDepartureTimeAndDuration
       - AtWorkSubTourModeChoice
     calibration_submodels:
+      - atwork_subtour
       - tour_mode_choice
       - nonwork_dest_choice
+    calibration_notes: >
+      At-work subtours are a small share of total tours. The tour mode
+      choice and dest choice tabs should be nearly unchanged from Stage 6.
 
   # Stage 8: Stops and trip mode choice (full model).
   # Tours are broken into trips via intermediate stop generation. Each trip

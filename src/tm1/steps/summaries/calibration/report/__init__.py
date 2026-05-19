@@ -11,7 +11,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import ao, cdap, commute_flows, nwdc, tour_mode, trip_mode, wfh, wsloc
+from . import ao, atwork, cdap, commute_flows, nwdc, tour_mode, trip_mode, wfh, wsloc
 from .helpers import esc, load_template
 
 # (submodel_key, tab_title, render_function)
@@ -23,6 +23,7 @@ _RENDERERS: list[tuple[str, str, object]] = [
     ("work_school_location", "Commuting Flows", commute_flows.render),
     ("nonwork_dest_choice", "Non-Work Dest Choice", nwdc.render),
     ("tour_mode_choice", "Tour Mode Choice", tour_mode.render),
+    ("atwork_subtour", "At-Work Subtours", atwork.render),
     ("trip_mode_choice", "Trip Mode Choice", trip_mode.render),
 ]
 
@@ -33,6 +34,7 @@ def write_report(
     *,
     survey_labels: set[str] | None = None,
     report_name: str = "calibration_report.html",
+    notes: str = "",
 ) -> Path:
     """Write calibration report HTML to *output_dir* and return the path."""
     output_dir = Path(output_dir)
@@ -95,8 +97,17 @@ def write_report(
         )
 
     page_tmpl = load_template("page.html")
+    notes_banner = ""
+    if notes:
+        notes_banner = (
+            "<div style='background:#fff3cd;border:1px solid #ffc107;"
+            "border-radius:4px;padding:10px 14px;margin:8px 0;"
+            "font-size:0.9em;color:#664d03;'>"
+            f"&#9432; {esc(notes.strip())}</div>"
+        )
     html_str = page_tmpl.substitute(
         timestamp=timestamp,
+        notes_banner=notes_banner,
         dataset_bar=dataset_bar,
         default_pair=default_pair,
         tab_buttons=tab_buttons,

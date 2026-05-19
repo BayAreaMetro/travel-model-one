@@ -125,6 +125,7 @@ def evaluate_stage(
         )
 
     submodels = get_calibration_submodels(stages, stage_num)
+    notes = stages[stage_num - 1].get("calibration_notes", "")
     log.info("Stage %d (%s): submodels=%s, datasets=%d",
              stage_num, stage_name, submodels, len(datasets))
 
@@ -132,6 +133,7 @@ def evaluate_stage(
         "output_dir": str(output_dir),
         "report_name": f"ablation_{stage_num:02d}_{stage_name}.html",
         "write_csv": False, "datasets": datasets, "submodels": submodels,
+        "notes": notes,
     }}}}
     run_calib(stage_output, run_cfg)
 

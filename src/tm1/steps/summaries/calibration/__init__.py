@@ -13,6 +13,7 @@ from .config import parse_config
 from .io import load_bundle
 from .report import write_report
 from .submodels import (
+    atwork_subtour,
     auto_ownership,
     daily_activity_pattern,
     nonwork_dest_choice,
@@ -32,6 +33,7 @@ SUBMODELS: dict[str, ModuleType] = {
     "daily_activity_pattern": daily_activity_pattern,
     "nonwork_dest_choice": nonwork_dest_choice,
     "tour_mode_choice": tour_mode_choice,
+    "atwork_subtour": atwork_subtour,
     "trip_mode_choice": trip_mode_choice,
 }
 
@@ -143,6 +145,15 @@ def _run_submodel(
             weight_col=bundle.get_weight_col("indiv_trip_data"),
             sampleshare=bundle.sampleshare,
         )
+    if submodel is atwork_subtour:
+        return submodel.summarize(
+            indiv_tour_data=bundle.indiv_tour_data.collect(),
+            ao_results=bundle.ao_results.collect(),
+            households=bundle.households.collect(),
+            dist_skim=bundle.dist_skim.collect(),
+            weight_col=bundle.get_weight_col("indiv_tour_data"),
+            sampleshare=bundle.sampleshare,
+        )
     msg = f"Unknown submodel module: {submodel}"
     raise ValueError(msg)
 
@@ -247,6 +258,7 @@ def run(  # noqa: C901, PLR0912
         all_results, run_cfg.output_dir,
         survey_labels=survey_labels,
         report_name=run_cfg.report_name,
+        notes=run_cfg.notes,
     )
     log.info("Wrote calibration report: %s (%.1fs)", report_path, time.perf_counter() - t_rpt)
     log.info("Calibration complete (%.1fs total)", time.perf_counter() - t_total)

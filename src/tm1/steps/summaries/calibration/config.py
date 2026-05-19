@@ -48,6 +48,7 @@ class CalibrationRunConfig:
     datasets: list[DatasetConfig] = field(default_factory=list)
     submodels: list[str] = field(default_factory=list)
     write_csv: bool = True
+    notes: str = ""
 
 
 def parse_config(cfg: dict) -> CalibrationRunConfig:
@@ -116,4 +117,5 @@ def parse_config(cfg: dict) -> CalibrationRunConfig:
         datasets=datasets,
         submodels=submodels,
         write_csv=write_csv,
+        notes=calib.get("notes", ""),
     )
