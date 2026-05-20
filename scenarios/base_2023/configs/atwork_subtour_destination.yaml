@@ -21,10 +21,8 @@ LOGSUM_SETTINGS: tour_mode_choice.yaml
 # model-specific logsum-related settings
 CHOOSER_ORIG_COL_NAME: workplace_zone_id
 ALT_DEST_COL_NAME: alt_dest
-# FIX: was 14 (=PM period). CTRAMP uses MDMD logsums for at-work subtours.
-# Hour 12 maps to MD period [9, 14).
-IN_PERIOD: 12
-OUT_PERIOD: 12
+IN_PERIOD: 14
+OUT_PERIOD: 14
 
 # optional (comment out if not desired)
 DEST_CHOICE_LOGSUM_COLUMN_NAME: destination_logsum
