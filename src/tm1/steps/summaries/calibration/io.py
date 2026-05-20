@@ -101,27 +101,27 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
         },
         "indiv_tour_data": {
             "household_id": "hh_id",
-            "primary_purpose": "tour_purpose",
             "tour_type": "tour_purpose",
+            "primary_purpose": "tour_purpose",
             "origin": "orig_taz",
             "destination": "dest_taz",
         },
         "joint_tour_data": {
             "household_id": "hh_id",
-            "primary_purpose": "tour_purpose",
             "tour_type": "tour_purpose",
+            "primary_purpose": "tour_purpose",
             "origin": "orig_taz",
             "destination": "dest_taz",
         },
         "indiv_trip_data": {
             "household_id": "hh_id",
-            "primary_purpose": "tour_purpose",
             "tour_type": "tour_purpose",
+            "primary_purpose": "tour_purpose",
         },
         "joint_trip_data": {
             "household_id": "hh_id",
-            "primary_purpose": "tour_purpose",
             "tour_type": "tour_purpose",
+            "primary_purpose": "tour_purpose",
         },
     },
 }
@@ -256,6 +256,19 @@ def load_bundle(dataset_cfg: object) -> object:
         if col_map:
             existing = set(lf.collect_schema().names())
             rename = {k: v for k, v in col_map.items() if k in existing}
+            # Resolve conflicts: if multiple source cols map to same target,
+            # keep only the first match (col_map order = priority order).
+            seen_targets: dict = {}
+            drop_cols = []
+            for src, tgt in list(rename.items()):
+                if tgt in seen_targets:
+                    # Duplicate target — drop this source column instead
+                    drop_cols.append(src)
+                    del rename[src]
+                else:
+                    seen_targets[tgt] = src
+            if drop_cols:
+                lf = lf.drop(drop_cols)
             if rename:
                 lf = lf.rename(rename)
 
@@ -339,6 +352,15 @@ def _apply_asim_transforms(table_name: str, lf: pl.LazyFrame) -> pl.LazyFrame:
         # Filter to non-joint tours only
         if "tour_category" in cols:
             lf = lf.filter(pl.col("tour_category") != "joint")
+            # Prefix at-work subtour purposes to match CTRAMP convention
+            # (CTRAMP: "atwork_business"; ASim: tour_type="business" + tour_category="atwork")
+            if "tour_purpose" in cols:
+                lf = lf.with_columns(
+                    pl.when(pl.col("tour_category") == "atwork")
+                    .then(pl.lit("atwork_") + pl.col("tour_purpose"))
+                    .otherwise(pl.col("tour_purpose"))
+                    .alias("tour_purpose"),
+                )
         if "tour_mode" in cols:
             lf = lf.with_columns(
                 pl.col("tour_mode")

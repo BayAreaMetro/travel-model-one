@@ -1,6 +1,10 @@
 """At-work subtour calibration — TLFD and mode shares for at-work subtours only."""
 
+import logging
+
 import polars as pl
+
+log = logging.getLogger(__name__)
 
 REQUIRED_FIELDS = ("indiv_tour_data", "ao_results", "households", "dist_skim")
 
@@ -31,6 +35,14 @@ def summarize(
     # Filter to at-work tours only
     tours = indiv_tour_data.filter(pl.col("tour_purpose").is_in(_ATWORK_PURPOSES))
     if tours.height == 0:
+        found_purposes = indiv_tour_data["tour_purpose"].unique().sort().to_list()
+        log.warning(
+            "atwork_subtour: found 0 at-work tours in indiv_tour_data "
+            "(n=%d). Expected tour_purpose in %s, but found: %s. "
+            "This is expected for survey data but indicates a bug for "
+            "model output.",
+            indiv_tour_data.height, _ATWORK_PURPOSES, found_purposes,
+        )
         return {}
 
     # --- Weight handling ---

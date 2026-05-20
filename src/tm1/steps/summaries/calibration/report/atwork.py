@@ -75,7 +75,11 @@ def render(
         parts.append(render_pairs(mode_datasets, _render_mode_pair))
 
     if not parts:
-        return "<p>No at-work subtour data available.</p>"
+        msg = (
+            "At-Work Subtours renderer called but no data found. "
+            "Expected atwork_tlfd and atwork_mode_summary in results."
+        )
+        raise RuntimeError(msg)
     return "\n".join(parts)
 
 
