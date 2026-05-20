@@ -22,6 +22,7 @@ from uec_mappings import (
     ALT_MAPPINGS,
     COEFF_OVERRIDES,
     CONSTANTS_NOTES,
+    LABEL_TO_EXPECTED_ALTS,
     MAPPINGS,
     NOTES,
     SIZE_TERMS_CROSSWALK,
@@ -220,6 +221,27 @@ SHEET_TO_PURPOSE: dict[str, str] = {
     "WorkBased": "atwork",
 }
 
+# Build reverse lookup: boolean variable stems → purpose values.
+# Derived from SHEET_TO_PURPOSE so new purposes are handled automatically.
+_GUARD_STEM_TO_PURPOSE: dict[str, str] = {}
+for _sheet, _purp in SHEET_TO_PURPOSE.items():
+    _GUARD_STEM_TO_PURPOSE[_purp] = _purp                  # "work" → "work"
+    _GUARD_STEM_TO_PURPOSE[_sheet.lower()] = _purp         # "workbased" → "atwork"
+    _GUARD_STEM_TO_PURPOSE[f"{_purp}_tour"] = _purp        # "work_tour" → "work"
+    _GUARD_STEM_TO_PURPOSE[f"{_purp}_subtour"] = _purp     # "atwork_subtour" → "atwork"
+    _GUARD_STEM_TO_PURPOSE[f"{_purp}_tours"] = _purp       # plural forms
+    _GUARD_STEM_TO_PURPOSE[f"{_purp}_subtours"] = _purp
+
+
+def _purpose_from_guard(stem: str) -> str | None:
+    """Derive comparison purpose from a boolean guard variable stem.
+
+    Given a stem like 'work_tour' (from df.is_work_tour), returns the
+    purpose name used in the comparison ('work').  Returns None if the
+    stem doesn't correspond to a known purpose (e.g. 'indiv', 'joint').
+    """
+    return _GUARD_STEM_TO_PURPOSE.get(stem)
+
 
 def _read_yaml_constants(configs_dirs: list[Path], yaml_file: str) -> dict[str, float]:
     """Read CONSTANTS section from an ActivitySim model YAML file.
@@ -232,7 +254,7 @@ def _read_yaml_constants(configs_dirs: list[Path], yaml_file: str) -> dict[str, 
     for d in reversed(configs_dirs):
         p = d / yaml_file
         if p.exists():
-            cfg = yaml.safe_load(p.read_text(encoding="utf-8"))
+            cfg = yaml.safe_load(p.read_text(encoding="utf-8", errors="replace"))
             consts = cfg.get("CONSTANTS", {})
             for k, v in consts.items():
                 if isinstance(v, (int, float)):
@@ -582,6 +604,27 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
             _resolved_tokens[_sn] = resolved
             _ivt_derived[_sn] = ivt_derived
 
+        # --- Alt-column cross-validation ---
+        def _check_alt_column_match(asim_label: str, cr: dict, alt_names: list[str]) -> str:
+            """Check if CTRAMP row's non-zero alt columns match the expected alt.
+
+            Returns a warning string if there's a mismatch, empty string if OK.
+            """
+            if not cr or not cr.get("coeffs") or not alt_names:
+                return ""
+            # Find which alts have non-zero values in this CTRAMP row
+            row_alts = set(cr["coeffs"].keys())
+            # Determine expected alts from ASim label
+            for prefix, expected_alts in LABEL_TO_EXPECTED_ALTS.items():
+                if prefix in asim_label:
+                    expected_set = set(expected_alts)
+                    if row_alts and not row_alts.intersection(expected_set):
+                        return (f"⚠ ALT MISMATCH: row has values on "
+                                f"{sorted(row_alts)} but label implies "
+                                f"{sorted(expected_set)}")
+                    break
+            return ""
+
         def _resolve_ctramp_formula_val(row: dict, sheet_name: str = "") -> float | str:
             """Extract the effective numeric coefficient from a CTRAMP UEC row.
 
@@ -774,7 +817,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                             cname = const_bool.group(1)
                             if cname in yaml_constants and yaml_constants[cname] != 0:
                                 expr_multiplier = yaml_constants[cname]
-            # Check if expression filters by tour_type — if the current purpose
+            # Check if expression filters by purpose — if the current purpose
             # doesn't match the filter, the effective coefficient is 0.
             if ar.get("expr"):
                 expr = ar["expr"]
@@ -790,10 +833,20 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     excluded_purpose = neq_match.group(1)
                     if purpose == excluded_purpose:
                         return 0.0
-                # Pattern: is_atwork_subtour — only applies to atwork purpose
-                if re.search(r'\bis_atwork_subtour\b', expr):
-                    if purpose != "atwork":
-                        return 0.0
+                # Pattern: df.is_X or ~df.is_X (or bare is_X) used as a
+                # multiplicative/boolean-AND guard.  Both * and & combine
+                # boolean factors that zero-out the utility for non-matching
+                # purposes.  Derive the purpose from the variable stem.
+                if '*' in expr or '&' in expr:
+                    for bm in re.finditer(r'(~\s*)?(?:df\.)?is_(\w+)', expr):
+                        negated = bool(bm.group(1))
+                        guard_purpose = _purpose_from_guard(bm.group(2))
+                        if guard_purpose is None:
+                            continue
+                        if negated and purpose == guard_purpose:
+                            return 0.0
+                        if not negated and purpose != guard_purpose:
+                            return 0.0
             # Get any coefficient name from the row (all alts share same generic name for ASCs)
             for _alt, val in ar["coeffs"].items():
                 if isinstance(val, (int, float)):
@@ -836,6 +889,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
 
                 # Per-purpose numeric comparison
                 val_cells = ""
+                _alt_mismatch_warn = ""
                 for sn, purpose in zip(seg_names, purposes):
                     sheet_row = _row_for_sheet(sn)
                     # Per-sheet dicts use raw row data (unmodified by desc-matching)
@@ -844,16 +898,36 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     # Mark the actual resolved row number as used (may differ from sheet_row due to desc-matching)
                     if cr is not None:
                         used_ctramp.add(cr["no"])
+                        # Cross-validate: check the CTRAMP row's alt columns
+                        # match the alternative implied by the ASim label.
+                        if not _alt_mismatch_warn:
+                            _alt_mismatch_warn = _check_alt_column_match(
+                                asim_label, cr, sheets[0].get("alt_names", []))
                     c_val = _resolve_ctramp_formula_val(cr, sheet_name=sn)
                     a_val = _resolve_asim_for_purpose(ar, purpose) if show_asim else ""
                     c_is_unresolved = isinstance(c_val, str) and "UNRESOLVED" in c_val
                     a_is_unresolved = isinstance(a_val, str) and "UNRESOLVED" in a_val
                     # If crosswalk explicitly sets None for this sheet, CTRAMP
-                    # intentionally omits this row — treat CTRAMP value as 0.
+                    # has no mapped row. Flag non-zero ASim values as unmapped.
                     if sheet_row is None and isinstance(ctramp_no_spec, dict):
-                        c_val = 0.0
+                        try:
+                            _a_num = float(a_val) if a_val != "" else 0.0
+                        except (ValueError, TypeError):
+                            _a_num = None
+                        if _a_num is not None and abs(_a_num) < 1e-10:
+                            c_val = 0.0  # Both effectively zero — acceptable
+                        else:
+                            # Non-zero ASim value with no CTRAMP source — flag it
+                            c_val = "∅ UNMAPPED"
                     if c_val == "" and a_val == "":
                         val_cells += "<td class='num'></td><td class='num'></td>"
+                    elif c_val == "∅ UNMAPPED":
+                        # No CTRAMP row for this sheet — flag as unmapped diff
+                        n_total += 1
+                        n_diff += 1
+                        a_str = _fmt(a_val) if a_val != "" else "—"
+                        val_cells += f"<td class='num diff'>∅</td><td class='num diff'>{a_str}</td>"
+                        _DIFF_RECORDS.append((name, asim_label, display_no, purpose, "∅ UNMAPPED", a_val, "UNMAPPED"))
                     elif c_is_unresolved or a_is_unresolved:
                         # One or both sides unresolved — count as unverified diff
                         n_total += 1
@@ -911,9 +985,17 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                             val_cells += f"<td class='num diff'>{c_str}</td><td class='num diff'>{a_str}</td>"
                             _DIFF_RECORDS.append((name, asim_label, display_no, purpose, c_val, a_val, "ONE_SIDE_MISSING"))
 
+                # Log alt-column mismatch as a warning diff (values may match
+                # numerically but the CTRAMP row applies to a different mode).
+                if _alt_mismatch_warn:
+                    _DIFF_RECORDS.append((name, asim_label, display_no, seg_names[0], _alt_mismatch_warn, "", "ALT_MISMATCH"))
+
                 body += "<tr>"
                 if show_asim:
-                    body += f"<td{rowspan}>{esc(asim_label)}</td>"
+                    _warn_attr = f" title='{esc(_alt_mismatch_warn)}'" if _alt_mismatch_warn else ""
+                    _warn_cls = " class='alt-mismatch'" if _alt_mismatch_warn else ""
+                    _warn_icon = " ⚠" if _alt_mismatch_warn else ""
+                    body += f"<td{rowspan}{_warn_cls}{_warn_attr}>{esc(asim_label)}{_warn_icon}</td>"
                 body += f"<td>{display_no}</td>"
                 body += f"<td>{esc(cr_any['desc']) if cr_any else ''}</td>"
                 body += f"<td>{esc(_ctramp_expr(cr_any))}</td>"
@@ -957,7 +1039,17 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
     elif multi_seg:
         # Multi-segment table: one coeff column per segment
         seg_names = [s["sheet_name"] for s in sheets]
-        purposes = [SHEET_TO_PURPOSE.get(sn, sn.lower()) for sn in seg_names]
+        asim_alts_set = set(spec.get("alt_names", []))
+        purposes = []
+        for sn in seg_names:
+            p = SHEET_TO_PURPOSE.get(sn, sn.lower())
+            # If the mapped purpose doesn't match an ASim column, fall back to
+            # the lowercased sheet name (e.g. "University" → "university")
+            if asim_alts_set and p not in asim_alts_set:
+                fallback = sn.lower()
+                if fallback in asim_alts_set:
+                    p = fallback
+            purposes.append(p)
         coeff_hdrs = "".join(
             f"<th class='num'>CTRAMP {esc(sn)}</th><th class='num'>ASim {esc(alt)}</th>"
             for sn, alt in zip(seg_names, purposes)

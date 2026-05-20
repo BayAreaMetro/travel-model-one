@@ -130,7 +130,7 @@ MAPPINGS: dict[str, dict[str, int | list[int] | dict[str, int]]] = {
         "Driving-age child who is in school alternative-specific constants": 34,
         "Pre-driving-age child who is in school alternative-specific constants": 35,
         "Pre-driving-age child who is too young for school alternative-specific constants": 36,
-        "Pre-driving-age child who is too young for school interaction with age 0 to 1": 37,
+        "Pre-driving-age child who is too young for school interaction with age": 37,
         "Pre-driving-age child who is too young for school interaction with age 4 to 5": 38,
         "Pre-driving-age child who is in school interaction with age 6 to 9": 39,
         "Pre-driving-age child who is in school interaction with age 13 to 15": 40,
@@ -1091,6 +1091,26 @@ COEFF_OVERRIDES: dict[str, dict[int, float]] = {
 # with each paired to its corresponding ASim alt.
 ALT_MAPPINGS: dict[str, dict[str, str]] = {
     # Now that ASim has the full 11-alt spec, AO is a 1:1 match — no alt mapping needed.
+}
+
+
+# Cross-validation: map ASim label substrings to expected CTRAMP alt column names.
+# Used to detect when a crosswalk row number points to the wrong alternative
+# (e.g. a row labeled "Walk ASC" in the XLS that actually applies to the BIKE column).
+LABEL_TO_EXPECTED_ALTS: dict[str, list[str]] = {
+    "Walk_ASC": ["WALK"],
+    "Bike_ASC": ["BIKE"],
+    "DRIVEALONEFREE": ["DRIVEALONEFREE"],
+    "DRIVEALONEPAY": ["DRIVEALONEPAY"],
+    "Shared_ride_2": ["SHARED2FREE", "SHARED2PAY"],
+    "Shared_ride_3": ["SHARED3FREE", "SHARED3PAY"],
+    "Walk_to_Transit": ["WALK_LOC", "WALK_LRF", "WALK_EXP", "WALK_HVY", "WALK_COM"],
+    "Drive_to_Transit": ["DRIVE_LOC", "DRIVE_LRF", "DRIVE_EXP", "DRIVE_HVY", "DRIVE_COM"],
+    "Taxi_ASC": ["TAXI"],
+    "TNC_Single": ["TNC_SINGLE"],
+    "TNC_Shared": ["TNC_SHARED"],
+    "Joint_Walk_ASC": ["WALK"],
+    "Joint_Bike_ASC": ["BIKE"],
 }
 
 
