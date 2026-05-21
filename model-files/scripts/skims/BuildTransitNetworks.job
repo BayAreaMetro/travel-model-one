@@ -48,6 +48,9 @@
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
+INT_ZONES = %INTERNAL_ZONES%
+TOT_ZONES = %TOTAL_ZONES%
+
 ; time period loop
 loop period = 1, 5
 
@@ -110,7 +113,7 @@ loop period = 1, 5
       maxruntime  = 240
       
       ; we want walk access connectors -- mode 1 -- for all non-external i-j pairs
-      select i = 1-1454, j = 1-1454  
+      select i = 1-@INT_ZONES@, j = 1-@INT_ZONES@
       select accessmodes = 1
       
       ; generate zone access links
@@ -181,7 +184,7 @@ loop period = 1, 5
       maxruntime  = 240
       
       ; we want drive access connectors -- mode 2 -- for all non-external i-j pairs
-      select i = 1-1454, j = 1-1454  
+      select i = 1-@INT_ZONES@, j = 1-@INT_ZONES@ 
       select accessmodes = 2
       
       ; park and ride parameters -- mode 2 is centroid to drive auxiliary nodes
@@ -248,7 +251,7 @@ loop period = 1, 5
       maxruntime  = 240
    
       ; allow paths to emerge from zones via walk (1) or drive (2) access modes
-      select i = 1-1454, j = 1-1454  
+      select i = 1-@INT_ZONES@, j = 1-@INT_ZONES@ 
       select accessmodes = 1, 2
       
       ; we are not generating zone access links
@@ -271,12 +274,12 @@ loop period = 1, 5
    endrun
    
    ; step 5: select two best park and ride locations for each mode and create the support links that are used in skimming/assignment  
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=walk          -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_walk.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=express_bus   -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_express_bus.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=light_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_light_rail.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=ferry         -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_ferry.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=heavy_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_heavy_rail.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=commuter_rail -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_commuter_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=@TOT_ZONES@ -v type=walk          -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_walk.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=@TOT_ZONES@ -v type=express_bus   -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_express_bus.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=@TOT_ZONES@ -v type=light_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_light_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=@TOT_ZONES@ -v type=ferry         -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_ferry.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=@TOT_ZONES@ -v type=heavy_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_heavy_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v TOTAL_ZONES=@TOT_ZONES@ -v type=commuter_rail -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_commuter_rail.dat
    
    ; step 6: create KNR access links for local bus from walk access links
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" @token_period@_transit_suplinks_walk.dat > @token_period@_bus_acclinks_KNR.dat
