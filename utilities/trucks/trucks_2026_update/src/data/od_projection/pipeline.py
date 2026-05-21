@@ -8,6 +8,7 @@ from src.data.od_projection.crosswalk import build_crosswalk
 from src.data.od_projection.projection import project_matrices
 # from src.data.od_projection.format_mtc_output import format_mtc_output
 from src.data.od_projection.projection import project_matrices
+from src.data.od_projection.trip_generation import internal_gates_generation, prepare_trip_generation_data
 
 import numpy as np
 import pandas as pd
@@ -86,7 +87,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         offset = cfg["zones"]["offset"],
         n_from = cfg["zones"]["from_matrix_size"],
         n_to = cfg["zones"]["to_matrix_size"],
-        matrixes_names = cfg["projection"]["from_matrices_to_project"], 
+        matrixes_names = cfg["projection"].get("from_matrices_to_project", None),
         zone_types = ["internal_gate", "internal_zone"],
     )
 
@@ -100,7 +101,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         offset = cfg["zones"]["offset"],
         n_from = cfg["zones"]["from_matrix_size"],
         n_to = cfg["zones"]["to_matrix_size"],
-        matrixes_names = cfg["projection"]["from_matrices_to_project"], 
+        matrixes_names = cfg["projection"].get("from_matrices_to_project", None), 
         zone_types = ["internal_zone"]
     )
 
@@ -114,19 +115,40 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         offset = cfg["zones"]["offset"],
         n_from = cfg["zones"]["from_matrix_size"],
         n_to = cfg["zones"]["to_matrix_size"],
-        matrixes_names = cfg["projection"]["from_matrices_to_project"], 
+        matrixes_names = cfg["projection"].get("from_matrices_to_project", None), 
         zone_types = ["internal_gate"]
     )
 
     logger.info("[3/5] Done in %.1fs", time.perf_counter() - t3)
 
-    # 
-
-    # # ── Step 5: format MTC output files ───────────────────────────
-    # logger.info("[5/5] Formatting MTC output files …")
-    # t5 = time.perf_counter()
+    # ── Step 4: format MTC output files ───────────────────────────
+    # logger.info("[4/5] Formatting MTC output files …")
+    # t4 = time.perf_counter()
     # format_mtc_output(cfg)
-    # logger.info("[5/5] Done in %.1fs", time.perf_counter() - t5)
+    # logger.info("[4/5] Done in %.1fs", time.perf_counter() - t4)
+
+
+    # ── Step 5: Prepare data for modeling ───────────────────────────
+    logger.info("[5/5] Preparing data for modeling …")
+    t5 = time.perf_counter()
+    data["zones_generation"] = prepare_trip_generation_data(
+        matrixes_names = cfg["projection"].get("from_matrices_to_project", None),
+        source_matrices= data["projected_zones"], 
+        landuse = data["tm_land_use"]
+        )
+    fpath = Path(cfg["output"]["zones_generation"]) 
+    fpath.parent.mkdir(parents=True, exist_ok=True)
+    data["zones_generation"].to_csv(fpath, index=False)
+    
+    data["tnl_generation"] = internal_gates_generation(
+        matrixes_names = cfg["projection"].get("from_matrices_to_project", None),
+        source_matrices = data["from_omx"],
+        crosswalk = data["crosswalk"]
+    )
+    fpath = Path(cfg["output"]["tnl_generation"]) 
+    fpath.parent.mkdir(parents=True, exist_ok=True)
+    data["tnl_generation"].to_csv(fpath, index=False)
+    logger.info("[5/5] Done in %.1fs", time.perf_counter() - t5)
 
     # # ───── END OF PIPELINE ───────────────────────────────────────────────────────
 
