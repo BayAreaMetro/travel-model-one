@@ -72,6 +72,26 @@ MAPPINGS: dict[str, dict[str, int | list[int] | dict[str, int]]] = {
         "util_sample_of_alternatives_correction_factor":       7,
     },
 
+    "School Location SOA": {
+        "util_dist_0_1":            7,
+        "util_dist_1_2":            8,
+        "util_dist_2_5":            9,
+        "util_dist_5_15":          10,
+        "util_dist_15_up":         11,
+        "util_size_variable":      12,
+        "util_no_attractions":     13,
+    },
+
+    "At-Work Subtour Destination SOA": {
+        "util_distance_piecewise_linear_from_0_to_1_miles":    7,
+        "util_distance_piecewise_linear_from_1_to_2_miles":    8,
+        "util_distance_piecewise_linear_from_2_to_5_miles":    9,
+        "util_distance_piecewise_linear_from_5_to_15_miles":  10,
+        "util_distance_piecewise_linear_for_15_plus_miles":   11,
+        "util_size_variable_atwork":                          12,
+        "util_no_attractions_atwork_size_variable_is_0":      13,
+    },
+
     "Auto Ownership": {
         "util_drivers_2":                      21,
         "util_drivers_3":                      22,
@@ -1294,8 +1314,8 @@ SIZE_TERMS_CROSSWALK: dict[tuple[str, str], tuple[str, str]] = {
     ("university", "university"): ("school", "university"),
     ("school", "grade"):        ("school", "gradeschool"),
     ("school", "high"):         ("school", "highschool"),
-    ("escort", "kids"):         ("non_mandatory", "escort_kids"),
-    ("escort", "no kids"):      ("non_mandatory", "escort_nokids"),
+    ("escort", "kids"):         ("non_mandatory", "escort"),
+    ("escort", "no kids"):      ("non_mandatory", "escort"),
     ("shopping", "shopping"):   ("non_mandatory", "shopping"),
     ("eatout", "eatout"):       ("non_mandatory", "eatout"),
     ("othmaint", "othmaint"):   ("non_mandatory", "othmaint"),

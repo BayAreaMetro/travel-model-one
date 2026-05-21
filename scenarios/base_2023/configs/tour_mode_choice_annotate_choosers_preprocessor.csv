@@ -4,8 +4,8 @@ local,_DF_IS_TOUR,'tour_type' in df.columns
 ,number_of_participants,df.number_of_participants if _DF_IS_TOUR else 1
 ,is_joint,(df.tour_category=='joint') if _DF_IS_TOUR else False
 #,,
- local,_HAVE_PARENT_TOURS,'parent_tour_id' in df.columns
-,_parent_tour_mode,"reindex(tours.tour_mode, df.parent_tour_id) if _HAVE_PARENT_TOURS else ''"
+ local,_HAVE_PARENT_TOURS,('parent_tour_id' in df.columns) or ('tours' in locals() and 'parent_tour_id' in tours.columns)
+,_parent_tour_mode,"reindex(tours.tour_mode, df.parent_tour_id) if 'parent_tour_id' in df.columns else reindex(tours.tour_mode, reindex(tours.parent_tour_id, df.index)) if _HAVE_PARENT_TOURS else ''"
 ,work_tour_is_drive,"_parent_tour_mode.isin(['DRIVEALONEFREE','DRIVEALONEPAY'])"
 ,work_tour_is_bike,_parent_tour_mode=='BIKE'
 ,work_tour_is_SOV,"_parent_tour_mode.isin(['DRIVEALONEFREE','DRIVEALONEPAY'])"
@@ -13,7 +13,7 @@ local,_DF_IS_TOUR,'tour_type' in df.columns
 ,is_mandatory,(df.tour_category=='mandatory') if 'tour_category' in df.columns else False
 ,is_joint,(df.tour_category=='joint') if 'tour_category' in df.columns else False
 ,is_indiv,~is_joint
-,is_atwork_subtour,(df.tour_category=='atwork') if 'tour_category' in df.columns else False
+,is_atwork_subtour,"(df.tour_category=='atwork') if 'tour_category' in df.columns else (reindex(tours.tour_category, df.index)=='atwork') if 'tours' in locals() else False"
 ,is_escort,(df.tour_type == 'escort') if _DF_IS_TOUR else False
 ,is_work_tour,(df.tour_type == 'work') if _DF_IS_TOUR else False
 # FIXME why inverse of value of time? need better name?,,

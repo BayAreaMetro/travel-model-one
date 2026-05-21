@@ -28,7 +28,6 @@ shadow_pricing: false
 
 # --- Which stages to run (1-based; comment out to skip) ---
 active_stages: [1,2,3,4,5,6,7,8]
-# active_stages: [1,2,3,4,5,6,7]
 
 # --- Stage definitions (shared by both CTRAMP and ActivitySim ablation) ---
 # Each stage adds models cumulatively on top of all previous stages.
@@ -157,7 +156,7 @@ stages:
   # Stage 8: Stops and trip mode choice (full model).
   # Tours are broken into trips via intermediate stop generation. Each trip
   # gets a destination and mode. Trip matrices are written for assignment.
-  - name: stops
+  - name: stops (full model)
     activitysim_models:
       - stop_frequency
       - trip_purpose
@@ -272,6 +271,16 @@ coefficient_comparison:
       ctramp_file: DestinationChoice.xls
       ctramp_sheets: [WorkBased]
       asim_spec: atwork_subtour_destination.csv
+      asim_coefficients: atwork_subtour_destination_coefficients.csv
+    - name: School Location SOA
+      ctramp_file: DestinationChoiceAlternativeSample.xls
+      ctramp_sheets: [University, HighSchool, GradeSchool]
+      asim_spec: school_location_sample.csv
+      asim_coefficients: school_location_coefficients.csv
+    - name: At-Work Subtour Destination SOA
+      ctramp_file: DestinationChoiceAlternativeSample.xls
+      ctramp_sheets: [WorkBased]
+      asim_spec: atwork_subtour_destination_sample.csv
       asim_coefficients: atwork_subtour_destination_coefficients.csv
   size_terms:
     ctramp: DestinationChoiceSizeCoefficients.csv
