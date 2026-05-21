@@ -61,7 +61,7 @@ walk_ASC_auto_sufficient_shopping,1.943176,F
 walk_ASC_auto_sufficient_social,3.423214,F
 walk_ASC_auto_sufficient_univ,0.7884134,F
 walk_ASC_auto_sufficient_work,-0.2194449,F
-walk_ASC_auto_sufficient_atwork,1.88527,F
+walk_ASC_auto_sufficient_atwork,1.361243,F
 bike_ASC_no_auto_eatout,0.5433096,F
 bike_ASC_no_auto_escort,-0.0173665,F
 bike_ASC_no_auto_othdiscr,0.5433096,F
@@ -81,7 +81,7 @@ bike_ASC_auto_deficient_shopping,0.0621828,F
 bike_ASC_auto_deficient_social,1.253711,F
 bike_ASC_auto_deficient_univ,4.05905,F
 bike_ASC_auto_deficient_work,1.42486,F
-bike_ASC_auto_deficient_atwork,0,F
+bike_ASC_auto_deficient_atwork,1.88527,F
 bike_ASC_auto_sufficient_eatout,0.1300914,F
 bike_ASC_auto_sufficient_escort,-1.483929,F
 bike_ASC_auto_sufficient_othdiscr,0.1300914,F
