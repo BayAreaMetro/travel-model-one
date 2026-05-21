@@ -49,9 +49,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         "tm_land_use": pd.read_csv(cfg["input"]["tm_land_use"])
     }
 
-    out = Path(cfg["output"]["output_dir"])
-    out_files = cfg["output"]["files"]
-    out.mkdir(parents=True, exist_ok=True)
+    output_path = cfg["output"]
 
     # ── Step 1: Data Preprocessing ─────────────────────────────────────────────────
     logger.info("[1/5] Data Preparation …")
@@ -70,7 +68,9 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         weights= data["truck_trip_gen_tm16"][["all_trucks_production", "all_trucks_attraction"]], 
         sliver_cfg= cfg["slivers"]
     )
-    data["crosswalk"].to_csv(out / out_files["crosswalk"], index=False)
+    fpath = Path(output_path["crosswalk"])
+    fpath.parent.mkdir(parents=True, exist_ok=True)
+    data["crosswalk"].to_csv(fpath, index=False)
     logger.info("[2/5] Done in %.1fs", time.perf_counter() - t2)
 
     # ── Step 3: project matrices ───────────────────────────────────────────────

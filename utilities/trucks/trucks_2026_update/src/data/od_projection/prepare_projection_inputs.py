@@ -31,11 +31,20 @@ def prepare_inputs(data: dict, cfg):
     data["truck_trip_gen_tm16"] = estimate_truck_trip_gen_tm16(
         land_use = data["tm_land_use"]
         )
-    out = Path(cfg["output"]["output_dir"])
-    out.mkdir(parents=True, exist_ok=True)
-    data["projected_zones_and_gates"] = omx.open_file(out / cfg["output"]["files"]["omx_zone_and_gates"],'w') 
-    data["projected_zones_only"] = omx.open_file(out / cfg["output"]["files"]["omx_only_zones"],'w') 
-    data["projected_gates_only"] = omx.open_file(out / cfg["output"]["files"]["omx_only_gates"],'w') 
+    
+    out_path = cfg["output"]
+
+    fpath = Path(out_path["omx_zone_and_gates"])
+    fpath.parent.mkdir(parents=True, exist_ok=True)
+    data["projected_zones_and_gates"] = omx.open_file(fpath,'w')
+
+    fpath = Path(out_path["omx_only_zones"])
+    fpath.parent.mkdir(parents=True, exist_ok=True)
+    data["projected_zones_only"] = omx.open_file(fpath,'w') 
+
+    fpath = Path(out_path["omx_only_gates"])
+    fpath.parent.mkdir(parents=True, exist_ok=True)    
+    data["projected_gates_only"] = omx.open_file(fpath, 'w')
     return data
 
 
