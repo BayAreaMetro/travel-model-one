@@ -1,0 +1,22 @@
+target,geography,seed_table,importance,control_field,expression
+num_hh,TAZ,households,10000000,numhh_gq,(households.WGTP > 0) & (households.WGTP < np.inf)
+hh_size_1_gq,TAZ,households,100000,hh_size_1_gq,households.NP == 1
+hh_size_2,TAZ,households,100000,hh_size_2,households.NP == 2
+hh_size_3,TAZ,households,100000,hh_size_3,households.NP == 3
+hh_size_4_plus,TAZ,households,100000,hh_size_4_plus,households.NP >= 4
+hh_inc_30,TAZ,households,1000000,HHINCQ1,(households.TYPEHUGQ==1) & (households.income > -999999999) & (households.income <= 30000)
+hh_inc_30_60,TAZ,households,1000000,HHINCQ2,(households.TYPEHUGQ==1) & (households.income > 30000) & (households.income <= 60000)
+hh_inc_60_100,TAZ,households,1000000,HHINCQ3,(households.TYPEHUGQ==1) & (households.income > 60000) & (households.income <= 100000)
+hh_inc_100_plus,TAZ,households,1000000,HHINCQ4,(households.TYPEHUGQ==1) & (households.income > 100000) & (households.income <= 999999999)
+hh_wrks_0,TAZ,households,10000,hh_wrks_0,(households.TYPEHUGQ==1) & (households.num_workers == 0)
+hh_wrks_1,TAZ,households,10000,hh_wrks_1,(households.TYPEHUGQ==1) & (households.num_workers == 1)
+hh_wrks_2,TAZ,households,10000,hh_wrks_2,(households.TYPEHUGQ==1) & (households.num_workers == 2)
+hh_wrks_3_plus,TAZ,households,1000000,hh_wrks_3_plus,(households.TYPEHUGQ==1) & (households.num_workers >= 3)
+pers_age_00_04,TAZ,persons,10000000,AGE0004,(persons.AGEP >= 0) & (persons.AGEP <= 4)
+pers_age_05_19,TAZ,persons,100000,AGE0519,(persons.AGEP >= 5) & (persons.AGEP <= 19)
+pers_age_20_44,TAZ,persons,100000,AGE2044,(persons.AGEP >= 20) & (persons.AGEP <= 44)
+pers_age_45_64,TAZ,persons,100001,AGE4564,(persons.AGEP >= 45) & (persons.AGEP <= 64)
+pers_age_65_plus,TAZ,persons,100000,AGE65P,(persons.AGEP >= 65) & (persons.AGEP <= np.inf)
+gq_type_univ,TAZ,persons,10000000,gq_type_univ,persons.gqtype==1
+gq_type_mil,TAZ,persons,10000000,gq_type_mil,persons.gqtype==2
+gq_type_othnon,TAZ,persons,10000000,gq_type_othnon,persons.gqtype==3

@@ -1,0 +1,17 @@
+# base_2023 scenario — ActivitySim operational overrides
+#
+# The full model specification lives in base-models/activity/configs/.
+# This file contains only scenario-specific operational settings.
+
+inherit_settings: True
+
+# Full population (0 = all households; set to e.g. 1000 for dev/debug)
+# households_sample_size: 0
+household_sample_size: 1_450_000 (~50% of full population to match CTRAMP sample size)
+# households_sample_size: 1000
+
+# Shadow pricing for workplace/school location
+use_shadow_pricing: True
+
+# Resume from checkpoint (uncomment to resume after failure)
+# resume_after: _

@@ -1,0 +1,158 @@
+# Base 2023 CTRAMP Scenario — run the legacy Java model via Python orchestration
+#
+# This is the CTRAMP equivalent of base_2023 (which uses ActivitySim).
+# Same inputs, same year, but uses the Java CT-RAMP demand model.
+#
+# NOTE: This runs the DEMAND MODEL ONLY against pre-built skims.
+# It does NOT run a full global iteration (skim → demand → assign → feedback).
+# Highway/transit skim building and assignment require Cube Voyager and are
+# still orchestrated by the legacy batch scripts (RunIteration.bat).
+
+slack: "off"
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
+proj_dir: "E:/tm1_ctramp_test"
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  DERIVED PATHS — generally no need to change                               │
+# └─────────────────────────────────────────────────────────────────────────────┘
+survey_output_dir: "{proj_dir}/survey"
+ctramp_output_dir: "{proj_dir}/main"
+
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+steps:
+  # --- 1. Setup: create project directory structure ---
+  setup:
+    copy_inputs:
+      land_use:
+        from: "{reference_run}/landuse/tazData.csv"
+        to: "{proj_dir}/landuse/tazData.csv"
+      walk_shares:
+        from: "{reference_run}/landuse/walkAccessBuffers.float.csv"
+        to: "{proj_dir}/landuse/walkAccessBuffers.float.csv"
+      households:
+        from: "{reference_run}/popsyn/hhFile.csv"
+        to: "{proj_dir}/popsyn/hhFile.csv"
+      persons:
+        from: "{reference_run}/popsyn/personFile.csv"
+        to: "{proj_dir}/popsyn/personFile.csv"
+      skims:
+        from: "{reference_run}/skims"
+        to: "{proj_dir}/skims"
+        glob: "*.tpp"
+      accessibility:
+        from: "{reference_run}/skims/accessibility.csv"
+        to: "{proj_dir}/skims/accessibility.csv"
+      ctramp_model:
+        from: "{reference_run}/CTRAMP/model"
+        to: "{proj_dir}/CTRAMP/model"
+      shadow_prices:
+        from: "{reference_run}/main/ShadowPricing_5.csv"
+        to: "{proj_dir}/main/ShadowPricing_5.csv"
+      ctramp_runtime:
+        from: "{reference_run}/CTRAMP/runtime"
+        to: "{proj_dir}/CTRAMP/runtime"
+
+  # --- 2. Simulate: run CTRAMP Java demand model ---
+  #
+  # Iteration modes:
+  #   iterations: 3        — full loop: iters 1→3 with sample ramp (0.15, 0.30, 0.50)
+  #   iteration: 3         — single run at iter 3 (e.g. for quick testing)
+  #
+  # If sample_rate is set, it overrides the default per-iteration ramp.
+  # Shadow pricing is auto-configured per iteration when enabled.
+  #
+  simulate_ctramp:
+    project_dir: "{proj_dir}"
+    runtime_dir: "{proj_dir}/CTRAMP/runtime"
+    host_ip: "localhost"
+    threads: 48 # It will reserve 2 threads for infrastructure to leave some headroom.
+    iterations: 3          # full 3-iteration loop (sample ramp: 0.15 → 0.30 → 0.50)
+    # iteration: 3         # single iteration (uncomment to skip the loop) and just run one "iteration 3"
+    # sample_rate: 0.50    # uncomment to override the default per-iteration ramp
+    seed: 0
+    shadow_pricing: true   # set false to disable shadow pricing
+    # All components enabled for full model run.
+    # Set individual components to false to disable them.
+    components:
+      UsualWorkAndSchoolLocationChoice: true
+      AutoOwnership: true
+      FreeParking: true
+      CoordinatedDailyActivityPattern: true
+      IndividualMandatoryTourFrequency: true
+      MandatoryTourDepartureTimeAndDuration: true
+      MandatoryTourModeChoice: true
+      JointTourFrequency: true
+      JointTourLocationChoice: true
+      JointTourDepartureTimeAndDuration: true
+      JointTourModeChoice: true
+      IndividualNonMandatoryTourFrequency: true
+      IndividualNonMandatoryTourLocationChoice: true
+      IndividualNonMandatoryTourDepartureTimeAndDuration: true
+      IndividualNonMandatoryTourModeChoice: true
+      AtWorkSubTourFrequency: true
+      AtWorkSubTourLocationChoice: true
+      AtWorkSubTourDepartureTimeAndDuration: true
+      AtWorkSubTourModeChoice: true
+      StopFrequency: true
+      StopLocation: true
+
+  # --- 3. Summaries: calibration report comparing survey vs CTRAMP ---
+  summaries:
+    calibration:
+      output_dir: "{proj_dir}/calibration_output"
+      write_csv: false
+
+      datasets:
+        - label: "BATS_2023"
+          format: ctramp
+          weight_col:
+            wsloc_results: "person_weight"
+            cdap_results: "person_weight"
+            households: "hh_weight"
+            ao_results: "hh_weight"
+            indiv_tour_data: "tour_weight"
+            joint_tour_data: "tour_weight"
+            indiv_trip_data: "trip_weight"
+            joint_trip_data: "trip_weight"
+          paths:
+            households: "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
+            persons: "{survey_output_dir}/ctramp_2023/PersonData.csv"
+            wsloc_results: "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
+            taz_data: "{proj_dir}/landuse/tazData.csv"
+            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+            cdap_results: "{survey_output_dir}/ctramp_2023/cdapResults.csv"
+            ao_results: "{survey_output_dir}/ctramp_2023/aoResults.csv"
+            indiv_tour_data: "{survey_output_dir}/ctramp_2023/IndivTourData.csv"
+            indiv_trip_data: "{survey_output_dir}/ctramp_2023/IndivTripData.csv"
+            joint_tour_data: "{survey_output_dir}/ctramp_2023/JointTourData.csv"
+            joint_trip_data: "{survey_output_dir}/ctramp_2023/JointTripData.csv"
+
+        - label: "CTRAMP"
+          format: ctramp
+          sampleshare: 0.5
+          paths:
+            taz_data: "{proj_dir}/landuse/tazData.csv"
+            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+            households: "{proj_dir}/popsyn/hhFile.csv"
+            wsloc_results: "{ctramp_output_dir}/wsLocResults_3.csv"
+            ao_results: "{ctramp_output_dir}/aoResults.csv"
+            cdap_results: "{ctramp_output_dir}/cdapResults.csv"
+            indiv_tour_data: "{ctramp_output_dir}/indivTourData_3.csv"
+            joint_tour_data: "{ctramp_output_dir}/jointTourData_3.csv"
+            indiv_trip_data: "{ctramp_output_dir}/indivTripData_3.csv"
+            joint_trip_data: "{ctramp_output_dir}/jointTripData_3.csv"
+
+      submodels:
+        - work_school_location
+        - auto_ownership
+        - daily_activity_pattern
+        - nonwork_dest_choice
+        - tour_mode_choice
+        - trip_mode_choice

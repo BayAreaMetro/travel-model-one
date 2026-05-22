@@ -1,0 +1,31 @@
+####################################################################
+# PopulationSim Multiprocessing Settings — TM1a
+#
+# Overrides base configs/settings.yaml when --multiprocess is used.
+# PopulationSim merges configs_mp/ on top of configs/.
+####################################################################
+
+inherit_settings: True
+
+multiprocess: True
+num_processes: 14 # Recommend n-1 to leave some room for overhead.
+cleanup_pipeline_after_run: True
+
+slice_geography: PUMA
+
+multiprocess_steps:
+  - name: mp_seed_balancing
+    begin: input_pre_processor
+  - name: mp_sub_balancing_TAZ
+    begin: sub_balancing.geography=TAZ
+    num_processes: 14 # Recommend n-1 to leave some room for overhead.
+    slice:
+      tables:
+        - slice_crosswalk
+        - crosswalk
+      except: True
+      coalesce:
+        - TAZ_weights
+        - TAZ_weights_sparse
+  - name: mp_summarize
+    begin: expand_households

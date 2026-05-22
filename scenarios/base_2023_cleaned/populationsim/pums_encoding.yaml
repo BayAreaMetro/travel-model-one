@@ -1,0 +1,43 @@
+# base_2023_cleaned — PopulationSim config overrides for PUMS 2019-2023
+#
+# In the cleaned pipeline, pemploy/pstudent/ptype are NO LONGER derived in
+# _create_seed_population(). Instead, the raw PUMS fields (ESR, WKW, WKHP,
+# SCHG, AGEP) are passed through to ActivitySim, which derives them at
+# runtime via annotate_persons_pums.csv.
+#
+# This file only configures the cross-table operations that MUST remain
+# in the seed population creation code:
+#   1. num_workers (person ESR → household aggregation)
+#   2. income deflation (ADJINC * HINCP → 2000$)
+#   3. GQ classification + weight transfer
+#   4. PUMA filtering
+#
+# -------------------------------------------------------------------
+# Income deflation: 2023 dollars → 2000 dollars
+# PUMS 2019-2023 reference year is 2023 (ADJINC adjusts to 2023$)
+# CPI-U: 2023 ≈ 310.0, 2000 ≈ 172.2
+# -------------------------------------------------------------------
+income_deflator_to_2000: 0.5555  # 172.2 / 310.0
+
+# ADJINC scaling factor (Census uses 7-digit adjustment factor / 1,000,000)
+adjinc_scale: 1000000
+
+# Employment status recode (for num_workers household aggregation only)
+employed_esr_codes: [1, 2, 4, 5]
+
+# Group quarters classification (unchanged from base)
+gq_institutional: 2      # TYPEHUGQ==2: nursing homes, prisons (dropped)
+gq_non_institutional: 3  # TYPEHUGQ==3: dorms, barracks, group homes
+gq_college_schg: [15, 16]
+gq_military_mil: 1
+
+gqtype:
+  not_gq: 0
+  college: 1
+  military: 2
+  other: 3
+
+# Geographic: 2020-vintage PUMAs
+# TODO: Update geo_cross_walk.csv to use 2020 PUMA codes (62 PUMAs)
+#       The crosswalked PUMS files use 2020 PUMAs already.
+

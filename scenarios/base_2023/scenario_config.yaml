@@ -1,0 +1,149 @@
+# Base 2023 Scenario — TM1.7 ActivitySim calibration against BATS 2023 survey
+#
+# See README.md in this folder for a walkthrough of the scenario structure.
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
+proj_dir: "E:/Tests/tm1a_test"
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  DERIVED PATHS — generally no need to change                               │
+# └─────────────────────────────────────────────────────────────────────────────┘
+survey_output_dir: "{proj_dir}/survey"
+asim_output_dir: "{proj_dir}/output_full"
+
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+steps:
+  # --- 1. Setup: copy inputs from reference run into project directory ---
+  setup:
+    copy_inputs:
+      land_use:
+        from: "{reference_run}/landuse/tazData.csv"
+        to: "{proj_dir}/data/land_use.csv"
+      households:      
+        from: "{reference_run}/popsyn/hhFile.csv"
+        to: "{proj_dir}/data/households.csv"
+      persons:
+        from: "{reference_run}/popsyn/personFile.csv"
+        to: "{proj_dir}/data/persons.csv"
+
+  # --- 2. Convert skims: CUBE .tpp → OMX for ActivitySim ---
+  convert_skims:
+    skim_tpp_dir: "{reference_run}/skims"
+    output: "{proj_dir}/data/skims.omx"
+
+  # --- 3. Prepare survey: clean BATS 2023, reformat to CTRAMP structure ---
+  prepare_survey:
+    config_path: "bats_config.yaml"  # resolved relative to scenario_dir
+    cache_dir: ".cache/survey"
+    clean_steps:
+      - url: "https://raw.githubusercontent.com/BayAreaMetro/travel-diary-survey-tools/develop/projects/bats_2023/clean_bats_2023.py"
+        function: "clean_2023_bats"
+    # Skip pipeline if these CTRAMP output files already exist (use --force to override)
+    check_outputs:
+      - "{survey_output_dir}/ctramp_2023/PersonData.csv"
+      - "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
+      - "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
+      - "{survey_output_dir}/ctramp_2023/cdapResults.csv"
+      - "{survey_output_dir}/ctramp_2023/aoResults.csv"
+      - "{survey_output_dir}/ctramp_2023/IndivTourData.csv"      
+      - "{survey_output_dir}/ctramp_2023/IndivTripData.csv"
+      - "{survey_output_dir}/ctramp_2023/JointTourData.csv"
+      - "{survey_output_dir}/ctramp_2023/JointTripData.csv"
+
+  # --- 4. PopulationSim: synthesize households/persons from PUMS ---
+  # Using pre-built synthetic population from reference run (2023_v12).
+
+  # --- 5. Simulate: run ActivitySim demand model ---
+  simulate_activitysim:
+    iterations: 0  # 0 = static skims (no highway assignment feedback loop)
+    activitysim:
+      data_dir: "{proj_dir}/data"
+      output_dir: "{proj_dir}/output"
+
+      # Config directory chain — first directory wins (whole-file override).
+      # Scenario-specific overrides go in activitysim/ within this scenario folder.
+      configs:
+        - "scenarios/base_2023/activitysim"   # ← scenario overrides (highest priority)
+        - "base-models/activity/configs_mp"   # multiprocessing defaults
+        - "base-models/activity/configs"      # full model specification (lowest priority)
+
+    # assignment:
+    #   # Highway assignment feedback (future — requires Cube or equivalent)
+
+  # --- 6. Summaries: generate calibration report ---
+  summaries:
+
+    calibration:
+      output_dir: "{proj_dir}/calibration_output"
+      write_csv: false
+
+      datasets:
+      # First two datasets are compared in the report.
+        - label: "BATS_2023"
+          format: ctramp  # survey data pre-formatted to CTRAMP column names
+          weight_col:
+            wsloc_results: "person_weight"
+            cdap_results: "person_weight"
+            households: "hh_weight"
+            ao_results: "hh_weight"
+            indiv_tour_data: "tour_weight"
+            joint_tour_data: "tour_weight"
+            indiv_trip_data: "trip_weight"
+            joint_trip_data: "trip_weight"
+          paths:
+            households: "{survey_output_dir}/ctramp_2023/HouseholdData.csv"
+            persons: "{survey_output_dir}/ctramp_2023/PersonData.csv"
+            wsloc_results: "{survey_output_dir}/ctramp_2023/MandatoryLocationData.csv"
+            taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
+            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+            cdap_results: "{survey_output_dir}/ctramp_2023/cdapResults.csv"
+            ao_results: "{survey_output_dir}/ctramp_2023/aoResults.csv"
+            indiv_tour_data: "{survey_output_dir}/ctramp_2023/IndivTourData.csv"
+            indiv_trip_data: "{survey_output_dir}/ctramp_2023/IndivTripData.csv"
+            joint_tour_data: "{survey_output_dir}/ctramp_2023/JointTourData.csv"
+            joint_trip_data: "{survey_output_dir}/ctramp_2023/JointTripData.csv"
+
+        - label: "ActivitySim"
+          format: activitysim
+          sampleshare: 0.5
+          paths:
+            taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
+            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+            households: "{asim_output_dir}/final_households.csv"
+            ao_results: "{asim_output_dir}/final_households.csv"
+            cdap_results: "{asim_output_dir}/final_persons.csv"
+            wsloc_results: "{asim_output_dir}/final_persons.csv"
+            indiv_tour_data: "{asim_output_dir}/final_tours.csv"
+            joint_tour_data: "{asim_output_dir}/final_tours.csv"
+            indiv_trip_data: "{asim_output_dir}/final_trips.csv"
+
+        - label: "CTRAMP_v161_testrun"
+          format: ctramp
+          sampleshare: 0.5
+          paths:
+            taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
+            dist_skim: "{reference_run}/skims/nonmotskm.tpp"
+            wsloc_results: "{reference_run}/main/wsLocResults_3.csv"
+            households: "{reference_run}/INPUT/popsyn/hhFile.2023_v12.csv"
+            ao_results: "{reference_run}/main/aoResults.csv"
+            cdap_results: "{reference_run}/main/cdapResults.csv"
+            indiv_tour_data: "{reference_run}/main/indivTourData_3.csv"
+            joint_tour_data: "{reference_run}/main/jointTourData_3.csv"
+            indiv_trip_data: "{reference_run}/main/indivTripData_3.csv"
+            joint_trip_data: "{reference_run}/main/jointTripData_3.csv"
+
+      submodels:
+        - work_school_location
+        - auto_ownership
+        - work_from_home
+        - daily_activity_pattern
+        - nonwork_dest_choice
+        - tour_mode_choice
+        - atwork_subtour
+        - trip_mode_choice

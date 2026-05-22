@@ -1,0 +1,65 @@
+[project]
+name = "travel-model-one"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "activitysim==1.5.1",
+    "aequilibrae>=1.6.2",
+    "plotly>=6.7.0",
+    "polars>=1.39.3",
+    "populationsim==0.10.0",
+    "python-dotenv>=1.0",
+    "travel-diary-survey-tools",
+    "xlwings>=0.35.1",
+    "zstandard>=0.25.0",
+]
+
+[tool.uv.sources]
+# travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }
+travel-diary-survey-tools = { path = "../travel-diary-survey-tools", editable = true }
+
+[project.scripts]
+tm1 = "tm1.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-coverage>=0.0",
+    "ruff>=0.15.11",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tm1", "src/cubeio"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:anyio"
+
+[tool.ruff]
+line-length = 100
+lint.select = ["ALL"]
+lint.pylint.max-args = 8  # Increase from default of 5 to accomodate 6 canon tables
+lint.ignore = [
+    "COM812",  # Trailing comma - conflicts with formatter
+    "D203",    # Use D211 (no blank line before class)
+    "D213",    # Use D212 (summary on first line)
+    "RET504",  # Allow return of assigned variable
+    "FBT001",  # Boolean args OK in this codebase
+    "FBT002",  # Boolean args OK in this codebase
+    "ERA001",  # Ignore commented out code
+    "FIX002",  # TODOs are tracked in code intentionally
+    "TD002",   # TODO author not required
+    "TD003",   # TODO issue link not required
+]
+lint.pydocstyle.convention = "google"
+exclude = ["*.html", "uv.lock", "renv", "utilities", "core", "model-files"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**" = ["T201", "INP001", "D103"]    # Allow print(); standalone scripts, not packages; no docstrings needed
+"tests/**" = ["T201", "S101", "INP001"]  # Allow print(), assert; not packages

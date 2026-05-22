@@ -1,0 +1,14 @@
+coefficient_name,value,constrain
+coef_wfh_constant,-1.0976,F
+coef_wfh_income_75_100k,0.2313,F
+coef_wfh_income_100_200k,0.4092,F
+coef_wfh_income_200k_plus,0.5997,F
+coef_wfh_ind_agr,-0.9475,F
+coef_wfh_ind_her,-0.4934,F
+coef_wfh_ind_mwt,-0.3378,F
+coef_wfh_ind_ret,-0.5782,F
+coef_wfh_north_bay,-0.4397,F
+coef_wfh_work_sf,0.1151,F
+coef_wfh_eastbay_sf,0.2437,F
+coef_wfh_distance,0.0205,F
+coef_wfh_calibration,-0.340,F
