@@ -1,21 +1,22 @@
 # ── File paths ────────────────────────────────────────────────────────────────
 input:
-  from_shapefile:      "data/external/caltrans/CSF2TDM_TAZs.shp"  
-  from_network_nodes:  "data/interim/cube_io/from_cube/statewide_net/HwyNetwork_Loaded_ADT_2020_Daily_nodes.shp"                                               
-  from_omx:            "data/interim/cube_io/from_cube/statewide_od_matrices/TRIPS_FFM_2020.omx"  # matrices to project
+  from_shapefile:      "data/external/caltrans/CSF2TDM_TAZs/CSF2TDM_TAZs.shp"  
+  from_network_nodes:  "data/interim/cube_io/statewide_net/HwyNetwork_Loaded_ADT_2020_Daily_nodes.shp"                                               
+  from_omx:            "data/interim/cube_io/statewide_od_matrices/TRIPS_FFM_2020.omx"  # matrices to project
   to_shapefile:        "data/external/mtc/MTC_TAZ/Travel Analysis Zones.shp"                                                
-  to_network_nodes:    "data/interim/cube_io/from_cube/mtc_net/mtc_nodes.shp"  
+  to_network_nodes:    "data/interim/cube_io/mtc_net/mtc_nodes.shp"  
   tm_land_use:         "data/external/mtc/2023_TM161_IPA_35/INPUT/landuse/tazData.csv"  
   
 output:
-  output_dir: data/interim/matrix_projection
-  files:
-    truck_trip_gen_tm16: truck_trip_generation_tm16.csv  
-    zone_classification: zone_classification.csv
-    crosswalk:           crosswalk.csv
-    omx_zone_and_gates:   SwTazTln_to_TMTaz_TRIPS_FFM_2020.omx
-    omx_only_zones:       SwTAZ_to_TMTaz_TRIPS_FFM_2020.omx
-    omx_only_gates:       SwTLN_to_TMTaz_TRIPS_FFM_2020.omx
+  truck_trip_gen_tm16: data/interim/matrix_projection/truck_trip_generation_tm16.csv  
+  zone_classification: data/interim/matrix_projection/zone_classification.csv
+  crosswalk:           data/interim/matrix_projection/crosswalk.csv
+  omx_zone_and_gates:  data/interim/matrix_projection/SwTazTln_to_TMTaz_TRIPS_FFM_2020.omx
+  omx_only_zones:      data/interim/matrix_projection/SwTAZ_to_TMTaz_TRIPS_FFM_2020.omx
+  omx_only_gates:      data/interim/matrix_projection/SwTLN_to_TMTaz_TRIPS_FFM_2020.omx
+  tnl_generation:      data/processed/truck_trip_generation_tnl.csv
+  zones_generation:     data/processed/truck_trip_generation_zone.csv
+  gateways_generation:  data/processed/truck_trip_generation_gateways.csv
 
 zones:
   from_zone_id: TAZ12            # zone ID field in the FROM shapefile
@@ -49,8 +50,8 @@ spatial:
 # ── MTC output formatting ─────────────────────────────────────────────────────
 # After projection, matrices are re-packaged into the five MTC TOD files.
 mtc_format:
-  input_omx_pattern:  "data/interim/cube_io/from_cube/mtc_truck_od_trips/tripstrk{tod}x.omx"
-  output_omx_pattern: "data/interim/matrix_projection/outputs/od_matrices_for_tm/tripstrk{tod}x.omx"
+  input_omx_pattern:  "data/interim/cube_io/mtc_truck_od_trips/tripstrk{tod}x.omx"
+  output_omx_pattern: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/tripstrk{tod}x.omx"
 
   mtc_tods: [EA, AM, MD, PM, EV]
   
