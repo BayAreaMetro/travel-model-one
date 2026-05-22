@@ -7,9 +7,9 @@ import sys
 import argparse
 from pathlib import Path
 from openpyxl import load_workbook
-import xlrd
+# import xlrd
 from xlrd import open_workbook
-from xlwt import easyxf
+# from xlwt import easyxf
 from xlutils.copy import copy as xl_copy
 import shutil
 
@@ -17,7 +17,8 @@ import shutil
 # Configuration --------------------------------
 CALIB_DIR = Path("M:/Development/Travel Model One/Calibration/Version 1.7")
 
-UEC_DIR = Path("X:/travel-model-one-tm1.7_calibration/model-files/model")
+# UEC_DIR = Path("X:/travel-model-one-tm1.7_calibration/model-files/model")
+UEC_DIR = Path("E:/GitHub/travel-model-one/model-files/model")
 BOX_DIR = Path("E:/Box/Modeling and Surveys/Development/Travel Model 1.7/Calibration/workbooks_TM1.7")
 
 
