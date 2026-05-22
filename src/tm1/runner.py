@@ -4,6 +4,7 @@ Each step is a module with a ``run(scenario_dir, cfg, **kwargs)`` function.
 """
 
 import logging
+import time
 from pathlib import Path
 
 import tm1.steps.convert_skims as convert_skims_step
@@ -19,6 +20,18 @@ from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
 
 log = logging.getLogger(__name__)
+
+
+def _fmt_elapsed(seconds: float) -> str:
+    """Format elapsed time as human-readable string."""
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    if seconds < 3600:
+        return f"{seconds / 60:.1f}m"
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    return f"{h}h{m:02d}m"
+
 
 STEPS = {
     "setup": setup_step,
@@ -57,7 +70,7 @@ def run_model(
         Common: ``base_model_dir``, ``force``.
     """
     scenario_dir = Path(scenario_dir).resolve()
-    label = scenario_dir.name
+    label = f"scenarios/{scenario_dir.name}"
 
     cfg = resolve_templates(load_config(scenario_dir))
 
@@ -72,7 +85,38 @@ def run_model(
     if steps is None:
         steps = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
 
-    notify(f"Starting {label}: {', '.join(steps)}")
+    # Gather run parameters for the start notification
+    sim_cfg = steps_cfg.get("simulate_activitysim", steps_cfg.get("simulate", {}))
+    iterations = kwargs.get("iterations") or sim_cfg.get("iterations", 0)
+
+    # Read merged ActivitySim settings from config chain
+    asim_cfg = sim_cfg.get("activitysim", sim_cfg) if sim_cfg else {}
+    asim_settings: dict = {}
+    base_model_dir = kwargs.get("base_model_dir", scenario_dir.parent.parent)
+    for c in reversed(asim_cfg.get("configs", [])):
+        p = Path(c) if Path(c).is_absolute() else Path(base_model_dir) / c
+        sf = p / "settings.yaml"
+        if sf.exists():
+            import yaml  # noqa: PLC0415
+
+            with sf.open() as f:
+                asim_settings.update(yaml.safe_load(f) or {})
+
+    sample = asim_settings.get("households_sample_size", 0)
+    nproc = asim_settings.get("num_processes", 1)
+    shadow = asim_settings.get("use_shadow_pricing", False)
+
+    sample_str = "full" if sample == 0 else f"{sample:,} HH"
+    header = (
+        f":rabbit2: Starting {label}\n"
+        f"  • steps: {', '.join(steps)}\n"
+        f"  • sample: {sample_str} | processors: {nproc} | "
+        f"shadow pricing: {'on' if shadow else 'off'}\n"
+        f"  • iterations: {iterations}"
+    )
+    notify(header)
+
+    t0_total = time.time()
 
     for step_name in steps:
         entry = STEPS.get(step_name)
@@ -95,16 +139,25 @@ def run_model(
             run_list = [(step_name, entry)]
 
         for name, mod in run_list:
-            notify(f"[{label}] {name}")
             log.info("--- Step: %s ---", name)
+            t0_step = time.time()
             try:
-                mod.run(scenario_dir, cfg, **kwargs)
+                result = mod.run(scenario_dir, cfg, **kwargs)
             except KeyboardInterrupt:
                 notify(f":no_entry_sign: {label} cancelled during {name}")
                 raise
             except Exception as e:
                 notify(f":exclamation: {label} failed at {name}: {e}")
                 raise
-            log.info("--- Done: %s ---", name)
+            elapsed = time.time() - t0_step
 
-    notify(f"Finished {label} :white_check_mark:")
+            if result == "skipped":
+                notify(f"[{label}] {name} already done, skipped")
+                log.info("--- Skipped: %s ---", name)
+            else:
+                elapsed_str = _fmt_elapsed(elapsed)
+                notify(f"[{label}] {name} done ({elapsed_str})")
+                log.info("--- Done: %s (%s) ---", name, elapsed_str)
+
+    total = time.time() - t0_total
+    notify(f"Finished {label} in {_fmt_elapsed(total)} :white_check_mark:")

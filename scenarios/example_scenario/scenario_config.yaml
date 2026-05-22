@@ -1,0 +1,53 @@
+# Example Scenario — WFH Policy Boost
+#
+# Demonstrates how to create a scenario overlay. This scenario applies an EN7-style
+# telecommuting encouragement policy that increases WFH rates in San Francisco
+# superdistricts (SD 1–6) by adding a utility boost of +0.5.
+#
+# Only files that differ from the base model need to be included here.
+# ActivitySim's config directory chain means any file placed in activitysim/
+# will override the same-named file from base-models/activity/configs/.
+#
+# Structure:
+#   scenarios/example_scenario/
+#   ├── scenario_config.yaml          ← pipeline steps + machine paths
+#   ├── activitysim/                  ← ActivitySim config overrides
+#   │   ├── settings.yaml             ← operational settings (sample size, etc.)
+#   │   └── work_from_home.csv        ← WFH utility spec with SF boosts
+#   └── populationsim/                ← PopulationSim overrides (empty = use base)
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
+proj_dir: "E:/Tests/example_wfh_boost"
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+steps:
+  setup:
+    copy_inputs:
+      land_use:
+        from: "{reference_run}/landuse/tazData.csv"
+        to: "{proj_dir}/data/land_use.csv"
+      households:
+        from: "{reference_run}/popsyn/hhFile.csv"
+        to: "{proj_dir}/data/households.csv"
+      persons:
+        from: "{reference_run}/popsyn/personFile.csv"
+        to: "{proj_dir}/data/persons.csv"
+
+  convert_skims:
+    skim_tpp_dir: "{reference_run}/skims"
+    output: "{proj_dir}/data/skims.omx"
+
+  simulate_activitysim:
+    iterations: 0
+    activitysim:
+      data_dir: "{proj_dir}/data"
+      output_dir: "{proj_dir}/output"
+      configs:
+        - "scenarios/example_scenario/activitysim"  # ← scenario overrides
+        - "base-models/activity/configs_mp"
+        - "base-models/activity/configs"

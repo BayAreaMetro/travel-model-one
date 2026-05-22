@@ -17,7 +17,7 @@ coef_pre_driving_age_child_who_is_in_school_interaction_with_age_13_to_15_M,-0.7
 coef_pre_driving_age_child_who_is_in_school_interaction_with_age_13_to_15_N,-0.672,F
 coef_pre_driving_age_child_who_is_too_young_for_school_asc_M,1.052531189,F
 coef_pre_driving_age_child_who_is_too_young_for_school_asc_N,-0.837567776,F
-coef_pre_driving_age_child_who_is_too_young_for_school_interaction_with_age_0_to_1_M,-0.4515,F
+coef_pre_driving_age_child_who_is_too_young_for_school_age_M,-0.4515,F
 coef_pre_driving_age_child_who_is_too_young_for_school_interaction_with_age_4_to_5_M,0.6107,F
 #,,
 coef_full_time_worker_interaction_with_age_less_than_40_M,0.2091,F
@@ -55,6 +55,11 @@ coef_non_working_adult_interaction_with_peak_accessibility_to_all_employment_M,0
 coef_retired_interaction_with_peak_accessibility_to_all_employment_M,0.2792,F
 coef_non_working_adult_retired_or_univ_student_interaction_with_off_peak_accessibility_to_all_employment_N,0.07207,F
 coef_child_who_is_in_school_or_too_young_for_school_interaction_with_off_peak_accessibility_to_retail_N,0.08233,F
+# WFH interaction (CTRAMP OnePerson rows 77-78, 85-87)
+coef_wfh_worker_h_bonus,0.1813,F
+coef_wfh_worker_m_penalty,-1.758,F
+coef_ft_worker_m_boost_post_wfh,0.5638,F
+coef_pt_worker_m_boost_post_wfh,0.6822,F
 # 2-way interactions,,
 coef_H_11,1.626,F
 coef_H_12,0.7407,F

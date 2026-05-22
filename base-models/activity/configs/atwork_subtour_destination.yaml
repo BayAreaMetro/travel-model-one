@@ -1,6 +1,5 @@
-
 SPEC: atwork_subtour_destination.csv
-SAMPLE_SPEC:  atwork_subtour_destination_sample.csv
+SAMPLE_SPEC: atwork_subtour_destination_sample.csv
 COEFFICIENTS: atwork_subtour_destination_coefficients.csv
 
 SAMPLE_SIZE: 30
@@ -27,6 +26,3 @@ OUT_PERIOD: 14
 
 # optional (comment out if not desired)
 DEST_CHOICE_LOGSUM_COLUMN_NAME: destination_logsum
-
-# comment out DEST_CHOICE_LOGSUM_COLUMN_NAME if saved alt logsum table
-DEST_CHOICE_SAMPLE_TABLE_NAME: tour_destination_sample

@@ -28,7 +28,7 @@ def run(
     scenario_dir: Path,  # noqa: ARG001
     cfg: dict,
     **kwargs: object,
-) -> None:
+) -> str | None:
     """Copy input files as specified in setup.copy_inputs."""
     force = kwargs.get("force", False)
 
@@ -74,3 +74,6 @@ def run(
             copied += 1
 
     log.info("Setup complete: %d item(s) configured, files copied", len(copy_inputs))
+    if copied == 0:
+        return "skipped"
+    return None

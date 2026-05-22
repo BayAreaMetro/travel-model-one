@@ -78,9 +78,9 @@ steps:
       output_dir: "{proj_dir}/output"
 
       # Config directory chain — first directory wins (whole-file override).
-      # Scenario-specific overrides go in configs/ within this scenario folder.
+      # Scenario-specific overrides go in activitysim/ within this scenario folder.
       configs:
-        - "scenarios/base_2023/configs"       # ← scenario overrides (highest priority)
+        - "scenarios/base_2023/activitysim"   # ← scenario overrides (highest priority)
         - "base-models/activity/configs_mp"   # multiprocessing defaults
         - "base-models/activity/configs"      # full model specification (lowest priority)
 
@@ -152,7 +152,9 @@ steps:
       submodels:
         - work_school_location
         - auto_ownership
+        - work_from_home
         - daily_activity_pattern
         - nonwork_dest_choice
         - tour_mode_choice
+        - atwork_subtour
         - trip_mode_choice

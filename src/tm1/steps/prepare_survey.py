@@ -32,7 +32,7 @@ def run(
     scenario_dir: Path,
     cfg: dict,
     **kwargs: object,
-) -> None:
+) -> str | None:
     """Run the survey preparation pipeline."""
     step_cfg = cfg.get("steps", {}).get("prepare_survey", {}) or {}
     force = bool(kwargs.get("force"))
@@ -53,7 +53,7 @@ def run(
     check = step_cfg.get("check_outputs", [])
     if not force and check and all(Path(p).exists() for p in check):
         log.info("All check_outputs exist — skipping (use --force to re-run)")
-        return
+        return "skipped"
 
     # Load project-specific clean steps (local paths or URLs)
     clean_steps = []

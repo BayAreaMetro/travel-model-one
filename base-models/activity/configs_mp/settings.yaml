@@ -40,7 +40,7 @@ want_dest_choice_sample_tables: False
 trace_od: [2,2]
 
 # to resume after last successful checkpoint, specify resume_after: _
-resume_after: _
+#resume_after: _
 
 models:
   ### mp_initialize step
@@ -53,6 +53,7 @@ models:
   - workplace_location
   - auto_ownership_simulate
   - free_parking
+  - work_from_home
   - cdap_simulate
   - mandatory_tour_frequency
   - mandatory_tour_scheduling
@@ -77,6 +78,7 @@ models:
   - trip_mode_choice
   ### mp_summarize step
   - write_data_dictionary
+  - track_skim_usage
   - write_trip_matrices
   - write_tables
   - summarize

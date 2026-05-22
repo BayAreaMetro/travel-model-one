@@ -21,19 +21,17 @@ override files in later directories (first wins, whole-file replacement):
 
 ```
 configs chain (highest priority first):
-  1. scenarios/base_2023/configs/       ← scenario-specific overrides
+  1. scenarios/base_2023/activitysim/   ← scenario-specific overrides
   2. base-models/activity/configs_mp/   ← multiprocessing defaults
   3. base-models/activity/configs/      ← full model specification
 ```
 
-To override a setting, copy the relevant YAML file from `base-models/` into
-this scenario's `configs/` directory and edit it there. **Never modify
-`base-models/` directly** — those are the canonical model specification shared
-by all scenarios.
+To override a setting, copy the relevant file from `base-models/` into
+this scenario's `activitysim/` directory and edit it there.
 
 ### Example: run a small sample for testing
 
-Create `configs/settings.yaml` with only the settings you want to change:
+Create `activitysim/settings.yaml` with only the settings you want to change:
 
 ```yaml
 inherit_settings: True

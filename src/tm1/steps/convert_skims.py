@@ -103,7 +103,7 @@ def run(
     scenario_dir: Path,  # noqa: ARG001
     cfg: dict,
     **kwargs: object,
-) -> None:
+) -> str | None:
     """Convert Cube TPP skims to OMX."""
     force = kwargs.get("force", False)
 
@@ -138,3 +138,6 @@ def run(
         skims_path.parent.mkdir(parents=True, exist_ok=True)
         file_map = build_file_map(tpp_dir)
         tpp_to_omx(file_map, skims_path)
+        return None
+
+    return "skipped"

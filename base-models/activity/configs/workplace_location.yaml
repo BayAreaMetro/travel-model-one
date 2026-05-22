@@ -63,6 +63,11 @@ SEGMENT_IDS:
 
 CONSTANTS:
   WORK_HIGH_SEGMENT_ID: 3
+  ID_SAN_FRANCISCO: 1
+  ID_SAN_MATEO: 2
+  ID_SANTA_CLARA: 3
+  ID_ALAMEDA: 4
+  ID_CONTRA_COSTA: 5
 
 
 # model adds these tables (informational - not added if commented out)

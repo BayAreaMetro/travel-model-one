@@ -1,9 +1,9 @@
 # ActivitySim Migration Notes
 
 Decisions, fixes, and gotchas encountered migrating TM1 from CTRAMP to
-ActivitySim 1.5.1. All scenario-specific fixes live in
-`scenarios/base_2023/configs/` as overrides — base model configs in
-`base-models/` are unchanged.
+ActivitySim 1.5.1. All fixes have been merged into `base-models/activity/configs/`.
+Scenario directories (e.g. `scenarios/base_2023/activitysim/`) contain only
+operational overrides (sample size, shadow pricing, etc.).
 
 ## Reference Model Run
 

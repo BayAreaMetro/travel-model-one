@@ -74,6 +74,18 @@ def _run_activitysim(  # noqa: C901
     nproc = asim_settings.get("num_processes", 1)
     sample_str = "all" if sample == 0 else f"{sample:,}"
     log.info("ActivitySim: HH sample=%s, processes=%s", sample_str, nproc)
+
+    # Warn if existing pipeline found and resume_after is not explicitly set
+    resume = asim_settings.get("resume_after")
+    pipeline_dir = output_dir / "pipeline.parquetpipeline"
+    if not resume and pipeline_dir.exists():
+        log.warning(
+            "Existing pipeline found at %s. ActivitySim will run from scratch, "
+            "overwriting previous results. To resume instead, set "
+            "'resume_after: _' in your scenario's activitysim/settings.yaml.",
+            pipeline_dir,
+        )
+
     log.info("Running: %s", " ".join(cmd))
 
     checkpoints_file = output_dir / "pipeline.parquetpipeline" / "checkpoints.parquet"

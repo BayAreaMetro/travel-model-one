@@ -173,7 +173,6 @@ trace_od:
 
 # to resume after last successful checkpoint, specify resume_after: _
 #resume_after: trip_destination
-resume_after:
 
 checkpoints: True
 # if checkpoints is False, no intermediate checkpoints will be written before the end of run
@@ -194,6 +193,7 @@ models:
   - workplace_location
   - auto_ownership_simulate
   - free_parking
+  - work_from_home
   - cdap_simulate
   - mandatory_tour_frequency
   - mandatory_tour_scheduling
@@ -240,6 +240,7 @@ output_tables:
         home_zone_id: land_use.zone_id
         school_zone_id: nonnegative | land_use.zone_id
         workplace_zone_id: nonnegative | land_use.zone_id
+        assigned_workplace_zone_id: nonnegative | land_use.zone_id
     - tablename: tours
       decode_columns:
         origin: land_use.zone_id
@@ -258,6 +259,14 @@ rural_threshold: 6
 # - value of time
 min_value_of_time: 1
 max_value_of_time: 50
+distributed_vot_mu: 0.684
+distributed_vot_sigma: 0.85
+
+household_median_value_of_time:
+  1: 6.01
+  2: 8.81
+  3: 10.44
+  4: 12.86
 distributed_vot_mu: 0.684
 distributed_vot_sigma: 0.85
 

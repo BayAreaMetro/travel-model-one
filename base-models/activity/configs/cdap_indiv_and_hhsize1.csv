@@ -9,8 +9,7 @@ Pre-driving-age child who is in school alternative-specific constants,ptype == 7
 Pre-driving-age child who is in school interaction with age 6 to 9,(ptype == 7) & (age >= 6) & (age <= 9),coef_pre_driving_age_child_who_is_in_school_interaction_with_age_6_to_9_M,,
 Pre-driving-age child who is in school interaction with age 13 to 15,(ptype == 7) & (age >= 13) & (age <= 15),coef_pre_driving_age_child_who_is_in_school_interaction_with_age_13_to_15_M,coef_pre_driving_age_child_who_is_in_school_interaction_with_age_13_to_15_N,
 Pre-driving-age child who is too young for school alternative-specific constants,ptype == 8,coef_pre_driving_age_child_who_is_too_young_for_school_asc_M,coef_pre_driving_age_child_who_is_too_young_for_school_asc_N,
-# corrected tm1 age bug,,,,
-Pre-driving-age child who is too young for school interaction with age 0 to 1,(ptype == 8) & (age >= 0) & (age <= 1),coef_pre_driving_age_child_who_is_too_young_for_school_interaction_with_age_0_to_1_M,,
+Pre-driving-age child who is too young for school interaction with age,(ptype == 8) * age,coef_pre_driving_age_child_who_is_too_young_for_school_age_M,,
 Pre-driving-age child who is too young for school interaction with age 4 to 5,(ptype == 8) & (age >= 4) & (age <= 5),coef_pre_driving_age_child_who_is_too_young_for_school_interaction_with_age_4_to_5_M,,
 #,,,,
 Full-time worker interaction with age less than 40,(ptype == 1) & (age < 40),coef_full_time_worker_interaction_with_age_less_than_40_M,,
@@ -49,4 +48,13 @@ University student interaction with off-peak accessibility to retail,(ptype == 3
 Driving-age child who is in school interaction with off-peak accessibility to retail,(ptype == 6) * auOpRetail,,coef_child_who_is_in_school_or_too_young_for_school_interaction_with_off_peak_accessibility_to_retail_N,
 Pre-driving-age child who is in school interaction with off-peak accessibility to retail,(ptype == 7) * auOpRetail,,coef_child_who_is_in_school_or_too_young_for_school_interaction_with_off_peak_accessibility_to_retail_N,
 Pre-driving-age child who is too young for school interaction with off-peak accessibility to retail,(ptype == 8) * auOpRetail,,coef_child_who_is_in_school_or_too_young_for_school_interaction_with_off_peak_accessibility_to_retail_N,
+#,,,,
+# Work From Home interaction (ported from CTRAMP OnePerson rows 77-78, 85-87)
+# work_from_home column is set by the work_from_home model upstream.
+# For non-workers it is False so these rows have no effect.
+WFH worker interaction (FT),(ptype == 1) & work_from_home,coef_wfh_worker_m_penalty,,coef_wfh_worker_h_bonus
+WFH worker interaction (PT),(ptype == 2) & work_from_home,coef_wfh_worker_m_penalty,,coef_wfh_worker_h_bonus
+Mandatory unavailable for WFH workers,(ptype <= 2) & work_from_home,coef_UNAVAILABLE,,
+FT worker M-pattern boost (post-WFH extraction),(ptype == 1) & ~work_from_home,coef_ft_worker_m_boost_post_wfh,,
+PT worker M-pattern boost (post-WFH extraction),(ptype == 2) & ~work_from_home,coef_pt_worker_m_boost_post_wfh,,
 
