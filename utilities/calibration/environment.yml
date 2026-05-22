@@ -13,5 +13,6 @@ dependencies:
   - pyyaml
   - ipykernel
   - pip
+  - xlutils
   - pip:
     - --no-deps -e e:/GitHub/BATS/travel-diary-survey-tools
