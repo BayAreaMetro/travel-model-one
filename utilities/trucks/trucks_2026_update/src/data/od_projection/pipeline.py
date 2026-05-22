@@ -135,17 +135,27 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     data["zones_generation"] = prepare_trip_generation_data(
         matrixes_names = matrixes_to_project,
         source_matrices= data["projected_zones"], 
-        landuse = data["tm_land_use"]
-        )
+        index_range = (1, 1454)
+    )
     fpath = Path(cfg["output"]["zones_generation"]) 
     fpath.parent.mkdir(parents=True, exist_ok=True)
     data["zones_generation"].to_csv(fpath, index=False)
+
+    data["gateways_generation"] = prepare_trip_generation_data(
+        matrixes_names = matrixes_to_project,
+        source_matrices= data["projected_zones"], 
+        index_range = (1455, 1475)
+    )
+    fpath = Path(cfg["output"]["gateways_generation"]) 
+    fpath.parent.mkdir(parents=True, exist_ok=True)
+    data["gateways_generation"].to_csv(fpath, index=False)
     
     data["tnl_generation"] = internal_gates_generation(
         matrixes_names = matrixes_to_project,
         source_matrices = data["from_omx"],
         crosswalk = data["crosswalk"]
     )
+
     fpath = Path(cfg["output"]["tnl_generation"]) 
     fpath.parent.mkdir(parents=True, exist_ok=True)
     data["tnl_generation"].to_csv(fpath, index=False)
@@ -155,6 +165,10 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
 
     logger.info("=" * 60)
     logger.info("Pipeline complete in %.1fs", time.perf_counter() - t0)
+    data["from_omx"].close()
+    data["projected_zones_and_gates"].close()
+    data["projected_zones_only"].close()
+    data["projected_gates_only"].close()
     # logger.info(
     #     "Projected OMX : %s", cfg["paths"]["output_omx"]
     # )
@@ -165,7 +179,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     logger.info("=" * 60)
 
 
-# ── CLI entry point ────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the FROM→TO matrix projection pipeline.")
