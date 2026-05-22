@@ -4,9 +4,6 @@ import numpy as np
 import os
 import sys
 import shutil
-import logging
-
-from pathlib import Path
 
 # Import the calibration framework
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -20,6 +17,40 @@ from calibration_data_models import (
 
 class AutoOwnershipCalibration(CalibrationBase):
     """Calibration processor for auto ownership."""
+    
+    # sheet, column, startRow, endRow
+    # used for validating UEC values in calibration workbook against model input
+    # UEC workbook is ".xls" and uses xlrd which is 0-based indexing for rows/columns, but
+    # config uses 1-based for readability, so offsets are applied in the reading functions
+    UEC_SOURCE_RANGES = {
+        "1_car_a":    ("Auto ownership",  8, 53, 54),
+        "2_cars_a":   ("Auto ownership", 10, 53, 54),
+        "3_cars_a":   ("Auto ownership", 13, 53, 54),
+        "4+_cars_a":  ("Auto ownership", 17, 53, 54),
+        "1_car_sc":   ("Auto ownership",  8, 59, 59),
+        "2_cars_sc":  ("Auto ownership", 10, 59, 59),
+        "3_cars_sc":  ("Auto ownership", 13, 59, 59),
+        "4+_cars_sc": ("Auto ownership", 17, 59, 59),
+        "1_car_b":    ("Auto ownership",  8, 55, 58),
+        "2_cars_b":   ("Auto ownership", 10, 55, 58),
+        "3_cars_b":   ("Auto ownership", 13, 55, 58),
+        "4+_cars_b":  ("Auto ownership", 17, 55, 58),
+    }
+    # calibration workbook is ".xlsx" and uses openpyxl which is 1-based indexing for rows/columns
+    CALIBRATION_DESTINATION_RANGES = {
+        "1_car_a":    ("calibration", 4, 5, 6),
+        "2_cars_a":   ("calibration", 5, 5, 6),
+        "3_cars_a":   ("calibration", 6, 5, 6),
+        "4+_cars_a":  ("calibration", 7, 5, 6),
+        "1_car_sc":   ("calibration", 4, 8, 8),
+        "2_cars_sc":  ("calibration", 5, 8, 8),
+        "3_cars_sc":  ("calibration", 6, 8, 8),
+        "4+_cars_sc": ("calibration", 7, 8, 8),
+        "1_car_b":    ("calibration", 4, 11, 14),
+        "2_cars_b":   ("calibration", 5, 11, 14),
+        "3_cars_b":   ("calibration", 6, 11, 14),
+        "4+_cars_b":  ("calibration", 7, 11, 14),
+    }
     
     def __init__(self, config_file: str = None):
         super().__init__("02", config_file)
@@ -124,7 +155,9 @@ def main():
     args = parser.parse_args()
 
     calibration = AutoOwnershipCalibration(config_file=args.config)
+    calibration.logger.info("Starting auto ownership calibration...")
     calibration.run()
+    calibration.logger.info("Calibration complete.")
 
 
 if __name__ == "__main__":

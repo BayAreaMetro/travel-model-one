@@ -39,6 +39,7 @@ import numpy as np
 import os
 import logging
 import sys
+import math
 import yaml
 import argparse
 from pathlib import Path
@@ -481,6 +482,7 @@ class CalibrationBase(ABC):
         self.workbook_path = f"{workbook_base}/{self.submodel} {submodel_name}/{workbook_template}.xlsx"
         self.workbook_temp = self.workbook_path.replace('.xlsx', '_temp.xlsx')
         self.workbook_iter = self.workbook_path.replace('.xlsx', f'_{self.calib_iter}.xlsx')
+        # load workbook_blank from the repo (local copy) instead of from "workbook_base" path
         self.workbook_blank = str(Path(__file__).parent / "workbook_templates" / f"{workbook_template}_blank.xlsx")
         
         workbook_dir = Path(self.workbook_path).parent
@@ -560,6 +562,36 @@ class CalibrationBase(ABC):
                 
         except Exception as e:
             self.logger.warning(f"Warning: Could not write to Excel sheet: {e}")
+
+    @staticmethod
+    def _read_xls_range(worksheet, column: int, start_row: int, end_row: int) -> list:
+        """Read a 1-based row/column slice from an xlrd worksheet."""
+        values = []
+        for row in range(start_row, end_row + 1):
+            values.append(worksheet.cell_value(row - 1, column - 1))
+        return values
+
+    @staticmethod
+    def _read_xlsx_range(worksheet, column: int, start_row: int, end_row: int) -> list:
+        """Read a 1-based row/column slice from an openpyxl worksheet."""
+        values = []
+        for row in range(start_row, end_row + 1):
+            values.append(worksheet.cell(row=row, column=column).value)
+        return values
+
+    @staticmethod
+    def _values_match(src_value, dst_value) -> bool:
+        """Compare Excel values while tolerating numeric type differences."""
+        if isinstance(src_value, str) or isinstance(dst_value, str):
+            return str(src_value).strip() == str(dst_value).strip()
+
+        if isinstance(src_value, bool) or isinstance(dst_value, bool):
+            return src_value == dst_value
+
+        if isinstance(src_value, (int, float)) and isinstance(dst_value, (int, float)):
+            return math.isclose(float(src_value), float(dst_value), rel_tol=1e-9, abs_tol=1e-9)
+
+        return src_value == dst_value
     
     def save_workbook(self):
         """Save the open calibration workbook.
@@ -641,20 +673,98 @@ class CalibrationBase(ABC):
         """
         pass
 
-    @abstractmethod
-    def validate_uec_values(self):
-        """Check that UEC values in the generated workbook are consistent with model input.
+    def validate_uec_values(self, src_workbook: str | Path | None = None,
+                            dst_workbook: str | Path | None = None) -> None:
+        """Validate mapped UEC source values against the saved calibration workbook.
 
-        This method is a placeholder for any submodel-specific checks that may
-        be needed to confirm that the UEC values (coefficients and constants)
-        in the calibration workbook match the expected values based on the model input data.  The exact checks
-        will depend on the submodel and the structure of the UECs.
+        Subclasses opt in by defining two class attributes:
 
-        The method should raise an exception if any validation check fails,
-        which will be logged by :meth:`run` and halt the calibration process
-        before saving the workbook.
+        * ``UEC_SOURCE_RANGES``: mapping key -> ``(sheet, column, start_row, end_row)``
+          for the source ``.xls`` workbook.
+        * ``CALIBRATION_DESTINATION_RANGES``: mapping key ->
+          ``(sheet, column, start_row, end_row)`` for the destination ``.xlsx`` workbook.
+
+        If either mapping is missing/empty, validation is skipped.
         """
-        pass
+        if self.bats_data:
+            self.logger.info("Skipping UEC value validation for BATS mode.")
+            return
+
+        source_ranges = getattr(self, "UEC_SOURCE_RANGES", {}) or {}
+        destination_ranges = getattr(self, "CALIBRATION_DESTINATION_RANGES", {}) or {}
+        if not source_ranges or not destination_ranges:
+            self.logger.info("No UEC validation ranges configured, skipping validation.")
+            return
+
+        src_path = Path(src_workbook) if src_workbook else Path(self.submodel_config.get("uec_src_file", ""))
+        dst_path = Path(dst_workbook) if dst_workbook else Path(getattr(self, "workbook_iter", ""))
+
+        # Skip validation if uec_src_file is not configured.
+        if not src_path.name:
+            self.logger.info("UEC source file not configured, skipping validation.")
+            return
+
+        if not src_path.exists():
+            raise FileNotFoundError(f"UEC source workbook not found: {src_path}")
+        if not dst_path.exists():
+            raise FileNotFoundError(f"Calibration destination workbook not found: {dst_path}")
+
+        try:
+            from xlrd import open_workbook
+            from openpyxl import load_workbook
+        except ImportError as e:
+            raise ImportError(
+                "UEC validation requires both 'xlrd' (for .xls) and 'openpyxl' (for .xlsx)."
+            ) from e
+
+        sep = "=" * 80
+        self.logger.info(f"\n{sep}\nUEC VALUE VALIDATION\n{sep}")
+        self.logger.info(f"Source workbook: {src_path}")
+        self.logger.info(f"Destination workbook: {dst_path}")
+
+        src_workbook_obj = open_workbook(src_path)
+        dst_workbook_obj = load_workbook(dst_path, data_only=True)
+        mismatches = []
+
+        for name, (src_sheet_name, src_column, src_start_row, src_end_row) in source_ranges.items():
+            if name not in destination_ranges:
+                raise KeyError(f"Missing destination mapping for UEC key: {name}")
+
+            dst_sheet_name, dst_column, dst_start_row, dst_end_row = destination_ranges[name]
+            src_values = self._read_xls_range(
+                src_workbook_obj.sheet_by_name(src_sheet_name),
+                src_column,
+                src_start_row,
+                src_end_row,
+            )
+            dst_values = self._read_xlsx_range(
+                dst_workbook_obj[dst_sheet_name],
+                dst_column,
+                dst_start_row,
+                dst_end_row,
+            )
+
+            if len(src_values) != len(dst_values):
+                raise ValueError(
+                    f"Validation length mismatch for {name}: "
+                    f"source has {len(src_values)} values and destination has {len(dst_values)} values"
+                )
+
+            for offset, (src_value, dst_value) in enumerate(zip(src_values, dst_values)):
+                if not self._values_match(src_value, dst_value):
+                    mismatches.append(
+                        f"{name}: {src_sheet_name}!R{src_start_row + offset}C{src_column}={src_value!r} "
+                        f"!= {dst_sheet_name}!R{dst_start_row + offset}C{dst_column}={dst_value!r}"
+                    )
+
+        if mismatches:
+            mismatch_preview = "\n".join(mismatches[:10])
+            extra_count = len(mismatches) - 10
+            if extra_count > 0:
+                mismatch_preview += f"\n... and {extra_count} more mismatches"
+            raise ValueError(f"UEC value validation failed:\n{mismatch_preview}")
+
+        self.logger.info("Validated UEC source values against the calibration workbook.")
 
     def run(self):
         """Run the complete calibration pipeline for this submodel.
