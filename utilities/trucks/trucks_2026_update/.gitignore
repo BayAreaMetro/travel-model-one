@@ -1,2 +1,7 @@
 /data
 /models/assignment
+
+# Cube log files 
+*.PRN
+*.VAR
+*.PRJ
