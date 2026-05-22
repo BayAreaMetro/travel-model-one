@@ -97,17 +97,16 @@ output_synthetic_population:
       - TYPEHUGQ
       - num_workers
       - income
-      - hh_income_2021
   persons:
     filename: synthetic_persons.csv
     columns:
       - SPORDER
       - AGEP
       - SEX
-      - pemploy
-      - pstudent
-      - ptype
-      - occupation
+      - ESR
+      - WKW
+      - WKHP
+      - SCHG
       - gqtype
 
 # Run Steps

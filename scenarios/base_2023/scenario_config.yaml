@@ -56,19 +56,8 @@ steps:
       - "{survey_output_dir}/ctramp_2023/JointTourData.csv"
       - "{survey_output_dir}/ctramp_2023/JointTripData.csv"
 
-  # --- 4. PopulationSim (stub) ---
-  # Using pre-built synthetic population from reference run.
-  # When ready to run PopulationSim natively, uncomment below:
-  # populationsim:
-  #   pums:
-  #     household: "M:/Data/Census/PUMS/PUMS 2023/csv_hca/psam_h06.csv"
-  #     person: "M:/Data/Census/PUMS/PUMS 2023/csv_pca/psam_p06.csv"
-  #   controls:
-  #     taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
-  #     county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
-  #     region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
-  #   working_dir: ".cache/popsim"
-  #   output_dir: ".cache/data"
+  # --- 4. PopulationSim: synthesize households/persons from PUMS ---
+  # Using pre-built synthetic population from reference run (2023_v12).
 
   # --- 5. Simulate: run ActivitySim demand model ---
   simulate_activitysim:

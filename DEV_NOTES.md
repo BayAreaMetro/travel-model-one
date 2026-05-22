@@ -101,6 +101,14 @@ The last CTRAMP model run, used as the benchmark for validation:
 - PopulationSim produces synthetic population from census PUMS + control totals
 - Land use inputs (UrbanSim or static) feed both PopulationSim and ActivitySim
 - End-to-end: land use → PopulationSim → ActivitySim → assignment
+- **STATUS: Step runner created** (`src/tm1/steps/populationsim.py`), base configs in `base-models/population/configs/`.
+  Scenario config section written (commented out in `base_2023`). Not yet wired up.
+- **TODO: Harmonization**
+  - `person_id` post-processing is unnecessary (ActivitySim handles indexing)
+  - `occupation` (SOC→1-6) is computed but never consumed by any ActivitySim component — drop it
+  - `pemploy`, `pstudent`, `ptype`, `num_workers`, `income` must remain (ActivitySim expects pre-computed)
+  - Long-term: if PopulationSim adds annotation CSV support, row-level derivations could move to config.
+    The 3 cross-table operations (num_workers agg, PINCP→HINCP, GQ weight) will always need code.
 
 ## What dies (eventually)
 - RunModel.bat, RunIteration.bat, RuntimeConfiguration.py
