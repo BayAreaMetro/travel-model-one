@@ -6,7 +6,7 @@ from src.utils import setup_logging, load_config
 from src.data.od_projection.prepare_projection_inputs import prepare_inputs
 from src.data.od_projection.crosswalk import build_crosswalk
 from src.data.od_projection.projection import project_matrices
-# from src.data.od_projection.format_mtc_output import format_mtc_output
+from src.data.od_projection.format_mtc_output import format_mtc_output
 from src.data.od_projection.projection import project_matrices
 from src.data.od_projection.trip_generation import internal_gates_generation, prepare_trip_generation_data
 
@@ -123,10 +123,12 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     logger.info("[3/5] Done in %.1fs", time.perf_counter() - t3)
 
     # ── Step 4: format MTC output files ───────────────────────────
-    # logger.info("[4/5] Formatting MTC output files …")
-    # t4 = time.perf_counter()
-    # format_mtc_output(cfg)
-    # logger.info("[4/5] Done in %.1fs", time.perf_counter() - t4)
+    logger.info("[4/5] Formatting MTC output files …")
+    t4 = time.perf_counter()
+    format_mtc_output(
+        sw_projection=data["projected_zones_and_gates"] , 
+        mtc_format_configs=cfg["mtc_format"])
+    logger.info("[4/5] Done in %.1fs", time.perf_counter() - t4)
 
 
     # ── Step 5: Prepare data for modeling ───────────────────────────
@@ -177,8 +179,6 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     #     cfg["mtc_format"]["output_omx_pattern"].replace("{tod}", "*"),
     # )
     logger.info("=" * 60)
-
-
 
 
 def main() -> None:

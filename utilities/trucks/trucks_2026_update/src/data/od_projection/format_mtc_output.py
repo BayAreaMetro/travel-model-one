@@ -82,30 +82,31 @@ def _parse_matrix_name(name: str) -> tuple[str, str]:
     return parts[0], parts[-1]
 
 
-# ── Step 1: aggregate projected matrices ──────────────────────────────────────
-
-def load_and_aggregate_projected(cfg: dict) -> dict[tuple[str, str], np.ndarray]:
+def collapse_projected_sw_omx_to_type_tod(omx_file: omx.File) -> dict[tuple[str, str], np.ndarray]:
     """
-    Read all matrices from the projected output OMX and aggregate (sum) by
-    (truck_type_prefix, statewide_tod), collapsing FR/NF and CA/EXT variants.
+    Collapse a projected statewide OMX by summing over FR/NF and CA/EXT
+    variants, returning matrices aggregated by truck class and TOD.
+    
+    The input OMX is assumed to be a "projected" output produced by: 
+    src.data.od_projection.projection.project_matrices
 
     Returns
     -------
-    dict mapping (prefix, statewide_tod) → float32 numpy array
+    dict mapping (statewide_truck_type, statewide_tod) → float32 numpy array
     """
     aggregated: dict[tuple[str, str], np.ndarray] = {}
 
-    with omx.open_file(cfg["paths"]["output_omx"], "r") as f:
-        for name in f.list_matrices():
-            try:
-                prefix, tod = _parse_matrix_name(name)
-            except ValueError as exc:
-                logger.warning("Skipping unrecognised matrix name: %s", exc)
-                continue
 
-            data = np.array(f[name], dtype=np.float32)
-            key  = (prefix, tod)
-            aggregated[key] = data if key not in aggregated else aggregated[key] + data
+    for name in omx_file.list_matrices():
+        try:
+            truck_type, tod = _parse_matrix_name(name)
+        except ValueError as exc:
+            logger.warning("Skipping unrecognised matrix name: %s", exc)
+            continue
+
+        data = np.array(omx_file[name], dtype=np.float32)
+        key  = (truck_type, tod)
+        aggregated[key] = data if key not in aggregated else aggregated[key] + data
 
     logger.info(
         "Projected OMX: %d matrices aggregated into %d (type, TOD) groups: %s",
@@ -116,9 +117,7 @@ def load_and_aggregate_projected(cfg: dict) -> dict[tuple[str, str], np.ndarray]
     return aggregated
 
 
-# ── Step 2: compute TOD split proportions ─────────────────────────────────────
-
-def compute_tod_split_proportions(cfg: dict) -> dict[str, dict[str, np.ndarray]]:
+def compute_tod_split_proportions(mtc_format_configs: dict) -> dict[str, dict[str, np.ndarray]]:
     """
     For every statewide TOD that maps to more than one MTC TOD, compute
     element-wise split proportions from the MTC reference OMX files.
@@ -131,14 +130,13 @@ def compute_tod_split_proportions(cfg: dict) -> dict[str, dict[str, np.ndarray]]
     Cells where all reference periods are zero receive an equal-split fallback.
     Only statewide TODs with more than one MTC target appear in the result.
     """
-    fmt        = cfg["mtc_format"]
-    in_pattern = fmt["input_omx_pattern"]
+    in_pattern = mtc_format_configs["input_omx_pattern"]
     result: dict[str, dict[str, np.ndarray]] = {}
 
-    for sw_tod, mapping in fmt["tod_mapping"].items():
+    for sw_tod, mapping in mtc_format_configs["tod_mapping"].items():
         mtc_tods = mapping["mtc_tods"]
         if len(mtc_tods) <= 1:
-            continue  # direct mapping — no split needed
+            continue  # direct mapping, no split needed
 
         ref_types = mapping.get("split_reference_types", [])
         n_tods    = len(mtc_tods)
@@ -156,19 +154,19 @@ def compute_tod_split_proportions(cfg: dict) -> dict[str, dict[str, np.ndarray]]
         ref_totals: dict[str, np.ndarray | None] = {t: None for t in mtc_tods}
         for mtc_tod in mtc_tods:
             ref_path = in_pattern.format(tod=mtc_tod)
-            with omx.open_file(ref_path, "r") as f:
-                available = set(f.list_matrices())
-                for rtype in ref_types:
-                    if rtype not in available:
-                        logger.warning(
-                            "Reference '%s' has no matrix '%s'; skipped.",
-                            ref_path, rtype,
-                        )
-                        continue
-                    data = np.array(f[rtype], dtype=np.float64)
-                    ref_totals[mtc_tod] = (
-                        data if ref_totals[mtc_tod] is None else ref_totals[mtc_tod] + data
+            reference_omx = omx.open_file(ref_path, "r")
+            available = set(reference_omx.list_matrices())
+            for rtype in ref_types:
+                if rtype not in available:
+                    logger.warning(
+                        "Reference '%s' has no matrix '%s'; skipped.",
+                        ref_path, rtype,
                     )
+                    continue
+                data = np.array(reference_omx[rtype], dtype=np.float64)
+                ref_totals[mtc_tod] = (
+                    data if ref_totals[mtc_tod] is None else ref_totals[mtc_tod] + data
+                )
             if ref_totals[mtc_tod] is None:
                 logger.warning(
                     "No reference data found for '%s' in '%s'; using zeros.",
@@ -198,8 +196,6 @@ def compute_tod_split_proportions(cfg: dict) -> dict[str, dict[str, np.ndarray]]
     return result
 
 
-# ── Step 3: assemble one (MTC TOD, MTC truck type) matrix ─────────────────────
-
 def build_mtc_matrix(
     mtc_tod: str,
     mtc_truck: str,
@@ -207,7 +203,7 @@ def build_mtc_matrix(
     aggregated: dict[tuple[str, str], np.ndarray],
     proportions: dict[str, dict[str, np.ndarray]],
     tod_mapping: dict,
-    reference_fallback: np.ndarray | None,
+    fallback: np.ndarray | None,
 ) -> tuple[np.ndarray | None, str]:
     """
     Assemble one MTC matrix from projected statewide data.
@@ -226,15 +222,15 @@ def build_mtc_matrix(
     aggregated        : output of load_and_aggregate_projected()
     proportions       : output of compute_tod_split_proportions()
     tod_mapping       : cfg["mtc_format"]["tod_mapping"]
-    reference_fallback: matrix from MTC reference file, or None
+    fallback          : Default matrix from MTC reference file, or None
     """
     from_types = truck_cfg.get("from_types")
 
     # ── No statewide equivalent: preserve the MTC reference matrix ────────────
     if from_types is None:
-        if reference_fallback is not None:
-            return reference_fallback.copy(), "MTC reference (preserved)"
-        return None, "from_types=null but no reference matrix available"
+        if fallback is not None:
+            return fallback.copy(), "MTC reference (preserved)"
+        return None, "from_types=null and no reference matrix available"
 
     # ── Accumulate statewide contributions ────────────────────────────────────
     result: np.ndarray | None = None
@@ -297,50 +293,25 @@ def build_mtc_matrix(
     if result is not None:
         return result.astype(np.float32), ", ".join(source_parts)
 
-    # ── No statewide data at all: warn and fall back to reference ──────────────
-    if reference_fallback is not None:
-        logger.warning(
-            "  %s / %-8s  no projected data for types %s — "
-            "falling back to MTC reference.",
-            mtc_tod, mtc_truck, from_types,
-        )
-        return reference_fallback.copy(), "MTC reference (fallback — no statewide data)"
+    # # ── No statewide data at all: warn and fall back to reference ──────────────
+    # if fallback is not None:
+    #     logger.warning(
+    #         "  %s / %-8s  no projected data for types %s — "
+    #         "falling back to MTC reference.",
+    #         mtc_tod, mtc_truck, from_types,
+    #     )
+    #     return fallback.copy(), "MTC reference (fallback — no statewide data)"
 
-    return None, f"no statewide data for {from_types} feeding {mtc_tod}, and no reference"
+    # return None, f"no statewide data for {from_types} feeding {mtc_tod}, and no reference"
 
 
-# ── Main entry point ───────────────────────────────────────────────────────────
-
-def format_mtc_output(cfg: dict) -> None:
-    """
-    Build the five MTC TOD OMX files from the projected statewide output.
-
-    For each MTC TOD and each MTC truck type:
-      • If from_types is null  → copy the matrix from the MTC reference file unchanged.
-      • Otherwise              → sum the relevant projected statewide matrices,
-                                 apply any configured TOD split proportions, and
-                                 write the result.
-
-    Output files follow the pattern configured in mtc_format.output_omx_pattern.
-    """
-    fmt         = cfg["mtc_format"]
-    in_pattern  = fmt["input_omx_pattern"]
-    out_pattern = fmt["output_omx_pattern"]
-    tod_mapping = fmt["tod_mapping"]
-
-    # Ensure output directory exists
-    Path(out_pattern.format(tod=fmt["mtc_tods"][0])).parent.mkdir(parents=True, exist_ok=True)
-
-    # ── Step 1: load and aggregate projected matrices ──────────────────────────
-    logger.info("Loading projected matrices from %s …", cfg["paths"]["output_omx"])
-    aggregated = load_and_aggregate_projected(cfg)
-
-    # ── Step 2: compute TOD split proportions ─────────────────────────────────
-    logger.info("Computing TOD split proportions from MTC reference files …")
-    proportions = compute_tod_split_proportions(cfg)
-
-    # ── Step 3: write one OMX per MTC TOD ─────────────────────────────────────
-    truck_mapping              = fmt["truck_type_mapping"]
+def patch_cube_omx_with_new_matrices(aggregated, proportions, configs):
+    tods = configs["mtc_tods"]
+    tod_mapping = configs["tod_mapping"]
+    truck_mapping = configs["truck_type_mapping"]
+    in_pattern  = configs["input_omx_pattern"]
+    out_pattern = configs["output_omx_pattern"]
+    
     tod_totals: dict[str, float] = {}
 
     logger.info(_SEP)
@@ -350,53 +321,49 @@ def format_mtc_output(cfg: dict) -> None:
     )
     logger.info(_SEP)
 
-    for mtc_tod in fmt["mtc_tods"]:
+    for mtc_tod in tods:
         out_path = out_pattern.format(tod=mtc_tod)
         ref_path = in_pattern.format(tod=mtc_tod)
 
-        # Pre-load this TOD's reference matrices (for preserved / fallback use)
+        # For fallback use if SW doesn't provide data for a truck type (e.g. very small trucks)
         ref_matrices: dict[str, np.ndarray] = {}
-        try:
-            with omx.open_file(ref_path, "r") as f:
-                for mat_name in f.list_matrices():
-                    ref_matrices[mat_name] = np.array(f[mat_name], dtype=np.float32)
-        except Exception as exc:
-            logger.warning("Could not read MTC reference '%s': %s", ref_path, exc)
+        reference_omx = omx.open_file(ref_path, "r")
+        for mat_name in reference_omx.list_matrices():
+            ref_matrices[mat_name] = np.array(reference_omx[mat_name], dtype=np.float32)
+       
 
         tod_trip_total = 0.0
-        with omx.open_file(out_path, "a") as out_f:
-            for mtc_truck, truck_cfg in truck_mapping.items():
-                matrix, source = build_mtc_matrix(
-                    mtc_tod, mtc_truck, truck_cfg,
-                    aggregated, proportions, tod_mapping,
-                    ref_matrices.get(mtc_truck),
-                )
-                if matrix is None:
-                    logger.error(
-                        "  %-5s  %-10s  OMITTED: %s", mtc_tod, mtc_truck, source
-                    )
-                    continue
+        
+        out_omx = omx.open_file(out_path, "a")
+    
+        for mtc_truck, truck_cfg in truck_mapping.items():
+            matrix, source = build_mtc_matrix(
+                mtc_tod, mtc_truck, truck_cfg,
+                aggregated, proportions, tod_mapping,
+                ref_matrices.get(mtc_truck),
+            )
 
-                matrix_node = out_f[mtc_truck]
-                replacement_data = np.asarray(matrix, dtype=matrix_node.atom.dtype)
-                matrix_node[:] = replacement_data
+            matrix_node = out_omx[mtc_truck]
+            replacement_data = np.asarray(matrix, dtype=matrix_node.atom.dtype)
+            matrix_node[:] = replacement_data
 
-                trips = float(matrix.sum())
-                tod_trip_total += trips
-                logger.info(
-                    "  %-5s  %-10s  %14.0f   %s",
-                    mtc_tod, mtc_truck, trips, source,
-                )
-            out_f.flush()
-
+            trips = float(matrix.sum())
+            tod_trip_total += trips
+            logger.info(
+                "  %-5s  %-10s  %14.0f   %s",
+                mtc_tod, mtc_truck, trips, source,
+            )
+        out_omx.flush()
         tod_totals[mtc_tod] = tod_trip_total
+        out_omx.close()
+        reference_omx.close()
 
     # ── Summary ────────────────────────────────────────────────────────────────
     grand_total = sum(tod_totals.values())
     logger.info(_SEP)
     logger.info("  %-5s  %-10s  %14s", "TOD", "", "Total trips")
     logger.info(_SEP)
-    for tod in fmt["mtc_tods"]:
+    for tod in tods:
         pct = 100.0 * tod_totals[tod] / grand_total if grand_total > 0 else 0.0
         logger.info("  %-5s  %-10s  %14.0f   (%5.1f%%)", tod, "", tod_totals[tod], pct)
     logger.info("  %-5s  %-10s  %14.0f", "TOTAL", "", grand_total)
@@ -406,14 +373,26 @@ def format_mtc_output(cfg: dict) -> None:
         str(Path(out_pattern.format(tod="*")).parent / Path(out_pattern.format(tod="*")).name),
     )
 
-
-# ── Entry point ────────────────────────────────────────────────────────────────
-
-def main(config_path: str = "config/config.yaml") -> None:
-    setup_logging()
-    cfg = load_config(config_path)
-    format_mtc_output(cfg)
+    return None
 
 
-if __name__ == "__main__":
-    main()
+def format_mtc_output(sw_projection, mtc_format_configs) -> None:
+    """
+    Build the five MTC TOD OMX files from the projected statewide output.
+
+    For each MTC TOD and each MTC truck type:
+      • If from_types is null  → copy the matrix from the MTC reference file unchanged.
+      • Otherwise              → sum the relevant projected statewide matrices,
+                                 apply any configured TOD split proportions. 
+    
+    """
+    # ── Step 1: Aggregate projected matrices ──────────────────────────
+    aggregated = collapse_projected_sw_omx_to_type_tod(sw_projection)
+
+    # ── Step 2: compute TOD split proportions ─────────────────────────────────
+    logger.info("Computing TOD split proportions from MTC reference files …")
+    proportions = compute_tod_split_proportions(mtc_format_configs)
+
+    # ── Step 3: write one OMX per MTC TOD ─────────────────────────────────────
+    patch_cube_omx_with_new_matrices(aggregated, proportions, mtc_format_configs)
+    
