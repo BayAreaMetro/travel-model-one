@@ -39,7 +39,8 @@ This branch (`activitysim_revival`) replaces the Java-based CTRAMP demand model 
 
 ```
 base-models/activity/configs/    # Canonical ActivitySim configs (specs, coefficients, YAML)
-scenarios/base_2023/configs/     # Scenario overrides ONLY (inherits from base-models)
+scenarios/{name}/activitysim/    # Scenario overrides ONLY (inherits from base-models)
+scenarios/{name}/populationsim/  # PopulationSim overrides
 src/tm1/                         # Python package (CLI, runner)
 src/cubeio/                      # Cube skim/matrix I/O
 scripts/                         # Utility and launch scripts
@@ -63,18 +64,18 @@ pip install uv
 uv sync
 
 # Verify
-uv run tm1 --help
+tm1 --help
 ```
 
 ### Running a Scenario
 
 ```bash
-uv run tm1 run --scenario base_2023
+tm1 run --scenario base_2023
 ```
 
 ### Creating a New Scenario
 
-1. Create `scenarios/<name>/configs/settings.yaml` with `inherit_settings: True`
+1. Create `scenarios/<name>/activitysim/settings.yaml` with `inherit_settings: True`
 2. Add only the config files that *differ* from the base
 3. Point input tables at your land-use / skims data
-4. Run with `uv run tm1 run --scenario <name>`
+4. Run with `tm1 run --scenario <name>`
