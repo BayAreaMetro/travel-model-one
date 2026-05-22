@@ -8,9 +8,9 @@ This workflow runs a **partial TM1.6 model execution**, covering:
 - Highway assignment
 - Post-processing steps (preparing networks for the next iteration)
 
-It executes **a single Highway assignment iteration**, using **externally produced truck trip OD matrices** instead of the TM-1.6 truuck trip generation and distribution models.
+It executes **a single Highway assignment iteration**, using **externally produced truck OD matrices** in place of the TM-1.6 truck demand.
 
-This workflow uses outputs from a completed TM1.6 run to initialize the simulation at the Truck Toll Choice step. For these experiments, the base run is sourced from: https://mtcdrive.box.com/s/rrgnyrc73uogqvxtzvkihxz8cqlyeg67. Download and extract this file locally into data/external/mtc.
+This workflow uses outputs from a completed TM1.6 run to initialize the simulation at the Truck Toll Choice step. For these experiments, the base run is available from: https://mtcdrive.box.com/s/rrgnyrc73uogqvxtzvkihxz8cqlyeg67. Download and extract this file locally into `data/external/mtc`.
 
 ## Usage
 
