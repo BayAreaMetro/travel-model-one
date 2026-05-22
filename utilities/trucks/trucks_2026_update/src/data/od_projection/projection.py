@@ -135,7 +135,7 @@ def project_matrices(
         offset, 
         n_from, 
         n_to,
-        matrixes_names: None,
+        matrixes_names,
         zone_types: list[str], 
         ) -> omx.File:
     """Inline projection step — reuses logic from project_matrix without re-reading crosswalk.
@@ -150,9 +150,6 @@ def project_matrices(
       - projected trips (total output TO matrix)
       - approximation loss (relevant − projected)
     """
-    if matrixes_names is None:
-        matrixes_names   = source_matrices.list_matrices()
-
     # Masks 
     ids = crosswalk[crosswalk["type"].isin(zone_types)]["from_zone_id"].unique() - offset
     mask = mask_1d(ids, n_from)

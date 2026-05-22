@@ -51,6 +51,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     }
 
     output_path = cfg["output"]
+    matrixes_to_project = list(cfg["projection"].get("from_matrices_to_project", data["from_omx"].list_matrices()))
 
     # ── Step 1: Data Preprocessing ─────────────────────────────────────────────────
     logger.info("[1/5] Data Preparation …")
@@ -87,7 +88,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         offset = cfg["zones"]["offset"],
         n_from = cfg["zones"]["from_matrix_size"],
         n_to = cfg["zones"]["to_matrix_size"],
-        matrixes_names = cfg["projection"].get("from_matrices_to_project", None),
+        matrixes_names = matrixes_to_project,
         zone_types = ["internal_gate", "internal_zone"],
     )
 
@@ -101,7 +102,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         offset = cfg["zones"]["offset"],
         n_from = cfg["zones"]["from_matrix_size"],
         n_to = cfg["zones"]["to_matrix_size"],
-        matrixes_names = cfg["projection"].get("from_matrices_to_project", None), 
+        matrixes_names = matrixes_to_project, 
         zone_types = ["internal_zone"]
     )
 
@@ -115,7 +116,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         offset = cfg["zones"]["offset"],
         n_from = cfg["zones"]["from_matrix_size"],
         n_to = cfg["zones"]["to_matrix_size"],
-        matrixes_names = cfg["projection"].get("from_matrices_to_project", None), 
+        matrixes_names = matrixes_to_project, 
         zone_types = ["internal_gate"]
     )
 
@@ -132,7 +133,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     logger.info("[5/5] Preparing data for modeling …")
     t5 = time.perf_counter()
     data["zones_generation"] = prepare_trip_generation_data(
-        matrixes_names = cfg["projection"].get("from_matrices_to_project", None),
+        matrixes_names = matrixes_to_project,
         source_matrices= data["projected_zones"], 
         landuse = data["tm_land_use"]
         )
@@ -141,7 +142,7 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     data["zones_generation"].to_csv(fpath, index=False)
     
     data["tnl_generation"] = internal_gates_generation(
-        matrixes_names = cfg["projection"].get("from_matrices_to_project", None),
+        matrixes_names = matrixes_to_project,
         source_matrices = data["from_omx"],
         crosswalk = data["crosswalk"]
     )
