@@ -7,7 +7,7 @@ This directory contains the end-to-end pipeline for updating the truck generatio
 ## Project Structure
 
 - `config/`  : YAML model specifications and pipeline settings.
-- `data/`    : Local data storage. **Note:** This folder is git-ignored; all project data is hosted on **Box**.
+- `data/`    : Local data storage. **Note:** This folder is git-ignored; all project data is hosted on **Box**: https://mtcdrive.box.com/s/7p99h020p361bzzmltwp5q2sa8oaxah1
 - `notebooks/` : Jupyter notebooks for exploration, validation, and final reporting (the "Source of Truth" for model selection).
 - `src/`     : Core source code for data cleaning and the OLS estimation engine.
 
