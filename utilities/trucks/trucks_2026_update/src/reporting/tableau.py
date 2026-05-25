@@ -3,6 +3,16 @@ from pathlib import Path
 import pandas as pd
 
 
+def round_numeric(df: pd.DataFrame, decimals: int = 10) -> pd.DataFrame:
+    """
+    Round all numeric columns in a DataFrame to the specified number of decimals.
+    """
+    numeric_cols = df.select_dtypes(include="number").columns
+    df[numeric_cols] = df[numeric_cols].round(decimals)
+    return df
+
+
+
 def write_tableau_csv(
     df: pd.DataFrame,
     output_path: str | Path,
@@ -24,5 +34,6 @@ def write_tableau_csv(
         .replace("/", "_")
         for col in cleaned.columns
     ]
+    cleaned = round_numeric(cleaned)
 
     cleaned.to_csv(output_path, index=False)
