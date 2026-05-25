@@ -8,6 +8,12 @@ from datetime import datetime
 from pathlib import Path
 
 
+import geopandas as gpd
+
+
+
+
+
 def setup_logging(
     level: int = logging.INFO,
     log_dir: str | None = None,
@@ -79,3 +85,38 @@ def timeit(func: Callable) -> Callable:
         return result
 
     return wrapper
+
+
+
+def save(data, filepath: str, overwrite: bool = True) -> None:
+    """
+    Save a dataframe or geodataframe based on file extension.
+
+    Supports:
+        - CSV (.csv)
+        - Parquet (.parquet)
+        - Shapefile (.shp)
+
+    Ensures output directory exists.
+    """
+    path = Path(filepath)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if path.exists() and not overwrite:
+        raise FileExistsError(f"{path} already exists")
+
+    suffix = path.suffix.lower()
+
+    if suffix == ".csv":
+        data.to_csv(path, index=False)
+
+    elif suffix == ".parquet":
+        data.to_parquet(path, index=False)
+
+    elif suffix == ".shp":
+        if not isinstance(data, gpd.GeoDataFrame):
+            raise ValueError("Shapefile output requires a GeoDataFrame")
+        data.to_file(path)
+
+    else:
+        raise ValueError(f"Unsupported format: {suffix}")
