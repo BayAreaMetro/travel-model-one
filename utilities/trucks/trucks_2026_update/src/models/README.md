@@ -3,46 +3,36 @@
 
 This module is an engine for executing OLS regression defined via YAML configurations. It serves as the core estimation logic for updating the TM-1.7 Travel Demand Model truck generation equations.
 
-### Usage
-Run the estimation script as a module from this directory (`utils/truck_updates/`):
-
-```bash
-python -m src.models.estimate \
-  --specs path/to/model_specs.yaml \
-  --data path/to/data.csv \
-  [--output path/to/output_dir] \
-  [--geo-cols col1 col2] \
-  [--agg-cols col3 col4]
-```
-
-### Arguments
-
-
-| Argument | Requirement | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `--specs` | **Required** | N/A | Path to YAML file with model specifications. |
-| `--data` | **Required** | N/A | Path to modeling dataset (parquet or csv). |
-| `--output` | Optional | `data/outputs` | Base output directory. |
-| `--geo-cols` | Optional | `[]` | Extra columns to include in prediction output (e.g., county, district). |
-| `--agg-cols` | Optional | `[]` | Columns to aggregate validation on (e.g., county, district). |
----
-
-## Overview
-
 The script performs the following steps:
 
 1. Loads model specifications from a YAML file  
-2. Loads input data (CSV or Parquet)  
+2. Loads input data: target and feature datasets
 3. Executes a suite of regression models  
 4. Saves outputs (predictions, diagnostics, etc.) to a timestamped directory  
 5. Copies input files for reproducibility  
 
 
-## Model Specification (YAML)
+### How to Run
 
-The model suite is driven by a YAML configuration file that defines each regression model to be estimated. Each entry in the YAML file represents one model.
+Run the estimation script as a module from this directory (`utilities/trucks/trucks_2026_updates`):
 
-At a high level, the YAML file follows this structure:
+```bash
+python -m src.models.estimate \
+  --specs path/to/model_specs.yaml \
+  --model-configs path/to/model_configs.yaml \
+```
+
+## Requried YAML files
+
+The model pipeline is driven entirely by two YAML configuration files. 
+
+1. **`--specs`**: Path to the YAML file that defines all regression models to be estimated. This file specifies model names, dependent variables, features, and optional parameters.
+
+2. **`--model-configs`**: Path to YAML file with model configuration. Defines path to model targets and featues dataset. 
+
+### YAML Structure Overview  **`--specs`**
+
+At the top level, the YAML file contains a `models` list, where each entry represents one regression model to be estimated:
 
 ```yaml
 models:
@@ -57,6 +47,110 @@ models:
     geography_id_col: <column name> # optional. default: "taz_id"
     description: <text>             # optional. default: ""
     tags: [<tag1>, <tag2>]          # optional. default: []
+```
+
+#### YAML Parameter Definitions
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `name` | string | Yes | N/A | Unique identifier for the model. Used in output files and logging. |
+| `target` | string | Yes | N/A | Name of the dependent variable (column in input data). |
+| `features` | list | Yes | N/A | List of independent variable names (columns in input data). |
+| `model_type` | string | No | `"ols"` | Type of regression model. Currently supports: `"ols"` (Ordinary Least Squares). |
+| `weight_col` | string | No | `null` | Column name for observation weights. If provided, models are estimated using weighted regression. |
+| `group_col` | string | No | `null` | Column name for grouping/stratification. If provided, separate models are estimated for each group. |
+| `description` | string | No | `""` | Descriptive text for the model, included in outputs for documentation. |
+| `tags` | list | No | `[]` | List of categorical tags for organizing and filtering models in outputs. |
+
+#### Example YAML Configuration
+
+```yaml
+models:
+  - name: truck_generation_primary
+    target: daily_trucks
+    features:
+      - employment
+      - retail_sqft
+      - manufacturing_sqft
+    model_type: ols
+    weight_col: zone_weight
+    description: "Primary truck generation model for major employment zones"
+    tags: ["baseline", "primary"]
+    
+  - name: truck_generation_secondary
+    target: daily_trucks
+    features:
+      - employment
+      - population
+    model_type: ols
+    description: "Secondary truck generation model using simplified feature set"
+    tags: ["baseline", "secondary"]
+    
+  - name: truck_generation_by_county
+    target: daily_trucks
+    features:
+      - employment
+      - retail_sqft
+    group_col: county
+    weight_col: zone_weight
+    description: "County-specific truck generation models"
+    tags: ["county_disaggregated"]
+```
+
+---
+
+
+
+### YAML Structure Overview  **`--model-configs`**
+
+The model configuration YAML file specifies the input data sources and output paths for the model pipeline. It defines where to find the target and feature datasets, how to join them, and where to save results.
+
+At the top level, the YAML file contains the following sections:
+
+```yaml
+data_sources:
+  features:
+    path: <path/to/features.csv>
+    id: <feature_id_column>
+  targets:
+    path: <path/to/targets.csv>
+    id: <target_id_column>
+
+output: <path/to/output/directory>
+
+additional_columns:
+  - <column_name_1>
+  - <column_name_2>
+```
+
+#### YAML Parameter Definitions
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `data_sources.features.path` | string | Yes | Path to the features dataset (CSV or Parquet) containing independent variables. |
+| `data_sources.features.id` | string | Yes | ID/join column name in the features dataset. |
+| `data_sources.targets.path` | string | Yes | Path to the targets dataset (CSV or Parquet) containing the dependent variable and observations. |
+| `data_sources.targets.id` | string | Yes | ID/join column name in the targets dataset. Must align with features.id for proper merging. |
+| `output` | string | Yes | Base output directory where model results will be saved. |
+| `additional_columns` | list | No | List of additional column names to include in prediction outputs (e.g., geography identifiers, county, district). |
+
+#### Example YAML Configuration
+
+```yaml
+data_sources:
+  features:
+    path: data/external/mtc/2023_TM161_IPA_35/landuse/tazData.csv
+    id: ZONE
+  targets:
+    path: data/processed/truck_trip_generation_zone.csv
+    id: TAZ1454
+
+output: models/truck_trip_generation
+
+additional_columns:
+  - TAZ1454
+  - COUNTY
+  - DISTRICT
 ```
 
 ---
