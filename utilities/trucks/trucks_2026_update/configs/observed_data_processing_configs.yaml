@@ -1,0 +1,130 @@
+
+
+
+# ── Paths ─────────────────────────────────────────────────────────────────
+inputs:
+  # Raw inputs.
+  # class and counts data are split into one file per Caltrans district;
+  # point to the folder and V1 will glob + concatenate all matching files.
+  caltrans_2018:                "data/external/caltrans/counts/2018 Class Vehicles/"       # hourly counts by vehicle class                    
+  caltrans_control_stations:    "data/external/caltrans/counts/2018 Traffic Counts/"       # CONTROLNO → route/county/postmile                  
+  shn_postmiles:                "data/external/caltrans/counts/SHN_Postmiles_Tenth/SHN_Postmiles_Tenth.shp" # SHN points every 0.1 mi
+  mtc_network_links:            "data/interim/cube_io/mtc_net/mtc_links.shp"        # MTC network links
+  overrides:                    "data/BATA_TM_network_link_matching.csv"             # manual overrides for station-to-link matches
+
+outputs:
+  caltrans_aadtt:               "data/interim/observed_data/caltrans_aadtt.csv"
+  bata_aadtt:                   "data/interim/observed_data/bata_aadtt.csv"
+  station_locations_shp:        "data/interim/observed_data/station_locations/station_locations.shp"
+  station_locations_csv:        "data/interim/observed_data/station_locations.csv"
+  crosswalk:                    "data/interim/observed_data/station_mtc_link_crosswalk.csv"
+  stations_review:              "data/interim/observed_data/count_station_to_review.csv"
+  validation_table:             "data/interim/observed_data/validation_table/validation_table.shp"
+
+  # Tableau review outputs (written by run_spatial_match.py)
+  stations_tableau_shp: "data/interim/observed_data/stations_tableau.shp"
+  review_links_shp:     "data/interim/observed_data/review_links.shp"
+
+
+# ── CRS ───────────────────────────────────────────────────────────────────
+# EPSG:26910 = NAD83 / UTM zone 10N — the native CRS of the MTC network
+# and TAZ1454 shapefile.  All spatial operations run in this CRS.
+# The SHN (EPSG:3857) and any WGS-84 inputs are reprojected at load time.
+working_crs: "EPSG:26910"
+# CRS assigned to mtc_links.shp, which ships without an embedded projection.
+network_crs:  "EPSG:26910"
+
+# ── Direction normalisation ────────────────────────────────────────────────
+# All direction fields are normalised to N / S / E / W strings at ingest.
+direction_map:
+  class_file:              # numeric codes used in 2018 Class Vehicles CSVs
+    1: "N"
+    3: "E"
+    5: "S"
+    7: "W"
+  counts_file:             # letter codes used in 2018 Traffic Counts CSVs
+    "N": "N"
+    "S": "S"
+    "E": "E"
+    "W": "W"
+  shn_file:                # SHN postmile shapefile Direction field → N/S/E/W
+    "NB": "N"
+    "SB": "S"
+    "EB": "E"
+    "WB": "W"
+
+# ── Typical weekday filter (V1) ────────────────────────────────────────────
+typical_weekday:
+  # Python weekday index: Mon=0 Tue=1 Wed=2 Thu=3 Fri=4 Sat=5 Sun=6
+  weekdays: [1, 2, 3]     # Tuesday, Wednesday, Thursday
+  # California public holidays and adjacent high-travel days to exclude.
+  # Extend as needed.
+  holidays:
+    - "2018-01-01"        # New Year's Day
+    - "2018-01-15"        # MLK Day
+    - "2018-02-19"        # Presidents' Day
+    - "2018-05-28"        # Memorial Day
+    - "2018-07-04"        # Independence Day
+    - "2018-09-03"        # Labor Day
+    - "2018-11-12"        # Veterans Day (observed)
+    - "2018-11-21"        # Day before Thanksgiving
+    - "2018-11-22"        # Thanksgiving
+    - "2018-11-23"        # Day after Thanksgiving
+    - "2018-12-24"        # Christmas Eve
+    - "2018-12-25"        # Christmas Day
+    - "2018-12-31"        # New Year's Eve
+
+# ── Vehicle class → truck type mapping ──────────────────────────────
+# CNT2–CNT13 are the 13 FHWA scheme F vehicle classes in the class file.
+vehicle_class_map: #TODO: Review. Mapping done randomly to check the pipeline end-to-enth; update with actual mappings once the data is reviewed.
+  struck: [CNT5]  # light and medium trucks
+  mtruck: [CNT6]  # heavy single-unit trucks and 4-5 axle single-trailer trucks
+  ctruck: [CNT7, CNT8, CNT9, CNT10, CNT11, CNT12, CNT13]  # heavy multi-unit trucks and 6+ axle single-trailer trucks 
+  total:  [CNT5, CNT6, CNT7, CNT8, CNT9, CNT10, CNT11, CNT12, CNT13]  # all classes truck combined.
+
+# ── Time of day mapping ──────────────────────
+tod_hours:
+  EA: [3, 4, 5]
+  AM: [6, 7, 8, 9]
+  MD: [10, 11, 12, 13, 14]
+  PM: [15, 16, 17, 18]
+  EV: [19, 20, 21, 22, 23, 0, 1, 2]
+
+# ── Normality test (V1) ───────────────────────────────────────────────────
+# Shapiro-Wilk is used (appropriate for n ≈ 50–60 typical weekday obs).
+# Stations where p > alpha are flagged is_normal = True.
+normality_alpha: 0.05
+
+normality_percentiles: [0.025, 0.975]  # Percentiles to compute for the confidence interval in the typical day profiles.
+
+# ── Network matching (V2b) ────────────────────────────────────────────────
+matching:
+  # Maximum distance from station point to candidate link.
+  search_radius_m: 500
+
+outlier_k: 3  # Outliers are observations more than k MAD from the median; these are dropped before typical weekday filtering and normality testing.
+# ── Scenario-specific Validation ───────────────────────────────────────────
+# Each entry produces its own subfolder under output_dir:
+#   data/processed/validation/{name}/validation_table.csv
+# Add a new run by appending a new list item — nothing else changes.
+model_runs:
+  - name: MTC
+    network_shapefile: data/interim/tm16_outputs/tm16_legacy/links/avgload5period.shp
+    # Map each MTC TOD to the corresponding volume column in the shapefile.
+    # Update these column names once the model output is available.
+    volume_columns:
+      EA: EA
+      AM: AM
+      MD: MD
+      PM: PM
+      EV: EV
+      "24HR": total
+  - name: SW
+    network_shapefile: data/interim/tm16_outputs/tm16_statewide_truck_data/links/avgload5period.shp
+    volume_columns:
+      EA: EA
+      AM: AM
+      MD: MD
+      PM: PM
+      EV: EV
+      "24HR": total
