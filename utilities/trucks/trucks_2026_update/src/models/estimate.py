@@ -4,6 +4,7 @@ import pandas as pd
 
 from src.models.registry import load_model_specs_from_yaml
 from src.models.engine import run_model_suite
+from src.utils import setup_logging, load_config
 
 import datetime
 import shutil
@@ -23,35 +24,29 @@ def parse_args():
 
     parser.add_argument(
         "--specs",
-        required=True,
+        default="configs/model_specs.yaml",
         help="Path to YAML file with model specifications.",
     )
 
     parser.add_argument(
-        "--data",
-        required=True,
-        help="Path to modeling dataset (parquet or csv).",
+        "--model-configs",
+        default="configs/model_pipeline_configs.yaml",
+        help="Path to YAML file with model configuration.",
     )
 
-    parser.add_argument(
-        "--output",
-        default="data/outputs", #TODO: Verify with MTC the default output folder they'd like to use. 
-        help="Base output directory.",
-    )
+    # parser.add_argument(
+    #     "--geo-cols",
+    #     nargs="*",
+    #     default=[],
+    #     help="Extra columns to include in prediction output (e.g., county district).",
+    # )
 
-    parser.add_argument(
-        "--geo-cols",
-        nargs="*",
-        default=[],
-        help="Extra columns to include in prediction output (e.g., county district).",
-    )
-
-    parser.add_argument(
-        "--agg-cols",
-        nargs="*",
-        default=[],
-        help="Columns to aggregate validation on (e.g., county district).",
-    )
+    # parser.add_argument(
+    #     "--agg-cols",
+    #     nargs="*",
+    #     default=[],
+    #     help="Columns to aggregate validation on (e.g., county district).",
+    # )
 
     return parser.parse_args()
 
@@ -70,10 +65,11 @@ def load_data(path: str) -> pd.DataFrame:
 
 def main():
     args = parse_args()
+    configs = load_config(args.model_configs)
 
     # Create run-specific output directory
     run_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_output = Path(args.output)
+    base_output = Path(configs.get("output"))
     run_dir = base_output / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -81,9 +77,11 @@ def main():
     logger.info(f"Output directory: {run_dir}")
 
     # Copy specs & data for reproducibility
-    data_path = Path(args.data)
+    targets_path = Path(configs["data_sources"]["targets"]["path"])
+    features_path = Path(configs["data_sources"]["features"]["path"])
     shutil.copy(args.specs, run_dir / "used_model_specs.yaml")
-    shutil.copy(args.data, run_dir / data_path.name)
+    shutil.copy(targets_path, run_dir / targets_path.name)
+    shutil.copy(features_path, run_dir / features_path.name)
 
     logger.info("Loading model specs...")
     specs = load_model_specs_from_yaml(args.specs)
@@ -91,7 +89,14 @@ def main():
     logger.info(f"Loaded {len(specs)} model specs.")
 
     logger.info("Loading data...")
-    df = load_data(args.data)
+    features = load_data(features_path)
+    targets = load_data(targets_path)
+    df = features.merge(
+        targets, 
+        how="left",
+        left_on=configs["data_sources"]["features"]["id"], 
+        right_on=configs["data_sources"]["targets"]["id"],
+        ) 
 
     logger.info(f"Data shape: {df.shape}")
 
@@ -100,8 +105,8 @@ def main():
         df=df,
         model_specs=specs,
         output_dir=run_dir,
-        extra_prediction_cols=args.geo_cols,
-        aggregate_group_cols=args.agg_cols,
+        extra_prediction_cols=configs.get("additional_columns", {}),
+        aggregate_group_cols=configs.get("agg_columns", {})
     )
 
     logger.info("Done.")

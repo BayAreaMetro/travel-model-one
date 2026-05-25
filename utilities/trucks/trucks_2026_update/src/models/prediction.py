@@ -25,7 +25,7 @@ def make_predictions(
     observed = y = model_df.eval(spec.target).to_numpy()
     predicted = model.predict(X)
 
-    output = model_df[[spec.geography_id_col, *extra_cols]].copy()
+    output = model_df[[*extra_cols]].copy()
     output["model_name"] = spec.name
     output["target"] = spec.target
     output["observed"] = observed

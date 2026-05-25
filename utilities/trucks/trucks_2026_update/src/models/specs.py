@@ -17,7 +17,6 @@ class ModelSpec:
     model_type: ModelType = "ols"
     weight_col: str | None = None
     group_col: str | None = None
-    geography_id_col: str = "taz_id"
     description: str = ""
     tags: list[str] = field(default_factory=list)
 
@@ -30,7 +29,7 @@ class ModelSpec:
             # Matches any valid python variable/column name pattern
             extracted_cols.extend(re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*', expr))
 
-        cols = [*extracted_cols, self.geography_id_col]
+        cols = [*extracted_cols]
 
         if self.weight_col:
             cols.append(self.weight_col)

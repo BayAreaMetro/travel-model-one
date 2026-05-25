@@ -21,7 +21,6 @@ def load_model_specs_from_yaml(path: str | Path) -> list[ModelSpec]:
                 model_type=model_dict.get("model_type", "ols"),
                 weight_col=model_dict.get("weight_col"),
                 group_col=model_dict.get("group_col"),
-                geography_id_col=model_dict.get("geography_id_col", "taz_id"),
                 description=model_dict.get("description", ""),
                 tags=model_dict.get("tags", []),
             )
