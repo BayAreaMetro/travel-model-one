@@ -1,6 +1,6 @@
 # CSF2TDM TO TM-1.6 OD Projection Pipeline 
 
-This pipeline projects origin-destination (OD) matrices from the CSF2TDM zoning system into the TM-1.6 zoning system. It reads input OMX matrices, prepares and standardizes the required spatial inputs, builds a spatial crosswalk, project OD matrices, and writes the projected matrices to new OMX output files.
+This pipeline projects origin-destination (OD) matrices from the CSF2TDM zoning system into the TM-1.6 zoning system. It reads input OMX matrices, prepares and standardizes the required spatial inputs, builds a spatial crosswalk, project OD matrices in OMX format, format projected OMX files to TM-1.6 format (what it would be consistent with the outputs of the Truck Trips Distribution step), and prepares data for modeling. 
 
 The CSF2TDM matrices contain 7,000 zones. Of these, 5,128 are TAZs represented as polygons, while the remaining records are node-based zones used to represent regional gateways and special generator nodes, such as transportation logistics nodes (e.g.,:  the Port of Oakland). For this workflow, polygon-based zones are referred to as **zones**, and node-based zones are referred to as **gates**.
 
@@ -20,7 +20,14 @@ Project matrices
   ├─ zones only
   └─ gates only
   ↓
-Write output OMX files
+Write output OMX files (with SW format)
+  ↓
+Write output OMX files (with MTC format)
+  ↓
+Prepares data for modeling 
+  ├─ truck_trip_generation_zone
+  ├─ truck_trip_generation_gateways
+  └─ truck_trip_generation_tnl
 ```
 
 ## Usage
