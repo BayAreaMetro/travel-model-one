@@ -483,23 +483,4 @@ def estimate_caltrans_aadtt(cfg: dict) -> pd.DataFrame:
     )
     return counts
 
-def estimate_bata_aadtt(cfg: dict) -> pd.DataFrame:
-    """
-    Placeholder for BATA AADTT estimation logic.
 
-    Parameters
-    ----------
-    cfg : dict
-        Full configuration loaded from config.yaml.
-
-    Returns
-    -------
-    pd.DataFrame
-        Empty dataframe with expected columns for consistency.
-    """
-    columns = [
-        "control_station_id", "DISTRICT", "CONTROLNO", "direction", "TOD",
-        "vehicle_type", "n", "mean", "std", "p02", "p97",
-        "cv", "ci_width", "ci_width_rel", "rse", "quality_flag"
-    ]
-    return pd.DataFrame(columns=columns) #TODO: implement actual logic to estimate BATA AADTT
