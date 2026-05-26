@@ -3,7 +3,7 @@ import sys
 import yaml
 import time
 import functools
-from typing import Callable
+from typing import Callable, Optional
 from datetime import datetime
 from pathlib import Path
 
@@ -87,8 +87,36 @@ def timeit(func: Callable) -> Callable:
     return wrapper
 
 
+def save_shapefile(
+    gdf: gpd.GeoDataFrame,
+    path: str,
+    crs: Optional[str] = None,
+) -> None:
+    """
+    Save a GeoDataFrame as a shapefile.
 
-def save(data, filepath: str, overwrite: bool = True) -> None:
+    If `crs` is provided:
+        - If gdf has a CRS → reproject to the provided CRS
+        - If gdf has no CRS → assign the provided CRS
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame
+        Input geospatial data.
+    path : str
+        Output shapefile path.
+    crs : Optional[str]
+        Target CRS (e.g., 'EPSG:4326').
+    """
+    if crs is not None:
+        if gdf.crs is None:
+            gdf = gdf.set_crs(crs)
+        else:
+            gdf = gdf.to_crs(crs)
+
+    gdf.to_file(path)
+
+def save(data, filepath: str, overwrite: bool = True, crs: Optional[str] = None) -> None:
     """
     Save a dataframe or geodataframe based on file extension.
 
@@ -116,7 +144,7 @@ def save(data, filepath: str, overwrite: bool = True) -> None:
     elif suffix == ".shp":
         if not isinstance(data, gpd.GeoDataFrame):
             raise ValueError("Shapefile output requires a GeoDataFrame")
-        data.to_file(path)
+        save_shapefile(data, path, crs)
 
     else:
         raise ValueError(f"Unsupported format: {suffix}")

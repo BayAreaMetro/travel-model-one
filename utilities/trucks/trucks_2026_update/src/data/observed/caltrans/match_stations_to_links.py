@@ -51,6 +51,8 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from src.utils import save
+
 logger = logging.getLogger(__name__)
 
 
@@ -336,22 +338,6 @@ def apply_manual_overrides(
     return df
 
 
-
-def save_shapefile(
-    gdf: gpd.GeoDataFrame,
-    path: str,
-    crs: Optional[str] = None,
-) -> None:
-    """
-    Save a shapefile to disk.
-    """
-    folder = os.path.dirname(path)
-    os.makedirs(folder, exist_ok=True)
-    if crs is not None:
-        gdf = gdf.set_crs(crs)
-    gdf.to_file(path)
-
-
 def match_stations_to_links(
     station_locations: gpd.GeoDataFrame,
     cfg: dict,
@@ -385,17 +371,9 @@ def match_stations_to_links(
     crosswalk = best_match[~best_match["match_quality"].isin(["no_match"])]
     review = best_match[best_match["match_quality"].isin(["route_only", "proximity"])]
 
-    save_shapefile(best_match, output_path["stations_tableau_shp"], crs="EPSG:4326")
-
-    crosswalk_path = output_path["crosswalk"]
-    os.makedirs(os.path.dirname(crosswalk_path), exist_ok=True)
-    crosswalk.to_csv(crosswalk_path, index=False)
-
-    review_path = output_path["stations_review"]
-    os.makedirs(os.path.dirname(review_path), exist_ok=True)
-    review.to_csv(review_path, index=False)
-
-    logger.info("Crosswalk saved → %s", crosswalk_path)
+    save(best_match, output_path["station_link_match_qa"], crs="EPSG:4326")
+    save(crosswalk, output_path["crosswalk"])
+    save(review, output_path["stations_review"])
 
     exact    = best_match[best_match["match_quality"] == "exact"].shape[0]
     review = review.shape[0]
