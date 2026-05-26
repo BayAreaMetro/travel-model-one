@@ -1,0 +1,43 @@
+inputs:
+  bata_2023:  
+    path: data/external/bata/BATA_counts_by_plaza_hour_axles.xlsx
+    tab: "Result 1"
+  crosswalk:  data/external/bata/BATA_TM_network_link_matching.csv
+
+outputs: 
+  standardized_observed_aadtt:  data/interim/observed_data/bata/bata_standardized_observed_aadtt.csv
+
+# ── Typical weekday filter (V1) ────────────────────────────────────────────
+typical_weekday:
+  # Python weekday index: Mon=0 Tue=1 Wed=2 Thu=3 Fri=4 Sat=5 Sun=6
+  weekdays: [1, 2, 3]     # Tuesday, Wednesday, Thursday
+  # California public holidays and adjacent high-travel days to exclude.
+  # Extend as needed.
+  holidays:
+    - "2018-01-01"        # New Year's Day
+    - "2018-01-15"        # MLK Day
+    - "2018-02-19"        # Presidents' Day
+    - "2018-05-28"        # Memorial Day
+    - "2018-07-04"        # Independence Day
+    - "2018-09-03"        # Labor Day
+    - "2018-11-12"        # Veterans Day (observed)
+    - "2018-11-21"        # Day before Thanksgiving
+    - "2018-11-22"        # Thanksgiving
+    - "2018-11-23"        # Day after Thanksgiving
+    - "2018-12-24"        # Christmas Eve
+    - "2018-12-25"        # Christmas Day
+    - "2018-12-31"        # New Year's Eve
+
+  # ── Axle count → truck type mapping ──────────────────────────────
+axle_to_truck_type_map:
+  struck: [2]  # 2 axle
+  mtruck: [3]  # 3 axle
+  ctruck: [4, 5, 6, 7]  # 4+ axles
+
+# ── Time of day mapping ──────────────────────
+tod_hours:
+  EA: [3, 4, 5]
+  AM: [6, 7, 8, 9]
+  MD: [10, 11, 12, 13, 14]
+  PM: [15, 16, 17, 18]
+  EV: [19, 20, 21, 22, 23, 0, 1, 2]
