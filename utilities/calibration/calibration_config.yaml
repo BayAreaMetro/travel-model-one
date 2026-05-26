@@ -3,7 +3,7 @@ general:
   #   - locate input files via {target_dir} substitution in submodel configs
   #   - set the output directory: {target_dir}/Output_{calib_iter}/calibration/
   target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_00_Cube6"
-  calib_iter: "06_test"
+  calib_iter: "06_yuqi"
   iter: "1"
   # Root directory for calibration Excel workbooks (model run mode).
   # Each submodel's workbook is saved under:
@@ -27,6 +27,7 @@ calibration_02:
   name: Automobile Ownership
   workbook_template: 02_AutoOwnership_2023
   input_file: "{target_dir}/INPUT/popsyn/hhFile.2023_v12.csv"
+  uec_src_file: "{target_dir}/OUTPUT_{calib_iter}/UEC/AutoOwnership.xls"
   ao_results: "{target_dir}/OUTPUT_{calib_iter}/main/aoResults.csv"
 
 calibration_04:
