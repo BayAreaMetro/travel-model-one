@@ -61,6 +61,7 @@ def run_pipeline(config_path: str = "configs/observed/caltrans_2018.yaml") -> No
     observed= standardize_observed_aadtt(caltrans_aadtt, crosswalk)
     save(observed, Path(output_paths["standardized_observed_aadtt"]))
     logger.info("[4/4] Standarize observed Caltrans AADTT  Done in %.1fs", time.perf_counter() - t4)
+    return observed
 
 
 def main() -> None:
