@@ -4,6 +4,7 @@ def standardize_observed_aadtt(aadtt, crosswalk):
     df = aadtt.merge(crosswalk[["control_station_id", "link_id"]], on="control_station_id", how="right") 
     df["type"] = "observed"
     df["source"] = "caltrans_2018"
+    df["mean"] = df["mean"].round(0).astype("int")
     cols = {
         "control_station_id": "count_location_id",
         "link_id": "link_id",
