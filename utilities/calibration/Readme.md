@@ -57,6 +57,10 @@ Activate the conda environment before running Python scripts:
 conda activate tm1.7_calibration
 ```
 
+#### Update Non-BATS Calibration Target
+
+Update blank Excel calibration workbook templates in [workbook_templates/] with calibration targets from ACS, LODES, OBS, etc.
+
 #### Create Calibration Target from BATS
 
 To create BATS survey summaries for calibration targets, use [calibration_config_BATS.yaml](calibration_config_BATS.yaml) instead of the default config. This is configured per-submodel via the `bats_data: true` flag, which redirects input paths to BATS pipeline output files. Submodels without a `calibration_XX` section in the BATS config (e.g. submodel 02, which uses ACS data) exit cleanly without doing anything.
@@ -67,6 +71,8 @@ python 01_usual_work_school_location_TM.py --config calibration_config_BATS.yaml
 python 02_auto_ownership_TM.py --config calibration_config_BATS.yaml
 python 04_daily_activity_pattern_TM.py --config calibration_config_BATS.yaml
 ```
+
+If BATS pipeline output is not available, run the [BATS pipeline](https://github.com/BayAreaMetro/travel-diary-survey-tools/tree/tm1.7_calibration/projects/bats_2023): `python \travel-diary-survey-tools\projects\bats_2023\run.py --clear-cache --config config_tm17_calibration.yaml` first.
 
 #### Calibration Iterations
 
@@ -83,6 +89,7 @@ Then run [copy_output.bat](copy_output.bat), which:
 * exports skims to CSVs (if `CALIB_ITER=00`)
 * copies model core outputs from `%MODEL_DIR%` into `%TARGET_DIR%`
 * runs the active Python submodel scripts, which summarize outputs into CSVs and populate calibration workbook templates
+* validates that the constants for "current iter" in calibration workbooks are consistent with the UECs used in this model
 
 The modeler then:
 
