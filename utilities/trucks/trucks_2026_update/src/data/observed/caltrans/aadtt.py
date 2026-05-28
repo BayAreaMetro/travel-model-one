@@ -254,9 +254,7 @@ def apply_vehicle_classes_aggregation(df: pd.DataFrame, vehicle_classes: dict[st
     return df
 
 
-
-# @timeit
-def apply_hour_aggregation(
+def apply_tod_map(
     df: pd.DataFrame,
     tod_hours: dict[str, list[int]],
 ) -> pd.DataFrame:
@@ -276,41 +274,35 @@ def apply_hour_aggregation(
     pd.DataFrame
         Aggregated dataframe by TOD period.
     """
-    
-    # Build an hour -> TOD lookup
     hour_to_tod = {
         hour: tod
         for tod, hours in tod_hours.items()
         for hour in hours
     }
 
-    # Map each row's hour to a TOD label
     df["TOD"] = df["HOUR"].map(hour_to_tod)
 
-    # guard against unmapped hours
     if df["TOD"].isna().any():
         unmapped = sorted(df.loc[df["TOD"].isna(), "HOUR"].unique())
         raise ValueError(f"Unmapped hours found: {unmapped}")
     
-    # Group by columsn 
-    group_by = ["control_station_id", "DISTRICT", "CONTROLNO", "direction", "YEAR", "MONTH", "DAY", "TOD"]
+    return df 
 
-    # Value columns: ONLY count columns
-    value_cols = [c for c in df.columns if c.startswith("CNT")]
+def estimate_daily_volumnes(df):
+    group_cols = ["control_station_id", "DISTRICT", "CONTROLNO", "direction", "YEAR", "MONTH", "DAY", "TOD"]
+    value_cols = ["struck", "mtruck", "ctruck"]
 
     result = (
         df
-        .groupby(group_by, as_index=False)[value_cols]
+        .groupby(group_cols, as_index=False)[value_cols]
         .sum()
     )
-
-    logger.info("apply_hour_aggregation: pre_rows=%d post_rows=%d", len(df), len(result))
     return result
 
 
 
 # @timeit
-def compute_averages(df: pd.DataFrame, vehicle_cols: list[str], percentiles: list[float] = [0.025, 0.975]) -> pd.DataFrame:
+def estimate_average_volumes(df: pd.DataFrame, vehicle_cols: list[str], percentiles: list[float] = [0.025, 0.975]) -> pd.DataFrame:
     """
     Compute mean and standard deviation across the filtered weekday sample,
     grouped by (CONTROLID, direction, hour, truck_type).
@@ -476,9 +468,10 @@ def estimate_caltrans_aadtt(cfg: dict) -> pd.DataFrame:
         .pipe(normalize_directions, direction_map=cfg['direction_map']['class_file'])
         .pipe(remove_outliers, k=cfg['outlier_k'])
         .pipe(filter_typical_weekday, weekdays=cfg['typical_weekday']['weekdays'], holidays=cfg['typical_weekday']['holidays'])
-        .pipe(apply_hour_aggregation, tod_hours=cfg['tod_hours'])
+        .pipe(apply_tod_map, tod_hours=cfg['tod_hours'])
         .pipe(apply_vehicle_classes_aggregation, vehicle_classes=cfg['vehicle_class_map'])
-        .pipe(compute_averages, vehicle_cols=list(cfg['vehicle_class_map'].keys()), percentiles=cfg['normality_percentiles'])
+        .pipe(estimate_daily_volumnes)
+        .pipe(estimate_average_volumes, vehicle_cols=list(cfg['vehicle_class_map'].keys()), percentiles=cfg['normality_percentiles'])
         .pipe(add_estimate_quality_metrics, pct_low="p02", pct_high="p97")
     )
     return counts
