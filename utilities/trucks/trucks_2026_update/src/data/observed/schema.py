@@ -4,11 +4,12 @@ EXPECTED_COLUMNS = {
     "count_location_id": "str",
     "link_id": "str",
     "tod": "str",
-    "truck_type": "str",
+    "truck_type_1": "str",
+    "truck_type_2": "str",
     "type": "str",
     "source": "str",
     "quality_flag": "str",
-    "value": "float64",
+    "volume": "float64",
 }
 
 
@@ -31,13 +32,13 @@ def validate_observed_schema(df: pd.DataFrame) -> pd.DataFrame:
 
     # Enforce dtypes
     for col, dtype in EXPECTED_COLUMNS.items():
-        if col == "value":
+        if col == "volume":
             df[col] = pd.to_numeric(df[col], errors="raise")
         else:
             df[col] = df[col].astype(dtype)
 
     #  Basic sanity checks
-    if df["value"].isna().any():
-        raise ValueError("Column 'value' contains NaNs")
+    if df["volume"].isna().any():
+        raise ValueError("Column 'volume' contains NaNs")
 
     return df
