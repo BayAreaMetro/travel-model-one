@@ -63,13 +63,10 @@ typical_weekday:
 
 # ── Vehicle class → truck type mapping ──────────────────────────────
 # CNT2–CNT13 are the 13 FHWA scheme F vehicle classes in the class file.
-vehicle_class_map: #TODO: Review. Mapping done randomly to check the pipeline end-to-enth; update with actual mappings once the data is reviewed.
-  struck: [CNT5]  # light and medium trucks
-  mtruck: [CNT6]  # heavy single-unit trucks and 4-5 axle single-trailer trucks
-  ctruck: [CNT7, CNT8, CNT9, CNT10, CNT11, CNT12, CNT13]  # heavy multi-unit trucks and 6+ axle single-trailer trucks 
-  total:  [CNT5, CNT6, CNT7, CNT8, CNT9, CNT10, CNT11, CNT12, CNT13]  # all classes truck combined.
-
-# ── Time of day mapping ──────────────────────
+vehicle_class_map: 
+  struck: [CNT5]  
+  mtruck: [CNT6]  
+  ctruck: [CNT7, CNT8, CNT9, CNT10, CNT11, CNT12, CNT13]  
 tod_hours:
   EA: [3, 4, 5]
   AM: [6, 7, 8, 9]
