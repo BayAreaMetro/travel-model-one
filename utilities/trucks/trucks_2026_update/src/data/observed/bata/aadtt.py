@@ -69,7 +69,6 @@ def filter_2023_data(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("filter_2023_data: pre_rows=%d post_rows=%d", len(df), len(filtered))
     return filtered
 
-import pandas as pd
 
 def map_vehicle_class(df: pd.DataFrame, mapping: dict, axle_col: str = "Axle") -> pd.DataFrame:
     """
@@ -115,8 +114,18 @@ def estimate_aadtt(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         DataFrame with estimated AADTT values.
     """
-    return df.groupby(["Plaza", "TOD", "vehicle_type"]).agg(
-        mean=("Count", "mean")).reset_index()
+    daily_volume = (
+        df.groupby(["Plaza", "Date", "TOD", "vehicle_type"])
+        .agg(total_volume=("Count", "sum"))
+        .reset_index()
+        )
+    
+    avg_volume = (
+        daily_volume.groupby(["Plaza", "TOD", "vehicle_type"])
+        .agg(mean_volume=("total_volume", "mean"))
+        .reset_index()
+    )
+    return avg_volume
 
 
 def estimate_bata_aadtt(data, cfg) -> pd.DataFrame:
