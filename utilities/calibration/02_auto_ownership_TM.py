@@ -19,7 +19,7 @@ class AutoOwnershipCalibration(CalibrationBase):
     """Calibration processor for auto ownership."""
     
     # sheet, column, startRow, endRow
-    # used for validating UEC values in calibration workbook against model input
+    # used for populating current iteration constants in calibration workbook with model UEC input
     # UEC workbook is ".xls" and uses xlrd which is 0-based indexing for rows/columns, but
     # config uses 1-based for readability, so offsets are applied in the reading functions
     UEC_SOURCE_RANGES = {

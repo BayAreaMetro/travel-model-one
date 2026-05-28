@@ -39,7 +39,6 @@ import numpy as np
 import os
 import logging
 import sys
-import math
 import yaml
 import argparse
 from pathlib import Path
@@ -580,18 +579,10 @@ class CalibrationBase(ABC):
         return values
 
     @staticmethod
-    def _values_match(src_value, dst_value) -> bool:
-        """Compare Excel values while tolerating numeric type differences."""
-        if isinstance(src_value, str) or isinstance(dst_value, str):
-            return str(src_value).strip() == str(dst_value).strip()
-
-        if isinstance(src_value, bool) or isinstance(dst_value, bool):
-            return src_value == dst_value
-
-        if isinstance(src_value, (int, float)) and isinstance(dst_value, (int, float)):
-            return math.isclose(float(src_value), float(dst_value), rel_tol=1e-9, abs_tol=1e-9)
-
-        return src_value == dst_value
+    def _write_xlsx_range(worksheet, column: int, start_row: int, values: list) -> None:
+        """Write values to a 1-based row/column slice in an openpyxl worksheet."""
+        for offset, value in enumerate(values):
+            worksheet.cell(row=start_row + offset, column=column).value = value
     
     def save_workbook(self):
         """Save the open calibration workbook.
@@ -609,6 +600,8 @@ class CalibrationBase(ABC):
         method logs a note and returns without error.  Any save error is
         caught and logged as a warning.
         """
+        sep = "=" * 80
+        self.logger.info(f"\n{sep}\nSAVING WORKBOOK\n{sep}")
         if self.calib_workbook:
             try:
                 if self.bats_data:
@@ -673,9 +666,9 @@ class CalibrationBase(ABC):
         """
         pass
 
-    def validate_uec_values(self, src_workbook: str | Path | None = None,
+    def populate_uec_values(self, src_workbook: str | Path | None = None,
                             dst_workbook: str | Path | None = None) -> None:
-        """Validate mapped UEC source values against the saved calibration workbook.
+        """Populate destination calibration workbook cells (current iteration constants) from UEC source values.
 
         Subclasses opt in by defining two class attributes:
 
@@ -684,24 +677,27 @@ class CalibrationBase(ABC):
         * ``CALIBRATION_DESTINATION_RANGES``: mapping key ->
           ``(sheet, column, start_row, end_row)`` for the destination ``.xlsx`` workbook.
 
-        If either mapping is missing/empty, validation is skipped.
+        If either mapping is missing/empty, population is skipped.
         """
         if self.bats_data:
-            self.logger.info("Skipping UEC value validation for BATS mode.")
+            self.logger.info("Skipping UEC value population for BATS mode.")
             return
 
+        sep = "=" * 80
+        self.logger.info(f"\n{sep}\nSAVING WORKBOOK\n{sep}")
+        
         source_ranges = getattr(self, "UEC_SOURCE_RANGES", {}) or {}
         destination_ranges = getattr(self, "CALIBRATION_DESTINATION_RANGES", {}) or {}
         if not source_ranges or not destination_ranges:
-            self.logger.info("No UEC validation ranges configured, skipping validation.")
+            self.logger.info("No UEC range mappings configured, skipping population.")
             return
 
         src_path = Path(src_workbook) if src_workbook else Path(self.submodel_config.get("uec_src_file", ""))
         dst_path = Path(dst_workbook) if dst_workbook else Path(getattr(self, "workbook_iter", ""))
 
-        # Skip validation if uec_src_file is not configured.
+        # Skip population if uec_src_file is not configured.
         if not src_path.name:
-            self.logger.info("UEC source file not configured, skipping validation.")
+            self.logger.info("UEC source file not configured, skipping population.")
             return
 
         if not src_path.exists():
@@ -714,17 +710,17 @@ class CalibrationBase(ABC):
             from openpyxl import load_workbook
         except ImportError as e:
             raise ImportError(
-                "UEC validation requires both 'xlrd' (for .xls) and 'openpyxl' (for .xlsx)."
+                "UEC population requires both 'xlrd' (for .xls) and 'openpyxl' (for .xlsx)."
             ) from e
 
         sep = "=" * 80
-        self.logger.info(f"\n{sep}\nUEC VALUE VALIDATION\n{sep}")
+        self.logger.info(f"\n{sep}\nUEC VALUE POPULATION\n{sep}")
         self.logger.info(f"Source workbook: {src_path}")
         self.logger.info(f"Destination workbook: {dst_path}")
 
         src_workbook_obj = open_workbook(src_path)
-        dst_workbook_obj = load_workbook(dst_path, data_only=True)
-        mismatches = []
+        dst_workbook_obj = load_workbook(dst_path)
+        total_written = 0
 
         for name, (src_sheet_name, src_column, src_start_row, src_end_row) in source_ranges.items():
             if name not in destination_ranges:
@@ -737,34 +733,29 @@ class CalibrationBase(ABC):
                 src_start_row,
                 src_end_row,
             )
-            dst_values = self._read_xlsx_range(
+            expected_dst_len = dst_end_row - dst_start_row + 1
+            if len(src_values) != expected_dst_len:
+                raise ValueError(
+                    f"Population length mismatch for {name}: "
+                    f"source has {len(src_values)} values and destination range has {expected_dst_len} rows"
+                )
+
+            self._write_xlsx_range(
                 dst_workbook_obj[dst_sheet_name],
                 dst_column,
                 dst_start_row,
-                dst_end_row,
+                src_values,
             )
+            total_written += len(src_values)
 
-            if len(src_values) != len(dst_values):
-                raise ValueError(
-                    f"Validation length mismatch for {name}: "
-                    f"source has {len(src_values)} values and destination has {len(dst_values)} values"
-                )
+        self.logger.info(f"Populated {total_written} UEC cells into {dst_path}.")
+        dst_workbook_obj.save(dst_path)
+        self.logger.info(f"Saved populated workbook to {dst_path}")
 
-            for offset, (src_value, dst_value) in enumerate(zip(src_values, dst_values)):
-                if not self._values_match(src_value, dst_value):
-                    mismatches.append(
-                        f"{name}: {src_sheet_name}!R{src_start_row + offset}C{src_column}={src_value!r} "
-                        f"!= {dst_sheet_name}!R{dst_start_row + offset}C{dst_column}={dst_value!r}"
-                    )
-
-        if mismatches:
-            mismatch_preview = "\n".join(mismatches[:10])
-            extra_count = len(mismatches) - 10
-            if extra_count > 0:
-                mismatch_preview += f"\n... and {extra_count} more mismatches"
-            raise ValueError(f"UEC value validation failed:\n{mismatch_preview}")
-
-        self.logger.info("Validated UEC source values against the calibration workbook.")
+        # Keep the temp workbook in sync when using the default destination.
+        if dst_workbook is None and getattr(self, "workbook_temp", None) and Path(self.workbook_temp) != dst_path:
+            dst_workbook_obj.save(self.workbook_temp)
+            self.logger.info(f"Saved populated workbook to {self.workbook_temp}")
 
     def run(self):
         """Run the complete calibration pipeline for this submodel.
@@ -775,8 +766,8 @@ class CalibrationBase(ABC):
         2. :meth:`validate_outputs` — schema-check every output DataFrame.
         3. :meth:`setup_workbook` — open the Excel template.
         4. :meth:`generate_outputs` — write CSVs and populate the workbook.
-        5. :meth:`save_workbook` — persist the workbook to disk.
-        6. :meth:`validate_uec_values` — optional post-save UEC consistency checks.
+        5. :meth:`save_workbook` — save the workbook to disk.
+        6. :meth:`populate_uec_values` — populate the workbook with UEC values.
 
         Any unhandled exception is logged before being re-raised so that the
         error appears in the log file as well as the console.
@@ -787,7 +778,7 @@ class CalibrationBase(ABC):
             self.setup_workbook()
             self.generate_outputs(results)
             self.save_workbook()
-            self.validate_uec_values()
+            self.populate_uec_values()
         except Exception as e:
             self.logger.info(f"Error during calibration processing: {e}")
             raise

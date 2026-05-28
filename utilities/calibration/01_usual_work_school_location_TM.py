@@ -63,7 +63,7 @@ class WorkSchoolLocationCalibration(CalibrationBase):
     """
 
     # sheet, column, startRow, endRow
-    # used for validating UEC values in calibration workbook against model input
+    # used for populating current iteration constants in calibration workbook with model UEC input
     # UEC workbook is ".xls" and uses xlrd which is 0-based indexing for rows/columns, but
     # config uses 1-based for readability, so offsets are applied in the reading functions
     UEC_SOURCE_RANGES = {
@@ -432,7 +432,7 @@ def main():
 
     Constructs a :class:`WorkSchoolLocationCalibration` instance, then calls
     its :meth:`~CalibrationBase.run` method which executes the
-    ``process_data → validate_outputs → generate_outputs → validate UECs`` pipeline.
+    ``process_data → validate_outputs → generate_outputs`` pipeline.
     """
     parser = argparse.ArgumentParser(description="Usual work and school location calibration")
     parser.add_argument("--config", default=None, help="Path to calibration_config.yaml (default: same directory as this script)")

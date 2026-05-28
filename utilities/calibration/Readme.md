@@ -88,8 +88,7 @@ Then run [copy_output.bat](copy_output.bat), which:
 
 * exports skims to CSVs (if `CALIB_ITER=00`)
 * copies model core outputs from `%MODEL_DIR%` into `%TARGET_DIR%`
-* runs the active Python submodel scripts, which summarize outputs into CSVs and populate calibration workbook templates
-* validates that the constants for "current iter" in calibration workbooks are consistent with the UECs used in this model
+* runs the active Python submodel scripts, which summarize and validate outputs, save outputs into CSVs, populate calibration workbook templates with outputs and UEC inputs
 
 The modeler then:
 
