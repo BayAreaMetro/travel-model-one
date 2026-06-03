@@ -18,6 +18,24 @@ from calibration_data_models import (
 class DailyActivityPatternCalibration(CalibrationBase):
     """Calibration processor for coordinated daily activity pattern."""
     
+    # sheet, column, startRow, endRow
+    # used for populating current iteration constants in calibration workbook with model UEC input
+    # UEC workbook is ".xls" and uses xlrd which is 0-based indexing for rows/columns, but
+    # config uses 1-based for readability, so offsets are applied in the reading functions
+    UEC_SOURCE_RANGES = {
+        "Mandatory":        ("OnePerson",  7, 33, 40),
+        "Non-Mandatory":    ("OnePerson", 8, 33, 40),
+        "Home":             ("OnePerson", 9, 33, 40),
+    }
+    # calibration workbook is ".xlsx" and uses openpyxl which is 1-based indexing for rows/columns
+    CALIBRATION_DESTINATION_RANGES = {
+        "Mandatory":        ("calibration", 3, 31, 38),
+        "Non-Mandatory":    ("calibration", 4, 31, 38),
+        "Home":             ("calibration", 5, 31, 38),
+
+    }
+    
+
     def __init__(self, config_file: str = None):
         super().__init__("04", config_file)
         self.bats_data = self.submodel_config.get("bats_data", False)

@@ -99,7 +99,7 @@ class AutoOwnershipLongSummary(BaseModel):
 # CDAP
 class CDAPSummary(BaseModel):
     model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
-    person_type: CTRAMPPersonType
+    person_type: CTRAMPPersonType = Field(alias = 'PersonType')
     home: float = Field(ge=0, alias = 'H') | Literal['NA']
     mandatory: float = Field(ge=0, alias = 'M') | Literal['NA']
     non_mandatory: float = Field(ge=0, alias = 'N') | Literal['NA']

@@ -2,7 +2,7 @@ general:
   # Root of the BATS pipeline output (the ctramp_2023 folder). Used to:
   #   - locate input files via {target_dir} substitution in submodel configs
   #   - set the output directory: {target_dir}/BATS_Summaries/
-  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_yq_20260514/ctramp_2023"
+  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_mt_20260507/ctramp_2023"
   # Not used in BATS mode: output goes to BATS_Summaries/ regardless of this
   # value, and no iteration-stamped workbook is written.
   calib_iter: "00"
@@ -11,7 +11,7 @@ general:
   iter: "00"
   # Not used in BATS mode: survey-target runs save directly back to the
   # workbook_templates/ folder inside the calibration scripts directory.
-  workbook_base_path: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_yq_20260514/ctramp_2023"
+  workbook_base_path: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_mt_20260507/ctramp_2023"
 
 data_sources:
   taz_data: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_00_Cube6/INPUT/landuse/tazData.csv"

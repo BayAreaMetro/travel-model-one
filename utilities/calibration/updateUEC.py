@@ -29,7 +29,7 @@ def parse_arguments():
     )
     parser.add_argument('submodel', type=str, 
                         choices = ['UsualWorkSchool','NonworkDestinationChoice', 'AutomobileOwnership', 
-                                   'TourModeChoice', 'TripModeChoice', 'CoordinationDailyActivityPattern'  ],
+                                   'TourModeChoice', 'TripModeChoice', 'CoordinatedDailyActivityPattern'  ],
                        help='Submodel name (e.g., DestinationChoice, AutomobileOwnership)')
     parser.add_argument('version', type=str,
                        help='Version string')
@@ -64,9 +64,6 @@ def get_config(submodel, version):
             "gradeschool": [("GradeSchool", 7, 12, 16)]
         }
         
-        config = [
-            (calib_workbook, copy_src, copy_dst),
-        ]
 
     elif submodel == 'NonworkDestinationChoice':
         uec_src_workbook = UEC_DIR / "TM1.0 version" / "DestinationChoice_TM1.xls"
@@ -93,11 +90,6 @@ def get_config(submodel, version):
             "discr":     [("OthDiscr",     7, 12, 16)],
             "atwork":    [("WorkBased",    7, 12, 16)]
         }
-
-        config = [
-            (calib_workbook, copy_src, copy_dst)
-        ]
-        
         
     elif submodel == "AutomobileOwnership":
         calib_workbook = CALIB_DIR / "02 Automobile Ownership" / f"02_AutoOwnership_2023_{version}.xlsx"
@@ -154,8 +146,21 @@ def get_config(submodel, version):
             "4+_cars_b":  [("Auto ownership", 17, 55, 58)]
         }
         
-        config = [(calib_workbook, copy_src, copy_dst)]
-        
+    elif submodel == "CoordinatedDailyActivityPattern":
+        calib_workbook = CALIB_DIR / "04 Coordinated Daily Activity Pattern" / f"04_CoordinatedDailyActivityPattern_2023_{version}.xlsx"
+        uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "CoordinatedDailyActivityPattern_TM1.6.1.xls"
+
+        # sheet, column, startRow, endRow
+        copy_src = {
+            "Mandatory":        ("calibration", 13, 31, 38),
+            "Non-Mandatory":    ("calibration", 14, 31, 38)
+        }
+
+        copy_dst = {
+            "Mandatory":        [("OnePerson",  7, 33, 40)],
+            "Non-Mandatory":    [("OnePerson", 8, 33, 40)]
+        }
+
     elif submodel == "TourModeChoice":
         calib_workbook = CALIB_DIR / "11 Tour Mode Choice" / f"11_TourModeChoice_{version}.xlsx"
         uec_src_workbook = UEC_DIR / "TM1.5.1 version" / "ModeChoice_TM1.5.1.xls"
@@ -209,8 +214,6 @@ def get_config(submodel, version):
             "cbd_workbased": [("WorkBased",  5, 473, 480)]
         }
         
-        config = [(calib_workbook, copy_src, copy_dst)]
-        
     elif submodel == "TripModeChoice":
         calib_workbook = CALIB_DIR / "15 Trip Mode Choice" / f"15_TripModeChoice_{version}.xlsx"
         uec_src_workbook = UEC_DIR / "TM1.5.1 version" / "TripModeChoice_TM1.5.1.xls"
@@ -242,11 +245,11 @@ def get_config(submodel, version):
             "workbased":  [("WorkBased",  5, 511, 547)]
         }
         
-        config = [(calib_workbook, copy_src, copy_dst)]
-        
     else:
         raise ValueError(f"Don't understand SUBMODEL [{submodel}]")
     
+    config = [(calib_workbook, copy_src, copy_dst)]
+
     return uec_src_workbook, config
 
 
