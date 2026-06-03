@@ -13,7 +13,8 @@
 
 :setup_model
 :: Setup:: copy over CTRAMP
-set GITHUB_DIR=X:\travel-model-one-tm1.7_calibration
+:: Verify that local Git is on the right branch
+set GITHUB_DIR=\\tsclient\E\GitHub\travel-model-one
 mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
