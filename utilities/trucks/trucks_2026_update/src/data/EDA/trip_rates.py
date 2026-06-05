@@ -60,8 +60,8 @@ def plot_rates(rates_df, outpath=None):
 
     
     y_limits = {
-        "Trips per Employment": (0, 0.6),
-        "Trips per Household": (0, 0.6),
+        "Trips per Employment": (0, 0.45),
+        "Trips per Household": (0, 0.55),
         "Trips per Population": (0, 0.3),
     }
 
@@ -74,7 +74,7 @@ def plot_rates(rates_df, outpath=None):
             (rates_df["county"] != "REGION")
         ]
 
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(10, 8))
 
         sns.lineplot(
             data=data,

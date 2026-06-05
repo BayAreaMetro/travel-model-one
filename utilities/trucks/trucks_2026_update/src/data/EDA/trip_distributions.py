@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def compute_weighted_histograms(
@@ -80,13 +81,22 @@ def plot_distributions(
 ):
     source = df["source"].iloc[0]
 
+    palette = {
+        "very_small_trucks": "#4C72B0", 
+        "light_trucks": "#DD8452",   
+        "small_trucks": "#DD8452",
+        "medium_trucks": "#55A868",  
+        "heavy_trucks": "#C44E52",  
+        "large_trucks": "#C44E52"   
+    }
+
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     for series in df["series"].unique():
         subset = df[df["series"] == series]
 
-        axes[0].plot(subset["center"], subset["trips"], marker="o", label=series)
-        axes[1].plot(subset["center"], subset["share"], marker="o", label=series)
+        axes[0].plot(subset["center"], subset["trips"], marker="o", label=series, color=palette.get(series))
+        axes[1].plot(subset["center"], subset["share"], marker="o", label=series, color=palette.get(series))
 
     # -------------------------
     # Formatting
@@ -108,9 +118,15 @@ def plot_distributions(
     axes[1].legend()
 
     plt.tight_layout()
-
+    sns.set_context("notebook", font_scale=1.0)
     if outpath:
-        name = title.lower().replace(" - ", "_").replace("-", "").replace(" ", "_").replace(":", "_")
+        name = (
+            title.lower()
+            .replace(" - ", "_")
+            .replace("-", "")
+            .replace(" ", "_")
+            .replace(":", "_")
+        )
         filename = f"{source}_{name}.png"
         path = Path(outpath, filename)
         print(f"Saving {filename} to: {path}")
@@ -120,6 +136,8 @@ def plot_distributions(
 def compute_trip_distributions(long_df, configs, outpath=None):
     source = long_df["source"].iloc[0] if "source" in long_df else "unknown"
     all_results = []
+
+    
     
     for plot_id, cfg in configs.items():
 
