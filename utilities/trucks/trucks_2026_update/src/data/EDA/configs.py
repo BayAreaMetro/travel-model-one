@@ -71,21 +71,21 @@ SW_TRIP_DIST_CONFIG = {
         "plot_pairs": SW_DIST_PAIRS,
         "bins": 25,
         "filters": {"origin": [2655]},
-        "title": "Travel Distance Distribution - CSF2TDM 2655: PORT OF SAN FRANCISCO",
+        "title": f"Travel Distance Distribution CSF2TDM 2655: PORT OF SAN FRANCISCO",
         "x_label": "Distance (miles)"
     },
     "origin_2655_time": {
         "plot_pairs": SW_TIME_PAIRS,
         "bins": 25,
         "filters": {"origin": [2655]},
-        "title": "Travel Time Distribution - CSF2TDM 2655: PORT OF SAN FRANCISCO",
+        "title": f"Travel Time Distribution CSF2TDM 2655: PORT OF SAN FRANCISCO",
         "x_label": "Time (minutes)"
     },
     "origin_2656_distance": {
         "plot_pairs": SW_DIST_PAIRS,
         "bins": 25,
         "filters": {"origin": [2656]},
-        "title": "Travel Distance Distribution - CSF2TDM 2656: PORT OF REDWOOD CITY",
+        "title": f"Travel Distance Distribution CSF2TDM 2656: PORT OF REDWOOD CITY",
         "x_label": "Distance (miles)"
     },
     "origin_2656_time": {

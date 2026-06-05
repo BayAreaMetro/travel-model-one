@@ -50,14 +50,22 @@ def plot_rates(rates_df, outpath=None):
 
     
     palette = {
-        "very_small_trucks": "#4C72B0",  # muted blue (tab:blue)
-        "light_trucks": "#DD8452",   # muted blue (tab:blue)
+        "very_small_trucks": "#4C72B0", 
+        "light_trucks": "#DD8452",   
         "small_trucks": "#DD8452",
-        "medium_trucks": "#55A868",  # muted orange (tab:orange)
-        "heavy_trucks": "#C44E52",  # muted green (tab:green)
-        "large_trucks": "#C44E52"   # muted red (tab:red)
+        "medium_trucks": "#55A868",  
+        "heavy_trucks": "#C44E52",  
+        "large_trucks": "#C44E52"   
     }
 
+    
+    y_limits = {
+        "Trips per Employment": (0, 0.6),
+        "Trips per Household": (0, 0.6),
+        "Trips per Population": (0, 0.3),
+    }
+
+    source = rates_df["source"].loc[0]
 
     for metric_name in rates_df["metric"].unique():
     
@@ -66,7 +74,7 @@ def plot_rates(rates_df, outpath=None):
             (rates_df["county"] != "REGION")
         ]
 
-        plt.figure(figsize=(5, 3))
+        plt.figure(figsize=(10, 6))
 
         sns.lineplot(
             data=data,
@@ -77,16 +85,20 @@ def plot_rates(rates_df, outpath=None):
             palette=palette
         )
 
-        plt.title(metric_name)
-        plt.xlabel("County")
-        plt.ylabel(metric_name)
-        plt.xticks(rotation=45)
-        plt.ylim(0, 0.6)
+        plt.title(F"{source} - {metric_name}", fontsize=24)
+        plt.xlabel("County", fontsize=16)
+        plt.ylabel(metric_name, fontsize=16)
+        plt.xticks(rotation=45, fontsize=20)
+        plt.yticks(fontsize=16)
+        plt.legend(title="Type", fontsize=16, title_fontsize=16)
 
+        
+        plt.ylim(*y_limits.get(metric_name, (0, 0.6)))
+        sns.set_context("notebook", font_scale=1.4)
+        plt.grid(axis="y")
         plt.tight_layout()
 
         if outpath is not None:
-            source = rates_df["source"].loc[0]
             name = metric_name.lower().replace(" ", "_")
             filename = f"{source}_{name}.png"
             path = Path(outpath, filename)

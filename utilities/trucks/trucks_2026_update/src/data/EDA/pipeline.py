@@ -67,8 +67,9 @@ def run_eda():
         land_use=county_land_use,
         rate_bases=rate_bases
     )
-    plot_rates(sw_trip_rates, outpath=figures_outpath)
     sw_trip_distributions = compute_trip_distributions(sw_long, cfg.SW_TRIP_DIST_CONFIG, outpath=figures_outpath)
+    plot_rates(sw_trip_rates, outpath=figures_outpath)
+    
     
     save(sw_county_od, Path(tables_outpath, "SW_county_od_matrix.parquet"))
     save(sw_trip_rates, Path(tables_outpath, "SW_trip_rates_by_county.parquet"))
