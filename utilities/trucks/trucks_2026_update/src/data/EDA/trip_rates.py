@@ -74,7 +74,7 @@ def plot_rates(rates_df, outpath=None):
             (rates_df["county"] != "REGION")
         ]
 
-        plt.figure(figsize=(10, 8))
+        plt.figure(figsize=(5, 5))
 
         sns.lineplot(
             data=data,
@@ -85,16 +85,16 @@ def plot_rates(rates_df, outpath=None):
             palette=palette
         )
 
-        plt.title(F"{source} - {metric_name}", fontsize=24)
-        plt.xlabel("County", fontsize=16)
-        plt.ylabel(metric_name, fontsize=16)
-        plt.xticks(rotation=45, fontsize=20)
-        plt.yticks(fontsize=16)
-        plt.legend(title="Type", fontsize=16, title_fontsize=16)
+        plt.title(F"{source} - {metric_name}", fontsize=16)
+        plt.xlabel("County", fontsize=12)
+        plt.ylabel(metric_name, fontsize=12)
+        plt.xticks(rotation=45, fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.legend(title="Type", fontsize=12, title_fontsize=12)
 
         
         plt.ylim(*y_limits.get(metric_name, (0, 0.6)))
-        sns.set_context("notebook", font_scale=1.4)
+        sns.set_context("notebook", font_scale=1.0)
         plt.grid(axis="y")
         plt.tight_layout()
 
@@ -103,4 +103,4 @@ def plot_rates(rates_df, outpath=None):
             filename = f"{source}_{name}.png"
             path = Path(outpath, filename)
             print(f"Saving {filename} to: {path}")
-            plt.savefig(path)
+            plt.savefig(path, dpi=300, bbox_inches="tight")
