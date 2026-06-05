@@ -48,6 +48,17 @@ def compute_trip_rates_by_county(od_long, value_cols, land_use, rate_bases):
 
 def plot_rates(rates_df, outpath=None):
 
+    
+    palette = {
+        "very_small_trucks": "#4C72B0",  # muted blue (tab:blue)
+        "light_trucks": "#DD8452",   # muted blue (tab:blue)
+        "small_trucks": "#DD8452",
+        "medium_trucks": "#55A868",  # muted orange (tab:orange)
+        "heavy_trucks": "#C44E52",  # muted green (tab:green)
+        "large_trucks": "#C44E52"   # muted red (tab:red)
+    }
+
+
     for metric_name in rates_df["metric"].unique():
     
         data = rates_df[
@@ -55,20 +66,22 @@ def plot_rates(rates_df, outpath=None):
             (rates_df["county"] != "REGION")
         ]
 
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(5, 3))
 
         sns.lineplot(
             data=data,
             x="county",
             y="rate",
             hue="type",
-            marker="o"
+            marker="o", 
+            palette=palette
         )
 
         plt.title(metric_name)
         plt.xlabel("County")
         plt.ylabel(metric_name)
         plt.xticks(rotation=45)
+        plt.ylim(0, 0.6)
 
         plt.tight_layout()
 
