@@ -159,10 +159,11 @@ def summarize_predicted_counts(model_cfg: dict, cfg: dict) -> gpd.GeoDataFrame:
     return df_long
 
 
-def run_pipeline(config_path: str = "configs/evaluation.yaml") -> gpd.GeoDataFrame: 
+def run(config_path: str = "configs/evaluation.yaml") -> gpd.GeoDataFrame: 
     """
-
-    Execute the full observed data processing pipeline.
+    Compares observed truck counts with predicted counts from multiple model runs 
+    specified in the configuration file, and produces a consolidated GeoDataFrame 
+    for analysis.
 
     Parameters
     ----------
@@ -207,7 +208,7 @@ def main() -> None:
         help="Path to YAML config file (default: configs/evaluation.yaml)",
     )
     args = parser.parse_args()
-    run_pipeline(args.config)
+    run(args.config)
 
 
 if __name__ == "__main__":
