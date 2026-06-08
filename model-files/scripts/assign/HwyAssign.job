@@ -185,7 +185,7 @@ loop period = 1, 5
       parameters combine = equi; , enhance = 2
 
       ; JEF MAKE THIS DYNAMIC
-      ; set the assignment parameters -- 2340 internal zones + 36 external zones
+      ; set the assignment parameters -- 2440 internal zones + 36 external zones
       parameters zones = @TOT_ZONES@
 
       ; set the assignment parameters -- maximum number of iterations to 300

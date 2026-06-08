@@ -108,7 +108,7 @@ loop period = 1,5
       ; set the assignment paramters -- equilibrium assignment
       parameters combine = equi                                 
       
-      ; set the assignment parameters -- 2340 internal zones + 36 external zones
+      ; set the assignment parameters -- 2440 internal zones + 36 external zones
       parameters zones = @INT_ZONES@
       
       ; set the assignment parameters -- single dummy iteration just to calculate speeds
