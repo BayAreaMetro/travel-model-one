@@ -12,6 +12,7 @@ if %computername%==MODEL3-A      (  set COMMPATH=E:\Model3A-Share\COMMPATH)
 if %computername%==MODEL3-B      (  set COMMPATH=E:\Model3B-Share\COMMPATH)
 if %computername%==MODEL3-C      (  set COMMPATH=E:\Model3C-Share\COMMPATH)
 if %computername%==MODEL3-D      (  set COMMPATH=E:\Model3D-Share\COMMPATH)
+if %computername%==MODEL3-E      (  set COMMPATH=E:\Model3E-Share\COMMPATH)
 
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
