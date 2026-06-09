@@ -35,6 +35,7 @@ if %computername%==MODEL3-A            set HOST_IP_ADDRESS=10.164.0.200
 if %computername%==MODEL3-B            set HOST_IP_ADDRESS=10.164.0.201
 if %computername%==MODEL3-C            set HOST_IP_ADDRESS=10.164.0.202
 if %computername%==MODEL3-D            set HOST_IP_ADDRESS=10.164.0.203
+if %computername%==MODEL3-E            set HOST_IP_ADDRESS=10.164.0.204
 if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
