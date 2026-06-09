@@ -16,6 +16,44 @@ def compute_weighted_histograms(
     exclude_values=None,
     plot_id=None
 ):
+    """Compute trip-weighted histograms for each truck-type / skim-variable pair.
+
+    Filters the input data, then for each ``(value_col, x_col)`` pair in
+    ``plot_pairs`` builds a histogram weighted by trip counts and records
+    bin centers, trip totals, and share of total trips per bin.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Long-format OD DataFrame containing trip volume columns and skim
+        variable columns referenced in ``plot_pairs``.  Must contain a
+        ``"source"`` column.
+    plot_pairs : dict
+        Mapping of trip-volume column name to skim variable column name,
+        e.g. ``{"light_trucks": "time_comp_light_trucks"}``.
+    bins : int, optional
+        Number of histogram bins.  Default is 20.
+    filters : dict or None, optional
+        Column-to-values mapping used to ``isin``-filter rows before
+        computing histograms, e.g.
+        ``{"origin_county": ["Alameda", "San Francisco"]}``.
+    group_col : str or None, optional
+        Column to apply ``group_values`` / ``exclude_values`` filters on.
+    group_values : list or None, optional
+        Keep only rows where ``group_col`` is in this list.
+    exclude_values : list or None, optional
+        Remove rows where ``group_col`` is in this list.
+    plot_id : str or None, optional
+        Label attached to every output row identifying the plot configuration.
+
+    Returns
+    -------
+    pd.DataFrame
+        Tidy DataFrame with one row per bin per series, with columns
+        ``plot_id``, ``source``, ``series``, ``x_col``, ``bins``,
+        ``bin_id``, ``bin_start``, ``bin_end``, ``center``, ``trips``,
+        and ``share``.  Series with zero total trips are skipped.
+    """
     data = df.copy()
 
     # -------------------------
@@ -79,6 +117,32 @@ def plot_distributions(
     x_label=None,
     outpath=None
 ):
+    """Plot trip distribution curves (total trips and share) for each truck type.
+
+    Produces a side-by-side figure: the left panel shows raw trip counts
+    per bin and the right panel shows the share of total trips per bin,
+    with one line per truck-type series.  Saves to disk when ``outpath``
+    is provided.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Output of :func:`compute_weighted_histograms` with columns
+        ``series``, ``center``, ``trips``, ``share``, and ``source``.
+    title : str or None, optional
+        Figure title prefix.  Defaults to ``"Distribution"`` if ``None``.
+    x_label : str or None, optional
+        X-axis label shared by both panels.  Defaults to ``"Value"`` if
+        ``None``.
+    outpath : path-like or None, optional
+        Directory where the PNG figure is saved.  The filename is derived
+        from ``source`` and ``title``.  If ``None``, the figure is
+        rendered but not saved.
+
+    Returns
+    -------
+    None
+    """
     source = df["source"].iloc[0]
 
     palette = {
@@ -134,11 +198,47 @@ def plot_distributions(
 
 
 def compute_trip_distributions(long_df, configs, outpath=None):
+    """Run all histogram computations and plots defined in a configuration dictionary.
+
+    Iterates over every plot configuration entry, calls
+    :func:`compute_weighted_histograms` and :func:`plot_distributions` for
+    each, and concatenates the results into a single DataFrame.
+
+    Parameters
+    ----------
+    long_df : pd.DataFrame
+        Long-format OD DataFrame passed through to
+        :func:`compute_weighted_histograms`.  Must contain a ``"source"``
+        column.
+    configs : dict
+        Mapping of ``plot_id`` to configuration dict.  Each entry must
+        contain:
+
+        ``"plot_pairs"`` : dict
+            Truck-type-to-skim-variable mapping.
+        ``"bins"`` : int
+            Number of histogram bins.
+        ``"title"`` : str
+            Figure title.
+        ``"x_label"`` : str
+            X-axis label.
+        ``"filters"`` : dict, optional
+            Row-level filters forwarded to
+            :func:`compute_weighted_histograms`.
+    outpath : path-like or None, optional
+        Directory for saving figures; forwarded to
+        :func:`plot_distributions`.
+
+    Returns
+    -------
+    pd.DataFrame
+        Concatenation of all per-plot histogram DataFrames from
+        :func:`compute_weighted_histograms`, with a unified ``"source"``
+        column.
+    """
     source = long_df["source"].iloc[0] if "source" in long_df else "unknown"
     all_results = []
 
-    
-    
     for plot_id, cfg in configs.items():
 
         df_out = compute_weighted_histograms(

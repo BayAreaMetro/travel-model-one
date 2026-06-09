@@ -4,7 +4,28 @@ import h5py
 import openmatrix as omx
 
 def read_sw_trips(path, mtc_mask) -> pd.DataFrame:
-    
+    """Read CSF2TDM (statewide or SW model) truck OD trip matrices from OMX, 
+    filtered to the MTC region.
+
+    Applies a boolean mask to extract only the rows and columns corresponding
+    to MTC TAZs/TLNs from the full 7000×7000 CSF2TDM matrix and returns a
+    long format DataFrame indexed by origin-destination pair.
+
+    Parameters
+    ----------
+    path : str
+        File path to the statewide OD OMX file.
+    mtc_mask : np.ndarray of bool, shape (7000,)
+        Boolean mask where ``True`` marks positions (0-based) of MTC TAZs
+        and TLN zones in the full statewide matrix.
+
+    Returns
+    -------
+    pd.DataFrame
+        Long-format DataFrame with columns ``origin``, ``destination``
+        (1-based zone IDs), and one column per truck-type matrix found in
+        the OMX file. 
+    """
     zone_ids = np.where(mtc_mask)[0] + 1
     trips = pd.DataFrame(
         index=pd.MultiIndex.from_product([zone_ids, zone_ids], names=['origin', 'destination'])
@@ -19,6 +40,27 @@ def read_sw_trips(path, mtc_mask) -> pd.DataFrame:
     return trips
 
 def read_sw_skims(path, mtc_idx) -> pd.DataFrame:
+    """Read statewide highway skims from HDF5, filtered to MTC TAZ pairs.
+
+    Reads the ``auto`` dataset in chunks from the CSF2TDM skims HDF5 file
+    and keeps only records where both origin and destination belong to the
+    set of MTC TAZ/TLN IDs.  Returns distance and time skim columns for
+    truck classes.
+
+    Parameters
+    ----------
+    path : str
+        File path to the statewide skims HDF5 file (``skims.h5``).
+    mtc_idx : np.ndarray of int
+        1-based zone IDs for MTC TAZs and TLN locations, used to filter
+        origin-destination pairs.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns ``origin``, ``destination``, and all skim
+        columns whose names contain ``"TRUCK"``. 
+    """
     store = h5py.File(path, 'r')
     filtered_chunks = []
     dset = store['auto']
@@ -40,9 +82,39 @@ def read_sw_skims(path, mtc_idx) -> pd.DataFrame:
     return skims
 
 def sw_od_long_format(input_paths: dict):
-    
+    """Build a long-format statewide OD table with truck trips, skims, and county labels.
+
+    Reads the CSF2TDM trip OMX and highway skims HDF5, restricts both to
+    MTC TAZs and TLN gateway zones, merges them, and derives aggregated
+    truck-type columns, composite skims (1/3 AM + 2/3 Mid), and county
+    name labels.
+
+    Parameters
+    ----------
+    input_paths : dict
+        Dictionary with the following keys:
+
+        ``"od_omx"`` : str
+            Path to the statewide trip OMX file.
+        ``"skims"`` : str
+            Path to the statewide skims HDF5 file.
+        ``"taz_county"`` : str
+            Path to the TAZ-to-MPO/county mapping CSV.
+        ``"tln_indices"`` : dict
+            Mapping of TLN zone ID (int) to location name (str) for
+            ports and airports to include alongside TAZs.
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per origin-destination zone pair with columns for raw trip
+        matrices, skim values, and derived columns: ``origin_county``,
+        ``destination_county``, ``total_trips``, ``light_trucks``,
+        ``medium_trucks``, ``heavy_trucks``, ``dist_comp``, ``time_comp``,
+        and ``source`` (``"CSF2TDM"``).
+    """
     # MTC Map:
-    # Make sure to only include TAZs and TLN in the MTC region 
+    # Makes sure to only include TAZs and TLN in the MTC region 
     # mtc_index: TAZ IDs in the MTC region (1-based)
     # mtc_mask: boolean mask for selecting MTC TAZs from the 7000x7000 matrix (0-based)
     # -------------------------

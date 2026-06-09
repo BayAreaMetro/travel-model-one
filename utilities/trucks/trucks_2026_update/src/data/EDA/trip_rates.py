@@ -6,6 +6,36 @@ import matplotlib.pyplot as plt
 
 
 def compute_trip_rates_by_county(od_long, value_cols, land_use, rate_bases):
+    """Compute truck trip rates normalised by land use variables, by county and region.
+
+    For each truck type and each land use variable, aggregates origin trips
+    per county, divides by the corresponding land use total, and appends a
+    region-wide summary row.
+
+    Parameters
+    ----------
+    od_long : pd.DataFrame
+        Long-format OD DataFrame containing columns ``origin_county``,
+        ``destination_county``, ``source``, and one column per truck type
+        listed in ``value_cols``.
+    value_cols : list of str
+        Names of the truck-type trip columns to rate (e.g.
+        ``["light_trucks", "medium_trucks", "heavy_trucks"]``).
+    land_use : pd.DataFrame
+        County-level land use table indexed by county name.  Must contain
+        all columns referenced in ``rate_bases``.
+    rate_bases : dict
+        Mapping of land use column name to display label, e.g.
+        ``{"TOTEMP": "Trips per Employment"}``.
+
+    Returns
+    -------
+    pd.DataFrame
+        Tidy DataFrame with columns ``county``, ``trips``,
+        ``land_use_val``, ``land_use_col``, ``rate``, ``type``,
+        ``metric``, and ``source``.  Includes one ``"REGION"`` row per
+        truck-type / metric combination.
+    """
     mask = (od_long["origin_county"].isin(land_use.index)) & (od_long["destination_county"].isin(land_use.index))
     df = od_long[mask]
     results = []
@@ -47,8 +77,27 @@ def compute_trip_rates_by_county(od_long, value_cols, land_use, rate_bases):
     return out
 
 def plot_rates(rates_df, outpath=None):
+    """Plot truck trip rates by county for each land use metric.
 
-    
+    Produces one line-plot figure per unique metric in ``rates_df``,
+    showing rates by county for every truck type.  Excludes the
+    ``"REGION"`` summary row from the chart.  Saves figures to disk when
+    ``outpath`` is provided.
+
+    Parameters
+    ----------
+    rates_df : pd.DataFrame
+        Output of :func:`compute_trip_rates_by_county` with columns
+        ``county``, ``rate``, ``type``, ``metric``, and ``source``.
+    outpath : path-like or None, optional
+        Directory where PNG figures are saved.  Filenames follow the
+        pattern ``<source>_<metric_snake_case>.png``.  If ``None``,
+        figures are rendered but not saved.
+
+    Returns
+    -------
+    None
+    """
     palette = {
         "very_small_trucks": "#4C72B0", 
         "light_trucks": "#DD8452",   
@@ -58,7 +107,6 @@ def plot_rates(rates_df, outpath=None):
         "large_trucks": "#C44E52"   
     }
 
-    
     y_limits = {
         "Trips per Employment": (0, 0.45),
         "Trips per Household": (0, 0.55),
