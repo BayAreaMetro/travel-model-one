@@ -23,6 +23,7 @@ python aggregateTransitLinks.py AM|MD|PM|EV|EA
 
 """
 import csv, logging, os, sys
+from pathlib import Path
 
 import dbfpy3.dbf
 from simpledbf import Dbf5
@@ -111,15 +112,17 @@ def read_capacity_files(capacity_dir):
       veh_to_capacity:   vehtype -> float seat capacity
       prefix_to_vehicle: prefix (upper, 3-4 chars) -> [system, vehtype]
     """
+    capacity_path = Path(capacity_dir)
+
     line_to_attrs = {}
-    l2v_path = os.path.join(capacity_dir, "transitLineToVehicle.csv")
+    l2v_path = capacity_path / "transitLineToVehicle.csv"
     with open(l2v_path, newline="") as f:
         for name, system, _stripped, _simple, fullname, vt_am, vt_pm, vt_op in csv.reader(f):
             line_to_attrs[name.upper()] = [system, fullname, vt_am, vt_pm, vt_op]
     logging.info(f"Read {len(line_to_attrs)} entries from {l2v_path}")
 
     veh_to_capacity = {}
-    v2c_path = os.path.join(capacity_dir, "transitVehicleToCapacity.csv")
+    v2c_path = capacity_path / "transitVehicleToCapacity.csv"
     with open(v2c_path, newline="") as f:
         for tokens in csv.reader(f):
             if tokens[0] == "VehicleType":
@@ -128,7 +131,7 @@ def read_capacity_files(capacity_dir):
     logging.info(f"Read {len(veh_to_capacity)} entries from {v2c_path}")
 
     prefix_to_vehicle = {}
-    p2v_path = os.path.join(capacity_dir, "transitPrefixToVehicle.csv")
+    p2v_path = capacity_path / "transitPrefixToVehicle.csv"
     with open(p2v_path, newline="") as f:
         for prefix, system, vehtype in csv.reader(f):
             prefix_to_vehicle[prefix.upper()] = [system, vehtype]
