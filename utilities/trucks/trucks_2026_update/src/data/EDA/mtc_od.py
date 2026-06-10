@@ -9,6 +9,27 @@ from src.utils import save
 
 
 def read_mtc_trips(path) -> pd.DataFrame:
+    """Read MTC truck trip matrices from OMX files for all time-of-day periods.
+
+    Opens one OMX file per period, reads every truck-type matrix, and
+    concatenates all period/type combinations into a single flat DataFrame
+    indexed by origin-destination TAZ pair.
+
+    Parameters
+    ----------
+    path : str
+        Path template containing a ``{tod}`` placeholder that is substituted
+        for each time-of-day code (``"EA"``, ``"AM"``, ``"MD"``, ``"PM"``,
+        ``"EV"``).
+
+    Returns
+    -------
+    pd.DataFrame
+        Long-format DataFrame with columns ``origin``, ``destination``, and
+        one column per ``<truck_type>_<tod>`` combination (e.g.
+        ``vstruck_AM``).  Origin and destination values are 1-based TAZ IDs
+        ranging from 1 to 1475.
+    """
     tods = ["EA", "AM", "MD", "PM", "EV"]
     n = 1475
     base = pd.DataFrame({
@@ -27,6 +48,25 @@ def read_mtc_trips(path) -> pd.DataFrame:
     return base
 
 def read_mtc_skims(path) -> pd.DataFrame:
+    """Read MTC highway skim matrices for AM and MD periods from OMX files.
+
+    Extracts distance and time skims for the four truck size classes
+    (very-small, small, medium, large) across AM and MD periods and returns
+    them flattened to a TAZ-pair DataFrame.
+
+    Parameters
+    ----------
+    path : str
+        Path template with a ``{tod}`` placeholder substituted for each
+        period code (``"AM"``, ``"MD"``).
+
+    Returns
+    -------
+    pd.DataFrame
+        Long-format DataFrame with columns ``origin``, ``destination``, and
+        one column per ``<MATRIX>_<tod>`` combination
+        Origin and destination are 1-based TAZ IDs from 1 to 1475.
+    """
     tods = ["AM", "MD"]
     n = 1475
     base = pd.DataFrame({
@@ -35,14 +75,14 @@ def read_mtc_skims(path) -> pd.DataFrame:
     })
     
     matrices = [
-         'DISTLRG',
-         'DISTMED',
-         'DISTSML',
-         'DISTVSM',
-         'TIMELRG',
-         'TIMEMED',
-         'TIMESML',
-         'TIMEVSM',
+         'DISTLRG', # distance large 
+         'DISTMED', # distance medium 
+         'DISTSML', # distance small
+         'DISTVSM', # distance very small
+         'TIMELRG', # travel time large
+         'TIMEMED', # travel time medium
+         'TIMESML', # travel time small
+         'TIMEVSM', # travel time very small
     ]
     
     for tod in tods:
@@ -56,6 +96,23 @@ def read_mtc_skims(path) -> pd.DataFrame:
     return base
 
 def get_taz_county_map(df):
+    """Build a TAZ-to-county name mapping from the MTC land use table.
+
+    Maps internal TAZ IDs to county names and marks external gateway 
+    zones (TAZ 1455–1475) as ``"gateway"``.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Land use table with at minimum columns ``ZONE`` (TAZ ID) and
+        ``COUNTY`` (integer county code as defined in ``COUNTY_MAP``).
+
+    Returns
+    -------
+    dict
+        Mapping of TAZ ID (int) to county name (str).  Gateway zones
+        1455–1475 map to ``"gateway"``.
+    """
     df["county"] = df["COUNTY"].map(COUNTY_MAP)
     d = dict(zip(df["ZONE"], df["county"]))
     d.update({k: "gateway" for k in range(1455, 1476)})
@@ -63,6 +120,33 @@ def get_taz_county_map(df):
     
 
 def mtc_od_long_format(input_paths: dict):
+    """Build a long-format MTC OD table with truck trips, skims, and derived variables.
+
+    Reads long format trip matrices and highway skims, joins them by origin-destination
+    pair, attaches county labels from the land use file, and adds composite
+    distance/time skims weighted 1/3 AM + 2/3 MD.
+
+    Parameters
+    ----------
+    input_paths : dict
+        Dictionary with the following keys:
+
+        ``"od_omx"`` : str
+            Path template (with ``{tod}``) to MTC truck trip OMX files.
+        ``"skims"`` : str
+            Path template (with ``{tod}``) to MTC highway skim OMX files.
+        ``"land_use"`` : str
+            Path to the TAZ land use CSV (``tazData.csv``).
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per origin-destination TAZ pair with columns for all
+        raw trip/skim matrices plus derived columns: ``origin_county``,
+        ``destination_county``, ``total_trips``, ``very_small_trucks``,
+        ``small_trucks``, ``medium_trucks``, ``large_trucks``,
+        ``distance_comp_*``, ``time_comp_*``, and ``source`` (``"TM1.6"``).
+    """
     trips = read_mtc_trips(input_paths["od_omx"])
     skims = read_mtc_skims(input_paths["skims"])
     lu =    pd.read_csv(input_paths["land_use"])
