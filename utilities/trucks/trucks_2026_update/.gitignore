@@ -5,3 +5,8 @@
 *.PRN
 *.VAR
 *.PRJ
+
+.venv/
+__pycache__/
+*.pyc
+.python-version
