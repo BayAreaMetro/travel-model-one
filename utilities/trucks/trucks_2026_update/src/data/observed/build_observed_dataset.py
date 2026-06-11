@@ -1,3 +1,35 @@
+"""Build the unified observed truck count dataset from Caltrans and BATA sources.
+
+Combines two independent observed-data pipelines into one standardised table
+used for model validation and calibration:
+
+* **Caltrans 2018** — permanent count station data aggregated from hourly
+  vehicle-class CSVs by district.
+* **BATA 2023** — Bay Area Toll Authority toll-plaza axle counts.
+
+Each source pipeline is run independently and produces an output that conforms
+to the shared observed schema (see :mod:`src.data.observed.schema`).  The two
+outputs are concatenated, re-validated, and saved to a single file.
+
+Inputs (via CLI or defaults)
+-----------------------------
+``--caltrans-config`` : str
+    Path to the Caltrans pipeline YAML config.
+    Default: ``configs/observed/caltrans_2018.yaml``.
+``--bata-config`` : str
+    Path to the BATA pipeline YAML config.
+    Default: ``configs/observed/bata_2023.yaml``.
+``--output`` : str
+    Path where the merged dataset is saved.
+    Default: ``data/interim/observed_data/observed_dataset_merged.csv``.
+
+Output
+------
+A single file (format determined by extension) with columns:
+``count_location_id``, ``link_id``, ``tod``, ``truck_type_1``,
+``truck_type_2``, ``type``, ``source``, ``quality_flag``, ``volume``.
+Sources present: ``caltrans_2018``, ``bata_2023``.
+"""
 import argparse
 import logging
 from pathlib import Path
@@ -17,16 +49,25 @@ def run_pipeline(
     bata_config: str,
     output_path: str,
 ) -> None:
-    """
-    Run full observed data build:
-    - Run Caltrans pipeline
-    - Run BATA pipeline
-    - Combine outputs
-    
-    Args:
-        caltrans_config: Path to Caltrans pipeline config file
-        bata_config: Path to BATA pipeline config file
-        output_path: Path to save combined observed dataset
+    """Run both source pipelines and merge their outputs into a unified dataset.
+
+    Executes the Caltrans and BATA pipelines sequentially, concatenates the
+    two standardised outputs, re-validates the combined schema, and saves the
+    result to ``output_path``.
+
+    Parameters
+    ----------
+    caltrans_config : str
+        Path to the Caltrans pipeline YAML configuration file.
+    bata_config : str
+        Path to the BATA pipeline YAML configuration file.
+    output_path : str
+        Destination path for the merged dataset.  Format is inferred from
+        the file extension (e.g. ``.csv``, ``.parquet``).
+
+    Returns
+    -------
+    None
     """
 
     log_path = setup_logging(log_dir="data/logs", log_name="observed_build")
@@ -66,6 +107,15 @@ def run_pipeline(
 
 
 def main() -> None:
+    """Entry point for the unified observed dataset build script.
+
+    Parses ``--caltrans-config``, ``--bata-config``, and ``--output`` from
+    the command line and delegates to :func:`run_pipeline`.
+
+    Returns
+    -------
+    None
+    """
     parser = argparse.ArgumentParser(
         description="Build unified observed dataset from multiple sources"
     )
