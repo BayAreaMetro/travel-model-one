@@ -64,6 +64,7 @@ typical_weekday:
 # ── Vehicle class → truck type mapping ──────────────────────────────
 # CNT2–CNT13 are the 13 FHWA scheme F vehicle classes in the class file.
 vehicle_class_map: 
+  vstruck: [CNT3]
   struck: [CNT5]  
   mtruck: [CNT6]  
   ctruck: [CNT7, CNT8, CNT9, CNT10, CNT11, CNT12, CNT13]  
