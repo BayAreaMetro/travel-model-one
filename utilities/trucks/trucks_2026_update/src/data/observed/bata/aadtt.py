@@ -8,21 +8,31 @@ def apply_hour_aggregation(
     df: pd.DataFrame,
     tod_hours: dict[str, list[int]],
 ) -> pd.DataFrame:
-    """
-    Sum volumne across all hours belonging to the same TOD period.
+    """Sum axle counts across all hours belonging to the same time-of-day period.
+
+    Maps each row's ``Hour`` value to a TOD label and sums ``Count`` within
+    each (Plaza, Date, Axle, TOD) group.  Raises if any hour has no matching
+    TOD period.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Output of compute_hourly_averages.
+        Row-level BATA toll plaza data with at least columns ``Hour``,
+        ``Plaza``, ``Date``, ``Axle``, and ``Count``.
     tod_hours : dict[str, list[int]]
-        Maps each TOD label to the list of hours it covers,
-        e.g. {'AM': [6, 7, 8, 9], 'EA': [3, 4, 5], ...}.
+        Maps each TOD label to the list of clock hours it covers,
+        e.g. ``{'AM': [6, 7, 8, 9], 'EA': [3, 4, 5]}``.
 
     Returns
     -------
     pd.DataFrame
-        Aggregated dataframe by TOD period.
+        Aggregated counts with columns ``Plaza``, ``Date``, ``Axle``,
+        ``TOD``, and ``Count``.  One row per unique combination.
+
+    Raises
+    ------
+    ValueError
+        If any hour in ``df`` does not appear in ``tod_hours``.
     """
     
     # Build an hour -> TOD lookup
@@ -48,18 +58,19 @@ def apply_hour_aggregation(
     return result
 
 def filter_2023_data(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Filter the raw BATA 2023 data to include only 2023 records.
+    """Keep only rows whose ``Date`` falls within the 2023 calendar year.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Raw BATA 2023 data.
+        Raw BATA toll plaza data with a ``Date`` column parseable as a date
+        string (``"YYYY-MM-DD"`` format or equivalent).
 
     Returns
     -------
     pd.DataFrame
-        Filtered dataframe containing only relevant records for AADTT estimation.
+        Subset of ``df`` where ``Date`` is between 2023-01-01 and 2023-12-31
+        inclusive.
     """
     filtered = df[
         (df["Date"] >= "2023-01-01") &
@@ -71,22 +82,27 @@ def filter_2023_data(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def map_vehicle_class(df: pd.DataFrame, mapping: dict, axle_col: str = "Axle") -> pd.DataFrame:
-    """
-    Map axle counts to truck classes using a config mapping.
+    """Map axle-count values to truck-class labels using a mapping lookup.
+
+    Inverts the ``mapping`` dict (truck-class → axle list) to produce a
+    per-axle lookup and assigns the result to a new ``vehicle_type`` column.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Input DataFrame with an axle column.
+        Input DataFrame containing an axle column (default name ``"Axle"``).
     mapping : dict
-        Mapping like {"struck": [2], "mtruck": [3], ...}
-    axle_col : str
-        Name of the axle column.
+        Mapping from truck-class name to the list of axle values that belong
+        to it, e.g. ``{"struck": [2], "mtruck": [3], "ctruck": [4, 5, 6]}``.
+    axle_col : str, optional
+        Name of the column holding axle counts.  Default is ``"Axle"``.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with a new column 'truck_type'.
+        Input DataFrame with an added ``vehicle_type`` column containing
+        the mapped truck-class name.  Rows whose axle value is not in
+        ``mapping`` receive ``NaN``.
     """
 
     # Invert mapping: axle → class
@@ -101,18 +117,23 @@ def map_vehicle_class(df: pd.DataFrame, mapping: dict, axle_col: str = "Axle") -
     return df
 
 def estimate_aadtt(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Placeholder for AADTT estimation logic.
+    """Compute mean daily truck volume by plaza, TOD period, and vehicle type.
+
+    First sums counts within each (Plaza, Date, TOD, vehicle_type) day, then
+    averages those daily totals across all dates to produce the mean volume
+    per plaza / TOD / type combination.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Input DataFrame after hour aggregation and vehicle class mapping.
+        TOD-aggregated data with columns ``Plaza``, ``Date``, ``TOD``,
+        ``vehicle_type``, and ``Count``.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with estimated AADTT values.
+        One row per (Plaza, TOD, vehicle_type) with columns ``Plaza``,
+        ``TOD``, ``vehicle_type``, and ``mean_volume``.
     """
     daily_volume = (
         df.groupby(["Plaza", "Date", "TOD", "vehicle_type"])
@@ -129,18 +150,29 @@ def estimate_aadtt(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def estimate_bata_aadtt(data, cfg) -> pd.DataFrame:
-    """
-    Placeholder for BATA AADTT estimation logic.
+    """Run the full BATA AADTT estimation pipeline on raw toll plaza data.
+
+    Chains together filtering, TOD aggregation, vehicle-class mapping, and
+    mean daily volume estimation into a single step.
 
     Parameters
     ----------
     data : pd.DataFrame
-        Input data for BATA AADTT estimation.
+        Raw BATA Excel data with columns ``Date``, ``Hour``, ``Plaza``,
+        ``Axle``, and ``Count``.
+    cfg : dict
+        Configuration dict with the following keys used here:
+
+        ``"tod_hours"`` : dict[str, list[int]]
+            Hour-to-TOD mapping forwarded to :func:`apply_hour_aggregation`.
+        ``"axle_to_truck_type_map"`` : dict
+            Axle-to-class mapping forwarded to :func:`map_vehicle_class`.
 
     Returns
     -------
     pd.DataFrame
-        Empty dataframe with expected columns for consistency.
+        Mean daily truck volumes by plaza, TOD, and vehicle type.
+        Columns: ``Plaza``, ``TOD``, ``vehicle_type``, ``mean_volume``.
     """
     df = (data
           .pipe(filter_2023_data)
