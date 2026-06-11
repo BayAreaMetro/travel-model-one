@@ -83,6 +83,14 @@ def read_mtc_skims(path) -> pd.DataFrame:
          'TIMEMED', # travel time medium
          'TIMESML', # travel time small
          'TIMEVSM', # travel time very small
+         'TOLLDISTLRG', # toll distance large
+         'TOLLDISTMED', # toll distance medium
+         'TOLLDISTSML', # toll distance small
+         'TOLLDISTVSM', # toll distance very small
+         'TOLLTIMELRG', # toll travel time large
+         'TOLLTIMEMED', # toll travel time medium
+         'TOLLTIMESML', # toll travel time small
+         'TOLLTIMEVSM', # toll travel time very small
     ]
     
     for tod in tods:

@@ -1,7 +1,7 @@
 from src.data.observed.schema import validate_observed_schema
 
 def standardize_observed_aadtt(aadtt, crosswalk):
-    truck_type_2_map = {"ctruck": "HV", "struck": "SM", "mtruck": "SM"}
+    truck_type_2_map = {"ctruck": "HV", "struck": "SM", "mtruck": "SM", "vstruck": "SM"}
     df = aadtt.merge(crosswalk[["control_station_id", "link_id"]], on="control_station_id", how="right") 
     df["type"] = "observed"
     df["source"] = "caltrans_2018"

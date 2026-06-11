@@ -288,9 +288,8 @@ def apply_tod_map(
     
     return df 
 
-def estimate_daily_volumnes(df):
+def estimate_daily_volumnes(df, value_cols = ["vstruck", "struck", "mtruck", "ctruck"]):
     group_cols = ["control_station_id", "DISTRICT", "CONTROLNO", "direction", "YEAR", "MONTH", "DAY", "TOD"]
-    value_cols = ["struck", "mtruck", "ctruck"]
 
     result = (
         df
@@ -470,7 +469,7 @@ def estimate_caltrans_aadtt(cfg: dict) -> pd.DataFrame:
         .pipe(filter_typical_weekday, weekdays=cfg['typical_weekday']['weekdays'], holidays=cfg['typical_weekday']['holidays'])
         .pipe(apply_tod_map, tod_hours=cfg['tod_hours'])
         .pipe(apply_vehicle_classes_aggregation, vehicle_classes=cfg['vehicle_class_map'])
-        .pipe(estimate_daily_volumnes)
+        .pipe(estimate_daily_volumnes, value_cols=list(cfg['vehicle_class_map'].keys()))
         .pipe(estimate_average_volumes, vehicle_cols=list(cfg['vehicle_class_map'].keys()), percentiles=cfg['normality_percentiles'])
         .pipe(add_estimate_quality_metrics, pct_low="p02", pct_high="p97")
     )

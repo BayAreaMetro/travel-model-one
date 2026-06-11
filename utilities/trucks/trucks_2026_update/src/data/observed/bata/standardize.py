@@ -2,7 +2,7 @@ from src.data.observed.schema import validate_observed_schema
 
 def standardize_observed_aadtt(aadtt, crosswalk):
     # Second mapping to compare with TM outputs. 
-    truck_type_2_map = {"ctruck": "HV", "struck": "SM", "mtruck": "SM"}
+    truck_type_2_map = {"ctruck": "HV", "struck": "SM", "mtruck": "SM", "vstruck": "SM"}
     
     df = aadtt.merge(crosswalk, left_on="Plaza", right_on="count_location_id", how="right") 
     df["type"] = "observed"

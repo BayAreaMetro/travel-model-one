@@ -193,7 +193,7 @@ def run_eda():
     sw_trip_distributions = compute_trip_distributions(sw_long, cfg.SW_TRIP_DIST_CONFIG, outpath=figures_outpath)
     plot_rates(sw_trip_rates, outpath=figures_outpath)
     
-    
+    save(sw_long, Path(tables_outpath, "SW_long_format_od_trips.parquet"))
     save(sw_county_od, Path(tables_outpath, "SW_county_od_matrix.parquet"))
     save(sw_trip_rates, Path(tables_outpath, "SW_trip_rates_by_county.parquet"))
     save(sw_trip_distributions, Path(tables_outpath, "SW_trip_distributions.parquet"))
@@ -210,6 +210,7 @@ def run_eda():
     plot_rates(mtc_trip_rates, outpath=figures_outpath) 
     mtc_trip_distributions = compute_trip_distributions(mtc_long, cfg.MTC_TRIP_DIST_CONFIG, outpath=figures_outpath) 
 
+    save(mtc_long, Path(tables_outpath, "TM1.6_long_format_od_trips.parquet"))
     save(mtc_county_od, Path(tables_outpath, "TM1.6_county_od_matrix.parquet"))
     save(mtc_trip_rates, Path(tables_outpath, "TM1.6_trip_rates_by_county.parquet"))
     save(mtc_trip_distributions, Path(tables_outpath, "TM1.6_trip_distributions.parquet"))
