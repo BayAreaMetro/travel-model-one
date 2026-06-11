@@ -1,305 +1,325 @@
-"""
-calibration.py
---------------
-Estimates gamma parameters (b, c) per truck type by minimizing the difference
-between the modeled TLFD and the observed TLFD.
+"""Gamma parameter calibration via Nelder-Mead optimization.
 
-Algorithm
+The optimizer minimizes a weighted loss between the modeled TLFD and the
+observed TLFD, with an optional average-trip-length (ATL) penalty term.
+
+Loss function::
+
+    loss = weighted_SSE + atl_penalty_weight * ATL_penalty
+
+    weighted_SSE = sum_k [ observed_share_k * (modeled_share_k - observed_share_k)^2 ]
+    ATL_penalty  = ((modeled_ATL - observed_ATL) / observed_ATL)^2
+
+``weighted_SSE`` uses the observed bin shares as weights so that
+well-populated short-trip bins matter more than the sparse long-distance tail.
+
+``ATL_penalty`` penalizes mismatch in average trip length.  Set
+``atl_penalty_weight = 0.0`` in ``model_settings`` to disable it entirely and
+optimize on TLFD shape only.
+
+Optimizer
 ---------
-For each truck type:
-1. Fix P, A, skim (from inputs)
-2. Run gravity model with F(t) = t^b * exp(c*t)
-3. Compute modeled TLFD from output T_ij
-4. Compute loss = weighted SSE between modeled and observed TLFD
-5. Use Nelder-Mead to find (b, c) that minimizes loss
-6. Report final parameters + diagnostics
+``scipy.optimize.minimize`` is called with the method declared in
+``model_settings.optimizer_method`` (default ``"Nelder-Mead"``).  Bounds from
+``gamma_b_bounds`` and ``gamma_c_bounds`` are passed directly to scipy.
+scipy >= 1.7 enforces Nelder-Mead bounds via a soft-penalty transform; an
+explicit large-loss return is also applied inside the objective as a safety net
+for any method that ignores bounds.
 
-The objective also tracks average trip length as a secondary diagnostic.
+The optimizer is deterministic given fixed starting values (``b0``, ``c0``).
+No random seed is needed — identical YAML + inputs always produce identical
+calibrated parameters.
 """
 
-import time
-import numpy as np
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
-from scipy.optimize import minimize, OptimizeResult
+import numpy as np
+import pandas as pd
+import scipy.optimize
 
-from .config import (
-    TRUCK_TYPES,
-    GAMMA_INITIAL_PARAMS,
-    GAMMA_BOUNDS,
-    TLFD_BINS,
-)
-from .friction import GammaParams, gamma_ff
-from .gravity import run_gravity
+from src.models.trip_distribution.config import ModelSettings
+from src.models.trip_distribution.friction import build_ff_matrix
+from src.models.trip_distribution.gravity import run_gravity
 
 
-# ── TLFD utilities ─────────────────────────────────────────────────────────────
-
-def compute_tlfd(
-    T_ij: np.ndarray,
-    t_ij: np.ndarray,
-    bins: np.ndarray = TLFD_BINS,
-) -> np.ndarray:
-    """
-    Compute the trip length frequency distribution from a trip matrix and skim.
-
-    Parameters
-    ----------
-    T_ij : (n, n) trip matrix
-    t_ij : (n, n) travel time matrix
-    bins : bin edges in minutes
-
-    Returns
-    -------
-    shares : (len(bins)-1,) array of trip shares per bin, sums to 1
-    """
-    n_bins = len(bins) - 1
-    tlfd = np.zeros(n_bins, dtype=np.float64)
-
-    for k in range(n_bins):
-        mask = (t_ij >= bins[k]) & (t_ij < bins[k + 1])
-        tlfd[k] = T_ij[mask].sum()
-
-    total = tlfd.sum()
-    if total > 0:
-        tlfd /= total
-    return tlfd
-
-
-def avg_trip_length(T_ij: np.ndarray, t_ij: np.ndarray) -> float:
-    """Weighted average travel time across all OD pairs."""
-    total = T_ij.sum()
-    if total < 1e-9:
-        return 0.0
-    return float((T_ij * t_ij).sum() / total)
-
-
-def tlfd_avg_from_shares(shares: np.ndarray, bins: np.ndarray = TLFD_BINS) -> float:
-    """Compute approximate mean travel time from TLFD shares and bin midpoints."""
-    bin_mids = 0.5 * (bins[:-1] + bins[1:])
-    return float(np.dot(shares, bin_mids))
-
-
-# ── Calibration result ─────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Result dataclass
+# ---------------------------------------------------------------------------
 
 @dataclass
 class CalibrationResult:
-    """Stores calibration outcome for one truck type."""
-    truck_type: str
-    b: float
-    c: float
-    converged: bool
-    n_function_evals: int
-    final_loss: float
-    observed_avg_tl: float           # average trip length from observed TLFD
-    modeled_avg_tl: float            # average trip length from calibrated model
-    observed_tlfd: np.ndarray
-    modeled_tlfd: np.ndarray
-    loss_history: List[float] = field(default_factory=list)
-
-    @property
-    def params(self) -> GammaParams:
-        return GammaParams(truck_type=self.truck_type, b=self.b, c=self.c)
-
-    def summary(self) -> str:
-        status = "✓ converged" if self.converged else "✗ did not converge"
-        return (
-            f"{self.truck_type} [{status}]\n"
-            f"  b={self.b:.4f}, c={self.c:.4f}\n"
-            f"  Avg trip length: observed={self.observed_avg_tl:.1f} min, "
-            f"modeled={self.modeled_avg_tl:.1f} min\n"
-            f"  Final loss={self.final_loss:.6f}, "
-            f"fn evals={self.n_function_evals}"
-        )
-
-
-# ── Objective function ─────────────────────────────────────────────────────────
-
-def _make_objective(
-    P: np.ndarray,
-    A: np.ndarray,
-    skim: np.ndarray,
-    observed_tlfd: np.ndarray,
-    loss_history: List[float],
-    verbose: bool = False,
-) -> callable:
-    """
-    Build the objective function for one truck type.
-
-    Loss = weighted SSE between modeled and observed TLFD
-         + penalty term for average trip length mismatch
-
-    The observed shares are used as weights so that well-populated
-    time bins matter more than the sparse tail.
-    """
-    obs_avg_tl = tlfd_avg_from_shares(observed_tlfd)
-
-    def objective(params: np.ndarray) -> float:
-        b, c = params
-
-        # Hard constraints: b and c must be negative
-        if b >= 0 or c >= 0:
-            return 1e10
-
-        # Compute friction factor matrix
-        F = gamma_ff(skim, b, c)
-
-        # Run gravity model (tight tolerance during calibration is overkill;
-        # use a looser rmse to keep calibration fast)
-        result = run_gravity(P, A, F, max_iters=50, max_rmse=50.0)
-        T_mod = result.trips
-
-        # Compute modeled TLFD
-        mod_tlfd = compute_tlfd(T_mod, skim)
-
-        # Primary loss: observed-weighted SSE on TLFD shares
-        weights = observed_tlfd  # upweight bins with more trips
-        tlfd_loss = float(np.sum(weights * (mod_tlfd - observed_tlfd) ** 2))
-
-        # Secondary penalty: average trip length mismatch
-        mod_avg_tl = avg_trip_length(T_mod, skim)
-        atl_penalty = 0.1 * ((mod_avg_tl - obs_avg_tl) / (obs_avg_tl + 1e-9)) ** 2
-
-        loss = tlfd_loss + atl_penalty
-
-        loss_history.append(loss)
-        if verbose and len(loss_history) % 10 == 0:
-            print(f"    iter {len(loss_history):3d}: b={b:.4f}, c={c:.4f}, "
-                  f"loss={loss:.6f}, avg_tl={mod_avg_tl:.1f}")
-
-        return loss
-
-    return objective
-
-
-# ── Single truck type calibration ─────────────────────────────────────────────
-
-def calibrate_one(
-    truck_type: str,
-    P: np.ndarray,
-    A: np.ndarray,
-    skim: np.ndarray,
-    observed_tlfd: np.ndarray,
-    b0: Optional[float] = None,
-    c0: Optional[float] = None,
-    verbose: bool = True,
-) -> CalibrationResult:
-    """
-    Calibrate gamma parameters for one truck type.
+    """Output of a single gamma parameter calibration.
 
     Parameters
     ----------
-    truck_type    : label
-    P, A          : productions and attractions (n,)
-    skim          : blended travel time matrix (n, n)
-    observed_tlfd : target TLFD shares (n_bins,)
-    b0, c0        : initial parameter values (defaults to NCHRP 365 values)
-    verbose       : print progress every 10 function evaluations
+    b : float
+        Calibrated gamma ``b`` (exponent) parameter.
+    c : float
+        Calibrated gamma ``c`` (exponential decay) parameter.
+    converged : bool
+        True if the optimizer reported successful convergence within the
+        allotted function evaluations.
+    n_iters : int
+        Number of objective function evaluations performed by the optimizer.
+        Reported as "evals" in log messages.
+    final_loss : float
+        Optimizer loss value at termination (lower is better).
+    loss_history : list[float]
+        Loss value sampled every 10 objective evaluations, for convergence
+        plots.  Empty when calibration finishes in fewer than 10 evals.
+    """
+
+    b: float
+    c: float
+    converged: bool
+    n_iters: int
+    final_loss: float
+    loss_history: list[float] = field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# TLFD computation
+# ---------------------------------------------------------------------------
+
+def compute_tlfd(
+    trips: np.ndarray,
+    skim: np.ndarray,
+    tlfd_bins: pd.DataFrame,
+) -> np.ndarray:
+    """Compute the modeled trip length frequency distribution.
+
+    Assigns every trip in ``trips`` to a time bin based on the corresponding
+    travel time in ``skim``.  Returns the share of total trips falling in
+    each bin.
+
+    Bin assignment rules:
+
+    - Bins 0 … N-2: ``bin_start ≤ time < bin_end`` (half-open, exclusive right)
+    - Bin N-1 (last): ``time ≥ bin_start`` (open-ended, captures all long trips)
+
+    The last-bin rule ensures that trips beyond the observed TLFD's right edge
+    are always captured rather than silently dropped.
+
+    Parameters
+    ----------
+    trips : np.ndarray
+        Modeled trip matrix, shape (n_zones, n_zones), dtype float64.
+        0-based zone indexing.  All values must be ≥ 0.
+    skim : np.ndarray
+        Travel time matrix, shape (n_zones, n_zones), dtype float64.
+        Minutes.  Must have the same shape as ``trips``.
+    tlfd_bins : pd.DataFrame
+        Observed TLFD bin structure.  Must contain columns ``bin_start``
+        (float, inclusive left edge) and ``bin_end`` (float, exclusive right
+        edge), one row per bin, sorted ascending.  Typically the DataFrame
+        returned by ``io.load_tlfd``.
+
+    Returns
+    -------
+    np.ndarray
+        Modeled share per bin, shape (n_bins,), dtype float64.  Sums to 1.0
+        when ``trips.sum() > 0``.  Returns an all-zero array when the total
+        trip count is zero.
+
+    Notes
+    -----
+    Intrazonal trips (where ``skim[i, i] = 0``) land in the first bin if
+    its ``bin_start = 0``.  In practice they contribute zero trips because
+    :func:`friction.gamma_ff` returns 0 for ``t = 0``.
+    """
+    trips_flat = trips.ravel()
+    times_flat = skim.ravel()
+
+    total = float(trips_flat.sum())
+    n_bins = len(tlfd_bins)
+    mod_shares = np.zeros(n_bins, dtype=np.float64)
+
+    if total <= 0.0:
+        return mod_shares
+
+    bin_starts = tlfd_bins["bin_start"].to_numpy(dtype=np.float64)
+    bin_ends = tlfd_bins["bin_end"].to_numpy(dtype=np.float64)
+
+    for k in range(n_bins):
+        if k < n_bins - 1:
+            # Half-open interval [bin_start, bin_end)
+            mask = (times_flat >= bin_starts[k]) & (times_flat < bin_ends[k])
+        else:
+            # Last bin: open-ended to capture all remaining trips
+            mask = times_flat >= bin_starts[k]
+
+        mod_shares[k] = float(trips_flat[mask].sum()) / total
+
+    return mod_shares
+
+
+# ---------------------------------------------------------------------------
+# Calibration
+# ---------------------------------------------------------------------------
+
+def calibrate_trip_distribution(
+    P: np.ndarray,
+    A: np.ndarray,
+    skim: np.ndarray,
+    observed_tlfd: pd.DataFrame,
+    b0: float,
+    c0: float,
+    model_settings: ModelSettings,
+) -> CalibrationResult:
+    """Calibrate gamma friction factor parameters for one truck type.
+
+    Uses ``scipy.optimize.minimize`` (default method: Nelder-Mead) to find
+    ``b`` and ``c`` that minimize the weighted TLFD loss plus ATL penalty.
+    Each optimizer evaluation runs the full doubly-constrained gravity model
+    internally.
+
+    The loss function is::
+
+        loss = weighted_SSE + atl_penalty_weight * ATL_penalty
+
+    See the module docstring for the full formula.
+
+    Parameters
+    ----------
+    P : np.ndarray
+        Production vector, shape (n_zones,), dtype float64.
+        Daily vehicle trips per origin zone.
+    A : np.ndarray
+        Attraction vector, shape (n_zones,), dtype float64.
+        Daily vehicle trips per destination zone.
+    skim : np.ndarray
+        Travel time matrix, shape (n_zones, n_zones), dtype float64.
+        Minutes.  Used both to build the friction matrix and to bin trips
+        into TLFD bins during each evaluation.
+    observed_tlfd : pd.DataFrame
+        Validated TLFD with columns ``bin_start``, ``bin_end``, ``share``.
+        Returned by :func:`io.load_tlfd`.
+    b0 : float
+        Initial value for the ``b`` parameter passed to the optimizer.
+        Should be negative (e.g. ``-0.5``).
+    c0 : float
+        Initial value for the ``c`` parameter passed to the optimizer.
+        Should be negative (e.g. ``-0.05``).
+    model_settings : ModelSettings
+        Algorithm settings drawn from the YAML ``model_settings`` block:
+
+        - ``optimizer_method`` — scipy minimize method (default ``"Nelder-Mead"``)
+        - ``optimizer_max_iters`` — max function evaluations
+        - ``gamma_b_bounds`` — ``(lo, hi)`` search bounds for ``b``
+        - ``gamma_c_bounds`` — ``(lo, hi)`` search bounds for ``c``
+        - ``atl_penalty_weight`` — weight of ATL penalty term
+        - ``gravity_max_iters`` — forwarded to :func:`gravity.run_gravity`
+        - ``gravity_max_rmse`` — forwarded to :func:`gravity.run_gravity`
 
     Returns
     -------
     CalibrationResult
+        Calibrated ``b``, ``c`` and optimizer diagnostics.
+
+    Notes
+    -----
+    **Determinism:** Nelder-Mead is deterministic given fixed ``b0``, ``c0``.
+    Identical YAML and input files always produce identical calibrated parameters.
+
+    **Boundary hits:** if ``b`` or ``c`` converge at a bound, a WARNING is
+    emitted by :func:`run._check_boundary_warnings` after this function returns.
+    The calibration itself does not warn — it just returns the best parameters
+    it found.
+
+    **Gravity convergence inside the optimizer:** non-convergence of the inner
+    gravity model during calibration is silently accepted — the optimizer sees
+    the loss for the current (slightly off) trip table and adjusts accordingly.
+    Only the *final* gravity run (in ``run.py``) emits a warning on
+    non-convergence.
     """
-    if b0 is None or c0 is None:
-        b0_default, c0_default = GAMMA_INITIAL_PARAMS[truck_type]
-        b0 = b0 if b0 is not None else b0_default
-        c0 = c0 if c0 is not None else c0_default
+    logger = logging.getLogger("trip_distribution")
 
-    print(f"\nCalibrating {truck_type}: starting at b={b0}, c={c0}")
-    t_start = time.time()
+    P = np.asarray(P, dtype=np.float64)
+    A = np.asarray(A, dtype=np.float64)
+    skim = np.asarray(skim, dtype=np.float64)
 
-    loss_history: List[float] = []
-    objective = _make_objective(P, A, skim, observed_tlfd, loss_history, verbose)
+    # Pre-compute observed quantities used in every loss evaluation
+    obs_shares = observed_tlfd["share"].to_numpy(dtype=np.float64)
+    midpoints = (
+        (observed_tlfd["bin_start"] + observed_tlfd["bin_end"]) / 2.0
+    ).to_numpy(dtype=np.float64)
+    obs_atl = float((midpoints * obs_shares).sum())
 
-    opt_result: OptimizeResult = minimize(
-        objective,
-        x0=np.array([b0, c0]),
-        method="Nelder-Mead",
+    b_lo, b_hi = model_settings.gamma_b_bounds
+    c_lo, c_hi = model_settings.gamma_c_bounds
+    atl_weight = float(model_settings.atl_penalty_weight)
+
+    # Mutable state shared with the closure
+    eval_count = [0]
+    loss_history: list[float] = []
+
+    # ── Objective function ────────────────────────────────────────────────────
+    def _objective(params: np.ndarray) -> float:
+        b = float(params[0])
+        c = float(params[1])
+        eval_count[0] += 1
+
+        # Hard boundary guard: Nelder-Mead may explore outside bounds even
+        # with scipy's soft-penalty transform; return a large loss to push it back.
+        if not (b_lo <= b <= b_hi) or not (c_lo <= c <= c_hi):
+            return 1e9
+
+        # ── Inner gravity model ───────────────────────────────────────────
+        F = build_ff_matrix(skim, b, c)
+        grav = run_gravity(
+            P, A, F,
+            max_iters=model_settings.gravity_max_iters,
+            max_rmse=model_settings.gravity_max_rmse,
+        )
+
+        # ── Modeled TLFD ──────────────────────────────────────────────────
+        mod_shares = compute_tlfd(grav.trips, skim, observed_tlfd)
+
+        # ── Loss components ───────────────────────────────────────────────
+        # Weighted SSE: observed shares act as per-bin weights
+        weighted_sse = float(np.sum(obs_shares * (mod_shares - obs_shares) ** 2))
+
+        # ATL penalty: relative squared error of average trip length
+        mod_atl = float((midpoints * mod_shares).sum())
+        atl_penalty = ((mod_atl - obs_atl) / obs_atl) ** 2 if obs_atl > 0.0 else 0.0
+
+        loss = weighted_sse + atl_weight * atl_penalty
+
+        # DEBUG log + loss history every 10 evaluations
+        n = eval_count[0]
+        if n % 10 == 0:
+            loss_history.append(loss)
+            logger.debug(
+                f"[trip_distribution]   Optimizer iter {n}: "
+                f"loss={loss:.6f}, b={b:.4f}, c={c:.4f}"
+            )
+
+        return loss
+
+    # ── Run the optimizer ─────────────────────────────────────────────────────
+    bounds = [(b_lo, b_hi), (c_lo, c_hi)]
+
+    opt_result = scipy.optimize.minimize(
+        _objective,
+        x0=np.array([b0, c0], dtype=np.float64),
+        method=model_settings.optimizer_method,
+        bounds=bounds,
         options={
-            "xatol": 1e-4,
+            "maxiter": model_settings.optimizer_max_iters,
+            "maxfev": model_settings.optimizer_max_iters,
+            "xatol": 1e-6,
             "fatol": 1e-6,
-            "maxiter": 500,
-            "adaptive": True,   # adaptive Nelder-Mead, better for 2D
         },
     )
 
-    b_opt, c_opt = opt_result.x
-    elapsed = time.time() - t_start
-
-    # Final evaluation with tight gravity convergence
-    F_final = gamma_ff(skim, b_opt, c_opt)
-    final_result = run_gravity(P, A, F_final, truck_type=truck_type)
-    T_final = final_result.trips
-
-    mod_tlfd = compute_tlfd(T_final, skim)
-    mod_avg_tl = avg_trip_length(T_final, skim)
-    obs_avg_tl = tlfd_avg_from_shares(observed_tlfd)
-
-    result = CalibrationResult(
-        truck_type=truck_type,
-        b=float(b_opt),
-        c=float(c_opt),
+    return CalibrationResult(
+        b=float(opt_result.x[0]),
+        c=float(opt_result.x[1]),
         converged=bool(opt_result.success),
-        n_function_evals=int(opt_result.nfev),
+        n_iters=int(opt_result.nfev),
         final_loss=float(opt_result.fun),
-        observed_avg_tl=obs_avg_tl,
-        modeled_avg_tl=mod_avg_tl,
-        observed_tlfd=observed_tlfd,
-        modeled_tlfd=mod_tlfd,
         loss_history=loss_history,
     )
-
-    print(f"  Done in {elapsed:.1f}s")
-    print(result.summary())
-
-    return result
-
-
-# ── All truck types ────────────────────────────────────────────────────────────
-
-def calibrate_all(
-    pa_data: Dict[str, Dict[str, np.ndarray]],
-    skims: Dict[str, np.ndarray],
-    observed_tlfds: Dict[str, np.ndarray],
-    verbose: bool = True,
-) -> Dict[str, CalibrationResult]:
-    """
-    Calibrate gamma parameters for all truck types.
-
-    Parameters
-    ----------
-    pa_data        : {truck_type: {"P": ..., "A": ...}}
-    skims          : {truck_type: blended_skim_matrix}
-    observed_tlfds : {truck_type: observed_tlfd_shares}
-    verbose        : print progress during optimization
-
-    Returns
-    -------
-    results : {truck_type: CalibrationResult}
-    """
-    results = {}
-    for tt in TRUCK_TYPES:
-        results[tt] = calibrate_one(
-            truck_type=tt,
-            P=pa_data[tt]["P"],
-            A=pa_data[tt]["A"],
-            skim=skims[tt],
-            observed_tlfd=observed_tlfds[tt],
-            verbose=verbose,
-        )
-
-    print("\n" + "=" * 60)
-    print("CALIBRATION SUMMARY")
-    print("=" * 60)
-    for tt, r in results.items():
-        print(r.summary())
-
-    return results
-
-
-def params_from_calibration(
-    calibration_results: Dict[str, CalibrationResult],
-) -> Dict[str, GammaParams]:
-    """Extract GammaParams dict from calibration results — pass to gravity model."""
-    return {tt: r.params for tt, r in calibration_results.items()}

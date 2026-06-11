@@ -1,141 +1,99 @@
-"""
-friction.py
------------
-Gamma friction factor computation.
+"""Gamma friction factor functions for the doubly-constrained gravity model.
 
-The gamma function is:
+The gamma function family used here is::
+
     F(t) = t^b * exp(c * t)
 
-where:
-    t  = travel time in minutes (scalar or array)
-    b  = power parameter (should be negative)
-    c  = exponential decay parameter (should be negative)
-    a  = scaling constant, fixed at 1.0 (cancels in gravity denominator)
+where both ``b`` and ``c`` are negative, giving a monotonically decreasing
+friction factor.  The parameter ``a`` (overall scale) is fixed at 1.0 because
+it cancels in the doubly-constrained denominator and has no effect on the
+calibrated trip table.
 
-Both b and c negative → F(t) is monotonically decreasing for t > 0,
-which is required for a well-behaved gravity model.
+Zero-time cells (intrazonal impedances of 0) are assigned F = 0.0.  This
+suppresses intrazonal trips, consistent with the convention used in the
+observed TLFD data which also excludes intrazonal movements.
+
+Calibration note
+----------------
+``b`` and ``c`` are calibrated by ``calibration.calibrate_trip_distribution``
+using Nelder-Mead optimisation.  Typical search bounds:
+  b ∈ [−3.0, −0.01]
+  c ∈ [−0.5, −0.001]
 """
 
+from __future__ import annotations
+
 import numpy as np
-from dataclasses import dataclass
-from typing import Dict
-
-from .config import TRUCK_TYPES, GAMMA_INITIAL_PARAMS
-
-
-@dataclass
-class GammaParams:
-    """Gamma function parameters for one truck type."""
-    truck_type: str
-    b: float
-    c: float
-
-    def __post_init__(self):
-        if self.b >= 0:
-            raise ValueError(f"[{self.truck_type}] b must be negative, got {self.b}")
-        if self.c >= 0:
-            raise ValueError(f"[{self.truck_type}] c must be negative, got {self.c}")
-
-    def __repr__(self):
-        return f"GammaParams({self.truck_type}: b={self.b:.4f}, c={self.c:.4f})"
 
 
 def gamma_ff(t: np.ndarray, b: float, c: float) -> np.ndarray:
-    """
-    Evaluate the gamma friction factor for a travel time matrix or vector.
+    """Compute the gamma friction factor F(t) = t^b * exp(c * t).
 
-    F(t) = t^b * exp(c * t)
+    Both ``b`` and ``c`` must be negative so that F(t) is monotonically
+    decreasing — longer trips receive lower friction weights.
+    The ``a`` coefficient is fixed at 1.0 (it cancels in the gravity denominator).
+
+    Zero-time cells receive F = 0.0.  This suppresses intrazonal trips and
+    avoids ``0 ** b = inf`` when ``b`` is negative.
 
     Parameters
     ----------
-    t : array-like, travel times in minutes. Zeros/negatives are clipped to 0.1
-        to avoid numerical issues with t^b when b < 0.
-    b : power parameter (negative)
-    c : exponential parameter (negative)
+    t : np.ndarray
+        Travel time values in minutes.  Scalar or any shape.  Values of 0
+        are treated as intrazonal and receive F = 0.0.
+    b : float
+        Exponent parameter.  Must be negative.
+    c : float
+        Exponential decay parameter.  Must be negative.
 
     Returns
     -------
-    F : same shape as t, float64
+    np.ndarray
+        Friction factor values, same shape as ``t``.  dtype float64.
+        All values ≥ 0.
     """
     t = np.asarray(t, dtype=np.float64)
-    t_safe = np.maximum(t, 0.1)  # avoid 0^(negative) = inf
-    return np.power(t_safe, b) * np.exp(c * t_safe)
+
+    # Replace 0s with a safe placeholder before computing to avoid
+    # 0**negative = inf.  The second np.where zeroes those cells back out.
+    safe_t = np.where(t > 0.0, t, 1.0)
+    ff = safe_t**b * np.exp(c * safe_t)
+
+    return np.where(t > 0.0, ff, 0.0)
 
 
-def build_ff_matrix(
-    skim: np.ndarray,
-    b: float,
-    c: float,
-) -> np.ndarray:
-    """
-    Build a full (n_zones x n_zones) friction factor matrix from a skim.
+def build_ff_matrix(skim: np.ndarray, b: float, c: float) -> np.ndarray:
+    """Build a full friction factor matrix from a travel time skim.
+
+    Applies :func:`gamma_ff` element-wise to the entire skim array.
+    Intrazonal cells (zero travel time) receive F = 0.0, which effectively
+    removes them from the gravity model denominator.
 
     Parameters
     ----------
-    skim : (n_zones, n_zones) blended travel time matrix
-    b, c : gamma parameters
+    skim : np.ndarray
+        Travel time matrix, shape (n_zones, n_zones), dtype float64.
+        Values are in minutes, 0-based zone indexing.
+    b : float
+        Gamma exponent parameter.  Must be negative.
+    c : float
+        Gamma exponential decay parameter.  Must be negative.
 
     Returns
     -------
-    F : (n_zones, n_zones) friction factor matrix
+    np.ndarray
+        Friction factor matrix, shape (n_zones, n_zones), dtype float64.
+
+    Raises
+    ------
+    ValueError
+        If ``skim`` is not a 2-D square array.
     """
+    skim = np.asarray(skim, dtype=np.float64)
+
+    if skim.ndim != 2 or skim.shape[0] != skim.shape[1]:
+        raise ValueError(
+            f"skim must be a square 2-D array; got shape {skim.shape}."
+        )
+
     return gamma_ff(skim, b, c)
-
-
-def build_all_ff_matrices(
-    skims: Dict[str, np.ndarray],
-    params: Dict[str, GammaParams],
-) -> Dict[str, np.ndarray]:
-    """
-    Build FF matrices for all truck types given calibrated parameters.
-
-    Parameters
-    ----------
-    skims  : {truck_type: blended_skim_matrix}
-    params : {truck_type: GammaParams}
-
-    Returns
-    -------
-    ff_matrices : {truck_type: ff_matrix}
-    """
-    return {
-        tt: build_ff_matrix(skims[tt], params[tt].b, params[tt].c)
-        for tt in TRUCK_TYPES
-    }
-
-
-def initial_params() -> Dict[str, GammaParams]:
-    """Return NCHRP 365-based starting parameters for all truck types."""
-    return {
-        tt: GammaParams(truck_type=tt, b=b0, c=c0)
-        for tt, (b0, c0) in GAMMA_INITIAL_PARAMS.items()
-    }
-
-
-def evaluate_ff_curve(
-    b: float,
-    c: float,
-    t_max: float = 120.0,
-    n_points: int = 120,
-) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Evaluate F(t) over a range of travel times — useful for plotting the curve.
-
-    Returns
-    -------
-    t_values : (n_points,) array of travel times
-    f_values : (n_points,) array of friction factors
-    """
-    t_values = np.linspace(1.0, t_max, n_points)
-    f_values = gamma_ff(t_values, b, c)
-    return t_values, f_values
-
-
-def is_monotone_decreasing(b: float, c: float, t_max: float = 120.0) -> bool:
-    """
-    Check that F(t) is monotonically decreasing over [1, t_max].
-    Both b < 0 and c < 0 guarantees this, but useful as a runtime check.
-    """
-    t = np.linspace(1.0, t_max, 500)
-    f = gamma_ff(t, b, c)
-    return bool(np.all(np.diff(f) <= 0))

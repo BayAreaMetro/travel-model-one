@@ -132,18 +132,21 @@ def load_caltrans_2018_files(path: str, pattern: str) -> pd.DataFrame:
 
 # @timeit
 def create_control_station_id(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Create a numeric ID for each unique (DISTRICT, CONTROLID, DIRECTION) combination.
+    """Create a numeric ID for each unique (DISTRICT, CONTROLNO, DIRECTION) combination
+    for Caltrans control stations. 
+
+    Assigns a 1-based integer ``control_station_id`` stable across runs given the same input sort order.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Must contain columns: DISTRICT, CONTROLID, and DIRECTION.
+        Must contain columns ``DISTRICT``, ``CONTROLNO``, and ``DIRECTION``.
 
     Returns
     -------
     pd.DataFrame
-        Same shape as input; adds control_station_id column.
+        Same shape as input with an added ``control_station_id`` integer
+        column.
     """
     df["control_station_id"] = (
             df.groupby(by=["DISTRICT", "CONTROLNO", "DIRECTION"]) 
@@ -225,19 +228,32 @@ def filter_typical_weekday(
 
 # @timeit
 def apply_vehicle_classes_aggregation(df: pd.DataFrame, vehicle_classes: dict[str, str]) -> pd.DataFrame:
-    """
-    Aggregate the count columns (CNT2 … CNT16) into broader vehicle classes (e.g. 'Car', 'Truck').
+    """Sum raw Caltrans count columns into truck-class columns.
+
+    For each entry in ``vehicle_classes``, sums the listed ``CNT*`` columns
+    and stores the result in a new column named after the class.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Wide-format class data with columns CNT2 … CNT16.
-    vehicle_classes : dict[str, str]
-        Mapping from vehicle class names to their corresponding column names (e.g. {'Car': 'CNT2', 'Truck': 'CNT3'}).
+        Wide-format class data with count columns ``CNT1`` through ``CNT15``
+        (one column per FHWA vehicle class).
+    vehicle_classes : dict[str, list[str] | str]
+        Mapping from truck-class name to one or more source count column
+        names, e.g. ``{"struck": ["CNT4", "CNT5"], "mtruck": "CNT6"}``.
 
     Returns
     -------
     pd.DataFrame
+        Input DataFrame with one additional column per entry in
+        ``vehicle_classes``, each holding the row-wise sum of its source
+        columns.
+
+    Raises
+    ------
+    KeyError
+        If any source column listed in ``vehicle_classes`` is missing from
+        ``df``.
     """
     
     for class_name, cols in vehicle_classes.items():
@@ -258,21 +274,28 @@ def apply_tod_map(
     df: pd.DataFrame,
     tod_hours: dict[str, list[int]],
 ) -> pd.DataFrame:
-    """
-    Sum volumne across all hours belonging to the same TOD period.
+    """Assign a time-of-day label to each row based on its ``HOUR`` value.
+
+    Builds a reverse lookup from hour to TOD label and stores the result in
+    a new ``TOD`` column.  Raises if any hour in the data has no mapping.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Output of compute_hourly_averages.
+        Row-level counts data with an ``HOUR`` column (integer, 0–23).
     tod_hours : dict[str, list[int]]
-        Maps each TOD label to the list of hours it covers,
-        e.g. {'AM': [6, 7, 8, 9], 'EA': [3, 4, 5], ...}.
+        Maps each TOD label to the list of clock hours it covers,
+        e.g. ``{'AM': [6, 7, 8, 9], 'EA': [3, 4, 5]}``.
 
     Returns
     -------
     pd.DataFrame
-        Aggregated dataframe by TOD period.
+        Input DataFrame with an added ``TOD`` string column.
+
+    Raises
+    ------
+    ValueError
+        If any ``HOUR`` value in ``df`` does not appear in ``tod_hours``.
     """
     hour_to_tod = {
         hour: tod
@@ -289,6 +312,24 @@ def apply_tod_map(
     return df 
 
 def estimate_daily_volumnes(df, value_cols = ["vstruck", "struck", "mtruck", "ctruck"]):
+    """Sum truck volumes to the daily level by station, direction, TOD, and date.
+
+    Groups by each (station, date, TOD) combination and sums the three truck
+    class columns, producing one row per unique group.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Hourly-level data with columns ``control_station_id``, ``DISTRICT``,
+        ``CONTROLNO``, ``direction``, ``YEAR``, ``MONTH``, ``DAY``, ``TOD``,
+        ``struck``, ``mtruck``, and ``ctruck``.
+
+    Returns
+    -------
+    pd.DataFrame
+        Daily totals with the same grouping columns plus summed ``struck``,
+        ``mtruck``, and ``ctruck`` columns.
+    """
     group_cols = ["control_station_id", "DISTRICT", "CONTROLNO", "direction", "YEAR", "MONTH", "DAY", "TOD"]
 
     result = (
@@ -302,24 +343,32 @@ def estimate_daily_volumnes(df, value_cols = ["vstruck", "struck", "mtruck", "ct
 
 # @timeit
 def estimate_average_volumes(df: pd.DataFrame, vehicle_cols: list[str], percentiles: list[float] = [0.025, 0.975]) -> pd.DataFrame:
-    """
-    Compute mean and standard deviation across the filtered weekday sample,
-    grouped by (CONTROLID, direction, hour, truck_type).
+    """Compute mean, standard deviation, and percentiles of daily truck volumes.
+
+    Melts the daily-total truck columns into long format, then aggregates by
+    (control_station_id, DISTRICT, CONTROLNO, direction, TOD, vehicle_type)
+    to produce per-station summary statistics across the filtered weekday
+    sample.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Long-format filtered data with a numeric 'volume' column.
+        Daily-level data (output of :func:`estimate_daily_volumnes`) with
+        grouping columns and one column per vehicle class listed in
+        ``vehicle_cols``.
     vehicle_cols : list[str]
-        List of vehicle class columns to include in the computation.
-    percentiles : list[float]
-        Percentiles to compute for the confidence interval.
+        Names of the truck-class columns to summarise
+        (e.g. ``["struck", "mtruck", "ctruck"]``).
+    percentiles : list[float], optional
+        Quantile values to compute.  Labels are auto-generated as
+        ``p<int(p*100):02d>`` (e.g. ``0.025`` → ``"p02"``).
+        Default is ``[0.025, 0.975]``.
 
     Returns
     -------
     pd.DataFrame
-        One row per (CONTROLID, direction, hour, truck_type) with columns:
-        n_obs, mean_volume, std_volume.
+        One row per (station, direction, TOD, vehicle_type) with columns
+        ``n``, ``mean``, ``std``, and one column per percentile label.
     """
     pct_labels = [f'p{int(p * 100):02d}' for p in percentiles]
     group_keys = ["control_station_id", "DISTRICT", "CONTROLNO", "direction", "TOD"] 
@@ -409,20 +458,25 @@ def add_estimate_quality_metrics(
 
 # @timeit
 def remove_outliers(df: pd.DataFrame, k: float = 3.0) -> pd.DataFrame:
-    """
-    Remove outliers from counts data using IQR-based method. 
+    """Drop rows whose total daily volume exceeds the station-level IQR upper fence.
+
+    For each control station, computes the IQR of total counts across all
+    ``CNT*`` columns and removes any row where the total exceeds
+    ``Q75 + k * IQR``.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Raw counts data with count columns CNT2 … CNT16.
-    k : float
-        IQR multiplier for outlier removal; Default is 3.0.
+        Raw counts data with ``control_station_id`` and count columns
+        ``CNT1`` through ``CNT15``.
+    k : float, optional
+        IQR multiplier for the upper fence.  Default is ``3.0``.
 
     Returns
     -------
     pd.DataFrame
-        Same shape as input but with outliers removed (set to NaN).
+        Subset of ``df`` with outlier rows dropped.  Does not modify values
+        in place.
     """
     df = df.copy()
 
@@ -445,19 +499,32 @@ def remove_outliers(df: pd.DataFrame, k: float = 3.0) -> pd.DataFrame:
 
 # @timeit
 def estimate_caltrans_aadtt(cfg: dict) -> pd.DataFrame:
-    """
-    Returns the AADTT (Annual Average Daily Truck Traffic) and statistics by
-    CONTROLID, direction, TOD, and truck type from the Caltrans 2018 counts data. 
-    This dataset contains hourly counts by vehicle class for every day in 2018. 
+    """Run the full Caltrans 2018 AADTT estimation pipeline.
+
+    Chains all processing steps from raw CSV loading through outlier removal,
+    typical-weekday filtering, TOD mapping, vehicle-class aggregation, daily
+    volume summation, statistical averaging, and quality-flag assignment.
 
     Parameters
     ----------
     cfg : dict
-        Full configuration loaded from config.yaml.
+        Full configuration loaded from the YAML config file.  Keys used:
+
+        ``"inputs"."caltrans_2018"`` : str — folder of district class CSVs.
+        ``"direction_map"."class_file"`` : dict — raw code → N/S/E/W mapping.
+        ``"outlier_k"`` : float — IQR multiplier for outlier removal.
+        ``"typical_weekday"."weekdays"`` : list[int] — Python weekday indices.
+        ``"typical_weekday"."holidays"`` : list[str] — ISO dates to exclude.
+        ``"tod_hours"`` : dict[str, list[int]] — hour-to-TOD mapping.
+        ``"vehicle_class_map"`` : dict — class name → CNT column(s) mapping.
+        ``"normality_percentiles"`` : list[float] — quantiles to compute.
 
     Returns
     -------
     pd.DataFrame
+        One row per (control_station_id, direction, TOD, vehicle_type) with
+        columns ``n``, ``mean``, ``std``, percentile columns, ``cv``,
+        ``ci_width``, ``ci_width_rel``, ``rse``, and ``quality_flag``.
     """
     raw_counts = load_caltrans_2018_files(cfg["inputs"]['caltrans_2018'], "*.csv")
 

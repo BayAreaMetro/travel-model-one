@@ -338,21 +338,30 @@ def add_lon_lat(stations: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 def add_additional_stations_info(df: pd.DataFrame, additional_info: pd.DataFrame) -> pd.DataFrame:
-    """
-    Merge additional station information into the main DataFrame.
-        Additional info includes ROUTE, COUNTY, and POSTMILE from the original
+    """Join route, county, and postmile attributes onto a station DataFrame.
+
+    Merges on (DISTRICT, CONTROLNO, DIRECTION) so that downstream SHN
+    matching has access to the highway route and postmile needed to locate
+    each station spatially.  Drops the redundant ``direction`` column after
+    the join.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Main DataFrame containing station information.
+        Station table with columns ``DISTRICT``, ``CONTROLNO``, and
+        ``direction`` (normalised N/S/E/W).
     additional_info : pd.DataFrame
-        DataFrame containing additional information to merge.
+        Lookup table with columns ``DISTRICT``, ``CONTROLNO``,
+        ``DIRECTION``, ``ROUTE``, ``COUNTY``, and ``POSTMILE``, as
+        produced by :func:`load_caltrans_control_stations`.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with additional information merged.
+        ``df`` left-joined with ``additional_info`` on
+        (DISTRICT, CONTROLNO, direction/DIRECTION).  The ``direction``
+        column is dropped; ``DIRECTION`` from ``additional_info`` is used
+        downstream.
     """
     return df.merge(
         additional_info, 
@@ -363,23 +372,38 @@ def add_additional_stations_info(df: pd.DataFrame, additional_info: pd.DataFrame
 
 
 def georeference_control_stations(control_stations: pd.DataFrame, cfg: dict) -> gpd.GeoDataFrame:
-    """
-    load the Traffic Counts lookup, match each
-    (CONTROLNO, direction) to the nearest SHN postmile point, and persist
-    the result as a GeoPackage.
+    """Attach a spatial geometry to each control station by matching to the SHN postmile shapefile.
+
+    Extracts unique (DISTRICT, CONTROLNO, direction) combinations from
+    ``control_stations``, joins route/county/postmile attributes from the
+    Traffic Counts lookup, and locates each station on the State Highway
+    Network by minimising the postmile difference.
 
     Parameters
     ----------
+    control_stations : pd.DataFrame
+        AADTT estimates table (output of :func:`~src.data.observed.caltrans.aadtt.estimate_caltrans_aadtt`)
+        with columns ``control_station_id``, ``DISTRICT``, ``CONTROLNO``,
+        and ``direction``.
     cfg : dict
-        Full configuration loaded from config.yaml.
+        Full configuration dict.  Keys used:
+
+        ``"inputs"."caltrans_control_stations"`` : str
+            Folder of district Traffic Counts CSV files.
+        ``"inputs"."shn_postmiles"`` : str
+            Path to ``SHN_Postmiles_Tenth.shp``.
+        ``"working_crs"`` : str
+            Target projected CRS (e.g. ``"EPSG:26910"``).
 
     Returns
     -------
     gpd.GeoDataFrame
-        Columns: CONTROLNO, direction, route, county, postmile,
-                 shn_pm_matched, postmile_diff, shn_direction, shn_match,
-                 longitude, latitude, geometry.
-        Saved to cfg['validation']['paths']['station_locations'].
+        One row per unique (DISTRICT, CONTROLNO, direction) with columns
+        ``control_station_id``, ``DISTRICT``, ``CONTROLNO``, ``DIRECTION``,
+        ``ROUTE``, ``COUNTY``, ``POSTMILE``, ``shn_pm_matched``,
+        ``postmile_diff``, ``shn_direction``, ``shn_match`` (bool),
+        ``longitude``, ``latitude``, and ``geometry`` (Point in the
+        working CRS).
     """
     paths = cfg["inputs"]
     working_crs = cfg["working_crs"]

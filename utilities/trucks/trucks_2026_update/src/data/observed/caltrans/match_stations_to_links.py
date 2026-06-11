@@ -119,8 +119,7 @@ def build_station_candidates(
     network: gpd.GeoDataFrame,
     lookup_buffer: int = 1000,
 ) -> gpd.GeoDataFrame:
-    """"
-    Build candidate network links for each station.
+    """Build candidate network links for each station.
 
     For each station:
     - compute distance to all routed network links
@@ -238,7 +237,8 @@ def station_link_match_confidence(
     For each station, this function:
     - evaluates all candidate links
     - assigns a match priority based on route and direction agreement
-    - selects the best candidate (lowest priority, then closest distance via rank)
+    - selects the best candidate based on the matches classification 
+        rules below. 
     - labels the result with a match_quality indicator
 
     Match classification rules
@@ -270,9 +270,9 @@ def station_link_match_confidence(
     Returns
     -------
     gpd.GeoDataFrame
-        One row per station with:
-        - the selected best link (if any)
-        - match_quality classification: {"good", "review", "no_match"}
+        One row per station with columns from ``candidates`` plus
+        ``match_quality`` ∈ ``{"exact", "route_only", "proximity",
+        "no_match"}``.  The ``match_priority`` working column is dropped.
     """
     df = candidates.copy()
     no_match = df["link_id"] == "-1"
