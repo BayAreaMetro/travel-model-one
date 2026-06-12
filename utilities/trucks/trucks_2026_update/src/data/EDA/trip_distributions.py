@@ -9,7 +9,7 @@ import seaborn as sns
 def compute_weighted_histograms(
     df,
     plot_pairs,
-    bins=20,
+    bins_width=20,
     filters=None,
     group_col=None,
     group_values=None,
@@ -82,6 +82,9 @@ def compute_weighted_histograms(
             print(f"Warning: No trips for {value_col} in {source}. Skipping histogram.")
             continue
 
+        max_val = data[x_col].max()
+        bins = np.arange(0, max_val + bins_width, bins_width)
+
         hist, edges = np.histogram(
             data[x_col],
             bins=bins,
@@ -97,7 +100,7 @@ def compute_weighted_histograms(
             "source": source,
             "series": value_col,
             "x_col": x_col,
-            "bins": bins,
+            "bin_width": bins_width,
             "bin_id": range(len(hist)),
             "bin_start": edges[:-1],
             "bin_end": edges[1:],
@@ -244,7 +247,7 @@ def compute_trip_distributions(long_df, configs, outpath=None):
         df_out = compute_weighted_histograms(
             long_df,
             plot_pairs=cfg["plot_pairs"],
-            bins=cfg["bins"],
+            bins_width=cfg["bins"],
             filters=cfg.get("filters"),
             plot_id=plot_id
         )

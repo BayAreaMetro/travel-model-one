@@ -48,7 +48,7 @@ SW_TIME_PAIRS = {
 SW_TRIP_DIST_CONFIG = {
     "sw_distance": {
         "plot_pairs": SW_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 miles bins 
         "filters": {
             "origin_county": COUNTIES,
             "destination_county": COUNTIES
@@ -58,7 +58,7 @@ SW_TRIP_DIST_CONFIG = {
     },
     "sw_time": {
         "plot_pairs": SW_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 mins bins 
         "filters": {
             "origin_county": COUNTIES,
             "destination_county": COUNTIES
@@ -69,70 +69,70 @@ SW_TRIP_DIST_CONFIG = {
         # TNLs
     "origin_2655_distance": {
         "plot_pairs": SW_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 miles bins 
         "filters": {"origin": [2655]},
         "title": f"Travel Distance Distribution CSF2TDM 2655: PORT OF SAN FRANCISCO",
         "x_label": "Distance (miles)"
     },
     "origin_2655_time": {
         "plot_pairs": SW_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 miles bins 
         "filters": {"origin": [2655]},
         "title": f"Travel Time Distribution CSF2TDM 2655: PORT OF SAN FRANCISCO",
         "x_label": "Time (minutes)"
     },
     "origin_2656_distance": {
         "plot_pairs": SW_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 miles bins 
         "filters": {"origin": [2656]},
         "title": f"Travel Distance Distribution CSF2TDM 2656: PORT OF REDWOOD CITY",
         "x_label": "Distance (miles)"
     },
     "origin_2656_time": {
         "plot_pairs": SW_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 mins bins 
         "filters": {"origin": [2656]},
         "title": "Travel Time Distribution - CSF2TDM 2656: PORT OF REDWOOD CITY",
         "x_label": "Time (minutes)"
     },
     "origin_2658_distance": {
         "plot_pairs": SW_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 mins bins 
         "filters": {"origin": [2658]},
         "title": "Travel Distance Distribution - CSF2TDM 2658: PORT OF OAKLAND",
         "x_label": "Distance (miles)"
     },
     "origin_2658_time": {
         "plot_pairs": SW_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 mins bins 
         "filters": {"origin": [2658]},
         "title": "Travel Time Distribution - CSF2TDM 2658: PORT OF OAKLAND",
         "x_label": "Time (minutes)"
     },
     "origin_6987_distance": {
         "plot_pairs": SW_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 miles bins 
         "filters": {"origin": [6987]},
         "title": "Travel Distance Distribution - CSF2TDM 6987: SFO AIRPORT",
         "x_label": "Distance (miles)"
     },
     "origin_6987_time": {
         "plot_pairs": SW_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 mins bins 
         "filters": {"origin": [6987]},
         "title": "Travel Time Distribution - CSF2TDM 6987: SFO AIRPORT",
         "x_label": "Time (minutes)"
     },
     "origin_6988_distance": {   
         "plot_pairs": SW_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 mins bins 
         "filters": {"origin": [6988]},
         "title": "Travel Distance Distribution - CSF2TDM 6988: OAK AIRPORT",
         "x_label": "Distance (miles)"
     },
     "origin_6988_time": {
         "plot_pairs": SW_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5, # 5 mins bins 
         "filters": {"origin": [6988]},
         "title": "Travel Time Distribution - CSF2TDM 6988: OAK AIRPORT",
         "x_label": "Time (minutes)"
@@ -158,7 +158,7 @@ MTC_TRIP_DIST_CONFIG = {
     "mtc_distance": {
         "plot_pairs": MTC_DIST_PAIRS,
 
-        "bins": 25,
+        "bins": 5,
         "filters": {
             "origin_county": COUNTIES,
             "destination_county": COUNTIES
@@ -169,7 +169,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "mtc_time": {
         "plot_pairs": MTC_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {
             "origin_county": COUNTIES,
             "destination_county": COUNTIES
@@ -181,7 +181,7 @@ MTC_TRIP_DIST_CONFIG = {
    # TNLs
     "origin_142_distance": {
         "plot_pairs": MTC_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [142]},
         "title": "Travel Distance Distribution - TAZ 142: PORT OF SAN FRANCISCO",
         "x_label": "Distance (miles)"
@@ -189,7 +189,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_142_time": {
         "plot_pairs": MTC_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [142]},
         "title": "Travel Time Distribution - TAZ 142: PORT OF SAN FRANCISCO",
         "x_label": "Time (minutes)"
@@ -197,7 +197,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_313_distance": {
         "plot_pairs": MTC_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [313]},
         "title": "Travel Distance Distribution - TAZ 313: PORT OF REDWOOD CITY",
         "x_label": "Distance (miles)"
@@ -205,7 +205,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_313_time": {
         "plot_pairs": MTC_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [313]},
         "title": "Travel Time Distribution - TAZ 313: PORT OF REDWOOD CITY",
         "x_label": "Time (minutes)"
@@ -213,7 +213,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_965_distance": {
         "plot_pairs": MTC_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [965]},
         "title": "Travel Distance Distribution - TAZ 965: PORT OF OAKLAND",
         "x_label": "Distance (miles)"
@@ -221,7 +221,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_965_time": {
         "plot_pairs": MTC_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [965]},
         "title": "Travel Time Distribution - TAZ 965: PORT OF OAKLAND",
         "x_label": "Time (minutes)"
@@ -229,7 +229,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_239_distance": {
         "plot_pairs": MTC_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [239]},
         "title": "Travel Distance Distribution - TAZ 239: SFO AIRPORT",
         "x_label": "Distance (miles)"
@@ -237,7 +237,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_239_time": {
         "plot_pairs": MTC_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [239]},
         "title": "Travel Time Distribution - TAZ 239: SFO AIRPORT",
         "x_label": "Time (minutes)"
@@ -245,7 +245,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_874_distance": {
         "plot_pairs": MTC_DIST_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [874]},
         "title": "Travel Distance Distribution - TAZ 874: OAK AIRPORT",
         "x_label": "Distance (miles)"
@@ -253,7 +253,7 @@ MTC_TRIP_DIST_CONFIG = {
 
     "origin_874_time": {
         "plot_pairs": MTC_TIME_PAIRS,
-        "bins": 25,
+        "bins": 5,
         "filters": {"origin": [874]},
         "title": "Travel Time Distribution - TAZ 874: OAK AIRPORT",
         "x_label": "Time (minutes)"
