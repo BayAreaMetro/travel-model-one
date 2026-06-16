@@ -1,0 +1,15 @@
+base_zip: "//mtc-share/models/full_run_2026.zip"
+output_root: "C:/cube_runs/truck_2026"
+
+scenarios:
+  - name: baseline
+    skip_if_exists: true
+    replacements: []
+
+  - name: scenario_low_toll
+    skip_if_exists: false
+    replacements:
+      - source: "C:/Users/me/edits/tollCalcs.s"
+        destination: "CTRAMP/scripts/tollCalcs.s"
+      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/a1b2c3d4e5f6/model-files/scripts/truckFFmodel.py"
+        destination: "model-files/scripts/truckFFmodel.py"
