@@ -21,8 +21,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path("config/scenarios.yaml"),
-        help="Path to the scenarios YAML file (default: config/scenarios.yaml).",
+        default=Path("config/travel_model_scenarios.yaml"),
+        help="Path to the scenarios YAML file (default: config/travel_model_scenarios.yaml).",
     )
     parser.add_argument(
         "--validate-only",

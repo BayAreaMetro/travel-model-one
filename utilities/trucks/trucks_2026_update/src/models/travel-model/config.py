@@ -81,7 +81,7 @@ class Scenario(BaseModel):
 
 class RunConfig(BaseModel):
     """
-    Top-level object that the entire scenarios.yaml deserialises into. See §4.4.
+    Top-level object that the entire travel_model_scenarios.yaml deserialises into. See §4.4.
 
     Usage: RunConfig.model_validate(yaml.safe_load(f))
     """
