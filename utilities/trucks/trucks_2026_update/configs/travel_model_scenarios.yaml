@@ -1,15 +1,24 @@
-base_zip: "//mtc-share/models/full_run_2026.zip"
-output_root: "C:/cube_runs/truck_2026"
+base_zip: "data/external/mtc/full_run_2026.zip"
+output_root: "models/travel_model"
 
 scenarios:
   - name: baseline
+
     skip_if_exists: true
     replacements: []
 
-  - name: scenario_low_toll
+  - name: truck_updates
+    # Swaps the truck model files for the versions on the tm1.7_truck_updates
+    # branch. After running, compare these files against baseline's placeholders
+    # to confirm the GitHub fetch replaced the "mock_file" bodies with real repo
+    # content. (Branch URLs → resolved to a concrete commit SHA at run time, §6.)
     skip_if_exists: false
     replacements:
-      - source: "C:/Users/me/edits/tollCalcs.s"
-        destination: "CTRAMP/scripts/tollCalcs.s"
-      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/a1b2c3d4e5f6/model-files/scripts/truckFFmodel.py"
-        destination: "model-files/scripts/truckFFmodel.py"
+      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/RunIteration.bat"
+        destination: "CTRAMP/RunIteration.bat"
+      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTimeOfDay.job"
+        destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripDistribution.job"
+        destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
+      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripGeneration.job"
+        destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
