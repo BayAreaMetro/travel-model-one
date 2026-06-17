@@ -1,17 +1,12 @@
-base_zip: "data/external/mtc/full_run_2026.zip"
-output_root: "models/travel_model"
+base_zip: "data/external/mtc/2023_TM161_IPA_35_20260217.zip"
+output_root: "temp"
 
 scenarios:
   - name: baseline
-
-    skip_if_exists: true
+    skip_if_exists: false
     replacements: []
 
   - name: truck_updates
-    # Swaps the truck model files for the versions on the tm1.7_truck_updates
-    # branch. After running, compare these files against baseline's placeholders
-    # to confirm the GitHub fetch replaced the "mock_file" bodies with real repo
-    # content. (Branch URLs → resolved to a concrete commit SHA at run time, §6.)
     skip_if_exists: false
     replacements:
       - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/RunIteration.bat"
