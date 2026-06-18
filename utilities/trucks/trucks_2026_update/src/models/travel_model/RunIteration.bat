@@ -15,6 +15,7 @@
 :: Step 0:  If iteration equals zero, go to step four (i.e. skip the demand models)
 ::
 :: ------------------------------------------------------------------------------------------------------
+goto hwyAssign
 goto trucks
 if %ITER%==0 goto hwyAssign
 
@@ -104,6 +105,7 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\TruckTripGeneration.job
 if ERRORLEVEL 2 goto done
 
+
 :: Apply the commercial vehicle distribution models
 runtpp CTRAMP\scripts\nonres\TruckTripDistribution.job
 if ERRORLEVEL 2 goto done
@@ -131,7 +133,7 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-:hwyAssign
+
 
 :: If demand models were executed, translate the trip lists to demand matrices
 if %ITER% GTR 0 (
@@ -139,6 +141,7 @@ if %ITER% GTR 0 (
 	if ERRORLEVEL 2 goto done
 )
 
+:hwyAssign
 :: Assign the demand matrices to the highway network
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
