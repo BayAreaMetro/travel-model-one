@@ -1,15 +1,20 @@
 base_zip: "data/external/mtc/2023_TM161_IPA_35_20260217.zip"
-output_root: "temp"
+output_root: "C:/Users/USJC173858/temp"
+
 
 scenarios:
   - name: baseline
-    skip_if_exists: false
-    replacements: []
+    skip_if_exists: true
+    replacements:
+      - source: "src/models/travel_model/RunIteration.bat"
+      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/travel_model/RunIteration.bat"
+        destination: "CTRAMP/RunIteration.bat"
 
   - name: truck_updates
     skip_if_exists: false
     replacements:
-      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/RunIteration.bat"
+      - source: "src/models/travel_model/RunIteration.bat"
+      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/travel_model/RunIteration.bat"
         destination: "CTRAMP/RunIteration.bat"
       - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTimeOfDay.job"
         destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
@@ -17,3 +22,10 @@ scenarios:
         destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
       - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripGeneration.job"
         destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
+        # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
+        # This file is build from the estiamted gamma function 
+        # and multiplied by a arbitraty number to (e.g. 1_000) to avoid underflow error 
+        # in CUBE gravity model. 
+      - source: "data/interim/truckFF_new.dat"
+        destination: "nonres/truckFF.dat"
+
