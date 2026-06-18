@@ -107,10 +107,14 @@ def read_capacity_files(capacity_dir):
     """
     Read the three transit capacity CSV files from capacity_dir.
 
+    Args:
+      capacity_dir: path (str or Path) to the directory containing the three CSV files.
+
     Returns:
-      line_to_attrs:     linename (upper) -> [system, fullname, AM_vtype, PM_vtype, OP_vtype]
-      veh_to_capacity:   vehtype -> float seat capacity
-      prefix_to_vehicle: prefix (upper, 3-4 chars) -> [system, vehtype]
+      line_to_attrs:     dict mapping linename (upper-cased) to
+                         [system, fullname, AM_vtype, PM_vtype, OP_vtype]
+      veh_to_capacity:   dict mapping vehicle type string to float seat capacity
+      prefix_to_vehicle: dict mapping prefix (upper-cased, 3-4 chars) to [system, vehtype]
     """
     capacity_path = Path(capacity_dir)
 
@@ -141,7 +145,19 @@ def read_capacity_files(capacity_dir):
 
 
 def get_system_and_vehicletype(linename, timeperiod, line_to_attrs, prefix_to_vehicle):
-    """Return (system, vehicletype) for a line name, falling back to prefix lookup."""
+    """
+    Return (system, vehicletype) for a line name, falling back to prefix lookup.
+
+    Args:
+      linename:          transit line name string (case-insensitive).
+      timeperiod:        time period string, one of EA/AM/MD/PM/EV; used to select
+                         the correct vehicle type column from line_to_attrs.
+      line_to_attrs:     dict as returned by read_capacity_files.
+      prefix_to_vehicle: dict as returned by read_capacity_files.
+
+    Returns:
+      (system, vehicletype): both are strings; empty strings if no match is found.
+    """
     key = linename.upper()
     if key in line_to_attrs:
         idx = TIMEPERIOD_TO_VEHTYPIDX[timeperiod]
@@ -168,6 +184,19 @@ def aggregate_transit_links(timeperiod, modes, capacity_dir):
     FREQ and SEQ come from the first mode's DBF output, which Cube writes alongside
     the CSV but with those two columns filled in.
     For all subsequent modes, only the ADDITIVE_FIELDS are summed in.
+
+    Args:
+      timeperiod:   time period string, one of EA/AM/MD/PM/EV.
+      modes:        iterable of mode name strings (e.g. "wlk_com_wlk"); used to
+                    construct input filenames trnlink{tp}_{mode}.csv/.dbf.
+                    Files are read from the current working directory.
+      capacity_dir: path (str or Path) to the directory containing the three
+                    transit capacity CSV files (passed to read_capacity_files).
+
+    Returns:
+      DataFrame with one row per transit link, containing all fields listed in
+      DBF_FIELDS plus the internal column _orig_idx.  ADDITIVE_FIELDS contain
+      the sum across all modes; all other fields reflect the first mode only.
     """
     tp = timeperiod
     tp_lower = tp.lower()
@@ -334,7 +363,14 @@ def aggregate_transit_links(timeperiod, modes, capacity_dir):
 # ---------------------------------------------------------------------------
 
 def write_dbf(df, out_path):
-    """Write the aggregated DataFrame to a DBF file."""
+    """
+    Write the aggregated DataFrame to a DBF file.
+
+    Args:
+      df:       DataFrame as returned by aggregate_transit_links; must contain
+                a column for every field name listed in DBF_FIELDS.
+      out_path: destination file path (str or Path) for the output DBF.
+    """
     new_dbf = dbfpy3.dbf.Dbf(out_path, new=True)
     for field_def in DBF_FIELDS:
         new_dbf.add_field(field_def)
