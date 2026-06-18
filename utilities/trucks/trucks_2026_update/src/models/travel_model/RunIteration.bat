@@ -15,7 +15,6 @@
 :: Step 0:  If iteration equals zero, go to step four (i.e. skip the demand models)
 ::
 :: ------------------------------------------------------------------------------------------------------
-goto hwyAssign
 goto trucks
 if %ITER%==0 goto hwyAssign
 
@@ -104,7 +103,6 @@ if ERRORLEVEL 2 goto done
 :: Apply the commercial vehicle generation models
 runtpp CTRAMP\scripts\nonres\TruckTripGeneration.job
 if ERRORLEVEL 2 goto done
-
 
 :: Apply the commercial vehicle distribution models
 runtpp CTRAMP\scripts\nonres\TruckTripDistribution.job
