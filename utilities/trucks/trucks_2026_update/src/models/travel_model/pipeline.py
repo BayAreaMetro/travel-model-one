@@ -11,6 +11,7 @@ Run a quick offline smoke check with::
 """
 from __future__ import annotations
 
+from os import environ
 import shutil
 import subprocess
 import sys
@@ -128,7 +129,7 @@ def _require_windows() -> None:
         raise RuntimeError(f"this step needs Windows (CUBE); you're on {sys.platform!r}")
 
 
-def _run(command: list[str], cwd: Path) -> bool:
+def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> bool:
     """Run a command, stream its output, and return whether it exited 0.
 
     Parameters
@@ -144,7 +145,10 @@ def _run(command: list[str], cwd: Path) -> bool:
         ``True`` if the process exited 0, else ``False``.
     """
     process = subprocess.Popen(
-        command, cwd=str(cwd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        command, 
+        cwd=str(cwd), 
+        env=env,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
     for line in process.stdout:
         print(line, end="")
@@ -171,8 +175,10 @@ def run_bat(scenario_dir: Path) -> bool:
         If called on a non-Windows platform.
     """
     _require_windows()
+    model_env = environ.copy()
+    model_env["ITER"] = str(4)
     bat = scenario_dir / "CTRAMP" / "RunIteration.bat"
-    return _run(["cmd", "/c", str(bat)], cwd=scenario_dir)
+    return _run(["cmd", "/c", str(bat)], cwd=scenario_dir, env=model_env)
 
 
 def run_conversion(scenario_dir: Path) -> bool:
@@ -251,9 +257,9 @@ def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> None:
         print(f"[{scenario.name}] applying {len(scenario.replacements)} replacement(s)")
         apply_replacements(scenario_dir, scenario.replacements)
         print(f"[{scenario.name}] running RunIteration.bat")
-        # if not run_bat(scenario_dir):
-        #     bat_failed = True
-        #     print(f"[{scenario.name}] .bat failed — skipping conversions")
+        if not run_bat(scenario_dir):
+            bat_failed = True
+            print(f"[{scenario.name}] .bat failed — skipping conversions")
 
     if not bat_failed:
         # print(f"[{scenario.name}] converting .tpp -> .omx")
