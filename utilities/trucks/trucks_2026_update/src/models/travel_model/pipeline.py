@@ -217,7 +217,10 @@ def run_net_conversion(scenario_dir: Path) -> bool:
         If called on a non-Windows platform.
     """
     _require_windows()
-    return _run(["runtpp", str(SCRIPTS_DIR / "net_to_shp.s")], cwd=scenario_dir)
+    source_script = SCRIPTS_DIR / "net_to_shp.s"
+    local_script = scenario_dir / "net_to_shp.s"
+    shutil.copyfile(source_script, local_script)
+    return _run(["runtpp", local_script.name], cwd=scenario_dir)
 
 
 def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> None:
@@ -248,14 +251,14 @@ def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> None:
         print(f"[{scenario.name}] applying {len(scenario.replacements)} replacement(s)")
         apply_replacements(scenario_dir, scenario.replacements)
         print(f"[{scenario.name}] running RunIteration.bat")
-        if not run_bat(scenario_dir):
-            bat_failed = True
-            print(f"[{scenario.name}] .bat failed — skipping conversions")
+        # if not run_bat(scenario_dir):
+        #     bat_failed = True
+        #     print(f"[{scenario.name}] .bat failed — skipping conversions")
 
     if not bat_failed:
-        print(f"[{scenario.name}] converting .tpp -> .omx")
-        if not run_conversion(scenario_dir):
-            print(f"[{scenario.name}] .tpp -> .omx conversion exited non-zero")
+        # print(f"[{scenario.name}] converting .tpp -> .omx")
+        # if not run_conversion(scenario_dir):
+        #     print(f"[{scenario.name}] .tpp -> .omx conversion exited non-zero")
         print(f"[{scenario.name}] converting .net -> shapefiles")
         if not run_net_conversion(scenario_dir):
             print(f"[{scenario.name}] .net -> shapefile conversion exited non-zero")

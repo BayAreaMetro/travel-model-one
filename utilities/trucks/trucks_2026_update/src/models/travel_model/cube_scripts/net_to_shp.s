@@ -11,10 +11,10 @@
 
 RUN PGM=NETWORK
 
-FILEI NETI="hwy\avgload5period.net"
+FILEI NETI="hwy\iter3\avgload5period.net"
 
-FILEO LINKO="hwy\avgload5period\links.shp",
-      NODEO="hwy\avgload5period\nodes.shp"
+FILEO LINKO="hwy\iter3\avgload5period_links.shp", FORMAT=SHP
+      NODEO="hwy\iter3\avgload5period_nodes.shp", FORMAT=SHP
 
 ENDRUN
 
