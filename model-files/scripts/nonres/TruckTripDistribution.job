@@ -97,7 +97,7 @@ run pgm = tripdist
    filei mati[1] = nonres\blendedTruckTime.tpp
    
    ; read in the k-factors
-   filei mati[2] = nonres\truckkfact.k22.z1454.mat
+   ; filei mati[2] = nonres\truckkfact.k22.z1454.mat
    
    ; write out the results
    fileo mato[1] = nonres\DailyTruckTrips.tpp, mo = 5-8, name = verySmall, small, medium, large 
@@ -135,9 +135,9 @@ run pgm = tripdist
           
    ; apply the gravity models (note the very small trucks do not use the K-factors)
    gravity purpose = 1, los = mi.1.timeVSM, ffactors = truckff
-   gravity purpose = 2, los = mi.1.timeSML, ffactors = truckff, kfactors = mi.2.truck_k
-   gravity purpose = 3, los = mi.1.timeMED, ffactors = truckff, kfactors = mi.2.truck_k
-   gravity purpose = 4, los = mi.1.timeLRG, ffactors = truckff, kfactors = mi.2.truck_k
+   gravity purpose = 2, los = mi.1.timeSML, ffactors = truckff 
+   gravity purpose = 3, los = mi.1.timeMED, ffactors = truckff 
+   gravity purpose = 4, los = mi.1.timeLRG, ffactors = truckff 
    
    ; scale the trips by 100 and bucket round (to be consistent with Chuck's application)
    mw[5] = mw[1] * 100.0
