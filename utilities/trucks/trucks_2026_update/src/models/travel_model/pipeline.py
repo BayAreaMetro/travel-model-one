@@ -12,6 +12,7 @@ Run a quick offline smoke check with::
 from __future__ import annotations
 
 from os import environ
+import time
 import shutil
 import subprocess
 import sys
@@ -176,7 +177,13 @@ def run_bat(scenario_dir: Path) -> bool:
     """
     _require_windows()
     model_env = environ.copy()
-    model_env["ITER"] = str(4)
+    # Assume running iteration 1
+    # Values taken from: 
+    # https://github.com/BayAreaMetro/travel-model-one/blob/4c756c05260def2b572a19f6714841eecb66c932/model-files/RunModel.bat#L276-L279
+    model_env["ITER"] = str(1)
+    model_env["PREV_ITER"] = str(1)
+    model_env["PREV_WGT"] = str(0.0)
+    model_env["WGT"] = str(1.0)
     bat = scenario_dir / "CTRAMP" / "RunIteration.bat"
     return _run(["cmd", "/c", str(bat)], cwd=scenario_dir, env=model_env)
 
@@ -279,8 +286,25 @@ def run_all(config: RunConfig) -> None:
         An already-validated config.
     """
     output_root = Path(config.output_root)
+    timings = []
     for scenario in config.scenarios:
+        start = time.perf_counter()
         run_scenario(scenario, config.base_zip, output_root)
+        elapsed = time.perf_counter() - start
+        timings.append((scenario.name, elapsed))
+
+    
+    print("\n===== Scenario Timing Summary =====")
+    total_time = 0.0
+    
+    for name, seconds in timings:
+        minutes = seconds / 60
+        print(f"{name:30s}  {seconds:8.1f} sec  ({minutes:.2f} min)")
+        total_time += seconds
+
+    print("-----------------------------------")
+    print(f"{'TOTAL':30s}  {total_time:8.1f} sec  ({total_time/60:.2f} min)")
+
 
 
 if __name__ == "__main__":
