@@ -8,12 +8,8 @@
 
 RUN PGM=MATRIX
 
-CONVERTMAT  FILEI="data\interim\od_projection\tripsTRK.tpp",
-            FILEO="data\interim\od_projection\tripsTRK.omx",
-            FORMAT=TPP, OFORMAT=OMX
-
-CONVERTMAT  FILEI="data\interim\od_projection\tripsTRKtoll.tpp",
-            FILEO="data\interim\od_projection\tripsTRKtoll.omx",
+CONVERTMAT  FILEI="nonres/TruckTG.dat",
+            FILEO="nonres/TruckTG.omx",
             FORMAT=TPP, OFORMAT=OMX
 
 ENDRUN

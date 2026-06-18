@@ -15,8 +15,8 @@ from pathlib import Path
 
 import yaml
 
-from .config import RunConfig
-from .pipeline import run_all
+from src.models.travel_model.config import RunConfig
+from src.models.travel_model.pipeline import run_all
 
 
 def main() -> None:
