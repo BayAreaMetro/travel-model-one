@@ -19,6 +19,7 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+import warnings
 
 import requests
 
@@ -93,8 +94,12 @@ def extract_scenario(base_zip: str, scenario_dir: Path) -> None:
 def apply_replacements(scenario_dir: Path, replacements: list[Replacement]) -> None:
     """Copy each replacement's resolved source over its destination.
 
-    Checks that every destination already exists before copying anything, so a
-    typo'd path fails loudly instead of partially applying.
+    
+    Checks whether each replacement destination already exists before copying.
+    Missing destinations are reported as warnings because they may indicate a typo,
+    becuase replacements are expected to keep the same file name. Some exception apply. 
+
+
 
     Parameters
     ----------
@@ -103,15 +108,10 @@ def apply_replacements(scenario_dir: Path, replacements: list[Replacement]) -> N
     replacements : list[Replacement]
         Source/destination pairs to apply.
 
-    Raises
-    ------
-    FileNotFoundError
-        If one or more destinations don't already exist in ``scenario_dir``. The
-        message lists every missing path, not just the first.
     """
     missing = [r.destination for r in replacements if not (scenario_dir / r.destination).exists()]
     if missing:
-        raise FileNotFoundError("destination(s) not found in scenario: " + ", ".join(missing))
+        warnings.warn("These files not found in destination(s): " + ", ".join(missing))
 
     for replacement in replacements:
         source_path = resolve_source(replacement.source)
@@ -157,7 +157,7 @@ def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> bo
     return process.returncode == 0
 
 
-def run_bat(scenario_dir: Path) -> bool:
+def run_bat(scenario_dir: Path, iteration: str) -> bool:
     """Run ``<scenario_dir>/CTRAMP/RunIteration.bat`` and return whether it exited 0.
 
     Parameters
@@ -180,8 +180,8 @@ def run_bat(scenario_dir: Path) -> bool:
     # Assume running iteration 1
     # Values taken from: 
     # https://github.com/BayAreaMetro/travel-model-one/blob/4c756c05260def2b572a19f6714841eecb66c932/model-files/RunModel.bat#L276-L279
-    model_env["ITER"] = str(1)
-    model_env["PREV_ITER"] = str(1)
+    model_env["ITER"] = iteration
+    model_env["PREV_ITER"] = str("TEST")
     model_env["PREV_WGT"] = str(0.0)
     model_env["WGT"] = str(1.0)
     bat = scenario_dir / "CTRAMP" / "RunIteration.bat"
@@ -211,7 +211,7 @@ def run_conversion(scenario_dir: Path) -> bool:
     return _run(["runtpp", str(SCRIPTS_DIR / "tpp_to_omx.s")], cwd=scenario_dir)
 
 
-def run_net_conversion(scenario_dir: Path) -> bool:
+def run_net_conversion(scenario_dir: Path, iteration: str) -> bool:
     """Run the ``.net`` → shapefile script (``runtpp``) and return whether it exited 0.
 
     Parameters
@@ -233,10 +233,14 @@ def run_net_conversion(scenario_dir: Path) -> bool:
     source_script = SCRIPTS_DIR / "net_to_shp.s"
     local_script = scenario_dir / "net_to_shp.s"
     shutil.copyfile(source_script, local_script)
-    return _run(["runtpp", local_script.name], cwd=scenario_dir)
+    
+    model_env = environ.copy()
+    model_env["ITER"] = iteration
+
+    return _run(["runtpp", local_script.name], cwd=scenario_dir, env=model_env)
 
 
-def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> bool:
+def run_scenario(scenario: Scenario, base_zip: str, output_root: Path, iteration: str) -> bool:
     """Run the full per-scenario pipeline, printing failures instead of raising.
 
     Extract → replace → ``.bat`` (skipped entirely if ``skip_if_exists`` and the
@@ -272,7 +276,7 @@ def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> bool:
         print(f"[{scenario.name}] applying {len(scenario.replacements)} replacement(s)")
         apply_replacements(scenario_dir, scenario.replacements)
         print(f"[{scenario.name}] running RunIteration.bat")
-        if not run_bat(scenario_dir):
+        if not run_bat(scenario_dir, iteration):
             bat_failed = True
             print(f"[{scenario.name}] .bat failed — skipping conversions")
 
@@ -281,7 +285,7 @@ def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> bool:
         # if not run_conversion(scenario_dir):
         #     print(f"[{scenario.name}] .tpp -> .omx conversion exited non-zero")
         print(f"[{scenario.name}] converting .net -> shapefiles")
-        if not run_net_conversion(scenario_dir):
+        if not run_net_conversion(scenario_dir, iteration):
             print(f"[{scenario.name}] .net -> shapefile conversion exited non-zero")
 
     return not bat_failed
@@ -308,7 +312,7 @@ def run_all(config: RunConfig) -> list[dict]:
     completed: list[dict] = []
     for scenario in config.scenarios:
         start = time.perf_counter()
-        succeeded = run_scenario(scenario, config.base_zip, output_root)
+        succeeded = run_scenario(scenario, config.base_zip, output_root, config.iteration)
         elapsed = time.perf_counter() - start
         timings.append((scenario.name, elapsed))
 

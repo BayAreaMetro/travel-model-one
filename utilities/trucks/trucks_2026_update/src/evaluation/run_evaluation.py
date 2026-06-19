@@ -55,6 +55,7 @@ INT_FORMAT = "#,##0"
 PCT_FORMAT = "+0.0%;-0.0%"
 DIFF_POS_FILL = "FFCCCC"  # light red: predicted over-estimates observed
 DIFF_NEG_FILL = "CCFFCC"  # light green: predicted under-estimates observed
+ITER = None
 
 
 def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
@@ -77,6 +78,8 @@ def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
     traceback and the remaining steps still run. Nothing here re-raises.
     """
     setup_logging(log_dir="data/logs", log_name="evaluation")
+    global ITER
+    ITER = cfg.get("iteration")
 
     logger.info("=" * 60)
     logger.info("Starting truck model evaluation pipeline")
@@ -115,7 +118,9 @@ def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
     # link_id -> DISTANCE (miles) lookup from the first scenario's network — all
     # scenarios share the same link geometry — for observed-VMT calculations.
     try:
-        reference_network = read_network(Path(completed_scenarios[0]["path"]))
+        reference_network = read_network(
+            Path(completed_scenarios[0]["path"])
+            )
         network_distance = reference_network.set_index("link_id")["DISTANCE"]
     except Exception:
         logger.exception("Could not build network DISTANCE lookup")
@@ -272,7 +277,7 @@ def read_network(scenario_path: Path) -> gpd.GeoDataFrame:
     ----------
     scenario_path : Path
         Root of a scenario's output directory. The network is read from
-        ``hwy/iter1/avgload5period_links.shp``.
+        ``hwy/iterTEST/avgload5period_links.shp``.
 
     Returns
     -------
@@ -282,7 +287,7 @@ def read_network(scenario_path: Path) -> gpd.GeoDataFrame:
         non-tolled and tolled heavy-truck 24-hour volumes; ``vol_SM`` does the
         same for small/medium trucks.
     """
-    gdf = gpd.read_file(Path(scenario_path) / "hwy" / "iter1" / "avgload5period_links.shp")
+    gdf = gpd.read_file(Path(scenario_path) / "hwy" / f"iter{ITER}" / "avgload5period_links.shp")
     gdf["link_id"] = gdf["A"].astype(str) + "-" + gdf["B"].astype(str)
     gdf["vol_HV"] = gdf["VOL24HR_HV"] + gdf["VOL24HR_HVT"]
     gdf["vol_SM"] = gdf["VOL24HR_SM"] + gdf["VOL24HR_SMT"]
@@ -509,7 +514,8 @@ def summarize_predicted_counts(model_cfg: dict, cfg: dict) -> gpd.GeoDataFrame:
     scenario_name = model_cfg["name"]
     scenario_path = Path(model_cfg["path"])
 
-    loaded_network = gpd.read_file(scenario_path / "hwy/iter1/avgload5period_links.shp")
+    # loaded_network = gpd.read_file(scenario_path / f"hwy/iter{ITER}/avgload5period_links.shp")
+    loaded_network = read_network(scenario_path)
 
     loaded_network["link_id"] = (
         loaded_network["A"].astype(str) + "-" + loaded_network["B"].astype(str)
@@ -578,7 +584,9 @@ def save_tableau_shapefile(
     # same link geometry, so the first one is sufficient.
     if "DISTANCE" not in obs.columns:
         try:
-            ref = read_network(Path(completed_scenarios[0]["path"]))
+            ref = read_network(
+                Path(completed_scenarios[0]["path"])
+                )
             obs = obs.merge(
                 ref.set_index("link_id")["DISTANCE"].rename("DISTANCE"),
                 left_on="link_id",

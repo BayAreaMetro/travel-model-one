@@ -133,10 +133,10 @@ if ERRORLEVEL 2 goto done
 
 :hwyAssign
 :: If demand models were executed, translate the trip lists to demand matrices
-if %ITER% GTR 0 (
-	runtpp CTRAMP\scripts\assign\PrepAssign.job
-	if ERRORLEVEL 2 goto done
-)
+:: if %ITER% GTR 0 (
+:: 	runtpp CTRAMP\scripts\assign\PrepAssign.job
+::	if ERRORLEVEL 2 goto done
+:: )
 
 :: Assign the demand matrices to the highway network
 runtpp CTRAMP\scripts\assign\HwyAssign.job
@@ -172,18 +172,18 @@ move hwy\LOADEV.net hwy\iter%ITER%\LOADEV.net
 runtpp CTRAMP\scripts\feedback\RenameAssignmentVariables.job
 
 :: Average the demand for this and the previous iteration and compute a speed estimate for each link
- IF %ITER% GTR 1 (
-	runtpp CTRAMP\scripts\feedback\AverageNetworkVolumes.job
-	if ERRORLEVEL 2 goto done
-	runtpp CTRAMP\scripts\feedback\CalculateSpeeds.job
-	if ERRORLEVEL 2 goto done
-) ELSE (
-  copy hwy\iter%ITER%\LOADEA_renamed.net hwy\iter%ITER%\avgLOADEA.net /Y
-  copy hwy\iter%ITER%\LOADAM_renamed.net hwy\iter%ITER%\avgLOADAM.net /Y
-  copy hwy\iter%ITER%\LOADMD_renamed.net hwy\iter%ITER%\avgLOADMD.net /Y
-  copy hwy\iter%ITER%\LOADPM_renamed.net hwy\iter%ITER%\avgLOADPM.net /Y
-  copy hwy\iter%ITER%\LOADEV_renamed.net hwy\iter%ITER%\avgLOADEV.net /Y
-)
+:: IF %ITER% GTR 1 (
+::	runtpp CTRAMP\scripts\feedback\AverageNetworkVolumes.job
+::	if ERRORLEVEL 2 goto done
+::	runtpp CTRAMP\scripts\feedback\CalculateSpeeds.job
+::	if ERRORLEVEL 2 goto done
+::) ELSE (
+copy hwy\iter%ITER%\LOADEA_renamed.net hwy\iter%ITER%\avgLOADEA.net /Y
+copy hwy\iter%ITER%\LOADAM_renamed.net hwy\iter%ITER%\avgLOADAM.net /Y
+copy hwy\iter%ITER%\LOADMD_renamed.net hwy\iter%ITER%\avgLOADMD.net /Y
+copy hwy\iter%ITER%\LOADPM_renamed.net hwy\iter%ITER%\avgLOADPM.net /Y
+copy hwy\iter%ITER%\LOADEV_renamed.net hwy\iter%ITER%\avgLOADEV.net /Y
+::)
 
 :: Compute network statistics to measure convergence
 runtpp CTRAMP\scripts\feedback\TestNetworkConvergence.job

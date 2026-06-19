@@ -64,4 +64,6 @@ class RunConfig(BaseModel):
 
     base_zip: str
     output_root: str
+    iteration: str
     scenarios: list[Scenario]
+

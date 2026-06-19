@@ -3,19 +3,19 @@ output_root: "C:/Users/USJC173858/temp"
 
 observed_data: "data/interim/observed_data/observed_dataset_merged.csv"
 network_crs: "EPSG:26910"
-evaluation_output: "data/processed/evaluation/round_1"
-
+evaluation_output: "data/processed/evaluation/round_2"
+iteration: "TEST"
 
 scenarios:
-  - name: baseline
-    skip_if_exists: true
+  - name: TM-1.6
+    skip_if_exists: false
     replacements:
       - source: "src/models/travel_model/RunIteration.bat"
       # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/travel_model/RunIteration.bat"
         destination: "CTRAMP/RunIteration.bat"
 
-  - name: truck_updates
-    skip_if_exists: true
+  - name: TM-1.7 Truck Updates
+    skip_if_exists: false
     replacements:
       - source: "src/models/travel_model/RunIteration.bat"
       # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/travel_model/RunIteration.bat"
@@ -31,5 +31,5 @@ scenarios:
         # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
         # in CUBE gravity model. 
       - source: "data/interim/truckFF_new.dat"
-        destination: "nonres/truckFF.dat"
+        destination: "nonres/truckFF_new.dat"
 
