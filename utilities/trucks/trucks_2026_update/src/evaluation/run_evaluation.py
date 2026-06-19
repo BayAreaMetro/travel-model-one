@@ -53,6 +53,8 @@ HEADER_GRAY = "404040"
 ALT_ROW_GRAY = "F2F2F2"
 INT_FORMAT = "#,##0"
 PCT_FORMAT = "+0.0%;-0.0%"
+DIFF_POS_FILL = "FFCCCC"  # light red: predicted over-estimates observed
+DIFF_NEG_FILL = "CCFFCC"  # light green: predicted under-estimates observed
 
 
 def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
@@ -109,6 +111,16 @@ def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
         default=pd.DataFrame(),
     )
 
+    # DISTANCE lives on the network, not the observed CSV. Derive a
+    # link_id -> DISTANCE (miles) lookup from the first scenario's network — all
+    # scenarios share the same link geometry — for observed-VMT calculations.
+    try:
+        reference_network = read_network(Path(completed_scenarios[0]["path"]))
+        network_distance = reference_network.set_index("link_id")["DISTANCE"]
+    except Exception:
+        logger.exception("Could not build network DISTANCE lookup")
+        network_distance = pd.Series(dtype=float)
+
     # --- Plots (one function per file in plots/) ---
     from src.evaluation.plots.scatter_obs_vs_pred import plot_scatter_all_scenarios
     from src.evaluation.plots.vmt_comparison import plot_vmt_comparison
@@ -123,7 +135,12 @@ def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
     )
     logger.info("Building VMT comparison plots")
     vmt_figures = _safe(
-        plot_vmt_comparison, vmt_table_obs, observed, scenario_color_map, default={}
+        plot_vmt_comparison,
+        vmt_table_obs,
+        observed,
+        network_distance,
+        scenario_color_map,
+        default={},
     )
 
     # --- Excel workbook (embeds the same figures, before the figures are closed) ---
@@ -556,6 +573,21 @@ def save_tableau_shapefile(
         except Exception:
             logger.warning("Could not parse observed geometry as WKT; using as-is")
 
+    # DISTANCE is not on the observed CSV — join it from the
+    # network so clean_output can compute observed VMT. All scenarios share the
+    # same link geometry, so the first one is sufficient.
+    if "DISTANCE" not in obs.columns:
+        try:
+            ref = read_network(Path(completed_scenarios[0]["path"]))
+            obs = obs.merge(
+                ref.set_index("link_id")["DISTANCE"].rename("DISTANCE"),
+                left_on="link_id",
+                right_index=True,
+                how="left",
+            )
+        except Exception:
+            logger.exception("Could not join network DISTANCE onto observed data")
+
     summaries = [obs]
     for scenario in completed_scenarios:
         logger.info("  → simulating counts for: %s", scenario["name"])
@@ -859,7 +891,7 @@ def _write_scatter_sheet(
     fig: Figure,
     scenario_color_map: dict[str, str],
 ) -> None:
-    """Write a scatter sheet: embedded figure plus its fit-statistics table."""
+    """Write a scatter sheet: embedded figure, fit-statistics, and a QA data table."""
     sheet_name = _safe_sheet_name(f"Scatter {scenario_name} {truck_type}")
     ws = wb.create_sheet(sheet_name)
     ws.sheet_view.showGridLines = False
@@ -884,6 +916,60 @@ def _write_scatter_sheet(
     for i, (label, value) in enumerate(rows, start=start_row + 1):
         ws.cell(row=i, column=1, value=label).font = _data_font()
         ws.cell(row=i, column=2, value=value).font = _data_font()
+
+    # Raw link-level QA table, below the stats (blank-row separator at row 41).
+    data = getattr(fig, "scatter_data", None)
+    if data is not None and len(data):
+        _write_scatter_data_table(ws, data, color, header_row=42)
+
+    _autosize(ws)
+
+
+def _write_scatter_data_table(ws: Worksheet, data: pd.DataFrame, color: str, header_row: int) -> None:
+    """Write the per-count-location QA table (observed/predicted/diff/pct_diff).
+
+    Rows come pre-sorted by ``observed`` descending. The ``diff`` column is fill-
+    coded per sign (light red over-estimate, light green under-estimate) and
+    ``pct_diff`` is written as a signed string so the sign always shows. The
+    table's first data row is frozen.
+    """
+    headers = ["link_id", "observed", "predicted", "diff", "pct_diff"]
+    for col, label in enumerate(headers, start=1):
+        _style_header(ws.cell(row=header_row, column=col, value=label), color)
+
+    for offset, (_, record) in enumerate(data.iterrows(), start=1):
+        r = header_row + offset
+        observed = record["observed"]
+        predicted = record["predicted"]
+        diff = record["diff"]
+
+        ws.cell(row=r, column=1, value=record["link_id"]).font = _data_font()
+
+        for col, value in ((2, observed), (3, predicted)):
+            cell = ws.cell(row=r, column=col, value=_num(value))
+            cell.font = _data_font()
+            cell.number_format = INT_FORMAT
+
+        diff_cell = ws.cell(row=r, column=4, value=_num(diff))
+        diff_cell.font = _data_font()
+        diff_cell.number_format = INT_FORMAT
+        if pd.notna(diff) and diff > 0:
+            diff_cell.fill = _fill(DIFF_POS_FILL)
+        elif pd.notna(diff) and diff < 0:
+            diff_cell.fill = _fill(DIFF_NEG_FILL)
+
+        pct_cell = ws.cell(row=r, column=5, value=_pct_diff_str(observed, predicted))
+        pct_cell.font = _data_font()
+
+    # Freeze the table header (everything above the first data row stays in view).
+    ws.freeze_panes = f"A{header_row + 1}"
+
+
+def _pct_diff_str(observed, predicted) -> str:
+    """Signed percent-difference string, or ``"n/a"`` when observed is 0/missing."""
+    if pd.isna(observed) or pd.isna(predicted) or observed == 0:
+        return "n/a"
+    return f"{(predicted - observed) / observed * 100:+.1f}%"
 
 
 def _write_vmt_sheet(

@@ -21,7 +21,7 @@ from src.evaluation.run_evaluation import read_network
 logger = logging.getLogger(__name__)
 
 TRUCK_TYPES = ["HV", "SM"]
-TRUCK_LABELS = {"HV": "Heavy Trucks (HV)", "SM": "Small & Medium Trucks (SM)"}
+TRUCK_LABELS = {"HV": "Heavy Trucks (HV)", "SM": "Very Small, Small & Medium Trucks (SM)"}
 
 
 def plot_scatter_all_scenarios(
@@ -135,4 +135,11 @@ def _plot_single_scatter(
     fig.tight_layout()
 
     fig.scenario_stats = {"slope": slope, "intercept": intercept, "r2": r2, "n": n}
+
+    # Attach the underlying link-level data so write_excel can render a QA table
+    # on the sheet without recomputing (parallels scenario_stats).
+    scatter_data = merged[["link_id", "obs_volume", "pred_volume"]].copy()
+    scatter_data.columns = ["link_id", "observed", "predicted"]
+    scatter_data["diff"] = scatter_data["predicted"] - scatter_data["observed"]
+    fig.scatter_data = scatter_data.sort_values("observed", ascending=False)
     return fig

@@ -18,13 +18,14 @@ from matplotlib.figure import Figure
 logger = logging.getLogger(__name__)
 
 TRUCK_TYPES = ["HV", "SM"]
-TRUCK_LABELS = {"HV": "Heavy Trucks (HV)", "SM": "Small & Medium Trucks (SM)"}
+TRUCK_LABELS = {"HV": "Heavy Trucks (HV)", "SM": "Very Small, Small & Medium Trucks (SM)"}
 OBSERVED_COLOR = "#AAAAAA"
 
 
 def plot_vmt_comparison(
     vmt_table: pd.DataFrame,
     observed: pd.DataFrame,
+    network_distance: pd.Series,
     scenario_color_map: dict[str, str],
 ) -> dict[str, Figure]:
     """
@@ -36,8 +37,12 @@ def plot_vmt_comparison(
         Scenario VMT restricted to observed links, with truck types
         (``["HV", "SM"]``) as the index and one column per scenario name.
     observed : pd.DataFrame
-        Observed truck counts. Must contain ``"volume"``, ``"DISTANCE"``, and
-        ``"truck_type_norm"`` (``"HV"`` / ``"SM"``).
+        Observed truck counts. Must contain ``"volume"``, ``"link_id"``, and
+        ``"truck_type_norm"`` (``"HV"`` / ``"SM"``). It does **not** carry
+        ``DISTANCE`` — that is joined in from ``network_distance``.
+    network_distance : pd.Series
+        Per-link distance in miles, indexed by ``link_id``. Derived from a
+        scenario network (all scenarios share the same link geometry).
     scenario_color_map : dict of str to str
         Mapping from scenario name to the hex color used for that scenario's bar.
 
@@ -49,11 +54,19 @@ def plot_vmt_comparison(
 
     Notes
     -----
-    Observed VMT is summed over the observed count locations only, matching the
+    ``DISTANCE`` is not present on the observed CSV, so it is joined from the
+    network on ``link_id`` (inner join) before computing observed VMT. This also
+    restricts observed VMT to links that exist in the network, matching the
     observed-links-only restriction already applied to ``vmt_table``.
     """
+    obs_with_dist = observed.merge(
+        network_distance.rename("DISTANCE"),
+        left_on="link_id",
+        right_index=True,
+        how="inner",
+    )
     obs_vmt = (
-        observed.assign(_vmt=observed["volume"] * observed["DISTANCE"])
+        obs_with_dist.assign(_vmt=obs_with_dist["volume"] * obs_with_dist["DISTANCE"])
         .groupby("truck_type_norm")["_vmt"]
         .sum()
     )
