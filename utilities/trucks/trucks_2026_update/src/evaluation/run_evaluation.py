@@ -492,7 +492,7 @@ def summarize_predicted_counts(model_cfg: dict, cfg: dict) -> gpd.GeoDataFrame:
     scenario_name = model_cfg["name"]
     scenario_path = Path(model_cfg["path"])
 
-    loaded_network = gpd.read_file(scenario_path / "hwy/avgload5period/avgload5period_links.shp")
+    loaded_network = gpd.read_file(scenario_path / "hwy/iter1/avgload5period_links.shp")
 
     loaded_network["link_id"] = (
         loaded_network["A"].astype(str) + "-" + loaded_network["B"].astype(str)
