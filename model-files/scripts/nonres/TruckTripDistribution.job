@@ -126,7 +126,7 @@ run pgm = tripdist
    setpa a[4] = zi.1.largeTruckA
    
    ; set the friction factors (time is in column 1, very small FF in 2, small FF in 3, medium FF in 4, and large FF in 5)
-   lookup list = Y, file = nonres\truckFF.dat, name = truckff, 
+   lookup list = Y, file = nonres\truckFF_new.dat, name = truckff, 
           lookup[1] = 1, result = 2,
           lookup[2] = 1, result = 3,
           lookup[3] = 1, result = 4,
