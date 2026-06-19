@@ -17,10 +17,15 @@ import yaml
 
 from src.models.travel_model.config import RunConfig
 from src.models.travel_model.pipeline import run_all
+from src.evaluation.run_evaluation import run_evaluation
 
 
 def main() -> None:
     """Parse ``--config``, validate the YAML into a ``RunConfig``, and run everything.
+
+    After all scenarios have been attempted, run the evaluation pipeline over the
+    scenarios that completed successfully (see
+    :func:`src.evaluation.run_evaluation.run_evaluation`).
 
     Raises
     ------
@@ -36,8 +41,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    config = RunConfig.model_validate(yaml.safe_load(args.config.read_text()))
-    run_all(config)
+    raw_cfg = yaml.safe_load(args.config.read_text())
+    config = RunConfig.model_validate(raw_cfg)
+    completed_scenarios = run_all(config)
+    run_evaluation(raw_cfg, completed_scenarios)
 
 
 if __name__ == "__main__":

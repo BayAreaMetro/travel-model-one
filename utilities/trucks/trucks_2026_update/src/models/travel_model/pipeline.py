@@ -236,7 +236,7 @@ def run_net_conversion(scenario_dir: Path) -> bool:
     return _run(["runtpp", local_script.name], cwd=scenario_dir)
 
 
-def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> None:
+def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> bool:
     """Run the full per-scenario pipeline, printing failures instead of raising.
 
     Extract → replace → ``.bat`` (skipped entirely if ``skip_if_exists`` and the
@@ -251,6 +251,14 @@ def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> None:
         Shared base zip (used unless the scenario overrides it).
     output_root : Path
         Parent folder for scenario directories.
+
+    Returns
+    -------
+    bool
+        ``True`` if the scenario completed (the ``.bat`` exited 0, or it was
+        skipped because ``skip_if_exists`` was set and the folder already
+        existed). ``False`` if the ``.bat`` ran and failed. A failed ``.net``
+        conversion does not mark the scenario as failed.
     """
     scenario_dir = output_root / scenario.name
     zip_to_use = scenario.base_zip or base_zip
@@ -276,27 +284,44 @@ def run_scenario(scenario: Scenario, base_zip: str, output_root: Path) -> None:
         if not run_net_conversion(scenario_dir):
             print(f"[{scenario.name}] .net -> shapefile conversion exited non-zero")
 
+    return not bat_failed
 
-def run_all(config: RunConfig) -> None:
+
+def run_all(config: RunConfig) -> list[dict]:
     """Run every scenario in order, one at a time.
 
     Parameters
     ----------
     config : RunConfig
         An already-validated config.
+
+    Returns
+    -------
+    list of dict
+        One dict per scenario that completed successfully (or was skipped),
+        each with ``"name"`` and ``"path"`` keys. The ``"path"`` is the
+        scenario's output directory (``output_root / name``) as a string.
+        Scenarios whose ``.bat`` failed are excluded and logged as a warning.
     """
     output_root = Path(config.output_root)
     timings = []
+    completed: list[dict] = []
     for scenario in config.scenarios:
         start = time.perf_counter()
-        run_scenario(scenario, config.base_zip, output_root)
+        succeeded = run_scenario(scenario, config.base_zip, output_root)
         elapsed = time.perf_counter() - start
         timings.append((scenario.name, elapsed))
 
-    
+        if succeeded:
+            completed.append(
+                {"name": scenario.name, "path": str(output_root / scenario.name)}
+            )
+        else:
+            print(f"[{scenario.name}] WARNING: scenario failed — excluded from evaluation")
+
     print("\n===== Scenario Timing Summary =====")
     total_time = 0.0
-    
+
     for name, seconds in timings:
         minutes = seconds / 60
         print(f"{name:30s}  {seconds:8.1f} sec  ({minutes:.2f} min)")
@@ -304,6 +329,8 @@ def run_all(config: RunConfig) -> None:
 
     print("-----------------------------------")
     print(f"{'TOTAL':30s}  {total_time:8.1f} sec  ({total_time/60:.2f} min)")
+
+    return completed
 
 
 

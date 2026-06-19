@@ -1,6 +1,10 @@
 base_zip: "data/external/mtc/2023_TM161_IPA_35_20260217.zip"
 output_root: "C:/Users/USJC173858/temp"
 
+observed_data: "data/interim/observed_data/observed_dataset_merged.csv"
+network_crs: "EPSG:26910"
+evaluation_output: "data/processed/evaluation/"
+
 
 scenarios:
   - name: baseline
@@ -23,8 +27,8 @@ scenarios:
       - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripGeneration.job"
         destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
         # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
-        # This file is build from the estiamted gamma function 
-        # and multiplied by a arbitraty number to (e.g. 1_000) to avoid underflow error 
+        # This file is build from the estimated gamma function
+        # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
         # in CUBE gravity model. 
       - source: "data/interim/truckFF_new.dat"
         destination: "nonres/truckFF.dat"
