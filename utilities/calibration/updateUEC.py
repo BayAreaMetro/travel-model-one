@@ -101,14 +101,14 @@ def get_config(submodel, version):
             "2_cars_a":   ("calibration", 5, 18, 19),
             "3_cars_a":   ("calibration", 6, 18, 19),
             "4+_cars_a":  ("calibration", 7, 18, 19),
+            "1_car_b":    ("calibration", 4, 24, 27),
+            "2_cars_b":   ("calibration", 5, 24, 27),
+            "3_cars_b":   ("calibration", 6, 24, 27),
+            "4+_cars_b":  ("calibration", 7, 24, 27),
             "1_car_sc":   ("calibration", 4, 21, 21),
             "2_cars_sc":  ("calibration", 5, 21, 21),
             "3_cars_sc":  ("calibration", 6, 21, 21),
             "4+_cars_sc": ("calibration", 7, 21, 21),
-            "1_car_b":    ("calibration", 4, 24, 27),
-            "2_cars_b":   ("calibration", 5, 24, 27),
-            "3_cars_b":   ("calibration", 6, 24, 27),
-            "4+_cars_b":  ("calibration", 7, 24, 27)
         }
         
         copy_dst = {
@@ -122,7 +122,16 @@ def get_config(submodel, version):
                           ("Auto ownership", 15, 53, 54),
                           ("Auto ownership", 16, 53, 54)],
             "4+_cars_a":  [("Auto ownership", 17, 53, 54)],
-            
+            "1_car_b":    [("Auto ownership",  8, 55, 58),
+                          ("Auto ownership",  9, 55, 58)],
+            "2_cars_b":   [("Auto ownership", 10, 55, 58),
+                          ("Auto ownership", 11, 55, 58),
+                          ("Auto ownership", 12, 55, 58)],
+            "3_cars_b":   [("Auto ownership", 13, 55, 58),
+                          ("Auto ownership", 14, 55, 58),
+                          ("Auto ownership", 15, 55, 58),
+                          ("Auto ownership", 16, 55, 58)],
+            "4+_cars_b":  [("Auto ownership", 17, 55, 58)],
             "1_car_sc":   [("Auto ownership",  8, 59, 59),
                           ("Auto ownership",  9, 59, 59)],
             "2_cars_sc":  [("Auto ownership", 10, 59, 59),
@@ -133,17 +142,6 @@ def get_config(submodel, version):
                           ("Auto ownership", 15, 59, 59),
                           ("Auto ownership", 16, 59, 59)],
             "4+_cars_sc": [("Auto ownership", 17, 59, 59)],
-            
-            "1_car_b":    [("Auto ownership",  8, 55, 58),
-                          ("Auto ownership",  9, 55, 58)],
-            "2_cars_b":   [("Auto ownership", 10, 55, 58),
-                          ("Auto ownership", 11, 55, 58),
-                          ("Auto ownership", 12, 55, 58)],
-            "3_cars_b":   [("Auto ownership", 13, 55, 58),
-                          ("Auto ownership", 14, 55, 58),
-                          ("Auto ownership", 15, 55, 58),
-                          ("Auto ownership", 16, 55, 58)],
-            "4+_cars_b":  [("Auto ownership", 17, 55, 58)]
         }
         
     elif submodel == "CoordinatedDailyActivityPattern":
@@ -331,7 +329,6 @@ def main():
                 
                 read_sheet = uec_read_workbook.sheet_by_name(uec_sheetname)
                 write_sheet = uec_workbook.get_sheet(sheet_index_by_name[uec_sheetname])
-                
                 # Get value after last cell (if any) to preserve it
                 uec_suffix_row = uec_end_row + 1
                 cell_after_last_val = read_sheet.cell_value(uec_suffix_row - 1, uec_column - 1)
