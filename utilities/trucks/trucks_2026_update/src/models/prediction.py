@@ -19,10 +19,15 @@ def make_predictions(
     cols = spec.required_columns() + extra_cols
     model_df = df[cols].dropna().copy()
 
-    X = model_df[spec.features]
+    X = pd.DataFrame(
+        {
+            feat: model_df.eval(feat, engine = "python", resolvers=[{"np": np}]) for feat in spec.features
+        },
+        index=model_df.index
+        )
     # X = sm.add_constant(X, has_constant="add")
 
-    observed = y = model_df.eval(spec.target).to_numpy()
+    observed = model_df.eval(spec.target, engine = "python", resolvers=[{"np": np}]).to_numpy()
     predicted = model.predict(X)
 
     output = model_df[[*extra_cols]].copy()

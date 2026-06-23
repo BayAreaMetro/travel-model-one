@@ -1,7 +1,10 @@
 import pandas as pd
 import statsmodels.api as sm
+import numpy as np
 
 from src.models.specs import ModelSpec
+
+LOCAL_ENV = {"np": np}
 
 def fit_model(
     df: pd.DataFrame,
@@ -26,8 +29,15 @@ def fit_model(
     """
     model_df = df[spec.required_columns()].dropna().copy()
 
-    y = model_df.eval(spec.target)
-    X = model_df[spec.features]
+    y = model_df.eval(spec.target, engine = "python", resolvers=[{"np": np}])
+    
+    X = pd.DataFrame(
+        {
+            feat: model_df.eval(feat, engine = "python", resolvers=[{"np": np}]) for feat in spec.features
+        },
+        index=model_df.index
+        )
+
     # X = sm.add_constant(X, has_constant="add")
 
     if spec.model_type == "ols":
