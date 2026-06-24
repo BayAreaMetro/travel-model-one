@@ -138,7 +138,7 @@ loop period = 1,5
     counter = 3 * (period - 1) + accegg
 
     ; distribute the tasks
-    DistributeMultistep processid = "ctramp", processnum = counter,  commpath = '%COMMPATH%'
+    DistributeMultistep Alias = "ctramp@counter@"
 
       ; line haul loop
       loop path = 1,6
@@ -612,10 +612,10 @@ loop period = 1,5
   endloop ; access/egress loop 
 endloop ; time period loop
    
-wait4files files = ctramp1.script.end,  ctramp2.script.end,  ctramp3.script.end,  ctramp4.script.end,  ctramp5.script.end,
-                   ctramp6.script.end,  ctramp7.script.end,  ctramp8.script.end,  ctramp9.script.end,  ctramp10.script.end,
-                   ctramp11.script.end, ctramp12.script.end, ctramp13.script.end, ctramp14.script.end, ctramp15.script.end, 
-          printfiles = save, DelDistribFiles = t, CheckReturnCode = t
+BARRIER IDLIST = ctramp1,  ctramp2,  ctramp3,  ctramp4,  ctramp5,
+                   ctramp6,  ctramp7,  ctramp8,  ctramp9,  ctramp10,
+                   ctramp11, ctramp12, ctramp13, ctramp14, ctramp15, 
+          printfiles = save, CheckReturnCode = t
                    
 
 ; combine all the debug output

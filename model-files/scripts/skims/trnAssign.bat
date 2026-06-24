@@ -76,14 +76,14 @@ IF %ITER% EQU %MAXITERATIONS% (set PHTDIFFCOND=0)
 echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
 :: Prepare the highway network for use by the transit network
-runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
+voyagercli ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
 
 :: Create the transit networks
-runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
+voyagercli ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
@@ -97,14 +97,14 @@ echo START TRNASSIGN            SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\l
 :transitSubAssign
 
 :: Assign the transit trips to the transit network
-runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
+voyagercli ..\..\CTRAMP\scripts\assign\TransitAssign.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   echo ERRORLEVEL is %ERRORLEVEL%
   goto donedone
 )
 :: And skim
-runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
+voyagercli ..\..\CTRAMP\scripts\skims\TransitSkims.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   echo ERRORLEVEL is %ERRORLEVEL%
@@ -114,7 +114,7 @@ if ERRORLEVEL 2 (
 :: Apply Regional Transit Fare Strategy
 :: This file should only be present if the Strategy is meant to be applied
 if exist "..\..\CTRAMP\scripts\skims\apply_regional_transit_fares_to_skims.job" (
-  runtpp "..\..\CTRAMP\scripts\skims\apply_regional_transit_fares_to_skims.job"
+  voyagercli "..\..\CTRAMP\scripts\skims\apply_regional_transit_fares_to_skims.job"
   if ERRORLEVEL 2 (
     set TRN_ERRORLEVEL=2
     echo ERRORLEVEL is %ERRORLEVEL%
