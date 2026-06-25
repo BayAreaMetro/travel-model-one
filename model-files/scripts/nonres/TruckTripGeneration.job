@@ -71,7 +71,11 @@ run pgm = tripgen
                                
       non_freight_small_production     = round(0.0357 * zi.1.TOTEMP)
       non_freight_medium_production    = round(0.0103 * zi.1.TOTEMP)
-      non_freight_large_production     = round(0.0050 * zi.1.TOTEMP)
+      non_freight_large_production     = round(0.40609 * LN(zi.1.TOTEMP + 1) 
+                                                + 0.01427 * zi.1.RETEMPN 
+                                                + 0.00425 * zi.1.FPSEMPN 
+                                                - 25.6071 * zi.1.RETEMPN/zi.1.TOTEMP 
+                                                - 10.56465 * zi.1.FPSEMPN/zi.1.TOTEMP)
       
       ; non-freight-based- attractions (equal productions)
       linkedVerySmallA = linkedVerySmallP
@@ -86,8 +90,12 @@ run pgm = tripgen
       freight_medium_production = round(0.01077 * zi.1.RETEMPN  + 0.005 * zi.1.FPSEMPN - 0.00047 * zi.1.HEREMPN -
                             0.00076 * zi.1.OTHEMPN  + 0.25183 * zi.1.AGREMPN + 0.00637 * zi.1.MWTEMPN) 
                             
-      freight_large_production  = round(0.01586 * zi.1.RETEMPN  + 0.0041 * zi.1.FPSEMPN - 0.00019 * zi.1.HEREMPN -
-                            0.00043 * zi.1.OTHEMPN  + 0.2621 * zi.1.AGREMPN + 0.00725 * zi.1.MWTEMPN)
+      freight_large_production  = round(0.01258 * zi.1.RETEMPN  
+                                       + 0.00237 * zi.1.FPSEMPN  
+                                       + 0.22018 * zi.1.AGREMPN 
+                                       + 0.00529 * LN(zi.1.MWTEMPN + 1) * zi.1.CIACRE
+                                       - 25.5905 * zi.1.RETEMPN/zi.1.TOTEMP
+                                       + 0.00098 * zi.1.TOTEMP)
                             
       ; garage-based - attractions
       freight_small_attraction  = round(0.00053 * zi.1.TOTEMP)
