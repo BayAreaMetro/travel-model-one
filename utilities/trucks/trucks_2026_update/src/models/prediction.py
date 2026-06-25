@@ -24,7 +24,7 @@ def make_predictions(
             feat: model_df.eval(feat, engine = "python", resolvers=[{"np": np}]) for feat in spec.features
         },
         index=model_df.index
-        )
+        ).fillna(0).replace([np.inf, -np.inf], 0)
     # X = sm.add_constant(X, has_constant="add")
 
     observed = model_df.eval(spec.target, engine = "python", resolvers=[{"np": np}]).to_numpy()
