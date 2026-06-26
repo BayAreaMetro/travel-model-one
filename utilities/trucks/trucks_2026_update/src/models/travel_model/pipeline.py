@@ -281,9 +281,9 @@ def run_scenario(scenario: Scenario, base_zip: str, output_root: Path, iteration
             print(f"[{scenario.name}] .bat failed — skipping conversions")
 
     if not bat_failed:
-        # print(f"[{scenario.name}] converting .tpp -> .omx")
-        # if not run_conversion(scenario_dir):
-        #     print(f"[{scenario.name}] .tpp -> .omx conversion exited non-zero")
+        print(f"[{scenario.name}] converting .tpp -> .omx")
+        if not run_conversion(scenario_dir):
+            print(f"[{scenario.name}] .tpp -> .omx conversion exited non-zero")
         print(f"[{scenario.name}] converting .net -> shapefiles")
         if not run_net_conversion(scenario_dir, iteration):
             print(f"[{scenario.name}] .net -> shapefile conversion exited non-zero")
