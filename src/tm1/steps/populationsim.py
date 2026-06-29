@@ -59,6 +59,13 @@ def _create_seed_population(hh_file: Path, per_file: Path, working_dir: Path) ->
     per = pd.read_csv(per_file)
     log.info("Read %s housing, %s person records", f"{len(hu):,}", f"{len(per):,}")
 
+    # Bay-Area pre-filtered PUMS files carry their own COUNTY (FIPS code) and
+    # County_Name columns. Drop them so the crosswalk's MTC COUNTY (1-9) is
+    # authoritative after the merge below (raw statewide PUMS lack these columns,
+    # so this is a harmless no-op there).
+    hu = hu.drop(columns=["COUNTY", "County_Name"], errors="ignore")
+    per = per.drop(columns=["COUNTY", "County_Name"], errors="ignore")
+
     # Filter to Bay Area PUMAs via geo crosswalk
     xwalk = pd.read_csv(_CONFIGS_DIR / "geo_cross_walk.csv")[["PUMA", "COUNTY"]].drop_duplicates()
     hu = hu.merge(xwalk, on="PUMA", how="inner")
