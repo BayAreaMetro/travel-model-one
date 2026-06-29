@@ -19,13 +19,13 @@ input_table_list:
   - tablename: households
     filename: households.csv
     index_col: household_id
+    # Column names come from PopulationSim's output_synthetic_population
+    # (NP, VEH, income, num_workers, household_id) — NOT the legacy reference
+    # popsyn schema (PERSONS, VEHICL, HINC, hworkers) used by base_2023_frozen.
     rename_columns:
-      HHID: household_id
-      PERSONS: hhsize
-      hworkers: num_workers
-      VEHICL: auto_ownership
+      NP: hhsize
+      VEH: auto_ownership
       TAZ: home_zone_id
-      HINC: income
     recode_columns:
       home_zone_id: land_use.zone_id
     keep_columns:
