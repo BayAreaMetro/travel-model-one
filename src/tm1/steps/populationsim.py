@@ -35,22 +35,46 @@ log = logging.getLogger(__name__)
 _CONFIGS_DIR = Path(__file__).resolve().parents[3] / "base-models" / "population" / "configs"
 
 
+def _resolve_config(filename: str, config_dirs: list[Path]) -> Path:
+    """Resolve a config file across the config-dir chain (first match wins).
+
+    Falls back to the base-models configs dir if not found in the chain. This
+    lets a scenario override ``geo_cross_walk.csv`` / ``pums_encoding.yaml`` by
+    placing its own copy earlier in the chain (e.g. for a different PUMA vintage).
+    """
+    for d in config_dirs:
+        p = d / filename
+        if p.exists():
+            return p
+    return _CONFIGS_DIR / filename
+
+
 # ---------------------------------------------------------------------------
 # Seed population creation (cross-table operations)
 # ---------------------------------------------------------------------------
 
 
-def _create_seed_population(hh_file: Path, per_file: Path, working_dir: Path) -> None:
+def _create_seed_population(
+    hh_file: Path,
+    per_file: Path,
+    working_dir: Path,
+    enc_path: Path,
+    xwalk_path: Path,
+) -> None:
     """Read raw PUMS CSVs and write seed_households/persons.csv.
 
     Performs cross-table derivations that cannot be expressed as
     PopulationSim annotation CSVs (person->household aggregations,
     GQ weight transfers, filtering).
 
+    ``enc_path`` (pums_encoding.yaml) and ``xwalk_path`` (geo_cross_walk.csv)
+    are resolved from the scenario config chain so scenarios can override the
+    PUMS encoding / PUMA vintage.
+
     Person-level model fields (pemploy, pstudent, ptype) are NOT derived here.
     They are computed at ActivitySim runtime by annotate_persons_pums.csv.
     """
-    with (_CONFIGS_DIR / "pums_encoding.yaml").open() as f:
+    with enc_path.open() as f:
         enc = yaml.safe_load(f)
     gq = enc["gqtype"]
     gq_inst, gq_noninst = enc["gq_institutional"], enc["gq_non_institutional"]
@@ -66,8 +90,21 @@ def _create_seed_population(hh_file: Path, per_file: Path, working_dir: Path) ->
     hu = hu.drop(columns=["COUNTY", "County_Name"], errors="ignore")
     per = per.drop(columns=["COUNTY", "County_Name"], errors="ignore")
 
+    # Normalize weeks-worked across PUMS vintages: 2017-21 PUMS has the
+    # categorical WKW (1-6); the 2019-23 5-year PUMS replaced it with numeric
+    # WKWN (weeks worked, 0-52). Derive WKW from WKWN when WKW is absent so the
+    # synthetic_persons output and annotate_persons_pums can rely on one column.
+    # ACS WKW categories: 1=50-52wks 2=48-49 3=40-47 4=27-39 5=14-26 6=1-13.
+    if "WKW" not in per.columns and "WKWN" in per.columns:
+        wkwn = per.WKWN.fillna(0).clip(0, 52)
+        per["WKW"] = (
+            pd.cut(wkwn, [-1, 0, 13, 26, 39, 47, 49, 52], labels=[0, 6, 5, 4, 3, 2, 1])
+            .astype(int)
+        )
+        log.info("Derived categorical WKW from numeric WKWN (2019-23 PUMS vintage)")
+
     # Filter to Bay Area PUMAs via geo crosswalk
-    xwalk = pd.read_csv(_CONFIGS_DIR / "geo_cross_walk.csv")[["PUMA", "COUNTY"]].drop_duplicates()
+    xwalk = pd.read_csv(xwalk_path)[["PUMA", "COUNTY"]].drop_duplicates()
     hu = hu.merge(xwalk, on="PUMA", how="inner")
     per = per.merge(xwalk, on="PUMA", how="inner")
     log.info("After PUMA filter: %s HH, %s persons", f"{len(hu):,}", f"{len(per):,}")
@@ -167,15 +204,17 @@ def _prepare_controls(controls: dict[str, str | Path], working_dir: Path) -> Non
 # ---------------------------------------------------------------------------
 
 
-def _run_synthesis(working_dir: Path, config_dirs: list[Path], multiprocess: bool) -> None:
+def _run_synthesis(
+    working_dir: Path, config_dirs: list[Path], multiprocess: bool, xwalk_path: Path
+) -> None:
     """Invoke PopulationSim with the given config chain."""
     popsim_output = working_dir / "pipeline"
     popsim_output.mkdir(parents=True, exist_ok=True)
 
-    # Ensure geo_cross_walk is in data dir
+    # Ensure geo_cross_walk is in data dir (resolved from the config chain)
     xwalk_dst = working_dir / "geo_cross_walk.csv"
     if not xwalk_dst.exists():
-        shutil.copy2(_CONFIGS_DIR / "geo_cross_walk.csv", xwalk_dst)
+        shutil.copy2(xwalk_path, xwalk_dst)
 
     from populationsim import run as _popsim_run  # noqa: PLC0415
     from populationsim.run import add_run_args as _popsim_add_run_args  # noqa: PLC0415
@@ -254,14 +293,7 @@ def run(
             log.info("PopulationSim outputs already exist in %s — skipping", output_dir)
             return "skipped"
 
-    # 1. Create seed population from PUMS
-    if not (working_dir / "seed_households.csv").exists():
-        _create_seed_population(Path(pums["household"]), Path(pums["person"]), working_dir)
-
-    # 2. Prepare control totals
-    _prepare_controls(controls, working_dir)
-
-    # 3. Build config directory chain
+    # 1. Build config directory chain (used to resolve overridable config files)
     config_dirs: list[Path] = []
     raw_configs = step_cfg.get("configs", [])
     if raw_configs:
@@ -277,6 +309,20 @@ def run(
             config_dirs.append(configs_mp)
         config_dirs.append(_CONFIGS_DIR)
 
+    # Resolve scenario-overridable config files from the chain (first match wins)
+    enc_path = _resolve_config("pums_encoding.yaml", config_dirs)
+    xwalk_path = _resolve_config("geo_cross_walk.csv", config_dirs)
+    log.info("Using pums_encoding=%s, geo_cross_walk=%s", enc_path, xwalk_path)
+
+    # 2. Create seed population from PUMS
+    if not (working_dir / "seed_households.csv").exists():
+        _create_seed_population(
+            Path(pums["household"]), Path(pums["person"]), working_dir, enc_path, xwalk_path
+        )
+
+    # 3. Prepare control totals
+    _prepare_controls(controls, working_dir)
+
     multiprocess = any(
         (d / "settings.yaml").exists()
         and "multiprocess: True" in (d / "settings.yaml").read_text()
@@ -285,7 +331,7 @@ def run(
 
     # 4. Run synthesis
     if not (working_dir / "pipeline" / "synthetic_households.csv").exists():
-        _run_synthesis(working_dir, config_dirs, multiprocess)
+        _run_synthesis(working_dir, config_dirs, multiprocess, xwalk_path)
 
     # 5. Post-process to final output
     _postprocess(working_dir, output_dir)
