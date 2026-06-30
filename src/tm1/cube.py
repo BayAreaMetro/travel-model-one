@@ -40,6 +40,10 @@ _CUBE_PATH = ";".join(d for d in _CUBE_DIRS if Path(d).is_dir())
 _ACCESS_VIOLATION = -1073741819
 _ACCESS_VIOLATION_U = 3221225477
 
+# Cube engine ReturnCode convention: 0 = ok, 1 = warnings, 2+ = fatal. MTC jobs
+# tolerate warnings (``if ERRORLEVEL 2 goto done``), so only >= this is a failure.
+_RC_FATAL = 2
+
 
 class CubeJobError(RuntimeError):
     """A Cube ``.job`` exited non-zero or failed to run."""
@@ -382,9 +386,12 @@ def run_cube_job(
         raise CubeJobError(msg)
 
     # The Voyager engine ReturnCode is authoritative; runtpp's process exit code
-    # can be a spurious .NET error on an otherwise-successful run.
+    # can be a spurious .NET error on an otherwise-successful run.  Cube's convention
+    # is 0 = ok, 1 = warnings, 2 = fatal; every MTC job tolerates warnings
+    # (``if ERRORLEVEL 2 goto done``), e.g. TRNBUILD emits ReturnCode 1 for benign
+    # "zone access link does not connect to stop node" warnings — so accept rc < 2.
     engine_rc = _engine_returncode(log_text)
-    ok = engine_rc == 0 if engine_rc is not None else rc == 0
+    ok = engine_rc < _RC_FATAL if engine_rc is not None else rc == 0
     if not ok:
         msg = (
             f"Cube job {job.name} failed (exit={rc}, engine ReturnCode={engine_rc}, "
