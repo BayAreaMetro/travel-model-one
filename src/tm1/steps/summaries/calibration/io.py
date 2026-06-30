@@ -139,7 +139,7 @@ def read_skim(path: str | Path) -> pl.LazyFrame:
 
     Dispatches by file extension:
     * ``.csv`` — expects columns ``orig``, ``dest``, ``DIST``.
-    * ``.tpp`` — Cube binary; uses ``cubeio.tpp``.
+    * ``.tpp`` — Cube binary; uses ``cubeio.read_tpp``.
     * ``.omx``  — OpenMatrix; uses ``openmatrix``.
     """
     path = Path(path)
@@ -179,9 +179,9 @@ def _read_skim_csv(path: Path) -> pl.LazyFrame:
 
 def _read_skim_tpp(path: Path) -> pl.LazyFrame:
     log.info("Reading TPP skim: %s", path)
-    from cubeio import tpp  # noqa: PLC0415
+    from cubeio import read_tpp  # noqa: PLC0415
 
-    skims = tpp.read_tpp(str(path))
+    skims = read_tpp(str(path))
     n_zones = skims["zones"]
     taz_ids = np.arange(1, n_zones + 1)
     orig, dest = np.meshgrid(taz_ids, taz_ids, indexing="ij")

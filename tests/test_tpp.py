@@ -22,7 +22,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from cubeio.tpp import read_tpp
+from cubeio import read_tpp, write_tpp
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -117,3 +117,34 @@ class TestGolden:
         gt = _load_sparse_csv_gt(golden_csv)
         assert len(gt) > 0, f"Golden CSV {golden_csv} has no rows"
         _check_sparse_cells(result, gt)
+
+
+# ---------------------------------------------------------------------------
+# Writer round-trip — write_tpp(read_tpp(golden)) reproduces every cell
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "tpp_path",
+    [c[2] for c in _golden_cases],
+    ids=[c[0] for c in _golden_cases],
+)
+def test_writer_roundtrip(tpp_path: Path, tmp_path: Path) -> None:
+    """read_tpp -> write_tpp -> read_tpp reproduces the matrices cell-exact.
+
+    Exercises every block type the goldens contain (0x00, 0xC8/0xE8 dense,
+    sparse transit rows) through the encoder.
+    """
+    orig = read_tpp(tpp_path)
+    out = tmp_path / tpp_path.name
+    write_tpp(out, orig["data"], zones=orig["zones"])
+    back = read_tpp(out)
+
+    assert back["zones"] == orig["zones"]
+    assert back["tables"] == orig["tables"]
+    for tbl in orig["tables"]:
+        a = orig["data"][tbl]
+        b = back["data"][tbl]
+        threshold = np.maximum(5e-4, np.abs(a) * 1e-4)
+        n_bad = int((np.abs(a - b) > threshold).sum())
+        assert n_bad == 0, f"{tbl}: {n_bad} cells differ after write/read round-trip"

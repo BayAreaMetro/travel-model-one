@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import polars as pl
-from tm1.tpp import read_tpp
+from cubeio import read_tpp
 
 
 def validate_one(tpp_path: Path, csv_path: Path) -> tuple[int, int, list[str]]:

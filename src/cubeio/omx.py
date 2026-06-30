@@ -1,7 +1,7 @@
-"""Generic Cube TPP → OMX matrix converter.
+"""Generic Cube TPP <-> OMX matrix converters.
 
-Streams TPP files one at a time, renaming tables according to a caller-supplied
-mapping, and writes a single OMX file.  Knows nothing about TM1 naming
+Bidirectional bridge between Cube TPP files and a single OMX file, renaming
+tables according to a caller-supplied mapping.  Knows nothing about TM1 naming
 conventions — the mapping is purely data-driven.
 """
 
@@ -11,7 +11,8 @@ from pathlib import Path
 import numpy as np
 import openmatrix as omx
 
-from cubeio.tpp import read_tpp
+from cubeio.tpp_read import read_tpp
+from cubeio.tpp_write import write_tpp
 
 try:
     from tqdm import tqdm
@@ -85,3 +86,58 @@ def tpp_to_omx(
 
     log.info("Wrote %d matrices (%s zones) to %s", count, zones, output)
     return count
+
+
+def omx_to_tpp(
+    omx_path: Path,
+    file_map: dict[Path, dict[str, str]],
+    *,
+    zones: int | None = None,
+) -> int:
+    """Convert OMX matrices to one or more Cube TPP files (inverse of ``tpp_to_omx``).
+
+    Parameters
+    ----------
+    omx_path
+        Source OMX file.
+    file_map
+        ``{tpp_path: {omx_key: cube_table_name}}``.  One entry per output TPP;
+        each inner dict maps OMX matrix keys to the Cube table names to write
+        into that file.  Missing OMX keys are skipped with a warning.
+    zones
+        Zone count; inferred from the first matrix's shape if omitted.
+
+    Returns:
+    -------
+    int
+        Number of TPP files written.
+    """
+    written = 0
+
+    with omx.open_file(str(omx_path), "r") as f:
+        available = set(f.list_matrices())
+        items = file_map.items()
+        if tqdm is not None:
+            items = tqdm(list(items), desc="OMX → TPP", unit="file")
+
+        for tpp_path, table_map in items:
+            if tqdm is not None and hasattr(items, "set_postfix_str"):
+                items.set_postfix_str(Path(tpp_path).name)
+
+            data: dict[str, np.ndarray] = {}
+            for omx_key, cube_name in table_map.items():
+                if omx_key not in available:
+                    log.warning("OMX key %s not found, skipping", omx_key)
+                    continue
+                data[cube_name] = np.asarray(f[omx_key])
+
+            if not data:
+                log.warning("No matrices found for %s, skipping", tpp_path)
+                continue
+
+            write_tpp(Path(tpp_path), data, zones=zones)
+            written += 1
+            log.debug("Wrote %s (%d tables)", tpp_path, len(data))
+
+    log.info("Wrote %d TPP file(s) from %s", written, omx_path)
+    return written

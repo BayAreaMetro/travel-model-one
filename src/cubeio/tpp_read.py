@@ -6,7 +6,7 @@ Validated bit-exact against Cube's own CSV dumps across 81 skim files
 
 Usage::
 
-    from tm1.tpp import read_tpp
+    from cubeio import read_tpp
 
     result = read_tpp("HWYSKMEA.tpp")
     # result['zones']  -> 1475
