@@ -21,7 +21,7 @@ import numpy as np
 import openmatrix as omx
 
 from cubeio import write_tpp
-from tm1.cube import run_cube_job
+from tm1.assignment.cube.runner import run_cube_job
 
 log = logging.getLogger(__name__)
 
@@ -329,7 +329,7 @@ def run_assignment_iteration(  # noqa: PLR0913
     if build_skims:
         run_highway_skims(proj_dir)
         if do_transit:
-            from tm1.transit import run_transit  # noqa: PLC0415
+            from tm1.assignment.cube.transit import run_transit  # noqa: PLC0415
             run_transit(proj_dir, iteration, cluster_nodes=transit_nodes)
         if skims_omx_path is None:
             msg = "skims_omx_path is required when build_skims=True"

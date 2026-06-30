@@ -1,4 +1,4 @@
-"""Tests for tm1.assignment — ActivitySim trip OMX -> Cube assignment demand TPP."""
+"""Tests for the Cube trip bridge — ActivitySim trip OMX -> Cube assignment demand TPP."""
 
 from pathlib import Path
 
@@ -7,7 +7,12 @@ import openmatrix as omx
 import pytest
 
 from cubeio import read_tpp
-from tm1.assignment import _ASIM_TO_CUBE, _TABLE_ORDER, _ZERO_CLASSES, build_trip_matrices
+from tm1.assignment.cube.highway import (
+    _ASIM_TO_CUBE,
+    _TABLE_ORDER,
+    _ZERO_CLASSES,
+    build_trip_matrices,
+)
 
 
 def _make_trip_omx(path: Path, period: str, zones: int, fill: dict[str, float]) -> None:

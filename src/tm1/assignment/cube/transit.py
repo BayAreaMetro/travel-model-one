@@ -17,7 +17,7 @@ import logging
 import shutil
 from pathlib import Path
 
-from tm1.cube import run_cube_job
+from tm1.assignment.cube.runner import run_cube_job
 
 log = logging.getLogger(__name__)
 
