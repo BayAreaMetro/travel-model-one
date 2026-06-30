@@ -114,11 +114,49 @@ def _run_activitysim(  # noqa: C901
 
 
 def _run_assignment(
-    cfg: dict,  # noqa: ARG001
+    cfg: dict,
     iteration: int,
 ) -> None:
-    """Run highway/transit assignment (not yet implemented)."""
-    log.warning("Assignment not yet implemented — skipping iteration %d", iteration)
+    """Run one faithful Cube highway assignment + feedback iteration.
+
+    Reads ``steps.simulate_activitysim.assignment``:
+
+    * ``cube_proj_dir`` — Cube project scaffold (hwy nets, CTRAMP/scripts, frozen
+      ``nonres/`` demand). Required to run assignment; if absent, assignment is
+      skipped (ActivitySim then just re-runs against the same static skims).
+    * ``cluster_nodes`` — local Cube Cluster size (must match ``HwyIntraStep.block``;
+      default 12).
+    * ``assign_job`` — assignment job script (default ``HwyAssign.job``).
+
+    The bridged demand comes from this iteration's ActivitySim ``trips_{period}.omx``
+    (in the ActivitySim ``output_dir``); the refreshed skims are written back to the
+    ActivitySim ``data_dir``'s ``skims.omx`` for the next ActivitySim run.
+    """
+    from tm1.assignment import run_assignment_iteration  # noqa: PLC0415
+
+    sim_cfg = cfg["steps"].get("simulate_activitysim", cfg["steps"].get("simulate", {}))
+    asim_cfg = sim_cfg.get("activitysim", sim_cfg)
+    asn = sim_cfg.get("assignment")
+    if not asn or not asn.get("cube_proj_dir"):
+        log.warning(
+            "No assignment.cube_proj_dir configured — skipping highway assignment "
+            "for iteration %d (ActivitySim will re-run against static skims)",
+            iteration,
+        )
+        return
+
+    proj_dir = Path(asn["cube_proj_dir"])
+    asim_output_dir = Path(asim_cfg["output_dir"])
+    skims_omx = Path(asn.get("skims_omx", Path(asim_cfg["data_dir"]) / "skims.omx"))
+
+    run_assignment_iteration(
+        proj_dir,
+        asim_output_dir,
+        iteration,
+        skims_omx_path=skims_omx,
+        cluster_nodes=asn.get("cluster_nodes", 12),
+        assign_job=asn.get("assign_job", "HwyAssign.job"),
+    )
 
 
 def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:

@@ -146,18 +146,21 @@ def run_highway_assignment(
     *,
     cluster_nodes: int = _NODES_ASSIGN,
     timeout: float = 14400,
+    assign_job: str = "HwyAssign.job",
 ) -> None:
     """Assign ``main/trips{P}.tpp`` + frozen nonres demand to the network.
 
     Runs ``HwyAssign.job`` (faithful, as-is), producing ``hwy/LOAD{P}.net`` for
     each period.  Requires ``main/trips{P}.tpp`` (see :func:`build_trip_matrices`)
     and the non-residential demand (``nonres/trips{Ix,Trk,AirPax,Hsr}{P}.tpp``)
-    to be in place.
+    to be in place.  ``assign_job`` selects the job script (e.g. a reduced-iteration
+    ``HwyAssign_smoke.job`` for quick mechanics checks).  ``cluster_nodes`` must
+    match the intrastep node range in ``HwyIntraStep.block``.
     """
     proj_dir = Path(proj_dir)
     scripts = proj_dir / "CTRAMP" / "scripts"
     run_cube_job(
-        _job(scripts, "assign", "HwyAssign.job"), proj_dir,
+        _job(scripts, "assign", assign_job), proj_dir,
         cluster_nodes=cluster_nodes, timeout=timeout,
     )
 
@@ -285,7 +288,7 @@ def refresh_skims_omx(proj_dir: str | Path, skims_omx_path: str | Path) -> Path:
     return skims_omx_path
 
 
-def run_assignment_iteration(
+def run_assignment_iteration(  # noqa: PLR0913
     proj_dir: str | Path,
     asim_output_dir: str | Path,
     iteration: int,
@@ -295,6 +298,8 @@ def run_assignment_iteration(
     wgt: float | None = None,
     prev_wgt: float | None = None,
     build_skims: bool = True,
+    cluster_nodes: int = _NODES_ASSIGN,
+    assign_job: str = "HwyAssign.job",
 ) -> None:
     """One full global feedback iteration of the faithful Cube assignment loop.
 
@@ -314,7 +319,7 @@ def run_assignment_iteration(
     proj_dir = Path(proj_dir)
     log.info("=== Assignment iteration %d ===", iteration)
     build_trip_matrices(asim_output_dir, proj_dir / "main")
-    run_highway_assignment(proj_dir)
+    run_highway_assignment(proj_dir, cluster_nodes=cluster_nodes, assign_job=assign_job)
     run_highway_feedback(
         proj_dir, iteration,
         prev_iteration=prev_iteration, wgt=wgt, prev_wgt=prev_wgt,
