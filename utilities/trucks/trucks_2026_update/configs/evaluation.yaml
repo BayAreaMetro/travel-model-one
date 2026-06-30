@@ -1,0 +1,19 @@
+observed_data: data/interim/observed_data/observed_dataset_merged.csv
+network_crs:  "EPSG:26910"
+output: data/processed/scenario_evaluation/scenarios_comparison_round_1.shp
+volume_columns:
+    EA: EA
+    AM: AM
+    MD: MD
+    PM: PM
+    EV: EV
+    "24HR": total
+model_runs:
+  - name: TM-1.6
+    path: C:/Users/USJC173858/temp/baseline
+  - name: TM-1.7 Truck truck_updates
+    path: C:/Users/USJC173858/temp/truck_updates
+# - name: MTC
+#   path: models/assignment/tm1_legacy/2023_TM161_IPA_35/
+# - name: SW
+#   path: models/assignment/tm16_with_sw_truck_od_trips/2023_TM161_IPA_35

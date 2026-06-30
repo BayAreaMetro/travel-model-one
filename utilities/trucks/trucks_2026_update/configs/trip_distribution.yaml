@@ -1,0 +1,48 @@
+model_settings:
+  gravity_max_iters: 99              # max IPF iterations per gravity run
+  gravity_max_rmse: 10.0             # convergence threshold (RMSE of col sums vs target A)
+  optimizer_method: "Nelder-Mead"    # scipy.optimize.minimize method
+  optimizer_max_iters: 500           # max optimizer function evaluations
+  atl_penalty_weight: 0.1            # weight of ATL penalty term in calibration loss (0.0 to disable)
+  gamma_b_bounds: [-3.0, -0.01]      # search bounds for b parameter
+  gamma_c_bounds: [-0.5, -0.001]     # search bounds for c parameter
+  verbosity: "INFO"                  # logging level: DEBUG, INFO, WARNING
+  output_dir: models/trip_distribution
+
+inputs:
+  pa_path: data/interim/trip_distribution/sw/SW_trip_generation_TAZ1454.parquet
+  skim_path: data/interim/trip_distribution/sw/blend_time_skims.omx
+  # geo_agg_cols:                  # omit entirely to skip all geo-aggregated outputs
+  #   - county_id
+  #   - district_id
+
+runs:
+  - name: light_trucks            # full name, used in output filenames and parquet columns
+    short_name: LT                # used as Excel tab prefix (keep <= 4 chars)
+    productions_column: light_trucks_production
+    attractions_column: light_trucks_attraction
+    skim_column: blend_time_struck      # must exist as a table in the OMX file
+    gamma_b0: -0.50               # initial value for optimizer
+    gamma_c0: -0.05               # initial value for optimizer
+    tlfd_path: data/interim/trip_distribution/sw/tlfd_light_trucks.csv
+    # target_od_path: data/interim/trip_distribution/sw/statewide_od_light.parquet
+
+  - name: medium_trucks
+    short_name: MD
+    productions_column: medium_trucks_production
+    attractions_column: medium_trucks_attraction
+    skim_column: blend_time_medium
+    gamma_b0: -1.00
+    gamma_c0: -0.03
+    tlfd_path: data/interim/trip_distribution/sw/tlfd_medium_trucks.csv
+    # no target_od_path — OD outputs skipped for this run
+
+  - name: heavy_trucks
+    short_name: HT
+    productions_column: heavy_trucks_production
+    attractions_column: heavy_trucks_attraction
+    skim_column: blend_time_large
+    gamma_b0: -1.20
+    gamma_c0: -0.02
+    tlfd_path: data/interim/trip_distribution/sw/tlfd_heavy_trucks.csv
+    # target_od_path: data/interim/trip_distribution/statewide_od_heavy.parquet
