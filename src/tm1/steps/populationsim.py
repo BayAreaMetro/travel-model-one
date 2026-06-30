@@ -49,9 +49,63 @@ def _resolve_config(filename: str, config_dirs: list[Path]) -> Path:
     return _CONFIGS_DIR / filename
 
 
+def _merge_guarded(
+    left: pd.DataFrame,
+    right: pd.DataFrame,
+    on: str | list[str],
+    how: str = "left",
+    *,
+    authoritative: bool = False,
+) -> pd.DataFrame:
+    """Merge that guards against silent column pollution.
+
+    pandas silently appends ``_x``/``_y`` suffixes when non-key columns overlap,
+    which can quietly drop the expected column name — e.g. a PUMA->COUNTY
+    crosswalk merge when the input PUMS already carries a differently-coded
+    COUNTY (Census FIPS vs MTC 1-9). This wrapper makes the intent explicit:
+
+    - ``authoritative=False`` (default): raise if any non-key column overlaps,
+      so unexpected pollution fails loud instead of corrupting the frame.
+    - ``authoritative=True``: the ``right`` frame is the source of truth for the
+      columns it supplies; drop the overlapping columns from ``left`` first so
+      the right frame wins cleanly.
+    """
+    keys = [on] if isinstance(on, str) else list(on)
+    overlap = [c for c in right.columns if c not in keys and c in left.columns]
+    if overlap:
+        if not authoritative:
+            msg = (
+                f"merge on {keys} would collide on {overlap}; pandas would "
+                f"silently suffix these _x/_y. Pass authoritative=True to let "
+                f"the right frame win, or rename the columns first."
+            )
+            raise ValueError(msg)
+        left = left.drop(columns=overlap)
+    return left.merge(right, on=on, how=how)
+
+
 # ---------------------------------------------------------------------------
 # Seed population creation (cross-table operations)
 # ---------------------------------------------------------------------------
+
+
+def _normalize_pums_vintage(per: pd.DataFrame) -> pd.DataFrame:
+    """Normalize PUMS columns that differ across ACS vintages (in place-ish).
+
+    Kept separate from the core cross-table logic so source/vintage quirks live
+    in one labelled place. Currently: derive the categorical ``WKW`` (1-6) from
+    the numeric ``WKWN`` (weeks worked, 0-52) used by the 2019-23 5-year PUMS,
+    so downstream (synthetic_persons output, annotate_persons_pums) can rely on
+    one column. ACS WKW categories: 1=50-52wks 2=48-49 3=40-47 4=27-39 5=14-26
+    6=1-13.
+    """
+    if "WKW" not in per.columns and "WKWN" in per.columns:
+        wkwn = per.WKWN.fillna(0).clip(0, 52)
+        per["WKW"] = pd.cut(
+            wkwn, [-1, 0, 13, 26, 39, 47, 49, 52], labels=[0, 6, 5, 4, 3, 2, 1]
+        ).astype(int)
+        log.info("Derived categorical WKW from numeric WKWN (2019-23 PUMS vintage)")
+    return per
 
 
 def _create_seed_population(
@@ -83,30 +137,16 @@ def _create_seed_population(
     per = pd.read_csv(per_file)
     log.info("Read %s housing, %s person records", f"{len(hu):,}", f"{len(per):,}")
 
-    # Bay-Area pre-filtered PUMS files carry their own COUNTY (FIPS code) and
-    # County_Name columns. Drop them so the crosswalk's MTC COUNTY (1-9) is
-    # authoritative after the merge below (raw statewide PUMS lack these columns,
-    # so this is a harmless no-op there).
-    hu = hu.drop(columns=["COUNTY", "County_Name"], errors="ignore")
-    per = per.drop(columns=["COUNTY", "County_Name"], errors="ignore")
+    # Normalize PUMS vintage differences (e.g. WKWN -> WKW) before deriving fields.
+    per = _normalize_pums_vintage(per)
 
-    # Normalize weeks-worked across PUMS vintages: 2017-21 PUMS has the
-    # categorical WKW (1-6); the 2019-23 5-year PUMS replaced it with numeric
-    # WKWN (weeks worked, 0-52). Derive WKW from WKWN when WKW is absent so the
-    # synthetic_persons output and annotate_persons_pums can rely on one column.
-    # ACS WKW categories: 1=50-52wks 2=48-49 3=40-47 4=27-39 5=14-26 6=1-13.
-    if "WKW" not in per.columns and "WKWN" in per.columns:
-        wkwn = per.WKWN.fillna(0).clip(0, 52)
-        per["WKW"] = (
-            pd.cut(wkwn, [-1, 0, 13, 26, 39, 47, 49, 52], labels=[0, 6, 5, 4, 3, 2, 1])
-            .astype(int)
-        )
-        log.info("Derived categorical WKW from numeric WKWN (2019-23 PUMS vintage)")
-
-    # Filter to Bay Area PUMAs via geo crosswalk
+    # Attach MTC geography via the crosswalk, which is authoritative for COUNTY
+    # (MTC 1-9): the guarded merge drops any COUNTY the PUMS itself carries
+    # (Census FIPS) so the two codings can't silently collide. The inner join
+    # also filters to Bay Area PUMAs.
     xwalk = pd.read_csv(xwalk_path)[["PUMA", "COUNTY"]].drop_duplicates()
-    hu = hu.merge(xwalk, on="PUMA", how="inner")
-    per = per.merge(xwalk, on="PUMA", how="inner")
+    hu = _merge_guarded(hu, xwalk, on="PUMA", how="inner", authoritative=True)
+    per = _merge_guarded(per, xwalk, on="PUMA", how="inner", authoritative=True)
     log.info("After PUMA filter: %s HH, %s persons", f"{len(hu):,}", f"{len(per):,}")
 
     # --- Cross-table: workers per household from person ESR ---
@@ -120,12 +160,12 @@ def _create_seed_population(
         .sum()
         .rename(columns={"employed": "num_workers"})
     )
-    hu = hu.merge(hh_workers, left_on="SERIALNO", right_index=True, how="left")
+    hu = _merge_guarded(hu, hh_workers.reset_index(), on="SERIALNO", how="left")
     hu["num_workers"] = hu.num_workers.fillna(0).astype(np.uint8)
 
     # --- Cross-table: transfer PINCP->HINCP for GQ records ---
     pers_inc = per[["SERIALNO", "PINCP"]].dropna(subset=["PINCP"]).drop_duplicates("SERIALNO")
-    hu = hu.merge(pers_inc, on="SERIALNO", how="left", suffixes=("", "_per"))
+    hu = _merge_guarded(hu, pers_inc, on="SERIALNO", how="left")
     hu.loc[hu.HINCP.isna(), "HINCP"] = hu["PINCP"]
     hu = hu.drop(columns=["PINCP"], errors="ignore")
 
@@ -136,7 +176,7 @@ def _create_seed_population(
 
     # --- Filtering ---
     hu = hu.loc[hu.NP > 0]  # remove vacant units
-    per = per.merge(hu[["SERIALNO", "TYPEHUGQ"]], on="SERIALNO", how="left")
+    per = _merge_guarded(per, hu[["SERIALNO", "TYPEHUGQ"]], on="SERIALNO", how="left")
     hu = hu.loc[hu.TYPEHUGQ != gq_inst]
     per = per.loc[per.TYPEHUGQ != gq_inst]
     log.info("After filtering: %s HH, %s persons", f"{len(hu):,}", f"{len(per):,}")
@@ -144,9 +184,7 @@ def _create_seed_population(
     # Unique household ID
     hu = hu.reset_index(drop=True)
     hu["household_id"] = hu.index + 1
-    per = per.merge(
-        hu[["SERIALNO", "WGTP", "household_id"]], on="SERIALNO", how="left", suffixes=("", "_hu")
-    )
+    per = _merge_guarded(per, hu[["SERIALNO", "WGTP", "household_id"]], on="SERIALNO", how="left")
 
     # --- Cross-table: GQ type + weight transfer ---
     gq_col_schg = enc["gq_college_schg"]
@@ -162,7 +200,7 @@ def _create_seed_population(
     ).astype(np.uint8)
 
     gq_wt = per[["SERIALNO", "PWGTP", "gqtype"]].drop_duplicates("SERIALNO")
-    hu = hu.merge(gq_wt, on="SERIALNO", how="left")
+    hu = _merge_guarded(hu, gq_wt, on="SERIALNO", how="left")
     hu.loc[hu.TYPEHUGQ == gq_noninst, "WGTP"] = hu.PWGTP
     hu = hu.drop(columns=["PWGTP"])
     hu = hu.rename(columns={"gqtype": "hhgqtype"})
