@@ -1,0 +1,44 @@
+Description,Target,Expression
+#,, Derive pemploy/pstudent/ptype from raw PUMS fields
+#,, This replaces the bespoke _derive_person_fields() Python code with config.
+#,, Input columns: ESR WKW WKHP SCHG age (raw PUMS; AGEP renamed to age at import)
+#,, Output columns: pemploy pstudent ptype (expected by annotate_persons.csv)
+#,,
+#,, --- Employment status (pemploy) ---
+#,, ESR codes: 0=N/A(<16) 1=civilian employed 2=civilian employed absent
+#,,            3=unemployed 4=armed forces 5=armed forces absent 6=NILF
+#,, WKW codes: 1=50-52wks 2=48-49 3=40-47 4=27-39 5=14-26 6=<14
+fill NaN ESR (under 16),ESR,persons.ESR.fillna(0).astype(int)
+fill NaN WKW,WKW,persons.WKW.fillna(0).astype(int)
+fill NaN WKHP,WKHP,persons.WKHP.fillna(0).astype(int)
+fill NaN SCHG,SCHG,persons.SCHG.fillna(0).astype(int)
+employed flag,_employed,"ESR.isin([1, 2, 4, 5])"
+default not employed,pemploy,PEMPLOY_NOT
+child under 16 (ESR==0),pemploy,"pemploy.where(ESR != 0, PEMPLOY_CHILD)"
+full-time worker (employed + WKW in 1-4 + WKHP>=35),pemploy,"pemploy.where(~(_employed & WKW.isin([1, 2, 3, 4]) & (WKHP >= 35)), PEMPLOY_FULL)"
+part-time worker (employed but not full-time),pemploy,"pemploy.where(~(_employed & ~(WKW.isin([1, 2, 3, 4]) & (WKHP >= 35))), PEMPLOY_PART)"
+#,,
+#,, --- Student status (pstudent) ---
+#,, SCHG codes: 1-14=grade school  15-16=college/graduate
+default non-student,pstudent,PSTUDENT_NOT
+grade or high school,pstudent,"pstudent.where(~SCHG.between(1, 14), PSTUDENT_GRADE_OR_HIGH)"
+university student,pstudent,"pstudent.where(~SCHG.isin([15, 16]), PSTUDENT_UNIVERSITY)"
+#,,
+#,, --- Person type (ptype) ---
+#,, Priority order (last assignment wins for tied conditions):
+#,,   retired >= 65 and not employed
+#,,   non-working adult < 65 and not employed
+#,,   part-time worker
+#,,   driving-age student (grade school 16+)
+#,,   university student (or grade school 20+)
+#,,   full-time worker
+#,,   school-age child <= 15
+#,,   preschool child < 6 and not student
+default retired,ptype,PTYPE_RETIRED
+non-working adult (age < 65),ptype,"ptype.where(persons.age >= 65, PTYPE_NONWORK)"
+part-time worker,ptype,"ptype.where(pemploy != PEMPLOY_PART, PTYPE_PART)"
+driving-age student (grade/HS),ptype,"ptype.where(pstudent != PSTUDENT_GRADE_OR_HIGH, PTYPE_DRIVING)"
+university student,ptype,"ptype.where(~((pstudent == PSTUDENT_UNIVERSITY) | ((persons.age >= 20) & (pstudent == PSTUDENT_GRADE_OR_HIGH))), PTYPE_UNIVERSITY)"
+full-time worker,ptype,"ptype.where(pemploy != PEMPLOY_FULL, PTYPE_FULL)"
+school-age child (age <= 15),ptype,"ptype.where(persons.age > 15, PTYPE_SCHOOL)"
+preschool child (age < 6 and non-student),ptype,"ptype.where(~((persons.age < 6) & (pstudent == PSTUDENT_NOT)), PTYPE_PRESCHOOL)"

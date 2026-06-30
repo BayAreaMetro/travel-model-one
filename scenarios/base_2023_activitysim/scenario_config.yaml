@@ -1,0 +1,83 @@
+# Base 2023 Cleaned — upgraded PUMS + harmonized PopulationSim
+#
+# This scenario uses PUMS 2019-2023 (5-year ACS) with 2020-vintage PUMAs.
+# It produces a NEW synthetic population that does NOT match the legacy
+# reference run (2023_TM161_IPA_35_testrun), which used PUMS 2017-21.
+#
+# Use base_2023 (not this) if you need to exactly replicate the reference run.
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
+proj_dir: "E:/Tests/tm1a_cleaned"
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  DERIVED PATHS — generally no need to change                               │
+# └─────────────────────────────────────────────────────────────────────────────┘
+survey_output_dir: "{proj_dir}/survey"
+asim_output_dir: "{proj_dir}/output_full"
+
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+steps:
+  # --- 1. Setup: copy inputs from reference run into project directory ---
+  # NOTE: land_use and skims still come from the reference run.
+  # Only the population is regenerated from newer PUMS.
+  setup:
+    copy_inputs:
+      land_use:
+        from: "{reference_run}/landuse/tazData.csv"
+        to: "{proj_dir}/data/land_use.csv"
+
+  # --- 2. Convert skims: CUBE .tpp → OMX for ActivitySim ---
+  convert_skims:
+    skim_tpp_dir: "{reference_run}/skims"
+    output: "{proj_dir}/data/skims.omx"
+
+  # --- 3. PopulationSim: synthesize from PUMS 2019-2023 (5-year ACS) ---
+  populationsim:
+    pums:
+      # Pre-crosswalked 2019-2023 5-year PUMS with 2020-vintage PUMAs.
+      # These files include a derived WKW column (mapped from WKWN).
+      household: "M:/Data/Census/PUMS_2023_5Year_Crosswalked/bay_area_households_2019_2023_crosswalked.csv"
+      person: "M:/Data/Census/PUMS_2023_5Year_Crosswalked/bay_area_persons_2019_2023_crosswalked.csv"
+    controls:
+      taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
+      county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
+      region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
+    working_dir: "{proj_dir}/popsim"
+    output_dir: "{proj_dir}/data"
+    configs:
+      - "scenarios/base_2023_activitysim/populationsim"
+      - "base-models/population/configs_mp"
+      - "base-models/population/configs"
+
+  # --- 4. Simulate: run ActivitySim demand model ---
+  simulate_activitysim:
+    iterations: 0  # 0 = static skims (no highway assignment feedback loop)
+    activitysim:
+      configs:
+        - "scenarios/base_2023_activitysim/activitysim"
+        - "base-models/activity/configs_mp"
+        - "base-models/activity/configs"
+      data_dir: "{proj_dir}/data"
+      output_dir: "{proj_dir}/output"
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  CALIBRATION / VALIDATION                                                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+calibration:
+  submodels:
+    - auto_ownership
+    - work_from_home
+    - free_parking
+    - cdap
+    - mandatory_tour_frequency
+    - joint_tour_frequency
+    - non_mandatory_tour_frequency
+    - atwork_subtour
+    - tour_mode_choice
+    - trip_mode_choice

@@ -483,7 +483,12 @@ public class UsualWorkSchoolLocationChoiceModel implements Serializable {
             
             ArrayList<int[]> startEndTaskIndicesList = getWriteHouseholdRanges(householdDataManager, householdDataManager.getNumHouseholds() );
 
-            long maxSize = 0;
+            // PERF: ObjectUtil.sizeOf() uses deep reflection to measure every
+            // household object.  On a full Bay Area population (~900K HHs) this
+            // adds 30-40+ minutes to the results-write step for a single
+            // diagnostic log line.  Commented out — uncomment only for debugging
+            // memory issues.
+            // long maxSize = 0;
             for ( int[] startEndIndices : startEndTaskIndicesList ) {
             
                 int startIndex = startEndIndices[0];
@@ -497,10 +502,10 @@ public class UsualWorkSchoolLocationChoiceModel implements Serializable {
 
                     Household household = householdArray[i];
 
-                    long size = ObjectUtil.sizeOf( household );
-                    if ( size > maxSize )
-                        maxSize = size;
-                    
+                    // PERF: see note above — deep reflection object sizing disabled
+                    // long size = ObjectUtil.sizeOf( household );
+                    // if ( size > maxSize )
+                    //     maxSize = size;
 
                     int hhId = household.getHhId();
                     int homeTaz = household.getHhTaz();
@@ -541,7 +546,8 @@ public class UsualWorkSchoolLocationChoiceModel implements Serializable {
 
             outStream.close();
 
-            logger.info( "max size for all Household objects after UWSL model is " + maxSize + " bytes." );
+            // PERF: disabled — see ObjectUtil.sizeOf() comment above
+            // logger.info( "max size for all Household objects after UWSL model is " + maxSize + " bytes." );
         }
 
     }

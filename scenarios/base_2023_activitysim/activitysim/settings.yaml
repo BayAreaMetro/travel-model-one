@@ -1,0 +1,90 @@
+# base_2023_activitysim scenario — ActivitySim operational overrides
+#
+# Key difference from base_2023: pemploy/pstudent/ptype are derived from raw
+# PUMS columns by annotate_persons_pums.csv at runtime, NOT pre-computed
+# on the input CSVs. This means the persons.csv carries ESR, WKW, WKHP,
+# SCHG, AGEP through from PopulationSim instead.
+
+inherit_settings: True
+
+# Full population (0 = all households; set to e.g. 1000 for dev/debug)
+households_sample_size: 0
+
+# Shadow pricing for workplace/school location
+use_shadow_pricing: True
+
+# Override input_table_list to import raw PUMS fields for annotation-based
+# derivation of pemploy/pstudent/ptype (done in annotate_persons_pums.csv).
+input_table_list:
+  - tablename: households
+    filename: households.csv
+    index_col: household_id
+    # Column names come from PopulationSim's output_synthetic_population
+    # (NP, VEH, income, num_workers, household_id) — NOT the legacy reference
+    # popsyn schema (PERSONS, VEHICL, HINC, hworkers) used by base_2023_frozen.
+    rename_columns:
+      NP: hhsize
+      VEH: auto_ownership
+      TAZ: home_zone_id
+    recode_columns:
+      home_zone_id: land_use.zone_id
+    keep_columns:
+      - home_zone_id
+      - income
+      - hhsize
+      - HHT
+      - auto_ownership
+      - num_workers
+
+  - tablename: persons
+    filename: persons.csv
+    index_col: person_id
+    rename_columns:
+      PERID: person_id
+      HHID: household_id
+      AGEP: age
+      SEX: sex
+    keep_columns:
+      - household_id
+      - age
+      - sex
+      # Raw PUMS fields for annotation-based derivation
+      - ESR
+      - WKW
+      - WKHP
+      - SCHG
+
+  - tablename: land_use
+    filename: land_use.csv
+    index_col: zone_id
+    rename_columns:
+      ZONE: zone_id
+      COUNTY: county_id
+      AREATYPE: area_type
+    recode_columns:
+      zone_id: zero-based
+    keep_columns:
+      - DISTRICT
+      - SD
+      - county_id
+      - TOTHH
+      - TOTPOP
+      - TOTACRE
+      - RESACRE
+      - CIACRE
+      - TOTEMP
+      - AGE0519
+      - RETEMPN
+      - FPSEMPN
+      - HEREMPN
+      - OTHEMPN
+      - AGREMPN
+      - MWTEMPN
+      - PRKCST
+      - OPRKCST
+      - area_type
+      - HSENROLL
+      - COLLFTE
+      - COLLPTE
+      - TOPOLOGY
+      - TERMINAL

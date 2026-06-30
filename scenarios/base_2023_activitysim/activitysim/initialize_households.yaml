@@ -1,0 +1,37 @@
+# initialize_households.yaml — base_2023_activitysim override
+#
+# Adds a PUMS derivation annotation step BEFORE the standard annotations.
+# This step derives pemploy/pstudent/ptype from raw PUMS columns (ESR, WKW,
+# WKHP, SCHG, AGEP) that are carried through from PopulationSim.
+#
+# After this step, the standard annotate_persons.csv / annotate_households.csv
+# proceed exactly as in the base configs.
+
+annotate_tables:
+  # NEW: Derive model fields from raw PUMS columns
+  - tablename: persons
+    annotate:
+      SPEC: annotate_persons_pums
+      DF: persons
+      TABLES:
+        - households
+  # Standard annotation stages (same as base)
+  - tablename: persons
+    annotate:
+      SPEC: annotate_persons
+      DF: persons
+      TABLES:
+        - households
+  - tablename: households
+    annotate:
+      SPEC: annotate_households
+      DF: households
+      TABLES:
+        - persons
+        - land_use
+  - tablename: persons
+    annotate:
+      SPEC: annotate_persons_after_hh
+      DF: persons
+      TABLES:
+        - households

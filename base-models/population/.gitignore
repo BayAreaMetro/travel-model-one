@@ -1,0 +1,5 @@
+# Pipeline artifacts
+pipeline.h5
+
+# Logs
+*.log

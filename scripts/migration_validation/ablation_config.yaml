@@ -1,0 +1,286 @@
+# Ablation configuration for CTRAMP ↔ ActivitySim migration validation
+# Machine-specific paths — edit for your environment.
+
+# --- Paths ---
+activitysim_project_dir: "E:/Tests/tm1a_test"
+ctramp_project_dir: "E:/Tests/tm1_ctramp_test"
+survey_dir: "E:/Tests/tm1a_test/survey/ctramp_2023"
+output_dir: "E:/Tests/ablation_calibration"
+
+# --- ActivitySim model configs (relative to repo root) ---
+repo_root: "E:/GitHub/travel-model-one"
+asim_config_dirs:
+  - "scenarios/base_2023_frozen_popsim/activitysim"
+  - "base-models/activity/configs_mp"
+  - "base-models/activity/configs"
+
+# --- Run parameters ---
+sample_rate: 0.15
+seed: 42
+num_processes: 46
+# Set to true to enable Slack notifications (requires env var SLACK_WEBHOOK_URL)
+slack: true
+
+# Shadow pricing: true = normal (CTRAMP: iter-dependent, ASim: use_shadow_pricing)
+#                 false = disabled for both (apples-to-apples UEC comparison)
+shadow_pricing: false
+
+# --- Which stages to run (1-based; comment out to skip) ---
+active_stages: [1,2,3,4,5,6,7,8]
+
+# --- Stage definitions (shared by both CTRAMP and ActivitySim ablation) ---
+# Each stage adds models cumulatively on top of all previous stages.
+stages:
+  # Stage 1: Usual workplace and school location choice.
+  # Workers/students are assigned to a work/school TAZ based on size terms,
+  # distance decay, and mode choice logsums.
+  - name: uwsl
+    activitysim_models:
+      - school_location
+      - workplace_location
+    ctramp_components:
+      - UsualWorkAndSchoolLocationChoice
+    calibration_submodels:
+      - work_school_location
+
+  # Stage 2: Auto ownership and free parking eligibility.
+  # Households choose a vehicle count (0–4+) based on density, income,
+  # demographics, and accessibility. Free parking assigns parking subsidy.
+  - name: pre_tour
+    activitysim_models:
+      - auto_ownership_simulate
+      - free_parking
+    ctramp_components:
+      - AutoOwnership
+      - FreeParking
+    calibration_submodels:
+      - auto_ownership
+
+  # Stage 3: Work From Home + Coordinated daily activity pattern.
+  # WFH runs first (binary logit per worker), then CDAP assigns
+  # M (mandatory), N (non-mandatory), or H (home) with WFH workers
+  # blocked from M pattern.
+  - name: cdap
+    activitysim_models:
+      - work_from_home
+      - cdap_simulate
+    ctramp_components:
+      - CoordinatedDailyActivityPattern
+    calibration_submodels:
+      - work_from_home
+      - daily_activity_pattern
+
+  # Stage 4: Mandatory tours — frequency, scheduling, and mode choice.
+  # Generates work/school tours, assigns departure/arrival periods,
+  # and chooses mode (drive alone, shared ride, transit, etc.).
+  - name: mandatory
+    activitysim_models:
+      - mandatory_tour_frequency
+      - mandatory_tour_scheduling
+      - tour_mode_choice_simulate
+    ctramp_components:
+      - IndividualMandatoryTourFrequency
+      - MandatoryTourDepartureTimeAndDuration
+      - MandatoryTourModeChoice
+    calibration_submodels:
+      - tour_mode_choice
+
+  # Stage 5: Joint tours (household-level non-mandatory travel).
+  # Determines if household members travel together for shopping, social,
+  # etc. Includes frequency, party composition, destination, and scheduling.
+  - name: joint
+    activitysim_models:
+      - joint_tour_frequency
+      - joint_tour_composition
+      - joint_tour_participation
+      - joint_tour_destination
+      - joint_tour_scheduling
+      - tour_mode_choice_simulate
+    ctramp_components:
+      - JointTourFrequency
+      - JointTourLocationChoice
+      - JointTourDepartureTimeAndDuration
+      - JointTourModeChoice
+    calibration_submodels:
+      - tour_mode_choice
+      - nonwork_dest_choice
+    calibration_notes: >
+      Non-Work Dest Choice: average trip lengths appear off because only
+      joint (household) tours exist at this stage — individual NM tours
+      (which dominate the distance distribution) are not yet generated.
+      Tour Mode Choice: Shared Ride 2 and 3+ shares are elevated because
+      joint tours are by definition multi-person shared rides. Both issues
+      resolve in Stage 6 when individual non-mandatory tours are added.
+
+  # Stage 6: Individual non-mandatory tours.
+  # Generates solo discretionary tours (shopping, eating out, social, etc.)
+  # with destination and scheduling.
+  - name: nonmandatory
+    activitysim_models:
+      - non_mandatory_tour_frequency
+      - non_mandatory_tour_destination
+      - non_mandatory_tour_scheduling
+      - tour_mode_choice_simulate
+    ctramp_components:
+      - IndividualNonMandatoryTourFrequency
+      - IndividualNonMandatoryTourLocationChoice
+      - IndividualNonMandatoryTourDepartureTimeAndDuration
+      - IndividualNonMandatoryTourModeChoice
+    calibration_submodels:
+      - tour_mode_choice
+      - nonwork_dest_choice
+
+  # Stage 7: At-work subtours (mid-day trips from workplace).
+  # Models lunch/errand trips that depart from and return to the workplace
+  # during the work tour.
+  - name: atwork
+    activitysim_models:
+      - atwork_subtour_frequency
+      - atwork_subtour_destination
+      - atwork_subtour_scheduling
+      - atwork_subtour_mode_choice
+    ctramp_components:
+      - AtWorkSubTourFrequency
+      - AtWorkSubTourLocationChoice
+      - AtWorkSubTourDepartureTimeAndDuration
+      - AtWorkSubTourModeChoice
+    calibration_submodels:
+      - atwork_subtour
+      - tour_mode_choice
+      - nonwork_dest_choice
+    calibration_notes: >
+      At-work subtours are a small share of total tours. The tour mode
+      choice and dest choice tabs should be nearly unchanged from Stage 6.
+
+  # Stage 8: Stops and trip mode choice (full model).
+  # Tours are broken into trips via intermediate stop generation. Each trip
+  # gets a destination and mode. Trip matrices are written for assignment.
+  - name: stops (full model)
+    activitysim_models:
+      - stop_frequency
+      - trip_purpose
+      - trip_destination
+      - trip_purpose_and_destination
+      - trip_scheduling
+      - trip_mode_choice
+      - write_trip_matrices
+    ctramp_components:
+      - StopFrequency
+      - StopLocation
+    calibration_submodels:
+      - trip_mode_choice
+
+# --- Survey dataset (BATS 2023) for calibration ground truth ---
+survey:
+  label: "BATS_2023"
+  format: ctramp
+  weight_col:
+    wsloc_results: person_weight
+    cdap_results: person_weight
+    households: hh_weight
+    ao_results: hh_weight
+    indiv_tour_data: tour_weight
+    joint_tour_data: tour_weight
+    indiv_trip_data: trip_weight
+    joint_trip_data: trip_weight
+  files:
+    households: HouseholdData.csv
+    persons: PersonData.csv
+    wsloc_results: MandatoryLocationData.csv
+    ao_results: aoResults.csv
+    cdap_results: cdapResults.csv
+    indiv_tour_data: IndivTourData.csv
+    joint_tour_data: JointTourData.csv
+    indiv_trip_data: IndivTripData.csv
+    joint_trip_data: JointTripData.csv
+
+# --- CTRAMP output file mapping ---
+# NOTE: ActivitySim dataset config is not listed here — it is built dynamically
+# per-stage in evaluate_stages.py (see build_asim_dataset).
+#
+# Ablation runs use iteration 1 (single-iteration). A full re-run of core
+# (global iteration loop) would produce _3 suffixes instead.
+# But it uses the latest skims with no substantive demand changes, so it's basically a 3.
+# Some files (aoResults, cdapResults) have no iteration suffix in CTRAMP.
+#
+# Files are looked up ONLY in the stage directory. If a file doesn't exist
+# there, that table won't be loaded (and the pipeline will warn per-submodel).
+ctramp_output_files:
+  wsloc_results: wsLocResults_1.csv
+  ao_results: aoResults.csv
+  cdap_results: cdapResults.csv
+  indiv_tour_data: indivTourData_1.csv
+  joint_tour_data: jointTourData_1.csv
+  indiv_trip_data: indivTripData_1.csv
+  joint_trip_data: jointTripData_1.csv
+  households: householdData_1.csv
+  persons: personData_1.csv
+
+# --- Coefficient comparison ---
+coefficient_comparison:
+  ctramp_model_dir: "model-files/model"  # relative to repo_root
+  ctramp_properties_file: "model-files/runtime/mtcTourBased.properties"  # relative to repo_root; use ctramp_project_dir override for resolved values
+  asim_configs_dirs:  # searched in priority order (first match wins)
+    - "scenarios/base_2023_frozen_popsim/activitysim"
+    - "base-models/activity/configs"
+  submodels:
+    - name: Workplace Location
+      ctramp_file: DestinationChoice.xls
+      ctramp_sheets: [Work]
+      asim_spec: workplace_location.csv
+      asim_coefficients: workplace_location_coefficients.csv
+    - name: School Location
+      ctramp_file: DestinationChoice.xls
+      ctramp_sheets: [University, HighSchool, GradeSchool]
+      asim_spec: school_location.csv
+      asim_coefficients: school_location_coefficients.csv
+    - name: Auto Ownership
+      ctramp_file: AutoOwnership.xls
+      ctramp_sheets: [Auto ownership]
+      asim_spec: auto_ownership.csv
+      asim_coefficients: auto_ownership_coefficients.csv
+    - name: CDAP
+      ctramp_file: CoordinatedDailyActivityPattern.xls
+      ctramp_sheets: [OnePerson]
+      asim_spec: cdap_indiv_and_hhsize1.csv
+      asim_coefficients: cdap_coefficients.csv
+    - name: Work From Home
+      ctramp_file: CoordinatedDailyActivityPattern.xls
+      ctramp_sheets: [WorkFromHome]
+      asim_spec: work_from_home.csv
+      asim_coefficients: work_from_home_coefficients.csv
+    - name: Tour Mode Choice
+      ctramp_file: ModeChoice.xls
+      ctramp_sheets: [Work, University, School, Escort, Shopping, EatOut, OthMaint, Social, OthDiscr, WorkBased]
+      asim_spec: tour_mode_choice.csv
+      asim_coefficients: tour_mode_choice_coefficients.csv
+      asim_coefficients_template: tour_mode_choice_coefficients_template.csv
+    - name: Trip Mode Choice
+      ctramp_file: TripModeChoice.xls
+      ctramp_sheets: [Work, University, School, Escort, Shopping, EatOut, OthMaint, Social, OthDiscr, WorkBased]
+      asim_spec: trip_mode_choice.csv
+      asim_coefficients: trip_mode_choice_coefficients.csv
+      asim_coefficients_template: trip_mode_choice_coefficients_template.csv
+    - name: Nonwork Destination Choice
+      ctramp_file: DestinationChoice.xls
+      ctramp_sheets: [EscortKids, EscortNoKids, Shopping, EatOut, OthMaint, Social, OthDiscr]
+      asim_spec: non_mandatory_tour_destination.csv
+      asim_coefficients: non_mandatory_tour_destination_coefficients.csv
+    - name: At-Work Subtour Destination Choice
+      ctramp_file: DestinationChoice.xls
+      ctramp_sheets: [WorkBased]
+      asim_spec: atwork_subtour_destination.csv
+      asim_coefficients: atwork_subtour_destination_coefficients.csv
+    - name: School Location SOA
+      ctramp_file: DestinationChoiceAlternativeSample.xls
+      ctramp_sheets: [University, HighSchool, GradeSchool]
+      asim_spec: school_location_sample.csv
+      asim_coefficients: school_location_coefficients.csv
+    - name: At-Work Subtour Destination SOA
+      ctramp_file: DestinationChoiceAlternativeSample.xls
+      ctramp_sheets: [WorkBased]
+      asim_spec: atwork_subtour_destination_sample.csv
+      asim_coefficients: atwork_subtour_destination_coefficients.csv
+  size_terms:
+    ctramp: DestinationChoiceSizeCoefficients.csv
+    asim: destination_choice_size_terms.csv

@@ -1,0 +1,10 @@
+/test/prototype_mtc_reference_pipeline.zip
+/test/prototype_mtc_reference_pipeline_sharrow.zip
+/test/.coverage
+.idea/**
+**/__pycache__
+activitysim.log
+
+data
+data_full
+output

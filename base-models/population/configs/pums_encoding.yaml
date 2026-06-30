@@ -1,0 +1,39 @@
+# Seed population configuration for TM1a
+# Controls how raw PUMS data is processed into PopulationSim seed files.
+#
+# Person-level model fields (pemploy, pstudent, ptype) are derived at
+# ActivitySim runtime by annotate_persons_pums.csv — NOT here.
+# This file only configures the cross-table operations in _create_seed_population():
+#   1. num_workers (person ESR → household aggregation)
+#   2. income deflation (ADJINC * HINCP → 2000$)
+#   3. GQ classification + weight transfer
+#   4. PUMA filtering (via geo_cross_walk.csv)
+
+# Income deflation: 2021 dollars → 2000 dollars (PUMS 2017-21 reference year)
+# Source: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
+income_deflator_to_2000: 0.5525  # 1 / 1.81
+
+# Employment status recode — used ONLY for num_workers aggregation
+# ESR values: 0=N/A (<16), 1=employed at work, 2=employed not at work,
+#             3=unemployed, 4=armed forces at work, 5=armed forces not at work,
+#             6=not in labor force
+employed_esr_codes: [1, 2, 4, 5]
+
+# ADJINC scaling factor (Census uses 7-digit adjustment factor / 1,000,000)
+adjinc_scale: 1000000
+
+# Group quarters classification
+# TYPEHUGQ: 1=housing unit, 2=institutional GQ (dropped), 3=non-institutional GQ
+# For TYPEHUGQ==3: college student if SCHG in [15,16], military if MIL==1, else other
+gq_college_schg: [15, 16]
+gq_military_mil: 1
+
+# TYPEHUGQ code values
+gq_institutional: 2      # dropped during filtering
+gq_non_institutional: 3  # kept (college, military, other)
+
+gqtype:
+  not_gq: 0
+  college: 1
+  military: 2
+  other: 3
