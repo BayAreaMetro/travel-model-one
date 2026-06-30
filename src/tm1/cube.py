@@ -35,6 +35,11 @@ _RUNTPP = r"C:\Program Files\Citilabs\CubeVoyager\runtpp.exe"
 _CLUSTER = r"C:\Program Files\Citilabs\CubeVoyager\Cluster.exe"
 _CUBE_PATH = ";".join(d for d in _CUBE_DIRS if Path(d).is_dir())
 
+# Windows STATUS_ACCESS_VIOLATION (0xC0000005) — runtpp emits this when it cannot
+# reach the Bentley license pipe at startup (signed and unsigned process-exit forms).
+_ACCESS_VIOLATION = -1073741819
+_ACCESS_VIOLATION_U = 3221225477
+
 
 class CubeJobError(RuntimeError):
     """A Cube ``.job`` exited non-zero or failed to run."""
@@ -50,23 +55,28 @@ def is_interactive_session() -> bool:
     return not (os.environ.get("SSH_CONNECTION") or os.environ.get("VSCODE_AGENT_FOLDER"))
 
 
-def recover_license() -> None:
-    """Clear a stuck Cube license lease (mirrors ``simulate_ctramp._recover_license``).
+def recover_license(*, hard: bool = False) -> None:
+    """Clear stuck Cube processes; optionally restart the Bentley license agents.
 
-    A ``runtpp`` that hung on ``MatReaderOpen`` — e.g. launched a moment before
-    Bentley was signed in — leaves a stuck lease in the Bentley/FlexNet license
-    agents, so every later job hangs too.  Killing the lease-holding agents
-    (which respawn on demand for the next license request) clears it.  The
-    Bentley CONNECT client is deliberately left running so the user's sign-in
-    is preserved.
+    **Soft** (default): kill only orphaned Cube processes (``runtpp``/``Voyager``/
+    ``Cluster``).  This clears stuck cluster nodes and their license leases without
+    touching the Bentley CONNECT licensing chain — safe to call repeatedly.
+
+    **Hard** (``hard=True``): additionally kill ``Bentley.Licensing.Service`` /
+    ``FNPLicensingService`` so they respawn fresh on the next request.  This is a
+    blunt instrument: killing the Bentley license agents repeatedly can leave the
+    license entitlement itself broken (every later ``runtpp`` then access-violates
+    at startup, requiring a manual CONNECTION Client restart / re-sign-in).  Use
+    only as a deliberate last resort, never in an automatic retry loop.  The
+    ``Bentley.Connect.Client`` is always left running to preserve sign-in.
     """
-    for image in (
-        "runtpp.exe", "VOYAGER.EXE", "voyager.exe", "Cluster.exe",
-        "Bentley.Licensing.Service.exe", "FNPLicensingService.exe",
-    ):
+    images = ["runtpp.exe", "VOYAGER.EXE", "voyager.exe", "Cluster.exe"]
+    if hard:
+        images += ["Bentley.Licensing.Service.exe", "FNPLicensingService.exe"]
+    for image in images:
         subprocess.run(["taskkill", "/f", "/im", image], capture_output=True, check=False)
     time.sleep(8)
-    log.info("Recovered Cube license: killed stuck runtpp/Voyager + license agents")
+    log.info("Cube recovery (%s): killed %s", "hard" if hard else "soft", ", ".join(images))
 
 
 def _engine_returncode(log_text: str) -> int | None:
@@ -145,19 +155,29 @@ def _write_job_bat(
     return bat_path
 
 
-def _progress_mtime(cwd: Path, logfile: Path) -> float:
+def _progress_mtime(cwd: Path, logfile: Path, commpath: Path | None = None) -> float:
     """Latest mtime across the artifacts a *working* Cube job keeps touching.
 
-    Cube writes its real output to ``TPPL*.PRN`` print files (and, under a cluster,
-    per-node ``ctramp*.script``/``*.script.*`` files) — NOT to runtpp's redirected
-    stdout, which can stay empty for the whole run.  A healthy job (even a long
-    multi-period assignment) advances one of these every few seconds; a job hung on
-    a stuck Bentley license lease never touches them again.  So "no mtime advance
-    for a while" — not "empty stdout" — is the reliable hang signal.
+    Cube writes its real output to ``TPPL*.PRN`` print files and, under a cluster,
+    to per-node coordination files in ``commpath`` and the node working/print files
+    — NOT to runtpp's redirected stdout, which can stay empty for the whole run.
+
+    A long multi-period *highway assignment* in particular keeps its churn in the
+    cluster's ``commpath`` and node scratch, touching nothing in ``cwd`` for minutes
+    at a time, so watching only ``cwd`` falsely reads as "hung" (this is what
+    false-killed a healthy 48-node run and cascaded into a broken license).  We
+    therefore take the newest mtime across cwd's Cube artifacts *and* the entire
+    ``commpath`` tree; a job genuinely hung on the license touches none of these.
     """
     latest = 0.0
-    for pat in ("TPPL*.PRN", "TPPL*.prn", "ctramp*.script", "*.script.*", logfile.name):
+    for pat in ("TPPL*.PRN", "TPPL*.prn", "ctramp*.script", "*.script*", logfile.name):
         for f in cwd.glob(pat):
+            try:
+                latest = max(latest, f.stat().st_mtime)
+            except OSError:
+                continue
+    if commpath is not None and commpath.is_dir():
+        for f in commpath.rglob("*"):
             try:
                 latest = max(latest, f.stat().st_mtime)
             except OSError:
@@ -195,10 +215,12 @@ def _run_via_schtasks(
     start = time.time()
     deadline = start + timeout
     startup_grace = 120  # Cube startup can take ~60s+; let the task appear first
-    # A stuck-license hang shows no Cube output progress; a healthy job (even a long
-    # assignment) keeps touching its PRN/script files. Allow a generous stall window
-    # so slow single phases are never mistaken for a hang.
-    no_progress_grace = 300
+    # A stuck-license hang shows no Cube output progress; a healthy job keeps touching
+    # its PRN/script/commpath files. A multi-period highway assignment can compute for
+    # many minutes between cwd/commpath touches, so use a generous stall window for
+    # cluster jobs — false-killing a healthy assignment then "recovering" the license
+    # is far worse than waiting out a real hang.
+    no_progress_grace = 1800 if cluster_nodes else 300
     last_progress = start
     last_sig = 0.0
     seen_running = False
@@ -215,7 +237,7 @@ def _run_via_schtasks(
             seen_running = seen_running or running
             if sentinel.exists():
                 break
-            sig = _progress_mtime(cwd, logfile)
+            sig = _progress_mtime(cwd, logfile, commpath)
             if sig > last_sig:
                 last_sig = sig
                 last_progress = time.time()
@@ -335,15 +357,29 @@ def run_cube_job(
                 cluster_nodes=cluster_nodes, commpath=cpath,
             )
         except (CubeJobError, TimeoutError) as exc:
-            # Most failures here are a stuck license lease (hang) — recover and
-            # retry once, which is the manual fix proven to work.
-            log.warning("Cube job %s failed (%s) — recover license, retry once", job.name, exc)
+            # A genuine hang leaves orphaned Cube processes/leases — a *soft*
+            # recovery (kill stuck runtpp/Voyager/Cluster only) + one retry is the
+            # safe fix.  We deliberately do NOT touch the Bentley license agents
+            # here: killing them in a retry loop is what breaks the license.
+            log.warning("Cube job %s failed (%s) — soft recover, retry once", job.name, exc)
             recover_license()
             rc = _run_via_schtasks(
                 job, cwd, env_extra=env_extra, timeout=timeout,
                 cluster_nodes=cluster_nodes, commpath=cpath,
             )
         log_text = logfile.read_text(errors="replace") if logfile.exists() else ""
+
+    # A startup access-violation (0xC0000005 / -1073741819) means runtpp could not
+    # reach the Bentley license pipe — a broken license entitlement, not a stuck
+    # lease.  Retrying or killing license agents cannot fix it and only makes it
+    # worse; fail fast with the manual remedy.
+    if rc in (_ACCESS_VIOLATION, _ACCESS_VIOLATION_U) and _engine_returncode(log_text) is None:
+        msg = (
+            f"Cube job {job.name} access-violated at startup (exit={rc}): runtpp could "
+            f"not reach the Bentley license. Restart the CONNECTION Client and "
+            f"re-sign-in in the interactive session, then retry. (cwd={cwd})"
+        )
+        raise CubeJobError(msg)
 
     # The Voyager engine ReturnCode is authoritative; runtpp's process exit code
     # can be a spurious .NET error on an otherwise-successful run.
