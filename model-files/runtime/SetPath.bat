@@ -12,6 +12,7 @@ if %computername%==MODEL3-A      (  set COMMPATH=E:\Model3A-Share\COMMPATH)
 if %computername%==MODEL3-B      (  set COMMPATH=E:\Model3B-Share\COMMPATH)
 if %computername%==MODEL3-C      (  set COMMPATH=E:\Model3C-Share\COMMPATH)
 if %computername%==MODEL3-D      (  set COMMPATH=E:\Model3D-Share\COMMPATH)
+if %computername%==MODEL3-E      (  set COMMPATH=E:\Model3E-Share\COMMPATH)
 
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
@@ -25,6 +26,9 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 :: The location of R and R libraries
 set R_HOME=C:\Program Files\R\R-4.2.1
 set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
+
+:: The location of Git
+set GIT_PATH=C:\Program Files\Git\cmd
 
 :: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
@@ -40,7 +44,7 @@ set CONDA_PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w
 set ENV_NAME=tm15-python310
 
 :: Add these variables to the PATH environment variable, moving the current path to the back
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%CONDA_PATH%
+set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%CONDA_PATH%;%GIT_PATH%
 
 :: Activate the correct conda environment -- this will update the PATH
 call activate %ENV_NAME%

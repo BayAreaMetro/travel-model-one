@@ -208,11 +208,6 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
-:: Step 4.5: Build initial transit files
-python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-if ERRORLEVEL 2 goto done
-
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 5:  Prepare for Iteration 0

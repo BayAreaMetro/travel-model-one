@@ -617,7 +617,10 @@ def config_distribution(replacements):
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a','Model3-b','model3-c','model3-d'] or hostname.startswith("WIN-"):
+    elif hostname.lower() in ['model2-a','model2-b','model2-c','model2-d',
+                      'pormdlppw01','pormdlppw02',
+                      'model3-a','model3-b','model3-c','model3-d','model3-e'
+                      ] or hostname.startswith("WIN-"):
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
