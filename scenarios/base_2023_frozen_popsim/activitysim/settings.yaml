@@ -1,0 +1,19 @@
+# base_2023_frozen_popsim scenario — ActivitySim operational overrides
+#
+# Legacy scenario: ActivitySim demand on the FROZEN reference popsyn population
+# (copied from the reference run), as opposed to base_2023_activitysim which
+# regenerates the population with PopulationSim. Kept as the CT-RAMP correctness
+# anchor. The full model specification lives in base-models/activity/configs/.
+
+inherit_settings: True
+
+# Full population (0 = all households; set to e.g. 1000 for dev/debug).
+# NOTE: a prior typo'd key 'household_sample_size' (singular) was silently
+# ignored by ActivitySim, so this scenario has always run the full population.
+households_sample_size: 0
+
+# Shadow pricing for workplace/school location
+use_shadow_pricing: True
+
+# Resume from checkpoint (uncomment to resume after failure)
+# resume_after: _

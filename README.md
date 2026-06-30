@@ -33,7 +33,7 @@ This branch (`activitysim_revival`) replaces the Java-based CTRAMP demand model 
 | Java + Cube scripts        | Python (`uv` managed)                     |
 | UEC workbooks (`.xls`)     | CSV specs + YAML configs                  |
 | Properties files           | `settings.yaml` + `constants.yaml`        |
-| `model-files/RunModel.bat` | `tm1 run --scenario base_2023`            |
+| `model-files/RunModel.bat` | `tm1 run --scenario base_2023_activitysim`            |
 
 ### Repository Layout
 
@@ -70,7 +70,7 @@ tm1 --help
 ### Running a Scenario
 
 ```bash
-tm1 run --scenario base_2023
+tm1 run --scenario base_2023_activitysim
 ```
 
 ### Creating a New Scenario

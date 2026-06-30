@@ -1,4 +1,4 @@
-# base_2023_cleaned scenario — ActivitySim operational overrides
+# base_2023_activitysim scenario — ActivitySim operational overrides
 #
 # Key difference from base_2023: pemploy/pstudent/ptype are derived from raw
 # PUMS columns by annotate_persons_pums.csv at runtime, NOT pre-computed

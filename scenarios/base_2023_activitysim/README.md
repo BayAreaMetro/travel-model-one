@@ -1,4 +1,4 @@
-# base_2023_cleaned
+# base_2023_activitysim
 
 Upgraded PopulationSim scenario using **PUMS 2019-2023 (5-year ACS)** with
 2020-vintage PUMAs.  This produces a *new* synthetic population and does NOT
@@ -6,7 +6,7 @@ match the legacy reference run.
 
 ## Architecture: annotation-driven derivations
 
-The key difference from `base_2023` is that **person model fields are derived
+The key difference from `base_2023_frozen_popsim` is that **person model fields are derived
 at ActivitySim runtime** instead of being pre-computed by PopulationSim:
 
 ```
@@ -40,9 +40,9 @@ populationsim/
   pums_encoding.yaml            # income deflator + GQ config (no person-field logic)
 ```
 
-## Relationship to `base_2023`
+## Relationship to `base_2023_frozen_popsim`
 
-| | `base_2023` | `base_2023_cleaned` |
+| | `base_2023_frozen_popsim` | `base_2023_activitysim` |
 |---|---|---|
 | PUMS vintage | 2017-21 (5-year) | 2019-2023 (5-year) |
 | PUMA definitions | 2010 (41 PUMAs) | 2020 (62 PUMAs) |
@@ -59,10 +59,10 @@ populationsim/
 - [ ] Create 2020-vintage `geo_cross_walk.csv` (62 PUMAs → 1454 TAZs)
 - [ ] Write simplified seed population creation that skips person-field derivation
 - [ ] Validate PopulationSim output against 2023 Census totals
-- [ ] Run ActivitySim end-to-end and compare to `base_2023` results
+- [ ] Run ActivitySim end-to-end and compare to `base_2023_frozen_popsim` results
 
 ## When to promote
 
 Once validation shows the cleaned population produces reasonable ActivitySim
 results (within ~5% of reference for key metrics), this scenario can replace
-`base_2023` as the primary calibration target.
+`base_2023_frozen_popsim` as the primary calibration target.

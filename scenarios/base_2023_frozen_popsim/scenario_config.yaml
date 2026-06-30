@@ -69,7 +69,7 @@ steps:
       # Config directory chain — first directory wins (whole-file override).
       # Scenario-specific overrides go in activitysim/ within this scenario folder.
       configs:
-        - "scenarios/base_2023/activitysim"   # ← scenario overrides (highest priority)
+        - "scenarios/base_2023_frozen_popsim/activitysim"   # ← scenario overrides (highest priority)
         - "base-models/activity/configs_mp"   # multiprocessing defaults
         - "base-models/activity/configs"      # full model specification (lowest priority)
 

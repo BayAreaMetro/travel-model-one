@@ -1,4 +1,4 @@
-# base_2023_cleaned — PopulationSim config overrides for PUMS 2019-2023
+# base_2023_activitysim — PopulationSim config overrides for PUMS 2019-2023
 #
 # In the cleaned pipeline, pemploy/pstudent/ptype are NO LONGER derived in
 # _create_seed_population(). Instead, the raw PUMS fields (ESR, WKW, WKHP,

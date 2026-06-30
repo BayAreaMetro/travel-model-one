@@ -51,7 +51,7 @@ steps:
     working_dir: "{proj_dir}/popsim"
     output_dir: "{proj_dir}/data"
     configs:
-      - "scenarios/base_2023_cleaned/populationsim"
+      - "scenarios/base_2023_activitysim/populationsim"
       - "base-models/population/configs_mp"
       - "base-models/population/configs"
 
@@ -60,7 +60,7 @@ steps:
     iterations: 0  # 0 = static skims (no highway assignment feedback loop)
     activitysim:
       configs:
-        - "scenarios/base_2023_cleaned/activitysim"
+        - "scenarios/base_2023_activitysim/activitysim"
         - "base-models/activity/configs_mp"
         - "base-models/activity/configs"
       data_dir: "{proj_dir}/data"

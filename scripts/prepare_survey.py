@@ -1,8 +1,8 @@
 """Run the survey preparation pipeline standalone.
 
 Usage:
-    python scripts/prepare_survey.py scenarios/base_2023/bats_config.yaml
-    python scripts/prepare_survey.py scenarios/base_2023/bats_config.yaml --force
+    python scripts/prepare_survey.py scenarios/base_2023_frozen_popsim/bats_config.yaml
+    python scripts/prepare_survey.py scenarios/base_2023_frozen_popsim/bats_config.yaml --force
 """
 
 import argparse

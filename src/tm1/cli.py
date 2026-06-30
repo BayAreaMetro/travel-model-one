@@ -2,10 +2,10 @@
 
 Usage::
 
-    tm1 run --scenario base_2023
-    tm1 run --scenario base_2023 --steps setup convert_skims
-    tm1 run --scenario base_2023 --iterations 3
-    tm1 run --scenario base_2023 --force --slack verbose
+    tm1 run --scenario base_2023_activitysim
+    tm1 run --scenario base_2023_activitysim --steps setup convert_skims
+    tm1 run --scenario base_2023_activitysim --iterations 3
+    tm1 run --scenario base_2023_activitysim --force --slack verbose
 """
 
 import argparse
@@ -51,7 +51,7 @@ def main() -> None:
     run_parser.add_argument(
         "--scenario",
         required=True,
-        help="Scenario name (folder under scenarios/, e.g. base_2023)",
+        help="Scenario name (folder under scenarios/, e.g. base_2023_activitysim)",
     )
     run_parser.add_argument(
         "--steps",

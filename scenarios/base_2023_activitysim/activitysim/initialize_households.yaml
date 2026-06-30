@@ -1,4 +1,4 @@
-# initialize_households.yaml — base_2023_cleaned override
+# initialize_households.yaml — base_2023_activitysim override
 #
 # Adds a PUMS derivation annotation step BEFORE the standard annotations.
 # This step derives pemploy/pstudent/ptype from raw PUMS columns (ESR, WKW,

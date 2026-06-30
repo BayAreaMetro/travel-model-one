@@ -102,7 +102,7 @@ The last CTRAMP model run, used as the benchmark for validation:
 - Land use inputs (UrbanSim or static) feed both PopulationSim and ActivitySim
 - End-to-end: land use → PopulationSim → ActivitySim → assignment
 - **STATUS: Step runner created** (`src/tm1/steps/populationsim.py`), base configs in `base-models/population/configs/`.
-  Scenario config section written (commented out in `base_2023`). Not yet wired up.
+  Scenario config section written (commented out in `base_2023_activitysim`). Not yet wired up.
 - **TODO: Harmonization**
   - `person_id` post-processing is unnecessary (ActivitySim handles indexing)
   - `occupation` (SOC→1-6) is computed but never consumed by any ActivitySim component — drop it
@@ -123,8 +123,8 @@ The last CTRAMP model run, used as the benchmark for validation:
 
 CLI usage examples:
 ```
-tm1 run --scenario scenarios/base_2023
-tm1 run --scenario scenarios/base_2023 --max-iterations 1 --sample-rate 0.1
+tm1 run --scenario scenarios/base_2023_activitysim
+tm1 run --scenario scenarios/base_2023_activitysim --max-iterations 1 --sample-rate 0.1
 tm1 batch scenarios/scenario_batches.yaml
 ```
 
@@ -132,7 +132,7 @@ Batch manifest example:
 ```yaml
 # scenarios/scenario_batches.yaml
 scenarios:
-  - scenarios/base_2023
+  - scenarios/base_2023_activitysim
   - scenarios/foo_2025
   - scenarios/bar_2050
 common_overrides:
