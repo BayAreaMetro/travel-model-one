@@ -32,6 +32,7 @@ _CUBE_DIRS = (
     r"C:\Program Files\Bentley\OpenPaths\CubeVoyager",
 )
 _RUNTPP = r"C:\Program Files\Citilabs\CubeVoyager\runtpp.exe"
+_CLUSTER = r"C:\Program Files\Citilabs\CubeVoyager\Cluster.exe"
 _CUBE_PATH = ";".join(d for d in _CUBE_DIRS if Path(d).is_dir())
 
 
@@ -60,7 +61,7 @@ def recover_license() -> None:
     is preserved.
     """
     for image in (
-        "runtpp.exe", "VOYAGER.EXE", "voyager.exe",
+        "runtpp.exe", "VOYAGER.EXE", "voyager.exe", "Cluster.exe",
         "Bentley.Licensing.Service.exe", "FNPLicensingService.exe",
     ):
         subprocess.run(["taskkill", "/f", "/im", image], capture_output=True, check=False)
@@ -87,30 +88,99 @@ def _env_lines(env_extra: dict[str, object] | None) -> str:
     return "\n".join(f"set {k}={v}" for k, v in env_extra.items()) + "\n"
 
 
+def _cluster_lines(
+    cluster_nodes: int | None, commpath: Path | None, *, opening: bool
+) -> str:
+    r"""Cube Cluster start/close lines for jobs that use ``DistributeMultistep``.
+
+    MTC's assignment/skim/feedback jobs distribute their period (or class) steps
+    across local Cube Cluster nodes and block on ``Wait4Files CTRAMP*.script.end``;
+    without a running cluster they hang forever.  We faithfully reproduce
+    ``RunModel.bat``'s ``Cluster "%COMMPATH%\\CTRAMP" 1-N Starthide Exit`` / ``…
+    Close Exit`` bracketing, but self-contained per job so no node state has to
+    survive across separately-scheduled tasks.
+    """
+    if not cluster_nodes or commpath is None:
+        return ""
+    base = f'"{commpath}\\CTRAMP" 1-{cluster_nodes}'
+    if opening:
+        # Defensive close clears any stale nodes from a prior aborted run.
+        return (
+            f'set COMMPATH={commpath}\n'
+            f'"{_CLUSTER}" {base} Close Exit\n'
+            f'"{_CLUSTER}" {base} Starthide Exit\n'
+        )
+    return f'"{_CLUSTER}" {base} Close Exit\n'
+
+
 def _write_job_bat(
-    job: Path, cwd: Path, sentinel: Path, logfile: Path, env_extra: dict[str, object] | None
+    job: Path,
+    cwd: Path,
+    sentinel: Path,
+    logfile: Path,
+    env_extra: dict[str, object] | None,
+    *,
+    cluster_nodes: int | None = None,
+    commpath: Path | None = None,
 ) -> Path:
-    """Write the launcher .bat run by the scheduled task (interactive session)."""
+    """Write the launcher .bat run by the scheduled task (interactive session).
+
+    When ``cluster_nodes`` is set the job is bracketed by Cube Cluster start/close;
+    ``runtpp``'s exit code is captured into ``RC`` *before* the cluster close (which
+    would otherwise clobber ``%ERRORLEVEL%``) and is what lands in the sentinel.
+    """
     bat = textwrap.dedent(f"""\
         @echo off
         cd /d "{cwd}"
         set PATH={_CUBE_PATH};%PATH%
         {_env_lines(env_extra)}del /f "{sentinel}" 2>nul
+        {_cluster_lines(cluster_nodes, commpath, opening=True)}\
         "{_RUNTPP}" "{job}" > "{logfile}" 2>&1
-        echo %ERRORLEVEL% > "{sentinel}"
+        set RC=%ERRORLEVEL%
+        {_cluster_lines(cluster_nodes, commpath, opening=False)}\
+        echo %RC% > "{sentinel}"
     """)
     bat_path = cwd / f"_cube_{job.stem}.bat"
     bat_path.write_text(bat, encoding="utf-8")
     return bat_path
 
 
+def _progress_mtime(cwd: Path, logfile: Path) -> float:
+    """Latest mtime across the artifacts a *working* Cube job keeps touching.
+
+    Cube writes its real output to ``TPPL*.PRN`` print files (and, under a cluster,
+    per-node ``ctramp*.script``/``*.script.*`` files) — NOT to runtpp's redirected
+    stdout, which can stay empty for the whole run.  A healthy job (even a long
+    multi-period assignment) advances one of these every few seconds; a job hung on
+    a stuck Bentley license lease never touches them again.  So "no mtime advance
+    for a while" — not "empty stdout" — is the reliable hang signal.
+    """
+    latest = 0.0
+    for pat in ("TPPL*.PRN", "TPPL*.prn", "ctramp*.script", "*.script.*", logfile.name):
+        for f in cwd.glob(pat):
+            try:
+                latest = max(latest, f.stat().st_mtime)
+            except OSError:
+                continue
+    return latest
+
+
 def _run_via_schtasks(
-    job: Path, cwd: Path, *, env_extra: dict[str, object] | None, timeout: float
+    job: Path,
+    cwd: Path,
+    *,
+    env_extra: dict[str, object] | None,
+    timeout: float,
+    cluster_nodes: int | None = None,
+    commpath: Path | None = None,
 ) -> int:
     """Run ``runtpp <job>`` in the interactive session via schtasks; block."""
     sentinel = cwd / f"_cube_{job.stem}.sentinel"
     logfile = cwd / f"_cube_{job.stem}.log"
-    bat = _write_job_bat(job, cwd, sentinel, logfile, env_extra)
+    bat = _write_job_bat(
+        job, cwd, sentinel, logfile, env_extra,
+        cluster_nodes=cluster_nodes, commpath=commpath,
+    )
     sentinel.unlink(missing_ok=True)
     task = f"tm1_cube_{job.stem}"
 
@@ -125,7 +195,12 @@ def _run_via_schtasks(
     start = time.time()
     deadline = start + timeout
     startup_grace = 120  # Cube startup can take ~60s+; let the task appear first
-    hang_grace = 150  # a healthy runtpp writes its banner well within this
+    # A stuck-license hang shows no Cube output progress; a healthy job (even a long
+    # assignment) keeps touching its PRN/script files. Allow a generous stall window
+    # so slow single phases are never mistaken for a hang.
+    no_progress_grace = 300
+    last_progress = start
+    last_sig = 0.0
     seen_running = False
     try:
         while True:
@@ -140,16 +215,21 @@ def _run_via_schtasks(
             seen_running = seen_running or running
             if sentinel.exists():
                 break
-            empty_log = not logfile.exists() or logfile.stat().st_size == 0
-            if running and empty_log and time.time() - start > hang_grace:
-                # runtpp launched but produced zero output -> hung on MatReaderOpen
-                # (a stuck Bentley license lease). Kill it; caller recovers + retries.
-                subprocess.run(
-                    ["taskkill", "/f", "/im", "runtpp.exe"], capture_output=True, check=False
-                )
+            sig = _progress_mtime(cwd, logfile)
+            if sig > last_sig:
+                last_sig = sig
+                last_progress = time.time()
+            if running and time.time() - last_progress > no_progress_grace:
+                # No Cube output progress for the whole window -> hung on
+                # MatReaderOpen (a stuck Bentley license lease). Kill runtpp +
+                # cluster nodes; caller recovers the license and retries once.
+                for image in ("runtpp.exe", "Cluster.exe", "VOYAGER.EXE"):
+                    subprocess.run(
+                        ["taskkill", "/f", "/im", image], capture_output=True, check=False
+                    )
                 msg = (
                     f"Cube job {job.name} appears hung on the license "
-                    f"(no output after {hang_grace:.0f}s)"
+                    f"(no output progress for {no_progress_grace:.0f}s)"
                 )
                 raise CubeJobError(msg)
             if not running and seen_running:
@@ -180,6 +260,8 @@ def run_cube_job(
     *,
     env_extra: dict[str, object] | None = None,
     timeout: float = 7200,
+    cluster_nodes: int | None = None,
+    commpath: str | Path | None = None,
 ) -> int:
     """Run a Cube Voyager ``.job`` and return its exit code (raises on non-zero).
 
@@ -195,6 +277,14 @@ def run_cube_job(
         parameters ``ITER``/``WGT`` for assignment/feedback jobs).
     timeout
         Seconds to wait for completion (schtasks path).
+    cluster_nodes
+        If set, start a local Cube Cluster of this many nodes around the job
+        (required by jobs using ``DistributeMultistep``/``Wait4Files`` — i.e. the
+        assignment, skim and feedback jobs).  Must be >= the highest ``processNum``
+        the job distributes (5 for the period-looped jobs).
+    commpath
+        Cluster communication directory (defaults to ``<cwd>/commpath``).  The job's
+        ``%COMMPATH%`` token resolves to this.
     """
     job = Path(job).resolve()
     cwd = Path(cwd).resolve()
@@ -203,27 +293,56 @@ def run_cube_job(
         raise FileNotFoundError(msg)
     cwd.mkdir(parents=True, exist_ok=True)
 
+    cpath: Path | None = None
+    if cluster_nodes:
+        cpath = Path(commpath).resolve() if commpath else cwd / "commpath"
+        cpath.mkdir(parents=True, exist_ok=True)
+
     if is_interactive_session():
         env = os.environ.copy()
         env["PATH"] = _CUBE_PATH + ";" + env.get("PATH", "")
+        if cpath is not None:
+            env["COMMPATH"] = str(cpath)
         if env_extra:
             env.update({k: str(v) for k, v in env_extra.items()})
         log.info("Running Cube job %s (interactive)", job.name)
-        proc = subprocess.run(
-            [_RUNTPP, str(job)], cwd=str(cwd), env=env,
-            capture_output=True, text=True, timeout=timeout, check=False,
-        )
-        rc, log_text = proc.returncode, proc.stdout or ""
+        if cluster_nodes:
+            # Reuse the bat path so the cluster bracketing is identical to remote.
+            sentinel = cwd / f"_cube_{job.stem}.sentinel"
+            logfile = cwd / f"_cube_{job.stem}.log"
+            sentinel.unlink(missing_ok=True)
+            bat = _write_job_bat(
+                job, cwd, sentinel, logfile, env_extra,
+                cluster_nodes=cluster_nodes, commpath=cpath,
+            )
+            subprocess.run(
+                ["cmd", "/c", str(bat)], cwd=str(cwd), env=env,
+                capture_output=True, text=True, timeout=timeout, check=False,
+            )
+            rc = int(sentinel.read_text().strip() or "1") if sentinel.exists() else 1
+            log_text = logfile.read_text(errors="replace") if logfile.exists() else ""
+        else:
+            proc = subprocess.run(
+                [_RUNTPP, str(job)], cwd=str(cwd), env=env,
+                capture_output=True, text=True, timeout=timeout, check=False,
+            )
+            rc, log_text = proc.returncode, proc.stdout or ""
     else:
         logfile = cwd / f"_cube_{job.stem}.log"
         try:
-            rc = _run_via_schtasks(job, cwd, env_extra=env_extra, timeout=timeout)
+            rc = _run_via_schtasks(
+                job, cwd, env_extra=env_extra, timeout=timeout,
+                cluster_nodes=cluster_nodes, commpath=cpath,
+            )
         except (CubeJobError, TimeoutError) as exc:
             # Most failures here are a stuck license lease (hang) — recover and
             # retry once, which is the manual fix proven to work.
             log.warning("Cube job %s failed (%s) — recover license, retry once", job.name, exc)
             recover_license()
-            rc = _run_via_schtasks(job, cwd, env_extra=env_extra, timeout=timeout)
+            rc = _run_via_schtasks(
+                job, cwd, env_extra=env_extra, timeout=timeout,
+                cluster_nodes=cluster_nodes, commpath=cpath,
+            )
         log_text = logfile.read_text(errors="replace") if logfile.exists() else ""
 
     # The Voyager engine ReturnCode is authoritative; runtpp's process exit code
