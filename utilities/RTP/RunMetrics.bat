@@ -179,7 +179,7 @@ if not exist metrics\transit_boards_miles.csv (
 if not exist metrics\transit_crowding.csv (
   rem Summarize transit crowding
   rem Input: \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\transitSeatCap.csv
-  rem        trn\trnlink[timeperiod]_ALLMSA.dbf
+  rem        trn\trnlink[timeperiod].dbf
   rem Output: metrics\transit_crowding_complete.csv
   rem         metrics\transit_crowding.csv
   rem         metrics\transit_crowding.log

@@ -140,7 +140,7 @@ loop period = 1, 5
 
       ; read in the transit stop locations in the line files
       read  file = "%MODEL_DIR%\trn\transitLines.link"
-      read  file = transit@token_period@.lin
+      read  file = "%MODEL_DIR%\trn\transitLines.lin"
 
    endrun   
 
@@ -267,7 +267,7 @@ loop period = 1, 5
    
       ; read in the transit stop locations in the line files
       read  file = "%MODEL_DIR%\trn\transitLines.link"
-      read  file = transit@token_period@.lin
+      read  file = "%MODEL_DIR%\trn\transitLines.lin"
    endrun
    
    ; step 5: select two best park and ride locations for each mode and create the support links that are used in skimming/assignment  
