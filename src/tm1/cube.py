@@ -16,6 +16,7 @@ Public API: :func:`run_cube_job`, :func:`is_interactive_session`.
 
 import logging
 import os
+import re
 import subprocess
 import textwrap
 import time
@@ -65,6 +66,19 @@ def recover_license() -> None:
         subprocess.run(["taskkill", "/f", "/im", image], capture_output=True, check=False)
     time.sleep(8)
     log.info("Recovered Cube license: killed stuck runtpp/Voyager + license agents")
+
+
+def _engine_returncode(log_text: str) -> int | None:
+    """Authoritative Cube result parsed from the run log.
+
+    ``runtpp.exe``'s *process* exit code can be a spurious .NET error
+    (e.g. 0x80131509) even when the Voyager engine succeeded — notably when it
+    reads a cubeio-written TPP.  The ``MATRIX/VOYAGER ReturnCode = N`` lines are
+    the real result.  Returns the worst (max) ReturnCode found, or ``None`` if
+    none are present (caller falls back to the process exit code).
+    """
+    codes = [int(m) for m in re.findall(r"ReturnCode\s*=\s*(\d+)", log_text)]
+    return max(codes) if codes else None
 
 
 def _env_lines(env_extra: dict[str, object] | None) -> str:
@@ -199,8 +213,9 @@ def run_cube_job(
             [_RUNTPP, str(job)], cwd=str(cwd), env=env,
             capture_output=True, text=True, timeout=timeout, check=False,
         )
-        rc = proc.returncode
+        rc, log_text = proc.returncode, proc.stdout or ""
     else:
+        logfile = cwd / f"_cube_{job.stem}.log"
         try:
             rc = _run_via_schtasks(job, cwd, env_extra=env_extra, timeout=timeout)
         except (CubeJobError, TimeoutError) as exc:
@@ -209,9 +224,17 @@ def run_cube_job(
             log.warning("Cube job %s failed (%s) — recover license, retry once", job.name, exc)
             recover_license()
             rc = _run_via_schtasks(job, cwd, env_extra=env_extra, timeout=timeout)
+        log_text = logfile.read_text(errors="replace") if logfile.exists() else ""
 
-    if rc != 0:
-        msg = f"Cube job {job.name} exited {rc} (cwd={cwd})"
+    # The Voyager engine ReturnCode is authoritative; runtpp's process exit code
+    # can be a spurious .NET error on an otherwise-successful run.
+    engine_rc = _engine_returncode(log_text)
+    ok = engine_rc == 0 if engine_rc is not None else rc == 0
+    if not ok:
+        msg = (
+            f"Cube job {job.name} failed (exit={rc}, engine ReturnCode={engine_rc}, "
+            f"cwd={cwd})\n{log_text[-1500:]}"
+        )
         raise CubeJobError(msg)
-    log.info("Cube job %s OK", job.name)
-    return rc
+    log.info("Cube job %s OK (engine ReturnCode=%s, exit=%s)", job.name, engine_rc, rc)
+    return 0
