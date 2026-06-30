@@ -77,3 +77,96 @@ def run_build_transit_networks(proj_dir: Path, ta_dir: Path) -> None:
         _scripts(proj_dir) / "skims" / "BuildTransitNetworks.job", ta_dir,
         env_extra=env, timeout=3600,
     )
+
+
+def run_transit_assignment(
+    proj_dir: Path, ta_dir: Path, *, cluster_nodes: int = _NODES_TRANSIT
+) -> None:
+    """TransitAssign.job — assign ``main/trips{P}.tpp`` transit demand to the network.
+
+    Distributes accegg(3) x path(5) = 15 tasks per period over the cluster
+    (``processnum`` 1-15), producing per-task ``trnlink*``/``trnline*`` volumes that
+    the skim + dwell steps consume.
+    """
+    env = {"MODEL_DIR": str(proj_dir)}
+    run_cube_job(
+        _scripts(proj_dir) / "assign" / "TransitAssign.job", ta_dir,
+        env_extra=env, cluster_nodes=cluster_nodes, commpath=proj_dir / "commpath",
+        timeout=7200,
+    )
+
+
+def run_transit_skims(
+    proj_dir: Path,
+    ta_dir: Path,
+    *,
+    trnassign_iter: int = 0,
+    prev_trnassign_iter: str = "NEG1",
+    cluster_nodes: int = _NODES_TRANSIT,
+) -> None:
+    """TransitSkims.job — skim the assigned transit network (cluster).
+
+    Produces ``trnskm{period}_{access}_{path}_{egress}.avg.iter{N}.tpp`` per task —
+    the MSA-averaged level-of-service skims.  For the FAST single pass the averaging
+    over one iteration is effectively the raw skim, so these are the skims the copy-up
+    delivers to ``skims/``.
+    """
+    env = {
+        "MODEL_DIR": str(proj_dir),
+        "TRNASSIGNITER": trnassign_iter,
+        "PREVTRNASSIGNITER": prev_trnassign_iter,
+    }
+    run_cube_job(
+        _scripts(proj_dir) / "skims" / "TransitSkims.job", ta_dir,
+        env_extra=env, cluster_nodes=cluster_nodes, commpath=proj_dir / "commpath",
+        timeout=7200,
+    )
+
+
+def copy_transit_skims(ta_dir: Path, skims_dir: Path) -> int:
+    """Copy the MSA-averaged transit skims up to ``skims/`` (trnAssign.bat copyup).
+
+    Keeps the ``.avg.iter{N}`` suffix so ``convert_skims``' ``find_latest_iter``
+    resolves them.  Returns the number of files copied.
+    """
+    skims_dir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for f in ta_dir.glob("trnskm*.avg.iter*.tpp"):
+        shutil.copy2(f, skims_dir / f.name)
+        n += 1
+    return n
+
+
+def run_transit(
+    proj_dir: str | Path,
+    iteration: int,
+    *,
+    cluster_nodes: int = _NODES_TRANSIT,
+    trnassign_iter: int = 0,
+) -> None:
+    """One faithful transit assignment + skim pass (RunModel FAST config).
+
+    Replays trnAssign.bat's single pass from ``trn/TransitAssignment.iter{N}/``:
+    stage lines -> PrepHwyNet -> BuildTransitNetworks -> TransitAssign ->
+    TransitSkims -> copy the averaged skims up to ``skims/``.  Uses the averaged
+    highway networks (``hwy/avgLOAD{P}.net``) produced by the highway feedback, so
+    call this *after* :func:`tm1.assignment.run_highway_feedback`.
+
+    The bus-dwell feedback (``transitDwellAccess.py`` Complex mode) only affects the
+    *next* global iteration's bus speeds and is not yet wired; a single global
+    iteration's transit skims are unaffected.
+    """
+    proj_dir = Path(proj_dir)
+    trn = proj_dir / "trn"
+    ta_dir = trn / f"TransitAssignment.iter{iteration}"
+    ta_dir.mkdir(parents=True, exist_ok=True)
+    log.info("--- Transit assignment pass (iter %d) ---", iteration)
+
+    _stage_lines(trn, ta_dir)
+    run_prep_hwynet(proj_dir, ta_dir, iteration)
+    run_build_transit_networks(proj_dir, ta_dir)
+    run_transit_assignment(proj_dir, ta_dir, cluster_nodes=cluster_nodes)
+    run_transit_skims(proj_dir, ta_dir, trnassign_iter=trnassign_iter,
+                      cluster_nodes=cluster_nodes)
+    n = copy_transit_skims(ta_dir, proj_dir / "skims")
+    log.info("Transit pass complete: copied %d skim files to skims/", n)

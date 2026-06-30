@@ -156,6 +156,8 @@ def _run_assignment(
         skims_omx_path=skims_omx,
         cluster_nodes=asn.get("cluster_nodes", 12),
         assign_job=asn.get("assign_job", "HwyAssign.job"),
+        do_transit=asn.get("transit", True),
+        transit_nodes=asn.get("transit_nodes", 15),
     )
 
 

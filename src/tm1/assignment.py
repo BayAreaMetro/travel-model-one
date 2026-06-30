@@ -300,6 +300,8 @@ def run_assignment_iteration(  # noqa: PLR0913
     build_skims: bool = True,
     cluster_nodes: int = _NODES_ASSIGN,
     assign_job: str = "HwyAssign.job",
+    do_transit: bool = True,
+    transit_nodes: int = 15,
 ) -> None:
     """One full global feedback iteration of the faithful Cube assignment loop.
 
@@ -326,6 +328,9 @@ def run_assignment_iteration(  # noqa: PLR0913
     )
     if build_skims:
         run_highway_skims(proj_dir)
+        if do_transit:
+            from tm1.transit import run_transit  # noqa: PLC0415
+            run_transit(proj_dir, iteration, cluster_nodes=transit_nodes)
         if skims_omx_path is None:
             msg = "skims_omx_path is required when build_skims=True"
             raise ValueError(msg)
