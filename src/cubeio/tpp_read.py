@@ -564,6 +564,17 @@ def read_tpp(path: str | Path) -> dict:  # noqa: C901, PLR0912, PLR0915
                 lo_arr, _ = _decode_sparse(body, zones)
                 matrices[tbl_name][row_idx] = lo_arr.astype(np.float64)
 
+            elif type_byte == 0x48:  # noqa: PLR2004
+                # Sparse hi-byte + precision: hi section then prec section.
+                # The 0x08 bit adds a precision lane to the 0x40 (hi-only) form,
+                # so value = hi*256 / divisor(prec).  Rare: rows whose cells are
+                # multiples of 256 with decimal precision.
+                body = block_data[3:]
+                hi_arr, hi_consumed = _decode_sparse(body, zones)
+                prec_arr, _ = _decode_sparse(body[hi_consumed:], zones)
+                divisors = _DIVISOR_LUT[prec_arr.astype(np.uint8)]
+                matrices[tbl_name][row_idx] = hi_arr.astype(np.float64) * 256.0 / divisors
+
             elif type_byte == 0x88:  # noqa: PLR2004
                 # Sparse 1-byte + precision: lo section then prec section.
                 # The 0x08 bit adds a precision lane to the 0x80 (lo-only)
