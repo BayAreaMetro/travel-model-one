@@ -564,6 +564,17 @@ def read_tpp(path: str | Path) -> dict:  # noqa: C901, PLR0912, PLR0915
                 lo_arr, _ = _decode_sparse(body, zones)
                 matrices[tbl_name][row_idx] = lo_arr.astype(np.float64)
 
+            elif type_byte == 0x88:  # noqa: PLR2004
+                # Sparse 1-byte + precision: lo section then prec section.
+                # The 0x08 bit adds a precision lane to the 0x80 (lo-only)
+                # form, so value = lo / divisor(prec).  Used for trip tables
+                # whose cells fit in one byte (0-255) with decimal precision.
+                body = block_data[3:]
+                lo_arr, lo_consumed = _decode_sparse(body, zones)
+                prec_arr, _ = _decode_sparse(body[lo_consumed:], zones)
+                divisors = _DIVISOR_LUT[prec_arr.astype(np.uint8)]
+                matrices[tbl_name][row_idx] = lo_arr.astype(np.float64) / divisors
+
             elif type_byte == 0xC0:  # noqa: PLR2004
                 # Sparse 2-byte: lo + hi sections, integer values
                 body = block_data[3:]
