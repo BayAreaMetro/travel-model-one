@@ -70,6 +70,24 @@ RUN_COST: dict[str, dict] = {
             "fac": [(10, 79, 1.0)]},
 }
 
+# "key" (premier line-haul) mode band per run type -> KEYIVT skim (in-vehicle time on
+# that band only).  loc has no separate key (all IVT is local); LRF additionally splits
+# out ferry (100-109) as FERRYIVT.  Bands match RUN_COST's mode buckets.
+KEY_BAND: dict[str, tuple] = {
+    "com": (130, 139), "hvy": (120, 129), "exp": (80, 99), "lrf": (100, 119),
+}   # lrf key = "Light rail/Ferry" combined (Cube ivtLRF spans 100-119); FERRYIVT below
+    # reports the ferry sub-band separately.
+FERRY_BAND = (100, 109)
+
+# ACTUAL-value component skim columns accumulated along the hyperpath (minutes / counts;
+# see skim_transit).  sk_edge = perceived NON-wait edge time (walk x factor, IVT x ivf,
+# boardpen -- NOT board_cost) so wait = (u - sk_edge) / wait_perceive stays exact under
+# any spread_window.  w_first/w_xfer = per-line half-headway markers for the iwait/xwait
+# split.  boards counts boardings.  fare = boarding XFARE + farelinks (cents); keydist =
+# key-mode in-vehicle distance (miles) for the rail distance-curve fare.
+SKIM_COLS = ("ivt", "keyivt", "ferryivt", "wacc", "waux", "wegr",
+             "boards", "sk_edge", "w_first", "w_xfer", "fare", "keydist")
+
 
 @dataclass
 class TransitParams:
@@ -107,12 +125,27 @@ def build_transit_graph(
     *,
     walk_modes: tuple = WALK_MODES,
     n_zones: int = 1475,
+    fares=None,
+    fare_states: str = "none",
 ) -> TransitGraph:
     """Build the layered Spiess-Florian graph from a Cube-style transit link table.
 
     *links* has one row per directional link (``A, B, time, mode, stopA, stopB,
-    name``); transit links have ``mode >= 10`` and a line ``name``, walk links carry
-    ``mode`` in *walk_modes*.  *headways* maps line name -> headway (minutes).
+    name`` and optional ``distance``); transit links have ``mode >= 10`` and a line
+    ``name``, walk links carry ``mode`` in *walk_modes*.  *headways* maps line name ->
+    headway (minutes).  *fares* is an optional :class:`fares.TransitFares`; when given,
+    the ``fare`` skim column is populated (boarding ``XFARE`` + ``farelinks``) and
+    ``keydist`` carries key-mode in-vehicle distance for the rail distance-curve fare.
+
+    *fare_states* controls how much previous-mode memory the stop states carry, so a
+    re-boarding can charge the exact transfer fare ``XFARE[prev][cur]``:
+
+    * ``"none"`` -- B(k)/C(k) carry no previous-mode label (single copy).  Fast; used for
+      the per-iteration level-of-service skims (IVT/wait/boardings/walk), which do not
+      need fare.  Transfer fare is not resolved (kept 0).
+    * ``"operator"`` -- one B(k)/C(k) copy per *present transit mode* (operator), so
+      ``XFARE[prev_mode][cur_mode]`` is exact -- matches Cube.  Larger graph; fares are
+      static, so this pass is run once and cached rather than every iteration.
     """
     params = params or TransitParams()
     pens = np.asarray(params.board_penalties, dtype=float)
@@ -139,17 +172,41 @@ def build_transit_graph(
     for m, fac in params.inveh_factor.items():
         ivf[mode == int(m)] = fac
 
+    if "distance" not in transit:
+        transit["distance"] = 0.0
     walk = links[links["mode"].isin(walk_modes)]
 
-    # one boarding point per (line, stop) -- see module docstring
-    sa = transit.loc[transit["stopA"] == 1, ["name", "A", "hw"]].rename(columns={"A": "node"})
-    sb = transit.loc[transit["stopB"] == 1, ["name", "B", "hw"]].rename(columns={"B": "node"})
+    # previous-mode fare-state resolution: "operator" -> one state per present mode
+    # (exact XFARE[prev][cur]); "none" -> a single state (fast LOS graph, no transfer
+    # fare).  fare_state_of maps a transit mode to its state index; fare_prev_mode maps
+    # a state index back to a representative previous mode for the XFARE lookup.
+    present_modes = sorted({int(m) for m in mode})
+    if fare_states == "operator" and fares is not None:
+        # one state per distinct XFARE row among present modes: modes with identical
+        # transfer-fare behaviour are interchangeable, so this is exact with fewer states.
+        rows: dict[bytes, list[int]] = {}
+        for m in present_modes:
+            rows.setdefault(fares.xfare[m].tobytes(), []).append(m)
+        reps = [ms[0] for ms in rows.values()]
+        fare_state_of = {m: i for i, ms in enumerate(rows.values()) for m in ms}
+        fare_prev_mode = np.array(reps, dtype=int)
+    else:
+        fare_state_of = dict.fromkeys(present_modes, 0)
+        fare_prev_mode = np.array([0], dtype=int)
+    G = len(fare_prev_mode)
+
+    # one boarding point per (line, stop) -- see module docstring.  mode is carried so
+    # the boarding fare (XFARE[access][line_mode]) can be charged per boarding edge.
+    sa = transit.loc[transit["stopA"] == 1, ["name", "A", "hw", "mode"]].rename(columns={"A": "node"})
+    sb = transit.loc[transit["stopB"] == 1, ["name", "B", "hw", "mode"]].rename(columns={"B": "node"})
     stops = pd.concat([sa, sb]).drop_duplicates(["name", "node"]).reset_index(drop=True)
 
     # ---- vertex ids ----
     # stop states x layers: A (walk-accessed, layer 0, board-only), then per layer
-    # k = 1..L-1: B(k) (alighted; board/egress/one transfer walk) and C(k) (arrived
-    # by transfer walk; board-only). Onboard vertices per (line-stop, layer 1..L-1).
+    # k = 1..L-1: B(k, g) (alighted from a group-g line; board/egress/one transfer walk)
+    # and C(k, g) (arrived by transfer walk from a group-g line; board-only).  The
+    # mode-group g of the last-ridden line is carried so a re-boarding charges the exact
+    # transfer fare XFARE[g][to].  Onboard vertices per (line-stop, layer 1..L-1).
     all_nodes = pd.concat([links["A"], links["B"]])
     centroids = sorted({int(x) for x in all_nodes if x <= n_zones})
     cidx = {c: i for i, c in enumerate(centroids)}
@@ -158,7 +215,8 @@ def build_transit_graph(
     obk = pd.unique(pd.concat([transit["name"] + "|" + transit["A"].astype(str),
                                transit["name"] + "|" + transit["B"].astype(str)]))
     obidx = {k: i for i, k in enumerate(obk)}
-    n_states = 1 + 2 * (n_layers - 1)           # A, B(1..L-1), C(1..L-1)
+    n_states = 1 + 2 * (n_layers - 1) * G       # A, B(1..L-1, g), C(1..L-1, g)
+    _c0 = 1 + (n_layers - 1) * G                 # offset of the first C state
     d0 = len(cidx)                              # destination copies of the centroids
     s0 = d0 + len(cidx)
     o0 = s0 + len(pidx) * n_states
@@ -176,11 +234,11 @@ def build_transit_graph(
     def av(nodes):                      # state A: walk-accessed, 0 boardings
         return _stop(nodes, 0)
 
-    def bv(nodes, k):                   # state B(k): alighted after k-th boarding
-        return _stop(nodes, 1 + (k - 1))
+    def bv(nodes, k, g):                # state B(k, g): alighted from group-g line
+        return _stop(nodes, 1 + (k - 1) * G + g)
 
-    def cvw(nodes, k):                  # state C(k): after transfer walk, k boardings
-        return _stop(nodes, n_layers + (k - 1))
+    def cvw(nodes, k, g):               # state C(k, g): after transfer walk, group g
+        return _stop(nodes, _c0 + (k - 1) * G + g)
 
     def ov(names, nodes, j):
         return o0 + np.array([obidx[f"{a}|{int(b)}"] for a, b in zip(names, nodes)]) \
@@ -188,39 +246,70 @@ def build_transit_graph(
 
     frames: list[pd.DataFrame] = []
 
-    def add(a, b, t, f):
-        frames.append(pd.DataFrame({"a_node": a, "b_node": b, "trav_time": t, "freq": f}))
+    def add(a, b, t, f, **cols):
+        n = len(a)
+        d = {"a_node": a, "b_node": b, "trav_time": t, "freq": f}
+        for c in SKIM_COLS:
+            v = cols.get(c, 0.0)
+            d[c] = v if hasattr(v, "__len__") else np.full(n, v, dtype=float)
+        frames.append(pd.DataFrame(d))
 
     # walk edges by NOX role: access (1) -> A; egress (6) from B(k) only;
     # transfer walk (3) B(k) -> C(k) only. Other walk modes (funnels) state-preserving.
+    # skims: actual walk minutes to wacc/wegr/waux by role; sk_edge = perceived (x factor)
     wa, wb = walk["A"].to_numpy(), walk["B"].to_numpy()
-    wt = walk["time"].to_numpy() * params.walk_factor
+    w_actual = walk["time"].to_numpy()
+    wt = w_actual * params.walk_factor
     wm = walk["mode"].to_numpy()
     acc = (wm == 1) & (wa <= n_zones) & (wb > n_zones)
     egr = (wm == 6) & (wa > n_zones) & (wb <= n_zones)
     xfr = (wm == 3) & (wa > n_zones) & (wb > n_zones)
-    oth = ~(acc | egr | xfr)            # funnels etc.: preserve state
+    oth = ~(acc | egr | xfr)            # funnels etc.: preserve state (aux walk)
+    o_nc = oth & (wa > n_zones) & (wb > n_zones)
     if acc.any():
-        add(cv(wa[acc]), av(wb[acc]), wt[acc], INF_FREQ)
+        add(cv(wa[acc]), av(wb[acc]), wt[acc], INF_FREQ, sk_edge=wt[acc], wacc=w_actual[acc])
+    # egress / transfer-walk / funnel emanate from every mode-group copy of B(k)/C(k);
+    # walking never changes the last-ridden mode, so the group g is preserved.
     for k in range(1, n_layers):
-        if egr.any():
-            add(bv(wa[egr], k), dvx(wb[egr]), wt[egr], INF_FREQ)
-        if xfr.any():
-            add(bv(wa[xfr], k), cvw(wb[xfr], k), wt[xfr], INF_FREQ)
-    if oth.any():
-        o_nc = oth & (wa > n_zones) & (wb > n_zones)
-        if o_nc.any():
-            add(av(wa[o_nc]), av(wb[o_nc]), wt[o_nc], INF_FREQ)
-            for k in range(1, n_layers):
-                add(bv(wa[o_nc], k), bv(wb[o_nc], k), wt[o_nc], INF_FREQ)
-                add(cvw(wa[o_nc], k), cvw(wb[o_nc], k), wt[o_nc], INF_FREQ)
+        for g in range(G):
+            if egr.any():
+                add(bv(wa[egr], k, g), dvx(wb[egr]), wt[egr], INF_FREQ,
+                    sk_edge=wt[egr], wegr=w_actual[egr])
+            if xfr.any():
+                add(bv(wa[xfr], k, g), cvw(wb[xfr], k, g), wt[xfr], INF_FREQ,
+                    sk_edge=wt[xfr], waux=w_actual[xfr])
+            if o_nc.any():
+                add(bv(wa[o_nc], k, g), bv(wb[o_nc], k, g), wt[o_nc], INF_FREQ,
+                    sk_edge=wt[o_nc], waux=w_actual[o_nc])
+                add(cvw(wa[o_nc], k, g), cvw(wb[o_nc], k, g), wt[o_nc], INF_FREQ,
+                    sk_edge=wt[o_nc], waux=w_actual[o_nc])
+    if o_nc.any():                       # state-A funnels (pre-first-board), no group yet
+        add(av(wa[o_nc]), av(wb[o_nc]), wt[o_nc], INF_FREQ,
+            sk_edge=wt[o_nc], waux=w_actual[o_nc])
 
-    # ride: onboard chains per layer 1..L-1
+    # ride: onboard chains per layer 1..L-1.  skims: actual IVT to ivt (all) + keyivt /
+    # ferryivt by mode band; sk_edge = perceived IVT (x ivf).
     tn = transit["name"].to_numpy()
     ta, tb = transit["A"].to_numpy(), transit["B"].to_numpy()
-    tt = transit["time"].to_numpy() * ivf
+    t_actual = transit["time"].to_numpy()
+    t_dist = transit["distance"].to_numpy(dtype=float)
+    tt = t_actual * ivf
+    kb = KEY_BAND.get(params.linehaul or "")
+    is_key = ((mode >= kb[0]) & (mode <= kb[1])) if kb else np.zeros(len(transit), bool)
+    is_ferry = (mode >= FERRY_BAND[0]) & (mode <= FERRY_BAND[1])
+    ivt_key = np.where(is_key, t_actual, 0.0)
+    ivt_ferry = np.where(is_ferry, t_actual, 0.0)
+    key_dist = np.where(is_key, t_dist, 0.0)     # key-mode distance -> rail fare curve
+    # per-link farelinks surcharge (cents) on the matching (mode, a, b) ride links
+    fl = np.zeros(len(transit))
+    if fares is not None and fares.farelinks:
+        fll = fares.farelinks
+        fl = np.array([fll.get((int(m), int(a), int(b)), 0.0)
+                       for m, a, b in zip(mode, ta, tb)])
     for j in range(1, n_layers):
-        add(ov(tn, ta, j), ov(tn, tb, j), tt, INF_FREQ)
+        add(ov(tn, ta, j), ov(tn, tb, j), tt, INF_FREQ,
+            sk_edge=tt, ivt=t_actual, keyivt=ivt_key, ferryivt=ivt_ferry,
+            keydist=key_dist, fare=fl)
 
     # boarding (charges pens[k] for the (k+1)-th boarding) and alighting
     freq_scale = 2.0 / params.wait_perceive     # SF wait 1/freq == perceived half-headway
@@ -229,7 +318,20 @@ def build_transit_graph(
     s_hw = stops["hw"].to_numpy()
     board_line_rows: dict[str, list] = {}
 
+    s_mode = stops["mode"].to_numpy()
+    s_grp = np.array([fare_state_of[int(m)] for m in s_mode])  # each stop's fare state
+    # first-boarding fare = XFARE[walk-access mode 1][line mode]; transfer fare from a
+    # state-g line (prev mode fare_prev_mode[g]) into a stop's line = XFARE[prev][cur].
+    # With fare_states="operator" this is exact per mode-pair (free for same operator,
+    # full for cross-operator); with "none" (G=1, prev mode 0) transfers are free.
+    if fares is not None:
+        board_fare = fares.xfare[1, s_mode]
+        tf_grp = fares.xfare[fare_prev_mode][:, s_mode]        # (G, n_stops) exact XFARE
+    else:
+        board_fare = np.zeros(len(stops))
+        tf_grp = np.zeros((G, len(stops)))
     wait_exp = params.wait_perceive * s_hw / 2.0     # expected perceived wait
+    half_hw = s_hw / 2.0                              # actual per-line half-headway
     w = params.spread_window
     if w is None:
         board_cost = np.zeros(len(stops))
@@ -248,18 +350,29 @@ def build_transit_graph(
         board_cost = wait_exp * (1.0 - 1.0 / w)
         board_freq = w * freq_scale / s_hw
 
-    def _board(from_v, k):
+    def _board(from_v, k, first, fare_arr):
         start = sum(len(f) for f in frames)
-        add(from_v, ov(s_name, s_node, k + 1), board_cost + pens[k], board_freq)
+        # sk_edge carries ONLY the non-wait boardpen (board_cost is wait -> stays inside
+        # u - sk_edge). first vs re-boarding half-headways feed the iwait/xwait split.
+        # fare = first-boarding XFARE (from walk) or the group-g transfer fare.
+        add(from_v, ov(s_name, s_node, k + 1), board_cost + pens[k], board_freq,
+            boards=1.0, sk_edge=np.full(len(stops), pens[k]),
+            w_first=(half_hw if first else 0.0), w_xfer=(0.0 if first else half_hw),
+            fare=fare_arr)
         for i, ln in enumerate(s_name):
             board_line_rows.setdefault(ln, []).append(start + i)
 
-    _board(av(s_node), 0)                       # first boarding from access state
-    for k in range(1, n_layers - 1):            # re-boarding after alight / xfer walk
-        _board(bv(s_node, k), k)
-        _board(cvw(s_node, k), k)
-    for j in range(1, n_layers):                # alight -> B(j)
-        add(ov(s_name, s_node, j), bv(s_node, j), np.zeros(len(stops)), INF_FREQ)
+    _board(av(s_node), 0, True, board_fare)     # first boarding from access state
+    for k in range(1, n_layers - 1):            # re-boarding from each group's B(k)/C(k)
+        for g in range(G):
+            _board(bv(s_node, k, g), k, False, tf_grp[g])
+            _board(cvw(s_node, k, g), k, False, tf_grp[g])
+    for j in range(1, n_layers):                # alight from line M -> B(j, group(M))
+        for g in range(G):
+            m = s_grp == g
+            if m.any():
+                add(ov(s_name[m], s_node[m], j), bv(s_node[m], j, g),
+                    np.zeros(int(m.sum())), INF_FREQ)
 
     edges = pd.concat(frames, ignore_index=True)
     board_rows = {k: np.array(v) for k, v in board_line_rows.items()}
@@ -296,3 +409,89 @@ def assign_transit(graph: TransitGraph, demand: np.ndarray, *,
 def boardings_by_line(volume: np.ndarray, graph: TransitGraph) -> pd.Series:
     """Total boardings per line = sum of volume over that line's boarding edges."""
     return pd.Series({ln: float(volume[rows].sum()) for ln, rows in graph.board_rows.items()})
+
+
+def skim_transit(
+    graph: TransitGraph,
+    *,
+    linehaul: str | None = None,
+    fares=None,
+    wait_perceive: float = 2.8,
+    n_zones: int = 1475,
+    threads: int | None = None,
+    max_path_min: float = 180.0,
+) -> dict[str, np.ndarray]:
+    """Skim the layered SF graph into Cube-style component matrices (actual units).
+
+    The fork's :class:`HyperpathGenerating` accumulates each edge column as its
+    strategy-expected value along the SAME optimal hyperpath -- Cube's optimal-strategy
+    skim.  We ride the perceived-cost strategy and read out ACTUAL-minute components.
+    Wait is not an edge attribute; it is isolated as ``(u - sk_edge) / wait_perceive``
+    where ``u`` is the total perceived cost (is_travel_time) and ``sk_edge`` the
+    accumulated perceived NON-wait edge time -- exact under any ``spread_window``.
+
+    For skim parity with Cube build the graph with ``spread_window=1.5`` (matches
+    Cube's combined-headway window); ``None`` (full spread) is more behaviourally
+    correct but reports ~10% lower wait.
+
+    ``linehaul`` (loc/lrf/exp/hvy/com) applies Cube's hierarchical filter: the premium
+    skim sets keep an OD only where the path actually uses that premier mode band
+    (verified 100% in the reference), so an OD without e.g. heavy rail is left to a
+    lower set.  ``loc`` (all-local) needs no premier filter.
+
+    Returns a dict of ``n_zones x n_zones`` arrays keyed by ActivitySim token:
+    ``TOTIVT, KEYIVT, FERRYIVT, IWAIT, XWAIT, WAUX, BOARDS`` (minutes / boardings;
+    x100 scaling and OMX naming happen at the wiring layer).  Unreachable ODs, those
+    not using the premier mode, and those whose actual path time exceeds
+    ``max_path_min`` (Cube's max-run prune) are 0.
+    """
+    zones = sorted(graph.centroid_vertex)                 # zone ids present as centroids
+    o_vert = np.array([graph.centroid_vertex[z] for z in zones], dtype=np.int64)
+    d_vert = np.array([graph.dest_vertex[z] for z in zones], dtype=np.int64)
+    # kernel treats nodes_to_indices as identity (vertex->vertex); the per-taz vertex
+    # ids in o/d_vert_ids drive the taz mapping (od_index_to_taz_index).
+    n2i = np.arange(graph.n_vertices, dtype=np.int64)
+
+    cols = list(SKIM_COLS)
+    hp = HyperpathGenerating(
+        graph.edges[["a_node", "b_node", "trav_time", "freq", *cols]],
+        tail="a_node", head="b_node", trav_time="trav_time", freq="freq",
+        skim_cols=["trav_time", *cols],
+        o_vert_ids=o_vert, d_vert_ids=d_vert, nodes_to_indices=n2i,
+    )
+    # skimming covers every OD regardless of demand; pass a single dummy entry.
+    hp.assign(o_vert[:1].astype(np.uint32), d_vert[:1].astype(np.uint32),
+              np.zeros(1), threads=threads)
+    sm = hp.skim_matrix
+    zi = np.array(zones) - 1
+
+    def zmat(name):
+        out = np.zeros((n_zones, n_zones))
+        out[np.ix_(zi, zi)] = np.asarray(sm.get_matrix(name), dtype=float)
+        return out
+
+    u = zmat("trav_time")
+    ivt, keyivt, ferryivt = zmat("ivt"), zmat("keyivt"), zmat("ferryivt")
+    wacc, waux, wegr = zmat("wacc"), zmat("waux"), zmat("wegr")
+    boards = zmat("boards")
+    wait = np.maximum(u - zmat("sk_edge"), 0.0) / wait_perceive
+    w_first, w_xfer = zmat("w_first"), zmat("w_xfer")
+    wsum = w_first + w_xfer
+    with np.errstate(divide="ignore", invalid="ignore"):
+        frac_i = np.where(wsum > 0, w_first / wsum, 1.0)
+    iwait, xwait = wait * frac_i, wait * (1.0 - frac_i)
+
+    # hierarchical premier-mode filter: premium sets keep only paths that use the
+    # premier band (KEYIVT > 0); loc keeps every reachable OD (all paths are local).
+    # fare = accumulated boarding XFARE + farelinks (cents), plus the rail distance
+    # curve on the key-mode in-vehicle distance for hvy/com (0 for bus/light rail).
+    fare = zmat("fare")
+    if fares is not None:
+        fare = fare + fares.rail_fare(linehaul, zmat("keydist"))
+
+    reach = (keyivt > 0) if linehaul in KEY_BAND else (u > 0)
+    actual_total = ivt + wait + wacc + waux + wegr
+    keep = reach & (actual_total <= max_path_min)
+    out = {"TOTIVT": ivt, "KEYIVT": keyivt, "FERRYIVT": ferryivt, "IWAIT": iwait,
+           "XWAIT": xwait, "WAUX": waux, "BOARDS": boards, "FARE": fare}
+    return {k: np.where(keep, v, 0.0) for k, v in out.items()}
