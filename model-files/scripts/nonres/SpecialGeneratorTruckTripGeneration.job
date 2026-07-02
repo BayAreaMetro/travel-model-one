@@ -1,0 +1,90 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; SpecialGeneratorTruckTripGeneration.job
+;
+; Input:  (1) Zonal database in DBF format with the following fields: (a) TOTEMP, total employment (same regardless
+;             of classification system); (b) RETEMPN, retail trade employment per the NAICS classification system; 
+;             (c) FPSEMPN, financial and professional services employment per the NAICS classification system; (d) 
+;             HEREMPN, health, educational, and recreational employment per the NAICS classification system; (e) 
+;             OTHEMPN, other employment per the NAICS classification system; (f) AGREMPN, agricultural employment
+;             per the NAICS classificatin system; (g) MWTEMPN, manufacturing, warehousing, and transportation 
+;             emp;loyment per the NAICS classification system; and, (h) TOTHH, total households.
+;
+; Output: (1) An DBF file containing the following fields: (a) zone number; (b) medium truck trip productions;
+;             (c) medium truck trip attractions; (d) large truck trip productions; (e) large truck trip attractions;
+;
+; Notes:  (1) This script asserts medium and large truck productions for 5 special freight generators 
+;             borrowed from the California Statewide Freight Forecasting and Travel Demand Model. 
+;             Attraction equations are borrowed from TruckTripDistribution.job.
+;
+; See also: (1) SpecialGeneratorTruckTripDistribution.job, which applies the distribution model. 
+;           (2) TruckTimeOfDay.job, which applies diurnal factors to the daily trips generated here. 
+;           (3) TruckTollChoice.job, which applies a toll/no toll choice model for trucks.
+;
+; version:  Travel Model One (v 0.3-1.7)
+; authors:  mas (WSP) (2026 07 02); dto (2010 08 31); cp (date unknown)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the number of zones token
+token_number_of_internal_zones = 1454
+
+; apply the generation models
+run pgm = tripgen
+
+   ; read in the zonal data in DBF format
+   filei zdati[1] = landuse\tazdata.dbf
+   
+   ; write the generation results to a DBF
+   ; TODO: expand P and A vectors if distribution varies by special generator
+   ; NOTE: FORM argument requires more precision to avoid loss of trips due to rounding if productions are small
+   fileo pao[1] = nonres\SGTruckTGx.dbf, form = 12.4, list = z, p[1], p[2], a[1], a[2], dbf = T, names=z, medprod, lrgprod, medattr, lrgattr
+   
+   ; only apply the model for internal zones
+   zones = @token_number_of_internal_zones@
+   
+   ; loop through the origin zones
+   phase = iloop
+   
+      IF (I = 142)      ; Port of SF
+        medium_production=10000
+        large_production=10000
+      ELSEIF (I = 239)  ; SFO Airport
+        medium_production=10000
+        large_production=10000      
+      ELSEIF (I = 313)  ; Port of Redwood City
+        medium_production=10000
+        large_production=10000  
+      ELSEIF (I = 874)  ; OAK Airport
+        medium_production=10000
+        large_production=10000  
+      ELSEIF (I = 965)  ; Port of Oakland
+        medium_production=10000
+        large_production=10000  
+      ELSE
+        medium_production=0
+        large_production=0
+      ENDIF
+      
+      medium_attraction = round(0.00347 * zi.1.TOTEMP)
+      large_attraction  = round(0.00426 * zi.1.TOTEMP)
+      
+      ; set the TP+ trip generation variables prior to balance phase
+      p[1] = medium_production      
+      p[2] = large_production
+      
+      a[1] = medium_attraction      
+      a[2] = large_attraction
+      
+   endphase
+   
+   ; balance attractions to productions
+   phase = adjust
+   
+      a[1] = p[1][0] / a[1][0] * a[1]
+      a[2] = p[2][0] / a[2][0] * a[2]
+   
+   endphase
+      
+ENDRUN
