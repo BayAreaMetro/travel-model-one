@@ -113,18 +113,22 @@ class CDAPSummaryBATS(BaseModel):
 
 # Non-Work Choice Destination 
 class NonMandAvgTripLength(BaseModel):
-    trip_purpose: CTRAMPPurpose = Field(alias='trip_type')
+    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
+
+    trip_purpose: Literal['escort', 'shop', 'maintenance', 'eatout', 'visit', 'discretionary', 'atwork'] = Field(alias='trip_type')
     avg_trip_length: float = Field(ge=0, alias = 'mean_trip_length')
 
 class NonMandTripLengthFrequency(BaseModel):
+    model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
+
     distbin: int = Field(ge = 1, description = 'Distance bin')
-    escort: float = Field(ge=0, alias=('Escort'))
-    shop: float = Field(ge=0, alias=('Shop'))
-    maintenance: float = Field(ge=0, alias=('Maintenance'))
-    eat_out: float = Field(ge=0, alias=('eatout'))
-    visit: float = Field(ge = 0, alias = ('Visit'))
+    escort: float = Field(ge=0)
+    shop: float = Field(ge=0)
+    maintenance: float = Field(ge=0)
+    eatout: float = Field(ge=0)
+    visit: float = Field(ge = 0)
     discretionary: float = Field(ge=0)
-    at_work: float = Field(ge=0, alias=('atwork'))
+    atwork: float = Field(ge=0)
 
 # Tour Mode Choice
 class TourModeChoiceModel(BaseModel):
