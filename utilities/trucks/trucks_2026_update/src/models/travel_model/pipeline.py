@@ -184,6 +184,8 @@ def run_bat(scenario_dir: Path, iteration: str) -> bool:
     model_env["PREV_ITER"] = str("TEST")
     model_env["PREV_WGT"] = str(0.0)
     model_env["WGT"] = str(1.0)
+    model_env["MODEL_YEAR"] = str(2021)
+    model_env["FUTURE"] =  str(2023)
     bat = scenario_dir / "CTRAMP" / "RunIteration.bat"
     return _run(["cmd", "/c", str(bat)], cwd=scenario_dir, env=model_env)
 
