@@ -171,6 +171,7 @@ def _run_assignment(
             max_iter=asn.get("max_iter", 100),
             gap_target=asn.get("gap_target", 1e-4),
             cores=asn.get("cores"),
+            transit_inputs_dir=asn.get("transit_inputs_dir"),
         )
         return
 

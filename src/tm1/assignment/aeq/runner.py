@@ -5,10 +5,11 @@ frozen non-residential), build the 13 assignment classes, solve user equilibrium
 Cube's facility-type VDF, skim the converged network, and write the refreshed highway
 level-of-service into ``skims.omx`` for the next ActivitySim run.
 
-Transit skims are preserved from the existing ``skims.omx`` (the transit assignment +
-skimming is wired separately); only the highway matrices are refreshed here, so the
-first closed loop exercises the skim -> demand -> assign -> skim cycle on the highway
-side while transit stays frozen.
+When ``transit_inputs_dir`` is given, transit level-of-service skims are refreshed too:
+the Spiess-Florian component skims (:mod:`tm1.assignment.aeq.transit_skims`) are built
+from the source transit network with bus in-vehicle times taken from this iteration's
+congested highway times, and merged into ``skims.omx`` alongside the highway matrices --
+a fully Cube-free closed loop.  Without it, existing transit matrices are preserved.
 """
 
 from __future__ import annotations
@@ -22,9 +23,12 @@ import pandas as pd
 
 from tm1.assignment.aeq.classes import build_vehicle_classes
 from tm1.assignment.aeq.demand import assemble_demand
+from tm1.assignment.aeq.fares import load_fares
 from tm1.assignment.aeq.highway import equilibrium_assignment
 from tm1.assignment.aeq.network import build_cube_graph
 from tm1.assignment.aeq.skim import highway_skims
+from tm1.assignment.aeq.transit_network import bus_time_table, build_ride_links, parse_lin
+from tm1.assignment.aeq.transit_skims import skim_all_runs
 from tm1.assignment.aeq.vdf import congested_time
 
 log = logging.getLogger(__name__)
@@ -106,6 +110,56 @@ def _write_skims_omx(
              skims_omx_path.name, len(highway), len(preserved))
 
 
+def _load_fare_cache(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    with np.load(path) as z:
+        return {k: z[k] for k in z.files}
+
+
+def _save_fare_cache(path: Path, cache: dict) -> None:
+    np.savez_compressed(path, **cache)
+
+
+def _transit_skims(
+    transit_dir: Path,
+    street_time_by_period: dict,
+    n_zones: int,
+    cores: int | None,
+    fare_cache_path: Path,
+) -> dict[str, np.ndarray]:
+    """Build the ActivitySim transit skim matrices from the source network.
+
+    Ride (in-vehicle bus) times come from this iteration's congested highway times
+    (``street_time_by_period`` = ``period -> {(a, b): bus minutes}``); the exact
+    operator-graph fare is computed once and cached to ``fare_cache_path`` (fares are
+    static, so later iterations reuse it).
+    """
+    lines = parse_lin(transit_dir / "transitLines.lin")
+    ld = pd.read_parquet(transit_dir / "link_distance.parquet")
+    link_dist = {(int(a), int(b)): float(x) for a, b, x in zip(ld.A, ld.B, ld.distance)}
+    rtd = pd.read_parquet(transit_dir / "ref_ride_time.parquet")
+    ref_time = {(int(a), int(b)): float(t) for a, b, t in zip(rtd.A, rtd.B, rtd.time)}
+    sl = pd.read_parquet(transit_dir / "support_links.parquet")
+    support_by_runtype = {rt: sl[sl["run_type"] == rt] for rt in sl["run_type"].unique()}
+    fares = load_fares(transit_dir / "fares", link_dist, lines)
+
+    ride_by_period: dict = {}
+    hw_by_period: dict = {}
+    for period, street_time in street_time_by_period.items():
+        ride, hw = build_ride_links(lines, period, street_time, link_dist, ref_time)
+        ride_by_period[period] = ride
+        hw_by_period[period] = hw
+
+    fare_cache = _load_fare_cache(fare_cache_path)
+    mats = skim_all_runs(ride_by_period, support_by_runtype, hw_by_period, fares,
+                         n_zones=n_zones, threads=cores, fare_cache=fare_cache)
+    _save_fare_cache(fare_cache_path, fare_cache)
+    log.info("transit skims: %d matrices (%d run types cached fare)",
+             len(mats), len(fare_cache))
+    return mats
+
+
 def run_assignment_iteration(
     asim_output_dir: str | Path,
     network_csv: str | Path,
@@ -119,6 +173,7 @@ def run_assignment_iteration(
     gap_target: float = 1e-4,
     av_pce: float = 1.0,
     cores: int | None = None,
+    transit_inputs_dir: str | Path | None = None,
 ) -> dict[str, float]:
     """Run one AequilibraE highway assignment + skim iteration for all periods.
 
@@ -134,6 +189,7 @@ def run_assignment_iteration(
 
     all_skims: dict[str, np.ndarray] = {}
     vmt: dict[str, float] = {}
+    street_time_by_period: dict[str, dict] = {}
     for period in periods:
         g, attrs = build_cube_graph(links, n_zones, capfac=CAPFAC[period])
         demand = assemble_demand(asim_output_dir, nonres_dir, period, n_zones)
@@ -158,6 +214,18 @@ def run_assignment_iteration(
                               cores=cores)
         for key, mat in skims.items():
             all_skims[f"{key}__{period}"] = mat
+
+        # transit bus in-vehicle times follow the congested street network (Cube
+        # useruntime=n): area-type delay applied to this iteration's congested times.
+        if transit_inputs_dir is not None:
+            links_ct = links.copy()
+            links_ct[f"ctim{period}"] = skim_time
+            street_time_by_period[period] = bus_time_table(links_ct, period)
+
+    if transit_inputs_dir is not None:
+        fare_cache_path = Path(skims_omx_path).with_name("aeq_transit_fare_cache.npz")
+        all_skims.update(_transit_skims(Path(transit_inputs_dir), street_time_by_period,
+                                        n_zones, cores, fare_cache_path))
 
     _save_msa_state(msa_path, msa_state)
     _write_skims_omx(Path(skims_omx_path), all_skims, n_zones)

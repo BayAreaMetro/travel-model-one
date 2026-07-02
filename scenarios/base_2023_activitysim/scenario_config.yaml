@@ -72,6 +72,9 @@ steps:
       network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
       nonres_dir: "{reference_run}/nonres"
       skims_omx: "{proj_dir}/data/skims.omx"
+      # Cube-free transit LOS skims from the source network (omit to preserve
+      # existing transit matrices); built once by scripts/build_aeq_inputs.py
+      transit_inputs_dir: "E:/aeq_inputs"
       cores: 24
       max_iter: 100
       gap_target: 0.001
