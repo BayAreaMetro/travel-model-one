@@ -54,9 +54,11 @@ _PHASE = {"label": "", "t0": 0.0, "exp": 1.0}
 
 
 def _phase(label: str, exp: float = 1.0):
-    _PHASE.update(label=label, t0=time.time(), exp=max(exp, 1.0))
-    if label:                                   # announce start immediately (no silence)
-        log.info("  > %s (expect ~%.0fs) ...", label, exp)
+    # only slow phases (>=30s: input load, fare graph) announce + tick; fast LOS skims
+    # just print their result line, so the log stays scannable.
+    _PHASE.update(label=label if exp >= 30 else "", t0=time.time(), exp=max(exp, 1.0))
+    if _PHASE["label"]:
+        log.info("  %s (~%.0fs) ...", label, exp)
 
 
 def _ticker():
@@ -64,8 +66,8 @@ def _ticker():
         time.sleep(30)
         if _PHASE["label"]:
             el = time.time() - _PHASE["t0"]
-            log.info("    ... %s  %.0fs/~%.0fs (%.0f%%)", _PHASE["label"], el,
-                     _PHASE["exp"], min(99, 100 * el / _PHASE["exp"]))
+            log.info("    %s: %.0f%% (%.0fs / ~%.0fs)", _PHASE["label"],
+                     min(99, 100 * el / _PHASE["exp"]), el, _PHASE["exp"])
 
 
 def _score(ref, aeq, reach):
@@ -127,33 +129,38 @@ def main() -> None:
              total, len(run_types), len(PERIODS))
 
     lh_of = {f"{a}_{lh}_{e}": (lh, am, em) for a, e, am, em in ACCESS_EGRESS for lh in LINEHAULS}
+    # separate fare / LOS timing so the ETA is not thrown off by the one-time fare cost
     rows, done, t0 = [], 0, time.time()
+    fare_secs = los_secs = 0.0
+    fare_n = los_n = 0
+    n_rt = len(run_types)
     for rt in run_types:
         lh, amode, emode = lh_of[rt]
         sup = sl[sl["run_type"] == rt]
         fare_mat = None
         if not args.skip_fare:
             tb = time.time()
-            _phase(f"{rt} fare graph build", 90)
+            _phase(f"{rt}: building fare graph", 90)
             gf = build_transit_graph(_assemble(ride["AM"], sup), hw["AM"],
                                      TransitParams(linehaul=lh, spread_window=1.5),
                                      n_zones=1475, fares=fares, fare_states="operator",
                                      access_mode=amode, egress_mode=emode)
-            _phase(f"{rt} fare skim", gf.n_vertices / 4500)
+            _phase(f"{rt}: skimming fare ({gf.n_vertices/1000:.0f}k verts)", gf.n_vertices / 4500)
             fare_mat = skim_transit(gf, linehaul=lh, fares=fares, threads=args.threads,
                                     max_path_min=180.0)["FARE"]
             _phase("")
-            log.info("  %s: fare graph %d verts skimmed in %.0fs", rt, gf.n_vertices,
-                     time.time() - tb)
+            fare_secs += time.time() - tb
+            fare_n += 1
         for p in PERIODS:
-            _phase(f"{rt} {p} LOS skim", 18)
+            tl = time.time()
             g = build_transit_graph(_assemble(ride[p], sup), hw[p],
                                     TransitParams(linehaul=lh, spread_window=1.5),
                                     n_zones=1475, fares=fares, fare_states="none",
                                     access_mode=amode, egress_mode=emode)
             sk = skim_transit(g, linehaul=lh, fares=fares, threads=args.threads,
                               max_path_min=180.0)
-            _phase("")
+            los_secs += time.time() - tl
+            los_n += 1
             if fare_mat is not None:
                 sk["FARE"] = fare_mat
             try:
@@ -170,19 +177,22 @@ def main() -> None:
                 comps.append("KEYIVT")
             if rt.startswith("drv") or rt.endswith("drv"):
                 comps += ["DTIM", "DDIST"]
-            cells = []
+            cells, corrs = [], []
             for c in comps:
                 refk = _KEYIVT_REF[lh] if c == "KEYIVT" else _REFKEY[c][0]
                 scale = 1 if c == "KEYIVT" else _REFKEY[c][1]
                 s = _score(np.asarray(R[refk], float) / scale, sk[c], reach)
                 if s:
                     rows.append((rt, p, c, *s))
-                    cells.append(f"{c} {s[2]:+.0f}%/{s[3]:.2f}")
+                    cells.append(f"{c} {s[2]:+.0f}%")
+                    corrs.append(s[3])
             done += 1
-            eta = (time.time() - t0) / done * (total - done)
-            log.info("[%2d/%2d %3.0f%% ETA %4.1fm] %s %s (%s od): %s",
-                     done, total, 100 * done / total, eta / 60, rt, p,
-                     f"{int(reach.sum()):,}", "  ".join(cells))
+            # ETA = remaining fare passes (one per run type) + remaining LOS skims
+            avg_fare, avg_los = fare_secs / max(fare_n, 1), los_secs / max(los_n, 1)
+            eta = ((n_rt - fare_n) * avg_fare + (total - done) * avg_los) / 60
+            log.info("[%2d/%d ETA %3.0fm] %-11s %s %4dk od | %s | min r %.2f",
+                     done, total, eta, rt, p, round(int(reach.sum()) / 1000),
+                     "  ".join(cells), min(corrs) if corrs else float("nan"))
 
     _phase("")
     df = pd.DataFrame(rows, columns=["run", "period", "comp", "cube", "aeq", "pct", "corr", "n"])
