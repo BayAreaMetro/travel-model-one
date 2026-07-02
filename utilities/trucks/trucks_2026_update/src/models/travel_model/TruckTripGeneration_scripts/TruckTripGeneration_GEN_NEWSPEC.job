@@ -40,7 +40,7 @@
 ;           (3) TruckTollChoice.job, which applies a toll/no toll choice model for trucks.
 ;
 ; version:  Travel Model One
-; authors:  Juan Caicedo (WSP) (2026 06 15); dto (2010 08 31); cp (date unknown)
+; authors:  dto (2010 08 31); cp (date unknown)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -64,55 +64,66 @@ run pgm = tripgen
    ; loop through the origin zones
    phase = iloop
    
-      ; non-freight -  productions (very small updated with NAICS coefficients)
+      ; non-garage-based, or linked trips, or Non-Freight - productions (very small updated with NAICS coefficients)
       linkedVerySmallP = round(0.4 * (0.95409 * zi.1.RETEMPN + 0.54333 * zi.1.FPSEMPN + 0.50769 * zi.1.HEREMPN + 
                                0.63558 * zi.1.OTHEMPN + 1.10181 * zi.1.AGREMPN + 0.81576 * zi.1.MWTEMPN +
                                0.26565 * ZI.1.TOTHH) )
-                               
-      non_freight_small_production     = round(0.0357 * zi.1.TOTEMP)
-      non_freight_medium_production    = round(0.0103 * zi.1.TOTEMP)
-      non_freight_large_production     = MAX(round(0.40609 * SQRT(zi.1.TOTEMP) + 0.01427 * zi.1.RETEMPN + 
-                                                0.00425 * zi.1.FPSEMPN - 25.6071 * (zi.1.RETEMPN/zi.1.TOTEMP) - 
-                                                10.56465 * (zi.1.FPSEMPN/zi.1.TOTEMP)), 0)
       
-      ; non-freight-based- attractions (equal productions)
+
+      small_non_freight_production = ROUND( 0.10427 * zi.1.TOTHH + 1.57552 * SQRT(zi.1.TOTEMP) + 76.95218 * (zi.1.RETEMPN / MAX(1, zi.1.TOTEMP)) - 
+                                           59.38507 * (zi.1.FPSEMPN / MAX(1, zi.1.TOTEMP)) + 30.78135 * (zi.1.HEREMPN / MAX(1, zi.1.TOTEMP)) - 
+                                           140.48017 * (zi.1.AGREMPN / MAX(1, zi.1.TOTEMP)) - 0.75866 * (zi.1.MWTEMPN / MAX(1, zi.1.CIACRE)) - 
+                                           0.57860 * (zi.1.OTHEMPN / MAX(1, zi.1.CIACRE)))
+
+      medium_non_freight_production = ROUND(0.02255 * zi.1.TOTHH + 0.50605 * SQRT(zi.1.TOTEMP) + 19.03365 * (zi.1.RETEMPN / MAX(1, zi.1.TOTEMP)) + 
+                                            2.74253 * (zi.1.HEREMPN / MAX(1, zi.1.TOTEMP)) - 0.86165 * (zi.1.MWTEMPN / MAX(1, zi.1.TOTEMP)) - 
+                                            14.24314 * (zi.1.OTHEMPN / MAX(1, zi.1.TOTEMP)))
+
+      large_non_freight_production = ROUND(0.00858 * zi.1.RETEMPN + 0.00295 * zi.1.FPSEMPN - 15.95454 * (zi.1.RETEMPN / MAX(1, zi.1.TOTEMP)) - 
+                                           6.10450 * (zi.1.FPSEMPN / MAX(1, zi.1.TOTEMP)) + 0.25394 * SQRT(zi.1.TOTEMP))
+
+      ; non-garage-based, or linked trips, or Non-freight - attractions (equal productions)
       linkedVerySmallA = linkedVerySmallP
-      non_freight_small_attraction     = round(0.0360 * zi.1.TOTEMP)
-      non_freight_medium_attraction    = round(0.0104 * zi.1.TOTEMP)
-      non_freight_large_attraction     = round(0.0050 * zi.1.TOTEMP)
+      small_non_freight_attraction     = small_non_freight_production
+      medium_non_freight_attraction    = medium_non_freight_production
+      large_non_freight_attraction     = large_non_freight_production
       
       ; Freight - productions (updated NAICS coefficients)
-      freight_small_production  = round(0.00101 * zi.1.RETEMPN  + 0.00081 * zi.1.FPSEMPN - 0.00014 * zi.1.HEREMPN -
-                            0.00017 * zi.1.OTHEMPN  + 0.05909 * zi.1.AGREMPN + 0.00089 * zi.1.MWTEMPN) 
-                           
-      freight_medium_production = round(0.01077 * zi.1.RETEMPN  + 0.005 * zi.1.FPSEMPN - 0.00047 * zi.1.HEREMPN -
-                            0.00076 * zi.1.OTHEMPN  + 0.25183 * zi.1.AGREMPN + 0.00637 * zi.1.MWTEMPN) 
-                            
-      freight_large_production  = MAX(round(0.01258 * zi.1.RETEMPN  + 0.00237 * zi.1.FPSEMPN  + 0.22018 * zi.1.AGREMPN  + 
-                                          0.00529 * (LN(zi.1.MWTEMPN + 1) * zi.1.CIACRE) - 25.5905 * (zi.1.RETEMPN/zi.1.TOTEMP) +
-                                          0.00098 * zi.1.TOTEMP), 0)
-                            
-      ; garage-based - attractions
-      freight_small_attraction  = round(0.00053 * zi.1.TOTEMP)
-      freight_medium_attraction = round(0.00347 * zi.1.TOTEMP)
-      freight_large_attraction  = round(0.00426 * zi.1.TOTEMP)
-      
+      small_freight_production = ROUND(-0.00004 * zi.1.RETEMPN + 0.00000 * (zi.1.FPSEMPN * zi.1.CIACRE) + 0.00011 * zi.1.HEREMPN - 0.00024 * zi.1.OTHEMPN + 
+                                        0.05099 * zi.1.AGREMPN + 3.75687 *  zi.1.FPSEMPN *  zi.1.CIACRE / 1000000)
+
+      medium_freight_production = ROUND(4.73104 * (zi.1.MWTEMPN * zi.1.CIACRE / 1000000) + 86.639 * (zi.1.MWTEMPN * zi.1.AGREMPN / 1000000) + 
+                                        0.10303 * zi.1.AGREMPN + 0.44495 * SQRT(zi.1.CIACRE)) 
+
+      large_freight_production = ROUND(82.95374 * (zi.1.AGREMPN * zi.1.MWTEMPN / 1000000) + 49.08167 * (zi.1.AGREMPN * zi.1.CIACRE / 1000000) + 
+                                       3.69365 * (zi.1.MWTEMPN * zi.1.CIACRE / 1000000) + 0.31899 * SQRT(zi.1.OTHEMPN))
+
+      ; Freight - attractions
+      small_freight_attraction = ROUND(0.00054 * zi.1.FPSEMPN + 0.00244 * zi.1.RETEMPN + 0.04008 * SQRT(zi.1.MWTEMPN) + 
+                                       0.19985 * (zi.1.FPSEMPN * zi.1.CIACRE / 1000000) + 0.84034 * (zi.1.HEREMPN * zi.1.CIACRE / 1000000))
+
+      medium_freight_attraction = ROUND(0.003 * zi.1.FPSEMPN + 0.0131 * zi.1.RETEMPN +  0.27719 * SQRT(zi.1.MWTEMPN) + 
+                                        1.63531 * (zi.1.FPSEMPN * zi.1.CIACRE / 1000000) + 4.32008 * (zi.1.HEREMPN * zi.1.CIACRE / 1000000))
+
+      large_freight_attraction = ROUND(-0.04965 * (zi.1.MWTEMPN / MAX(1, zi.1.CIACRE)) + 0.0009 * zi.1.TOTEMP + 0.01199 * zi.1.RETEMPN + 
+                                       0.23664 * SQRT(zi.1.MWTEMPN) + 2.3318 * (zi.1.FPSEMPN * zi.1.CIACRE / 1000000))
+
       ; set the TP+ trip generation variables prior to balance phase
       p[1] = linkedVerySmallP
-      p[2] = non_freight_small_production
-      p[3] = non_freight_medium_production
-      p[4] = non_freight_large_production
-      p[5] = freight_small_production
-      p[6] = freight_medium_production
-      p[7] = freight_large_production
+      p[2] = small_non_freight_production
+      p[3] = medium_non_freight_production
+      p[4] = large_non_freight_production
+      p[5] = small_freight_production
+      p[6] = medium_freight_production
+      p[7] = large_freight_production
       
       a[1] = linkedVerySmallA
-      a[2] = non_freight_small_attraction
-      a[3] = non_freight_medium_attraction
-      a[4] = non_freight_large_attraction
-      a[5] = freight_small_attraction
-      a[6] = freight_medium_attraction
-      a[7] = freight_large_attraction
+      a[2] = small_non_freight_attraction
+      a[3] = medium_non_freight_attraction
+      a[4] = large_non_freight_attraction
+      a[5] = small_freight_attraction
+      a[6] = medium_freight_attraction
+      a[7] = large_freight_attraction
       
    endphase
    
