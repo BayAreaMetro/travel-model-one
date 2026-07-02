@@ -40,11 +40,11 @@ run pgm = matrix
    filei mati[2] = nonres\ixDailyx4_truck.tpp
 
    ; Time-of-day specific truck tables
-   fileo mato[1] = nonres\TripsTrkEAx.tpp, mo=11-14, name = vstruck, struck, mtruck, ctruck
-   fileo mato[2] = nonres\TripsTrkAMx.tpp, mo=15-18, name = vstruck, struck, mtruck, ctruck
-   fileo mato[3] = nonres\TripsTrkMDx.tpp, mo=19-22, name = vstruck, struck, mtruck, ctruck
-   fileo mato[4] = nonres\TripsTrkPMx.tpp, mo=23-26, name = vstruck, struck, mtruck, ctruck
-   fileo mato[5] = nonres\TripsTrkEVx.tpp, mo=27-30, name = vstruck, struck, mtruck, ctruck
+   fileo mato[1] = nonres\TripsTrkEAx.tpp, mo=11-14, name = vstruck, struck, mtruck, ctruck DEC=4*S
+   fileo mato[2] = nonres\TripsTrkAMx.tpp, mo=15-18, name = vstruck, struck, mtruck, ctruck DEC=4*S
+   fileo mato[3] = nonres\TripsTrkMDx.tpp, mo=19-22, name = vstruck, struck, mtruck, ctruck DEC=4*S
+   fileo mato[4] = nonres\TripsTrkPMx.tpp, mo=23-26, name = vstruck, struck, mtruck, ctruck DEC=4*S
+   fileo mato[5] = nonres\TripsTrkEVx.tpp, mo=27-30, name = vstruck, struck, mtruck, ctruck DEC=4*S
    
    ; convert the P/A matrices to O/D (and scale DailyTruckTrips by 100, as distribution outputs trips x 100)
    mw[1] = (0.5 * mi.1.1 + 0.5 * mi.1.1.T)/100.0 + (0.5 * mi.2.vsm_daily + 0.5*mi.2.vsm_daily.T)
