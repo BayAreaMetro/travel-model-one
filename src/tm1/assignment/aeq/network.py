@@ -75,6 +75,12 @@ def build_cube_graph(
         "direction": 1,
         "id": link_id,
         "cost": t0,  # placeholder; the assignment overwrites this each iteration
+        # skim accumulators (filled per skim-class in tm1.assignment.aeq.skim);
+        # present from graph construction so they survive graph compaction.
+        "s_time": 0.0,
+        "s_dist": 0.0,
+        "s_btoll": 0.0,
+        "s_vtoll": 0.0,
     })
     g = Graph()
     g.network = net

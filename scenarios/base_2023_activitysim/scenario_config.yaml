@@ -57,7 +57,7 @@ steps:
 
   # --- 4. Simulate: run ActivitySim demand model ---
   simulate_activitysim:
-    iterations: 0  # 0 = static skims (no highway assignment feedback loop)
+    iterations: 0  # 0 = static skims; >0 enables the assignment feedback loop below
     activitysim:
       configs:
         - "scenarios/base_2023_activitysim/activitysim"
@@ -65,6 +65,16 @@ steps:
         - "base-models/activity/configs"
       data_dir: "{proj_dir}/data"
       output_dir: "{proj_dir}/output"
+    # Highway assignment feedback (used only when iterations > 0).
+    # backend "aeq" = open-source AequilibraE (no Cube license); "cube" = legacy loop.
+    assignment:
+      backend: aeq
+      network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
+      nonres_dir: "{reference_run}/nonres"
+      skims_omx: "{proj_dir}/data/skims.omx"
+      cores: 24
+      max_iter: 100
+      gap_target: 0.001
 
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  CALIBRATION / VALIDATION                                                  │

@@ -69,9 +69,12 @@ def _matrix(demand: np.ndarray, n_zones: int, name: str) -> AequilibraeMatrix:
     return m
 
 
-def _aon(g: Graph, matrix: AequilibraeMatrix, name: str, link_id: np.ndarray) -> np.ndarray:
+def _aon(g: Graph, matrix: AequilibraeMatrix, name: str, link_id: np.ndarray,
+         cores: int | None = None) -> np.ndarray:
     """All-or-nothing link loads for one class, in link_id order."""
     res = AssignmentResults()
+    if cores:
+        res.set_cores(cores)  # before prepare(): avoids the post-alloc __redim bug
     res.prepare(g, matrix)
     allOrNothing(name, matrix, g, res).execute()
     ld = res.get_load_results()
@@ -125,6 +128,7 @@ def equilibrium_assignment(
     max_iter: int = 100,
     gap_target: float = 1e-4,
     algorithm: str = "fw",
+    cores: int | None = None,
 ) -> AssignmentResult:
     """User-equilibrium assignment with Cube's exact facility-type VDF.
 
@@ -161,7 +165,7 @@ def equilibrium_assignment(
             g.graph.loc[gidx, "cost"] = gc
             g.set_graph("cost")
             g.set_blocked_centroid_flows(True)
-            aux[c.name] = _aon(g, mats[c.name], c.name, attrs.link_id)
+            aux[c.name] = _aon(g, mats[c.name], c.name, attrs.link_id, cores=cores)
             cur = flows[c.name]
             if cur is not None:
                 num += float(((cur - aux[c.name]) * gc).sum())

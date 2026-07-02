@@ -131,13 +131,52 @@ def _run_assignment(
     The bridged demand comes from this iteration's ActivitySim ``trips_{period}.omx``
     (in the ActivitySim ``output_dir``); the refreshed skims are written back to the
     ActivitySim ``data_dir``'s ``skims.omx`` for the next ActivitySim run.
-    """
-    from tm1.assignment import run_assignment_iteration  # noqa: PLC0415
 
+    Two backends are selected by ``assignment.backend``:
+
+    * ``"cube"`` (default) — the faithful legacy Cube Voyager loop (needs
+      ``cube_proj_dir`` + a local Cube install).
+    * ``"aeq"`` — the open-source AequilibraE highway assignment + skims (needs
+      ``network_csv`` and frozen ``nonres_dir``); no Cube license required.
+    """
     sim_cfg = cfg["steps"].get("simulate_activitysim", cfg["steps"].get("simulate", {}))
     asim_cfg = sim_cfg.get("activitysim", sim_cfg)
     asn = sim_cfg.get("assignment")
-    if not asn or not asn.get("cube_proj_dir"):
+    if not asn:
+        log.warning(
+            "No assignment config — skipping assignment for iteration %d "
+            "(ActivitySim will re-run against static skims)", iteration,
+        )
+        return
+
+    backend = asn.get("backend", "cube")
+    asim_output_dir = Path(asim_cfg["output_dir"])
+    skims_omx = Path(asn.get("skims_omx", Path(asim_cfg["data_dir"]) / "skims.omx"))
+
+    if backend == "aeq":
+        from tm1.assignment.aeq import run_assignment_iteration  # noqa: PLC0415
+
+        if not asn.get("network_csv"):
+            log.warning(
+                "backend=aeq but no assignment.network_csv configured — skipping "
+                "assignment for iteration %d", iteration,
+            )
+            return
+        run_assignment_iteration(
+            asim_output_dir,
+            asn["network_csv"],
+            asn.get("nonres_dir", ""),
+            skims_omx,
+            iteration=iteration,
+            max_iter=asn.get("max_iter", 100),
+            gap_target=asn.get("gap_target", 1e-4),
+            cores=asn.get("cores"),
+        )
+        return
+
+    from tm1.assignment import run_assignment_iteration  # noqa: PLC0415
+
+    if not asn.get("cube_proj_dir"):
         log.warning(
             "No assignment.cube_proj_dir configured — skipping highway assignment "
             "for iteration %d (ActivitySim will re-run against static skims)",
@@ -146,9 +185,6 @@ def _run_assignment(
         return
 
     proj_dir = Path(asn["cube_proj_dir"])
-    asim_output_dir = Path(asim_cfg["output_dir"])
-    skims_omx = Path(asn.get("skims_omx", Path(asim_cfg["data_dir"]) / "skims.omx"))
-
     run_assignment_iteration(
         proj_dir,
         asim_output_dir,
