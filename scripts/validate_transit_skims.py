@@ -55,6 +55,8 @@ _PHASE = {"label": "", "t0": 0.0, "exp": 1.0}
 
 def _phase(label: str, exp: float = 1.0):
     _PHASE.update(label=label, t0=time.time(), exp=max(exp, 1.0))
+    if label:                                   # announce start immediately (no silence)
+        log.info("  > %s (expect ~%.0fs) ...", label, exp)
 
 
 def _ticker():
@@ -121,7 +123,8 @@ def main() -> None:
         ride[p], hw[p] = build_ride_links(lines, p, bus_time_table(links, p),
                                           link_dist, ref_time)
     _phase("")
-    log.info("ready.")
+    log.info("inputs ready -- starting %d skims (%d run types x %d periods)",
+             total, len(run_types), len(PERIODS))
 
     lh_of = {f"{a}_{lh}_{e}": (lh, am, em) for a, e, am, em in ACCESS_EGRESS for lh in LINEHAULS}
     rows, done, t0 = [], 0, time.time()
