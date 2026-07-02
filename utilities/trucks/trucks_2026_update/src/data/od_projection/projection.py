@@ -101,7 +101,13 @@ def project_omx(matrixes_names, source_matrices, target_matrices, W_row_gates, W
     keep_filter = mask[:, None] | mask[None, :]
 
     for matrix_name in matrixes_names:
-        original_matrix = np.array(source_matrices[matrix_name][:], dtype=np.float32) 
+        # Some matrices in the SW FFM_2020.omx have small negative values. These values are relatively small (e.g > -0.05)
+        # Assume these values are zero to avoid negative trips. 
+        original_matrix = np.maximum(
+            np.array(source_matrices[matrix_name][:], dtype=np.float32),
+            0
+        )
+
         masked_matrix = original_matrix * keep_filter
         projected_matrix = W_row_gates.T @ masked_matrix @ W_col_gates
         target_matrices[matrix_name] = np.array(projected_matrix, dtype=np.float32)

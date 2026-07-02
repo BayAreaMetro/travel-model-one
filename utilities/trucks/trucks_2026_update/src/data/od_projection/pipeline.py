@@ -8,7 +8,7 @@ from src.data.od_projection.crosswalk import build_crosswalk
 from src.data.od_projection.projection import project_matrices
 from src.data.od_projection.format_mtc_output import format_mtc_output
 from src.data.od_projection.projection import project_matrices
-from src.data.od_projection.trip_generation import internal_gates_generation, prepare_trip_generation_data
+from src.data.od_projection.trip_generation import internal_gates_generation, get_od_marginals
 
 import numpy as np
 import pandas as pd
@@ -76,6 +76,16 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     logger.info("[2/5] Done in %.1fs", time.perf_counter() - t2)
 
     # ── Step 3: project matrices ───────────────────────────────────────────────
+    # Zones: This is a TAZ in the CSFTDM that is projected to a TAZ in TM-1-6 with 
+    # the crosswalk of step 2 if they fall withing the MTC area. If not, they are 
+    # mapped to the closeest gateway in the TM-1/6 model (e.g TAZ 1455 - 1575)
+
+    # Gates: This is node in the CSFTDM that has a position in OD matrix. Nodes that
+    #  fall withing the MTC area are assigned to the overlaping MTC 1454 TAZ, all 
+    # other nodes are mapped to the closest gateway in the TM-1.6. 
+
+    # To separate 
+
     logger.info("[3/5] Projecting matrices …")
     t3 = time.perf_counter()
     logger.info("[3/5] Projecting Zones & Gates …")
@@ -92,20 +102,6 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         zone_types = ["internal_gate", "internal_zone"],
     )
 
-    logger.info("[3/5] Projecting Zones only …")
-    data["projected_zones"]  = project_matrices(
-        source_matrices = data["from_omx"],
-        target_matrices = data["projected_zones_only"],
-        crosswalk = data["crosswalk"],
-        row_weight_col= cfg["projection"]["row_weight"],
-        col_weight_col= cfg["projection"]["column_weight"],
-        offset = cfg["zones"]["offset"],
-        n_from = cfg["zones"]["from_matrix_size"],
-        n_to = cfg["zones"]["to_matrix_size"],
-        matrixes_names = matrixes_to_project, 
-        zone_types = ["internal_zone"]
-    )
-
     logger.info("[3/5] Projecting Gates only …")
     data["projected_gates"]  = project_matrices(
         source_matrices = data["from_omx"],
@@ -120,6 +116,13 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
         zone_types = ["internal_gate"]
     )
 
+    logger.info("[3/5] Projecting Zones only …")
+    for name in data["projected_zones_and_gates"].list_matrices():
+        zone_and_gates = np.array(data["projected_zones_and_gates"][name])
+        gates =  np.array(data["projected_gates"][name])
+        zones = np.maximum(zone_and_gates - gates, 0)
+        data["projected_zones_only"][name] = zones
+
     logger.info("[3/5] Done in %.1fs", time.perf_counter() - t3)
 
     # ── Step 4: format MTC output files ───────────────────────────
@@ -131,36 +134,43 @@ def run_pipeline(config_path: str = "configs/od_projection_configs.yaml") -> Non
     logger.info("[4/5] Done in %.1fs", time.perf_counter() - t4)
 
 
-    # ── Step 5: Prepare data for modeling ───────────────────────────
-    logger.info("[5/5] Preparing data for modeling …")
+    # ── Step 5: Computing Production and attraction marginal from SW data  ───────────────────────────
+    # Production and attraction marginal for internal-internal TAZs, 
+    # gateways (internal-external, external-internal and external-external),
+    # and special generators (transportation logistic nodes). 
+
+    # These production/attraction vectors are used to re-estimate trip 
+    # generation equation in TM1.7 Truck Updates. 
+
+    logger.info("[5/5] Computing Production and attraction marginal from SW data …")
     t5 = time.perf_counter()
-    data["zones_generation"] = prepare_trip_generation_data(
+    data["zones_generation"] = get_od_marginals(
         matrixes_names = matrixes_to_project,
-        source_matrices= data["projected_zones"], 
-        index_range = (1, 1454)
+        source_matrices= data["projected_zones_only"], 
+        index_range = (1, 1454) # internal-internal trips
     )
     fpath = Path(cfg["output"]["zones_generation"]) 
     fpath.parent.mkdir(parents=True, exist_ok=True)
     data["zones_generation"].to_csv(fpath, index=False)
 
-    data["gateways_generation"] = prepare_trip_generation_data(
+    data["gateways_generation"] = get_od_marginals(
         matrixes_names = matrixes_to_project,
-        source_matrices= data["projected_zones"], 
-        index_range = (1455, 1475)
+        source_matrices= data["projected_zones_only"], 
+        index_range = (1455, 1475) # internal-external, external-internal, and external-external trips
     )
     fpath = Path(cfg["output"]["gateways_generation"]) 
     fpath.parent.mkdir(parents=True, exist_ok=True)
     data["gateways_generation"].to_csv(fpath, index=False)
     
-    data["tnl_generation"] = internal_gates_generation(
+    data["tln_generation"] = internal_gates_generation(
         matrixes_names = matrixes_to_project,
         source_matrices = data["from_omx"],
         crosswalk = data["crosswalk"]
     )
 
-    fpath = Path(cfg["output"]["tnl_generation"]) 
+    fpath = Path(cfg["output"]["tln_generation"]) 
     fpath.parent.mkdir(parents=True, exist_ok=True)
-    data["tnl_generation"].to_csv(fpath, index=False)
+    data["tln_generation"].to_csv(fpath, index=False)
     logger.info("[5/5] Done in %.1fs", time.perf_counter() - t5)
 
     # # ───── END OF PIPELINE ───────────────────────────────────────────────────────

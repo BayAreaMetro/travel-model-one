@@ -14,7 +14,7 @@ output:
   omx_zone_and_gates:  data/interim/matrix_projection/SwTazTln_to_TMTaz_TRIPS_FFM_2020.omx
   omx_only_zones:      data/interim/matrix_projection/SwTAZ_to_TMTaz_TRIPS_FFM_2020.omx
   omx_only_gates:      data/interim/matrix_projection/SwTLN_to_TMTaz_TRIPS_FFM_2020.omx
-  tnl_generation:      data/processed/truck_trip_generation_tnl.csv
+  tln_generation:      data/processed/truck_trip_generation_tln.csv
   zones_generation:     data/processed/truck_trip_generation_zone.csv
   gateways_generation:  data/processed/truck_trip_generation_gateways.csv
 
@@ -35,11 +35,11 @@ weights:
     attraction: all_trucks_attraction   # column name in to_variables_csv for weights
 
 # ── Sliver removal ────────────────────────────────────────────────────────────
-# After overlay, tiny imprecision polygons ("slivers") are filtered out.
-# A polygon is removed if it fails ANY of the three tests below.
+# After overlay, tiny imprecision polygons ("slivers") need to be filtered out.
+# A polygon/sliver is removed if it fails ANY of the three tests below.
 slivers:
   min_area_m2:       50.0    # absolute area floor (projected CRS units, i.e. m²)
-  min_area_fraction: 0.001   # fraction of the parent FROM-zone area  (0.1%)
+  min_area_fraction: 0.10   #  fraction of the parent FROM-zone area and TO-zone  (<5%)
   min_compactness:   0.02    # isoperimetric ratio 4π·A/P²; 0=infinitely thin, 1=circle
 
 # ── Spatial ───────────────────────────────────────────────────────────────────
