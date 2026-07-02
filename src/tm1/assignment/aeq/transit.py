@@ -86,7 +86,8 @@ FERRY_BAND = (100, 109)
 # split.  boards counts boardings.  fare = boarding XFARE + farelinks (cents); keydist =
 # key-mode in-vehicle distance (miles) for the rail distance-curve fare.
 SKIM_COLS = ("ivt", "keyivt", "ferryivt", "wacc", "waux", "wegr",
-             "boards", "sk_edge", "w_first", "w_xfer", "fare", "keydist")
+             "boards", "sk_edge", "w_first", "w_xfer", "fare", "keydist",
+             "dtim", "ddist")   # dtim/ddist = drive access/egress time (min) / dist (mi)
 
 
 @dataclass
@@ -127,6 +128,8 @@ def build_transit_graph(
     n_zones: int = 1475,
     fares=None,
     fare_states: str = "none",
+    access_mode: int = 1,
+    egress_mode: int = 6,
 ) -> TransitGraph:
     """Build the layered Spiess-Florian graph from a Cube-style transit link table.
 
@@ -174,7 +177,13 @@ def build_transit_graph(
 
     if "distance" not in transit:
         transit["distance"] = 0.0
-    walk = links[links["mode"].isin(walk_modes)]
+    # active access/egress + transfer(3)/aux(4)/funnel(5); drive access/egress use
+    # mode 2/7 (access_mode/egress_mode) instead of walk 1/6.  Only the ACTIVE access
+    # and egress modes are included so inactive walk/drive connectors are not usable.
+    active = {access_mode, egress_mode, 3, 4, 5}
+    walk = links[links["mode"].isin(active)].copy()
+    if "distance" not in walk:
+        walk["distance"] = 0.0
 
     # previous-mode fare-state resolution: "operator" -> one state per present mode
     # (exact XFARE[prev][cur]); "none" -> a single state (fast LOS graph, no transfer
@@ -259,22 +268,29 @@ def build_transit_graph(
     # skims: actual walk minutes to wacc/wegr/waux by role; sk_edge = perceived (x factor)
     wa, wb = walk["A"].to_numpy(), walk["B"].to_numpy()
     w_actual = walk["time"].to_numpy()
+    w_dist = walk["distance"].to_numpy(dtype=float)
     wt = w_actual * params.walk_factor
     wm = walk["mode"].to_numpy()
-    acc = (wm == 1) & (wa <= n_zones) & (wb > n_zones)
-    egr = (wm == 6) & (wa > n_zones) & (wb <= n_zones)
+    acc = (wm == access_mode) & (wa <= n_zones) & (wb > n_zones)
+    egr = (wm == egress_mode) & (wa > n_zones) & (wb <= n_zones)
     xfr = (wm == 3) & (wa > n_zones) & (wb > n_zones)
     oth = ~(acc | egr | xfr)            # funnels etc.: preserve state (aux walk)
     o_nc = oth & (wa > n_zones) & (wb > n_zones)
+    acc_drive = access_mode in (2, 7)   # drive access -> dtim/ddist not wacc
+    egr_drive = egress_mode in (2, 7)
+    _acc_cols = ({"dtim": w_actual[acc], "ddist": w_dist[acc]} if acc_drive
+                 else {"wacc": w_actual[acc]})
+    _egr_cols = ({"dtim": w_actual[egr], "ddist": w_dist[egr]} if egr_drive
+                 else {"wegr": w_actual[egr]})
     if acc.any():
-        add(cv(wa[acc]), av(wb[acc]), wt[acc], INF_FREQ, sk_edge=wt[acc], wacc=w_actual[acc])
+        add(cv(wa[acc]), av(wb[acc]), wt[acc], INF_FREQ, sk_edge=wt[acc], **_acc_cols)
     # egress / transfer-walk / funnel emanate from every mode-group copy of B(k)/C(k);
     # walking never changes the last-ridden mode, so the group g is preserved.
     for k in range(1, n_layers):
         for g in range(G):
             if egr.any():
                 add(bv(wa[egr], k, g), dvx(wb[egr]), wt[egr], INF_FREQ,
-                    sk_edge=wt[egr], wegr=w_actual[egr])
+                    sk_edge=wt[egr], **_egr_cols)
             if xfr.any():
                 add(bv(wa[xfr], k, g), cvw(wb[xfr], k, g), wt[xfr], INF_FREQ,
                     sk_edge=wt[xfr], waux=w_actual[xfr])
@@ -325,7 +341,7 @@ def build_transit_graph(
     # With fare_states="operator" this is exact per mode-pair (free for same operator,
     # full for cross-operator); with "none" (G=1, prev mode 0) transfers are free.
     if fares is not None:
-        board_fare = fares.xfare[1, s_mode]
+        board_fare = fares.xfare[access_mode, s_mode]         # boarding fare from access
         tf_grp = fares.xfare[fare_prev_mode][:, s_mode]        # (G, n_stops) exact XFARE
     else:
         board_fare = np.zeros(len(stops))
@@ -489,9 +505,11 @@ def skim_transit(
     if fares is not None:
         fare = fare + fares.rail_fare(linehaul, zmat("keydist"))
 
+    dtim, ddist = zmat("dtim"), zmat("ddist")     # drive access/egress time / distance
     reach = (keyivt > 0) if linehaul in KEY_BAND else (u > 0)
-    actual_total = ivt + wait + wacc + waux + wegr
+    actual_total = ivt + wait + wacc + waux + wegr + dtim
     keep = reach & (actual_total <= max_path_min)
     out = {"TOTIVT": ivt, "KEYIVT": keyivt, "FERRYIVT": ferryivt, "IWAIT": iwait,
-           "XWAIT": xwait, "WAUX": waux, "BOARDS": boards, "FARE": fare}
+           "XWAIT": xwait, "WAUX": waux, "BOARDS": boards, "FARE": fare,
+           "DTIM": dtim, "DDIST": ddist}
     return {k: np.where(keep, v, 0.0) for k, v in out.items()}
