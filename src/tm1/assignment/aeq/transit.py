@@ -22,10 +22,19 @@ One boarding point per (line, stop) is used: interior stops appear as both ``sto
 of the incoming link and ``stopA`` of the outgoing link, and adding both would create
 parallel boarding edges whose frequencies ADD in Spiess-Florian (halving the wait).
 
-Validation vs 2023_TM161_IPA_35 (AM, no calibrated constants):
-local bus boardings -2.1% r=0.987; heavy-rail run rail boardings -2.3% r=0.962.
+Cube's transfer prohibitors (``transferprohibitors_*.block``) are walk-chain rules,
+encoded here as stop *states* composed with the layers:
 
-Not yet modelled: fares as skims, transfer prohibitors, drive (PNR/KNR) access legs.
+* state ``A`` (arrived by walk access, layer 0 only) -- may only board;
+* state ``B(k)`` (just alighted, k boardings) -- may board, egress, or take ONE
+  stop-to-stop transfer walk;
+* state ``C(k)`` (arrived by transfer walk) -- may only board.
+
+This forbids access->transfer-walk chains, transfer-walk->egress, walk-only paths
+through the transit network, and chained transfer walks, exactly as Cube's NOX table.
+
+Not yet modelled: fares as skims, drive (PNR/KNR) access legs, Cube's 5-minute
+combined-headway window (S&F spreads over the full attractive line set).
 """
 
 from dataclasses import dataclass, field
@@ -36,8 +45,9 @@ from aequilibrae.paths.cython.public_transport import HyperpathGenerating
 
 INF_FREQ = 1.0e20
 
-# link mode codes (TransitAssign.job): walk access / egress / stop-to-stop transfer
-WALK_MODES = (1, 6, 3)
+# link mode codes (TransitAssign.job): walk access / egress / stop-to-stop transfer /
+# station walk funnel (aux node <-> platform; state-preserving in the NOX rules)
+WALK_MODES = (1, 6, 3, 5)
 
 # Cube's escalating boarding penalties (perceived min); index = boardings so far.
 BOARD_PENALTIES = (0.0, 30.0, 45.0)   # 4th+ boardings disallowed (negligible in data)
@@ -70,6 +80,11 @@ class TransitParams:
     board_penalties: tuple = BOARD_PENALTIES   # escalating boardpen (layered graph)
     linehaul: str | None = None           # key into RUN_COST for modefac/skipmodes
     inveh_factor: dict = field(default_factory=dict)  # extra {mode: factor} overrides
+    spread_window: float | None = None    # None: full S&F frequency spreading;
+    # 0: fully deterministic expected wait (TRNBUILD best path, no spreading);
+    # W>0: capped wait -- pay (expected wait - W) in the boarding cost and keep only
+    # W perceived minutes frequency-based, shrinking the attractive-set window to ~W
+    # (emulates TRNBUILD's combined-headways rule: spread only over near-equal lines)
 
 
 @dataclass
@@ -78,7 +93,10 @@ class TransitGraph:
 
     edges: pd.DataFrame                 # columns a_node, b_node, trav_time, freq
     n_vertices: int
-    centroid_vertex: dict               # zone id -> vertex id (O/D vertices)
+    centroid_vertex: dict               # zone id -> ORIGIN vertex id (access edges out)
+    dest_vertex: dict                   # zone id -> DESTINATION vertex id (egress in);
+    # origins and destinations are split so no path can pass THROUGH a centroid
+    # (egress -> re-access would reset the boarding-count/state machine)
     board_rows: dict                    # line name -> np.ndarray of boarding-edge rows
 
 
@@ -128,7 +146,10 @@ def build_transit_graph(
     sb = transit.loc[transit["stopB"] == 1, ["name", "B", "hw"]].rename(columns={"B": "node"})
     stops = pd.concat([sa, sb]).drop_duplicates(["name", "node"]).reset_index(drop=True)
 
-    # ---- vertex ids: centroids, stop(node, layer), onboard(line-node, layer 1..L-1)
+    # ---- vertex ids ----
+    # stop states x layers: A (walk-accessed, layer 0, board-only), then per layer
+    # k = 1..L-1: B(k) (alighted; board/egress/one transfer walk) and C(k) (arrived
+    # by transfer walk; board-only). Onboard vertices per (line-stop, layer 1..L-1).
     all_nodes = pd.concat([links["A"], links["B"]])
     centroids = sorted({int(x) for x in all_nodes if x <= n_zones})
     cidx = {c: i for i, c in enumerate(centroids)}
@@ -137,15 +158,29 @@ def build_transit_graph(
     obk = pd.unique(pd.concat([transit["name"] + "|" + transit["A"].astype(str),
                                transit["name"] + "|" + transit["B"].astype(str)]))
     obidx = {k: i for i, k in enumerate(obk)}
-    s0 = len(cidx)
-    o0 = s0 + len(pidx) * n_layers
+    n_states = 1 + 2 * (n_layers - 1)           # A, B(1..L-1), C(1..L-1)
+    d0 = len(cidx)                              # destination copies of the centroids
+    s0 = d0 + len(cidx)
+    o0 = s0 + len(pidx) * n_states
     n_vertices = o0 + len(obidx) * (n_layers - 1)
 
-    def cv(nodes):
+    def cv(nodes):                              # origin centroid vertices
         return np.array([cidx[int(n)] for n in nodes])
 
-    def sv(nodes, k):
-        return s0 + np.array([pidx[int(n)] for n in nodes]) * n_layers + k
+    def dvx(nodes):                             # destination centroid vertices
+        return np.array([d0 + cidx[int(n)] for n in nodes])
+
+    def _stop(nodes, state_off):
+        return s0 + np.array([pidx[int(n)] for n in nodes]) * n_states + state_off
+
+    def av(nodes):                      # state A: walk-accessed, 0 boardings
+        return _stop(nodes, 0)
+
+    def bv(nodes, k):                   # state B(k): alighted after k-th boarding
+        return _stop(nodes, 1 + (k - 1))
+
+    def cvw(nodes, k):                  # state C(k): after transfer walk, k boardings
+        return _stop(nodes, n_layers + (k - 1))
 
     def ov(names, nodes, j):
         return o0 + np.array([obidx[f"{a}|{int(b)}"] for a, b in zip(names, nodes)]) \
@@ -156,21 +191,29 @@ def build_transit_graph(
     def add(a, b, t, f):
         frames.append(pd.DataFrame({"a_node": a, "b_node": b, "trav_time": t, "freq": f}))
 
-    # walk: access -> layer 0; egress/transfer replicated per layer (layer-preserving)
+    # walk edges by NOX role: access (1) -> A; egress (6) from B(k) only;
+    # transfer walk (3) B(k) -> C(k) only. Other walk modes (funnels) state-preserving.
     wa, wb = walk["A"].to_numpy(), walk["B"].to_numpy()
     wt = walk["time"].to_numpy() * params.walk_factor
-    is_c_a = wa <= n_zones
-    is_c_b = wb <= n_zones
-    acc = is_c_a & ~is_c_b
-    egr = ~is_c_a & is_c_b
-    xfr = ~is_c_a & ~is_c_b
+    wm = walk["mode"].to_numpy()
+    acc = (wm == 1) & (wa <= n_zones) & (wb > n_zones)
+    egr = (wm == 6) & (wa > n_zones) & (wb <= n_zones)
+    xfr = (wm == 3) & (wa > n_zones) & (wb > n_zones)
+    oth = ~(acc | egr | xfr)            # funnels etc.: preserve state
     if acc.any():
-        add(cv(wa[acc]), sv(wb[acc], 0), wt[acc], INF_FREQ)
-    for k in range(n_layers):
+        add(cv(wa[acc]), av(wb[acc]), wt[acc], INF_FREQ)
+    for k in range(1, n_layers):
         if egr.any():
-            add(sv(wa[egr], k), cv(wb[egr]), wt[egr], INF_FREQ)
+            add(bv(wa[egr], k), dvx(wb[egr]), wt[egr], INF_FREQ)
         if xfr.any():
-            add(sv(wa[xfr], k), sv(wb[xfr], k), wt[xfr], INF_FREQ)
+            add(bv(wa[xfr], k), cvw(wb[xfr], k), wt[xfr], INF_FREQ)
+    if oth.any():
+        o_nc = oth & (wa > n_zones) & (wb > n_zones)
+        if o_nc.any():
+            add(av(wa[o_nc]), av(wb[o_nc]), wt[o_nc], INF_FREQ)
+            for k in range(1, n_layers):
+                add(bv(wa[o_nc], k), bv(wb[o_nc], k), wt[o_nc], INF_FREQ)
+                add(cvw(wa[o_nc], k), cvw(wb[o_nc], k), wt[o_nc], INF_FREQ)
 
     # ride: onboard chains per layer 1..L-1
     tn = transit["name"].to_numpy()
@@ -179,26 +222,52 @@ def build_transit_graph(
     for j in range(1, n_layers):
         add(ov(tn, ta, j), ov(tn, tb, j), tt, INF_FREQ)
 
-    # board layer k -> onboard layer k+1 (pens[k]); alight onboard j -> stop layer j
+    # boarding (charges pens[k] for the (k+1)-th boarding) and alighting
     freq_scale = 2.0 / params.wait_perceive     # SF wait 1/freq == perceived half-headway
     s_name = stops["name"].to_numpy()
     s_node = stops["node"].to_numpy()
     s_hw = stops["hw"].to_numpy()
     board_line_rows: dict[str, list] = {}
-    for k in range(n_layers - 1):
+
+    wait_exp = params.wait_perceive * s_hw / 2.0     # expected perceived wait
+    w = params.spread_window
+    if w is None:
+        board_cost = np.zeros(len(stops))
+        board_freq = freq_scale / s_hw
+    elif w <= 0:
+        board_cost = wait_exp
+        board_freq = np.full(len(stops), INF_FREQ)
+    elif w <= 1.0:
+        board_cost = np.maximum(wait_exp - w, 0.0)
+        board_freq = np.where(wait_exp > w, 1.0 / w, freq_scale / s_hw)
+    else:
+        # w > 1 acts as a frequency-inflation factor alpha: all line frequencies are
+        # scaled up by alpha (shrinking the attractive-set window by ~alpha while
+        # keeping frequency-PROPORTIONAL splits) and the removed share of the
+        # expected wait is paid deterministically in the boarding cost.
+        board_cost = wait_exp * (1.0 - 1.0 / w)
+        board_freq = w * freq_scale / s_hw
+
+    def _board(from_v, k):
         start = sum(len(f) for f in frames)
-        add(sv(s_node, k), ov(s_name, s_node, k + 1),
-            np.full(len(stops), pens[k]), freq_scale / s_hw)
+        add(from_v, ov(s_name, s_node, k + 1), board_cost + pens[k], board_freq)
         for i, ln in enumerate(s_name):
             board_line_rows.setdefault(ln, []).append(start + i)
-    for j in range(1, n_layers):
-        add(ov(s_name, s_node, j), sv(s_node, j), np.zeros(len(stops)), INF_FREQ)
+
+    _board(av(s_node), 0)                       # first boarding from access state
+    for k in range(1, n_layers - 1):            # re-boarding after alight / xfer walk
+        _board(bv(s_node, k), k)
+        _board(cvw(s_node, k), k)
+    for j in range(1, n_layers):                # alight -> B(j)
+        add(ov(s_name, s_node, j), bv(s_node, j), np.zeros(len(stops)), INF_FREQ)
 
     edges = pd.concat(frames, ignore_index=True)
     board_rows = {k: np.array(v) for k, v in board_line_rows.items()}
     centroid_vertex = {c: cidx[c] for c in centroids}
+    dest_vertex = {c: d0 + cidx[c] for c in centroids}
     return TransitGraph(edges=edges, n_vertices=n_vertices,
-                        centroid_vertex=centroid_vertex, board_rows=board_rows)
+                        centroid_vertex=centroid_vertex, dest_vertex=dest_vertex,
+                        board_rows=board_rows)
 
 
 def assign_transit(graph: TransitGraph, demand: np.ndarray, *,
@@ -207,8 +276,9 @@ def assign_transit(graph: TransitGraph, demand: np.ndarray, *,
     o, d = np.nonzero(demand)
     vol = demand[o, d]
     cvert = graph.centroid_vertex
+    dvert = graph.dest_vertex
     ov = np.array([cvert.get(int(x + 1), -1) for x in o])
-    dv = np.array([cvert.get(int(x + 1), -1) for x in d])
+    dv = np.array([dvert.get(int(x + 1), -1) for x in d])
     ok = (ov >= 0) & (dv >= 0)
 
     hp = HyperpathGenerating(
