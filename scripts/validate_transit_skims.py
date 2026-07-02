@@ -48,32 +48,22 @@ _KEYIVT_REF = {"lrf": "ivtLRF", "exp": "ivtEXP", "hvy": "ivtHVY", "com": "ivtCOM
 
 log = logging.getLogger("validate")
 
+# a blocking skim gives no internal progress, so we tick elapsed vs a rough expected
+# time (fare skim ~ vertices/4500 s; LOS ~ 18 s) -> a % that reads as progress.
+_PHASE = {"label": "", "t0": 0.0, "exp": 1.0}
 
-class Heartbeat:
-    """Background thread that logs ``... <phase> (Ns elapsed)`` every *interval* seconds
-    so long blocking phases (fare graph build / skim) still report progress.  The
-    parallel skim releases the GIL and numpy/pandas ops release it in chunks, so the
-    heartbeat gets scheduled even mid-call."""
 
-    def __init__(self, interval: float = 30.0):
-        self.interval = interval
-        self._phase: str | None = None
-        self._t0 = time.time()
-        self._stop = threading.Event()
-        self._thr = threading.Thread(target=self._run, daemon=True)
-        self._thr.start()
+def _phase(label: str, exp: float = 1.0):
+    _PHASE.update(label=label, t0=time.time(), exp=max(exp, 1.0))
 
-    def _run(self):
-        while not self._stop.wait(self.interval):
-            if self._phase:
-                log.info("    ... %s (%.0fs)", self._phase, time.time() - self._t0)
 
-    def phase(self, name: str | None):
-        self._phase = name
-        self._t0 = time.time()
-
-    def stop(self):
-        self._stop.set()
+def _ticker():
+    while True:
+        time.sleep(30)
+        if _PHASE["label"]:
+            el = time.time() - _PHASE["t0"]
+            log.info("    ... %s  %.0fs/~%.0fs (%.0f%%)", _PHASE["label"], el,
+                     _PHASE["exp"], min(99, 100 * el / _PHASE["exp"]))
 
 
 def _score(ref, aeq, reach):
@@ -115,8 +105,8 @@ def main() -> None:
              not args.skip_fare)
     log.info("tail -f %s", Path(args.log).resolve())
 
-    hb = Heartbeat(interval=30.0)
-    hb.phase("loading inputs + building per-period ride networks")
+    threading.Thread(target=_ticker, daemon=True).start()
+    _phase("loading inputs + building ride networks", 60)
     links = pd.read_csv(inp / "highway_links.csv")
     links.columns = [c.strip() for c in links.columns]
     lines = parse_lin(inp / "transitLines.lin")
@@ -130,7 +120,7 @@ def main() -> None:
     for p in PERIODS:
         ride[p], hw[p] = build_ride_links(lines, p, bus_time_table(links, p),
                                           link_dist, ref_time)
-    hb.phase(None)
+    _phase("")
     log.info("ready.")
 
     lh_of = {f"{a}_{lh}_{e}": (lh, am, em) for a, e, am, em in ACCESS_EGRESS for lh in LINEHAULS}
@@ -141,26 +131,26 @@ def main() -> None:
         fare_mat = None
         if not args.skip_fare:
             tb = time.time()
-            hb.phase(f"{rt}: building operator-fare graph")
+            _phase(f"{rt} fare graph build", 90)
             gf = build_transit_graph(_assemble(ride["AM"], sup), hw["AM"],
                                      TransitParams(linehaul=lh, spread_window=1.5),
                                      n_zones=1475, fares=fares, fare_states="operator",
                                      access_mode=amode, egress_mode=emode)
-            hb.phase(f"{rt}: skimming fare graph ({gf.n_vertices:,} verts)")
+            _phase(f"{rt} fare skim", gf.n_vertices / 4500)
             fare_mat = skim_transit(gf, linehaul=lh, fares=fares, threads=args.threads,
                                     max_path_min=180.0)["FARE"]
-            hb.phase(None)
+            _phase("")
             log.info("  %s: fare graph %d verts skimmed in %.0fs", rt, gf.n_vertices,
                      time.time() - tb)
         for p in PERIODS:
-            hb.phase(f"{rt} {p}: building + skimming LOS graph")
+            _phase(f"{rt} {p} LOS skim", 18)
             g = build_transit_graph(_assemble(ride[p], sup), hw[p],
                                     TransitParams(linehaul=lh, spread_window=1.5),
                                     n_zones=1475, fares=fares, fare_states="none",
                                     access_mode=amode, egress_mode=emode)
             sk = skim_transit(g, linehaul=lh, fares=fares, threads=args.threads,
                               max_path_min=180.0)
-            hb.phase(None)
+            _phase("")
             if fare_mat is not None:
                 sk["FARE"] = fare_mat
             try:
@@ -191,7 +181,7 @@ def main() -> None:
                      done, total, 100 * done / total, eta / 60, rt, p,
                      f"{int(reach.sum()):,}", "  ".join(cells))
 
-    hb.stop()
+    _phase("")
     df = pd.DataFrame(rows, columns=["run", "period", "comp", "cube", "aeq", "pct", "corr", "n"])
     df.to_csv(Path(args.out).with_suffix(".csv"), index=False)
     lines_out = [f"\nTRANSIT SKIM VALIDATION | {len(df)} cells | {time.time()-t0:.0f}s "
