@@ -21,6 +21,7 @@ quick ~20-minute LOS-only pass.  ``--runs wlk_loc_wlk,wlk_hvy_wlk`` limits the b
 from __future__ import annotations
 
 import argparse
+import gc
 import logging
 import os
 import sys
@@ -138,6 +139,10 @@ def main() -> None:
     fare_secs = los_secs = 0.0
     fare_n = los_n = 0
     n_rt = len(run_types)
+    # write the CSV incrementally + flush so a stall/kill never loses finished work
+    csv_path = Path(args.out).with_suffix(".csv")
+    csv_f = csv_path.open("w")
+    csv_f.write("run,period,comp,cube,aeq,pct,corr,n\n")
     for rt in run_types:
         lh, amode, emode = lh_of[rt]
         sup = sl[sl["run_type"] == rt]
@@ -155,6 +160,8 @@ def main() -> None:
             _phase("")
             fare_secs += time.time() - tb
             fare_n += 1
+            del gf                                   # free the big operator graph
+            gc.collect()
         for p in PERIODS:
             tl = time.time()
             g = build_transit_graph(_assemble(ride[p], sup), hw[p],
@@ -163,15 +170,16 @@ def main() -> None:
                                     access_mode=amode, egress_mode=emode)
             sk = skim_transit(g, linehaul=lh, fares=fares, threads=args.threads,
                               max_path_min=180.0)
+            del g
             los_secs += time.time() - tl
             los_n += 1
             if fare_mat is not None:
                 sk["FARE"] = fare_mat
+            done += 1
             try:
                 R = read_tpp(f"{ref}/skims/trnskm{p.lower()}_{rt}.tpp")["data"]
             except Exception as e:  # noqa: BLE001
                 log.warning("  %s %s: no reference (%s)", rt, p, str(e)[:50])
-                done += 1
                 continue
             reach = (np.asarray(R["ivt"], float) > 0) & (sk["TOTIVT"] > 0)
             comps = ["TOTIVT", "IWAIT", "XWAIT", "WAUX", "BOARDS"]
@@ -181,21 +189,22 @@ def main() -> None:
                 comps.append("KEYIVT")
             if rt.startswith("drv") or rt.endswith("drv"):
                 comps += ["DTIM", "DDIST"]
-            for c in comps:                          # full detail -> scorecard CSV
+            for c in comps:                          # full detail streamed to the CSV
                 refk = _KEYIVT_REF[lh] if c == "KEYIVT" else _REFKEY[c][0]
                 scale = 1 if c == "KEYIVT" else _REFKEY[c][1]
                 s = _score(np.asarray(R[refk], float) / scale, sk[c], reach)
                 if s:
                     rows.append((rt, p, c, *s))
-            done += 1
+                    csv_f.write(f"{rt},{p},{c},{s[0]:.4f},{s[1]:.4f},{s[2]:.4f},{s[3]:.4f},{s[4]}\n")
+            csv_f.flush()
             # ETA = remaining fare passes (one per run type) + remaining LOS skims
             avg_fare, avg_los = fare_secs / max(fare_n, 1), los_secs / max(los_n, 1)
             eta = ((n_rt - fare_n) * avg_fare + (total - done) * avg_los) / 60
             log.info("  [%2d/%d] %-11s %s   ETA %3.0fm", done, total, rt, p, eta)
 
+    csv_f.close()
     _phase("")
     df = pd.DataFrame(rows, columns=["run", "period", "comp", "cube", "aeq", "pct", "corr", "n"])
-    df.to_csv(Path(args.out).with_suffix(".csv"), index=False)
     lines_out = [f"\nTRANSIT SKIM VALIDATION | {len(df)} cells | {time.time()-t0:.0f}s "
                  f"@ {args.threads} threads", f"{'component':9s} {'runs':>4s} "
                  f"{'%diff med':>9s} {'%diff mean':>10s} {'corr med':>9s}"]
