@@ -54,20 +54,25 @@ _PHASE = {"label": "", "t0": 0.0, "exp": 1.0}
 
 
 def _phase(label: str, exp: float = 1.0):
-    # only slow phases (>=30s: input load, fare graph) announce + tick; fast LOS skims
-    # just print their result line, so the log stays scannable.
+    # only slow phases (>=30s: input load, fare graph) get a live bar; fast LOS skims
+    # just print their result line.  The bar redraws one line in place on stderr, so it
+    # never floods the log.
+    if _PHASE["label"]:                                  # clear the previous bar line
+        sys.stderr.write("\r" + " " * 78 + "\r")
+        sys.stderr.flush()
     _PHASE.update(label=label if exp >= 30 else "", t0=time.time(), exp=max(exp, 1.0))
-    if _PHASE["label"]:
-        log.info("  %s (~%.0fs) ...", label, exp)
 
 
 def _ticker():
     while True:
-        time.sleep(30)
-        if _PHASE["label"]:
+        time.sleep(2)
+        lbl = _PHASE["label"]
+        if lbl:
             el = time.time() - _PHASE["t0"]
-            log.info("    %s: %.0f%% (%.0fs / ~%.0fs)", _PHASE["label"],
-                     min(99, 100 * el / _PHASE["exp"]), el, _PHASE["exp"])
+            pct = min(99.0, 100 * el / _PHASE["exp"])
+            n = int(pct / 100 * 22)
+            sys.stderr.write(f"\r  {lbl:38.38s} [{'#'*n}{'.'*(22-n)}] {pct:2.0f}% ")
+            sys.stderr.flush()
 
 
 def _score(ref, aeq, reach):
@@ -94,7 +99,7 @@ def main() -> None:
     args = ap.parse_args()
 
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S",
+        level=logging.INFO, format="%(message)s",
         handlers=[logging.StreamHandler(sys.stdout),
                   logging.FileHandler(args.log, mode="w")])
     inp, ref = Path(args.inputs), args.reference
@@ -104,10 +109,9 @@ def main() -> None:
         want = set(args.runs.split(","))
         run_types = [r for r in run_types if r in want]
     total = len(run_types) * len(PERIODS)
-    log.info("PID %d | %d run types x %d periods = %d skims | %d threads | fare=%s",
-             os.getpid(), len(run_types), len(PERIODS), total, args.threads,
-             not args.skip_fare)
-    log.info("tail -f %s", Path(args.log).resolve())
+    log.info("transit skim validation | %d skims | %d threads | fare %s (pid %d)",
+             total, args.threads, "on" if not args.skip_fare else "off", os.getpid())
+    log.info("tail: %s\n", Path(args.log).resolve())
 
     threading.Thread(target=_ticker, daemon=True).start()
     _phase("loading inputs + building ride networks", 60)
@@ -177,22 +181,17 @@ def main() -> None:
                 comps.append("KEYIVT")
             if rt.startswith("drv") or rt.endswith("drv"):
                 comps += ["DTIM", "DDIST"]
-            cells, corrs = [], []
-            for c in comps:
+            for c in comps:                          # full detail -> scorecard CSV
                 refk = _KEYIVT_REF[lh] if c == "KEYIVT" else _REFKEY[c][0]
                 scale = 1 if c == "KEYIVT" else _REFKEY[c][1]
                 s = _score(np.asarray(R[refk], float) / scale, sk[c], reach)
                 if s:
                     rows.append((rt, p, c, *s))
-                    cells.append(f"{c} {s[2]:+.0f}%")
-                    corrs.append(s[3])
             done += 1
             # ETA = remaining fare passes (one per run type) + remaining LOS skims
             avg_fare, avg_los = fare_secs / max(fare_n, 1), los_secs / max(los_n, 1)
             eta = ((n_rt - fare_n) * avg_fare + (total - done) * avg_los) / 60
-            log.info("[%2d/%d ETA %3.0fm] %-11s %s %4dk od | %s | min r %.2f",
-                     done, total, eta, rt, p, round(int(reach.sum()) / 1000),
-                     "  ".join(cells), min(corrs) if corrs else float("nan"))
+            log.info("  [%2d/%d] %-11s %s   ETA %3.0fm", done, total, rt, p, eta)
 
     _phase("")
     df = pd.DataFrame(rows, columns=["run", "period", "comp", "cube", "aeq", "pct", "corr", "n"])
@@ -207,8 +206,8 @@ def main() -> None:
                              f"{d['pct'].mean():+10.1f} {d['corr'].median():9.3f}")
     summary = "\n".join(lines_out)
     Path(args.out).with_suffix(".txt").write_text(summary)
+    log.info("\n  done in %.0fm  ->  %s.csv", (time.time() - t0) / 60, args.out)
     log.info(summary)
-    log.info("wrote %s.csv / .txt", args.out)
 
 
 if __name__ == "__main__":
