@@ -315,7 +315,12 @@ def build_transit_graph(
     is_ferry = (mode >= FERRY_BAND[0]) & (mode <= FERRY_BAND[1])
     ivt_key = np.where(is_key, t_actual, 0.0)
     ivt_ferry = np.where(is_ferry, t_actual, 0.0)
-    key_dist = np.where(is_key, t_dist, 0.0)     # key-mode distance -> rail fare curve
+    # distance for the rail fare curve accumulates over the FARE band (distance-priced
+    # modes: ferry 100-109 for lrf, commuter 130-139 for com, BART for hvy) -- distinct
+    # from the KEYIVT band (lrf key spans 100-119 but light rail 110-119 is flat-fare).
+    fb = fares.rail_band.get(params.linehaul or "") if fares is not None else None
+    is_fare = ((mode >= fb[0]) & (mode <= fb[1])) if fb else np.zeros(len(transit), bool)
+    key_dist = np.where(is_fare, t_dist, 0.0)
     # per-link farelinks surcharge (cents) on the matching (mode, a, b) ride links
     fl = np.zeros(len(transit))
     if fares is not None and fares.farelinks:

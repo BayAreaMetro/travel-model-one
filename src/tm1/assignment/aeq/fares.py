@@ -30,10 +30,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-# rail fare systems modelled by a distance curve: linehaul -> (.far file, mode band)
+# rail fare modelled by a per-line-haul distance curve fitted from the OD fare files of
+# ALL systems in that line-haul's fare band: linehaul -> ([.far files], fare mode band).
+# The fare band is the DISTANCE-fare modes only: for lrf that is ferry (100-109), NOT the
+# light-rail 110-119 (flat, priced by boarding XFARE); com blends the four commuter rails.
 RAIL_FARE = {
-    "hvy": ("BART.far", (120, 129)),
-    "com": ("Caltrain.far", (130, 139)),
+    "hvy": (["BART.far"], (120, 129)),
+    "lrf": (["Ferry.far"], (100, 109)),
+    "com": (["Caltrain.far", "Amtrak.far", "ACE.far", "SMART.far"], (130, 139)),
 }
 
 _XFARE_RE = re.compile(r"\s*XFARE\[(\d+)\]\s*=\s*(.+)", re.I)
@@ -86,18 +90,20 @@ def _parse_far_matrix(path: str | Path) -> dict:
     return out
 
 
-def fit_rail_curve(far_path, lines: pd.DataFrame, link_dist: dict,
+def fit_rail_curve(far_paths, lines: pd.DataFrame, link_dist: dict,
                    mode_band: tuple) -> tuple[float, float]:
-    """Fit ``fare = a + b * network_distance`` from a rail fare matrix.
+    """Fit ``fare = a + b * network_distance`` from one or more rail fare matrices.
 
-    Station adjacency comes from the rail line node sequences (``lines`` = parse_lin
-    output); the per-station-pair network distance is the shortest path over the
-    consecutive-station links.  Returns ``(a, b)`` in cents / cents-per-mile.
+    Station adjacency comes from the band's rail line node sequences (``lines`` =
+    parse_lin output); the per-station-pair network distance is the shortest path over
+    the consecutive-station links.  When several systems share a band (e.g. commuter
+    rail = Caltrain + Amtrak + ACE + SMART) their fare files are pooled into one blended
+    curve.  Returns ``(a, b)`` in cents / cents-per-mile.
     """
     import networkx as nx
 
-    fm = _parse_far_matrix(far_path)
-    stations = {s for pr in fm for s in pr}
+    if isinstance(far_paths, (str, Path)):
+        far_paths = [far_paths]
     lo, hi = mode_band
     rail = lines[(lines["mode"] >= lo) & (lines["mode"] <= hi)]
     g = nx.Graph()
@@ -108,10 +114,11 @@ def fit_rail_curve(far_path, lines: pd.DataFrame, link_dist: dict,
             if d:
                 g.add_edge(a, b, d=d)
     dist, fare = [], []
-    for (a, b), f in fm.items():
-        if a in g and b in g and nx.has_path(g, a, b):
-            dist.append(nx.shortest_path_length(g, a, b, weight="d"))
-            fare.append(f)
+    for far_path in far_paths:
+        for (a, b), f in _parse_far_matrix(far_path).items():
+            if a in g and b in g and nx.has_path(g, a, b):
+                dist.append(nx.shortest_path_length(g, a, b, weight="d"))
+                fare.append(f)
     if len(dist) < 5:
         return 0.0, 0.0
     b_coef, a_coef = np.polyfit(np.array(dist), np.array(fare), 1)
@@ -125,6 +132,7 @@ class TransitFares:
     xfare: np.ndarray                       # [from_mode][to_mode] cents
     farelinks: dict                         # (mode, a, b) -> cents
     rail_curve: dict = field(default_factory=dict)   # linehaul -> (a, b) cents, c/mi
+    rail_band: dict = field(default_factory=dict)    # linehaul -> (lo, hi) fare modes
 
     def boarding_fare(self, access_mode: int, line_mode: int) -> float:
         """Walk/transfer boarding fare into ``line_mode`` from ``access_mode``."""
@@ -150,9 +158,12 @@ def load_fares(fares_dir: str | Path, link_dist: dict,
     xfare = parse_xfare(fares_dir / "xfare.far")
     farelinks = parse_farelinks(fares_dir / "farelinks.far")
     curves: dict = {}
+    bands: dict = {}
     if lines is not None:
-        for lh, (far_name, band) in RAIL_FARE.items():
-            far_path = fares_dir / far_name
-            if far_path.exists():
-                curves[lh] = fit_rail_curve(far_path, lines, link_dist, band)
-    return TransitFares(xfare=xfare, farelinks=farelinks, rail_curve=curves)
+        for lh, (far_names, band) in RAIL_FARE.items():
+            paths = [fares_dir / n for n in far_names if (fares_dir / n).exists()]
+            if paths:
+                curves[lh] = fit_rail_curve(paths, lines, link_dist, band)
+                bands[lh] = band
+    return TransitFares(xfare=xfare, farelinks=farelinks, rail_curve=curves,
+                        rail_band=bands)

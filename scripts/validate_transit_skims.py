@@ -191,7 +191,7 @@ def main() -> None:
                 comps += ["DTIM", "DDIST"]
             for c in comps:                          # full detail streamed to the CSV
                 refk = _KEYIVT_REF[lh] if c == "KEYIVT" else _REFKEY[c][0]
-                scale = 1 if c == "KEYIVT" else _REFKEY[c][1]
+                scale = 100 if c == "KEYIVT" else _REFKEY[c][1]   # ivt{MODE} is x100 too
                 s = _score(np.asarray(R[refk], float) / scale, sk[c], reach)
                 if s:
                     rows.append((rt, p, c, *s))
