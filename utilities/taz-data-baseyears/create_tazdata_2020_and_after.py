@@ -816,8 +816,8 @@ tazdata_census = tazdata_census.drop(columns=[
 # Convert integer-valued count columns to integer dtype.  These were kept as
 # floats through rounding and the county-target reallocation (which only shift
 # whole units), so cast them now to make the integer values explicit in the
-# outputs.  Genuine floats (SHPOP62P, and the acres/cost/enrollment fields
-# joined in below) are intentionally left as floats.
+# outputs.  Genuine floats (SHPOP62P, and the acres/cost fields joined in below)
+# are intentionally left as floats; enrollment is cast to int where it is joined.
 INTEGER_COLUMNS = [
     "TOTHH", "HHPOP", "TOTPOP", "EMPRES",
     "AGE0004", "AGE0519", "AGE2044", "AGE4564", "AGE65P", "AGE62P",
@@ -864,6 +864,12 @@ dev_acres_2025 = pandas.read_csv(dev_acres_2025_file)[["ZONE", "RESACRE", "CIACR
 
 tazdata_census = tazdata_census.merge(parking_2023, on="TAZ1454", how="left")
 tazdata_census = tazdata_census.merge(enrollment_2023, on="TAZ1454", how="left")
+# enrollment is integer-valued; fill any TAZs missing from the enrollment file
+# with 0 and cast to integer dtype
+enrollment_cols = ["HSENROLL", "COLLFTE", "COLLPTE"]
+tazdata_census[enrollment_cols] = (
+    tazdata_census[enrollment_cols].fillna(0).round().astype("int64")
+)
 tazdata_census = tazdata_census.merge(
     dev_acres_2025, left_on="TAZ1454", right_on="ZONE", how="left"
 ).drop(columns=["ZONE"])
