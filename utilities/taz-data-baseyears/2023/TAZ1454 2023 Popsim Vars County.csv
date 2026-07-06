@@ -1,4 +1,4 @@
-"COUNTY","pers_occ_management","pers_occ_professional","pers_occ_services","pers_occ_retail","pers_occ_manual","pers_occ_military"
+COUNTY,pers_occ_management,pers_occ_professional,pers_occ_services,pers_occ_retail,pers_occ_manual,pers_occ_military
 1,77438,183360,95012,61087,50627,364
 2,58198,130570,76796,47664,66313,478
 3,133334,396739,173177,113100,155638,1117
