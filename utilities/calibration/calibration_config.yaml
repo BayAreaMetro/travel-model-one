@@ -37,18 +37,20 @@ calibration_04:
   uec_src_file: "{target_dir}/OUTPUT_{calib_iter}/UEC/CoordinatedDailyActivityPattern.xls"
   bats_data: false
 
-# calibration_09:
-#   name: Non-Work Destination Choice
-#   workbook_template: 09_NonWorkDestinationChoice
-#   indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
-#   joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
+calibration_09:
+  name: Non-Work Destination Choice
+  workbook_template: 09_NonWorkDestinationChoice
+  indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
+  joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
+  uec_src_file: "{target_dir}/OUTPUT_{calib_iter}/UEC/DestinationChoice.xls"
 
-# calibration_11:
-#   name: Tour Mode Choice
-#   workbook_template: 11_TourModeChoice
-#   indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
-#   joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
-#   taz_sd_file: X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv
+calibration_11:
+  name: Tour Mode Choice
+  workbook_template: 11_TourModeChoice_2023
+  indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
+  joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
+  household_file: "{target_dir}/OUTPUT_{calib_iter}/main/householdData_{iter}.csv"
+  ferry_skim_dir: "{target_dir}/OUTPUT_00/skims"
 
 # calibration_15:
 #   name: Trip Mode Choice
