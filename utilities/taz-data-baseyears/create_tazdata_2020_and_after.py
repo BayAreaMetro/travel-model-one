@@ -146,12 +146,11 @@ pandas.set_option("display.max_columns", 100)
 # ----------------------------------------------------------------------------
 # Determine data source years
 # ----------------------------------------------------------------------------
-ACS_PUMS_5YEAR_LATEST = 2022
-ACS_PUMS_1YEAR_LATEST = 2023
-ACS_5YEAR_LATEST = ACS_PUMS_5YEAR_LATEST  # don't use inconsistent versions
+ACS_PUMS_5YEAR_LATEST = 2024
+ACS_PUMS_1YEAR_LATEST = 2024
 
 # figure out our primary datasource - which ACS5-year
-ACS_5year = min(YEAR + 2, ACS_5YEAR_LATEST)
+ACS_5year = min(YEAR + 2, ACS_PUMS_5YEAR_LATEST)
 logger.info("ACS_5year: %d", ACS_5year)
 
 # Used for avg workers per 3+ person households
@@ -159,7 +158,7 @@ ACS_PUMS_1year = min(ACS_PUMS_1YEAR_LATEST, YEAR)
 ACS_PUMS_5year = min(ACS_PUMS_5YEAR_LATEST, YEAR + 2)
 
 # lodes year
-LODES_YEAR_LATEST = 2022
+LODES_YEAR_LATEST = 2023
 LODES_YEAR = min(YEAR, LODES_YEAR_LATEST)
 
 # Blended ACS/LODES employed residents weight (0.0=ACS only, 1.0=LODES only)
@@ -718,6 +717,17 @@ lehd_lodes_h_county = (
 logger.info("lehd_lodes_h_county:\n%s", lehd_lodes_h_county)
 
 county_targets = county_targets.merge(lehd_lodes_h_county, on="County_Name", how="left")
+# log the two EMPRES totals (ACS vs LODES) before blending
+_empres_compare = county_targets[["County_Name", "EMPRES_target", "EMPRES_LEHD_target"]].rename(
+    columns={"EMPRES_target": "EMPRES_ACS", "EMPRES_LEHD_target": "EMPRES_LODES"}
+)
+logger.info(
+    "EMPRES targets before blending (EMPRES_LODES_WEIGHT=%.2f): ACS regional=%s, LODES regional=%s\n%s",
+    EMPRES_LODES_WEIGHT,
+    f"{int(_empres_compare['EMPRES_ACS'].sum()):,}",
+    f"{int(_empres_compare['EMPRES_LODES'].sum()):,}",
+    _empres_compare,
+)
 county_targets["EMPRES_target"] = (
     EMPRES_LODES_WEIGHT * county_targets["EMPRES_LEHD_target"]
     + (1.0 - EMPRES_LODES_WEIGHT) * county_targets["EMPRES_target"]

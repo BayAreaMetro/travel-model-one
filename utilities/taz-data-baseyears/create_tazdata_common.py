@@ -46,6 +46,8 @@ BAY_AREA_COUNTIES = [
 DOLLARS_2000_TO_202X = {
     2021: 1.72,
     2022: 1.81,
+    2023: 1.88,
+    2024: 1.93,
 }
 
 # Census geography codes
