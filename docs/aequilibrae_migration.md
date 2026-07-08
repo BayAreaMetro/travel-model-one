@@ -236,21 +236,113 @@ but refreshes each iteration. So a fast graph runs each iteration for time, wait
 boardings, and drive legs, and the operator-labelled fare graph is computed once and
 cached. Cube recomputes everything, fare included, each iteration.
 
-## 6. Known residuals
+## 6. Divergence ledger
 
-| Residual | Size | Cause |
-|---|---|---|
-| Commuter-rail fare off-peak | accurate in morning peak, to about -20% off-peak | one fare skim is cached across periods; commuter-rail service varies most by period, so one period's fare paths do not fit the others |
-| Auxiliary walk time | +4% | new path routes more trips through a walk transfer |
-| Commuter-rail reachability | misses a minority of long pairs | maximum path-time limit |
-| Rail-fare correlation | 0.65 for commuter | distance curve smooths station-pair structure |
-| Early-morning period | larger percent, tiny volumes | very small trip counts |
+Every known difference from Cube, each with its verified mechanism and the evidence that
+established it. Standard of proof: a divergence is only "explained" once a falsifiable test
+has isolated its cause; "both correct" claims cite the test. Sizes are from the July 2026
+full battery (75 runs, 610 component cells) unless noted; the median cell is at parity
+(TOTIVT -1.1% r 0.985, boardings -0.1% r 0.988), so this ledger describes the tails.
 
-The commuter-rail fare caching is the one open item with real demand exposure (the reverse
-peak carries meaningful commuter-rail trips). The fix is to compute the fare skim per period
-for the modes whose service varies by period, at a bounded increase in the one-time fare
-cost; this is under consideration. The combined-headway window and the rail-fare distance
-curve are the accommodations most worth revisiting if demand is re-calibrated.
+### 6.1 The structural divergence: optimal strategy vs. COMBINE blending
+
+Both engines implement Spiess-Florian frequency-based transit assignment. They differ in
+one sub-step: how simultaneous services at a stop are merged. TRNBUILD's COMBINE merges
+"common lines" whose headways fall within a fixed window (MAXDIFF = 20) and treats them as
+one service with frequency-blended attributes; the Spiess-Florian attractive set instead
+admits a line only if it lowers the expected cost, so cost-dominated (slow) patterns are
+excluded. One mechanism, three visible symptoms:
+
+**(a) Commuter-rail composition and fare** (com KEYIVT about -2 to -3%; fare -9% at r 0.71
+in the AM peak, 67% of OD fares exact to the cent). Where Caltrain runs local, limited and
+bullet patterns on one corridor, Cube reports the frequency-blended run time and the
+blended path's fare; the new implementation rides the cost-optimal pattern mix. Evidence
+chain: (1) a 2-minute rail boarding bonus flips only 1% of the divergent pairs -- these are
+not ties; (2) line-level assignment tracing shows the divergent pairs ride bullet/limited
+patterns and corridor parallels where matched pairs ride locals; (3) on 99 single-boarding
+pure-rail pairs (no substitution possible) the new path is 61.4 min vs Cube's 66.1 for the
+same seat -- the blend isolated; (4) priced under Cube's own generalized-cost rules
+(2x wait, 2x walk, per-mode factors, cumulative boarding penalties), the new paths are
+strictly cheaper on 64% of divergent pairs even at worst-case bounds. Cube's builder never
+offers these paths; where the two disagree, the new path is better under Cube's own
+weights. Not correctable without deliberately choosing worse paths.
+
+**(b) Reported waits** (initial wait about -1 to -2 min on dense-service runs; correlation
+0.84-0.91). The strategy's expected wait pools all attractive lines' frequencies; Cube's
+combine window pools fewer. The under-report concentrates where many lines share stops.
+Off-peak transfer waits, previously the worst cells (to -55%), are addressed by the
+IWAITMAX correction in 6.2.
+
+**(c) Reachability edges** (com recall 94-97% of Cube's reachable pairs; the new
+implementation also reaches pairs Cube does not). Near the 180-min actual / 300-min
+perceived path limits (matched to Cube's maxruntime/maxpathtime), the strategy's expected
+cost and Cube's single-path cost fall on opposite sides for a small band of marginal pairs,
+and a pair drops from a premium skim when the premium mode leaves the strategy entirely.
+Verified that only about 1% of Cube's own reachable pairs violate the 180-min actual-time
+test, so the limits themselves are faithful; the band is the strategy-vs-path difference.
+
+### 6.2 IWAITMAX: Cube caps the initial wait only
+
+`transit_combined_headways.block` caps the wait to board Caltrain (mode 130) and ferries
+(100-104) at 25 minutes -- initial boarding only, by TRNBUILD semantics and by the block's
+own comments ("people time their arrivals for the schedules"). Faithful reproduction in a
+frequency-based engine requires care because frequency plays two roles (wait cost and
+combination weight):
+
+- **First boardings** use the capped headway in both the deterministic boarding cost and
+  the boarding frequency: a lone capped line then prices at exactly Cube's
+  2 x 25 perceived minutes, and splits stay frequency-proportional. Using the raw headway
+  here (an early implementation) charged up to 27 phantom perceived minutes to board
+  sparse rail; fixing it recovered 6,893 Cube-reachable commuter-rail pairs (recall 91.6%
+  to 96.5% in the AM walk market) and improved the light-rail/ferry runs across the board.
+- **Transfers** use the raw headway in the kernel frequency and in the reported transfer
+  wait (Cube reports raw transfer waits: its early-morning commuter transfer wait averages
+  52 minutes). The deterministic spread slice stays capped: with the spread window (6.3)
+  that slice is charged per line rather than per combined service, and raw sparse headways
+  there overcharge multi-pattern stops -- tested: it collapsed AM commuter recall from
+  96.5% to 84.9%. With the final configuration the worst battery cell (early-morning
+  drive-egress commuter transfer wait, -55%) validates at -3%, with in-vehicle time and
+  boardings at r 0.99+.
+
+### 6.3 Spread window (accommodation)
+
+`spread_window = 1.5` inflates all line frequencies (shrinking the attractive-set window
+toward Cube's MAXDIFF = 20 combine window) and repays the removed wait share
+deterministically per line. It is the deliberate accommodation standing in for COMBINE.
+Known bias: at stops where several patterns share the window, the per-line deterministic
+slice does not shrink with the combined headway, so boarding there is charged slightly
+more than Cube's combined service; at transfers to sparse modes this is bounded by the
+IWAITMAX cap (6.2). Deterministic best-path (window 0) was tested and is strictly worse
+against Cube (rail time -7.8% vs -1.4% at 1.5).
+
+### 6.4 Fares
+
+Fares are computed from the source fare inputs exactly as Cube's decomposition:
+boarding/transfer XFARE + farelinks surcharges + station-to-station FAREMAT matrices
+(symmetrized; the `.far` files list one direction). No distance-curve approximation
+remains for line-hauls with fare matrices. AM validation: local 0.0% r 0.98, light
+rail/ferry +0.2% r 0.99, express -0.8% r 0.97, heavy rail +1.2% r 0.94, commuter -9.1%
+r 0.71 (the composition effect of 6.1a; the fare arithmetic on matched paths is exact).
+
+Off-peak fare cells degrade (to -37%, correlations to 0.01) because one AM fare pass is
+cached across periods while 7-20% of each other period's reachable pairs are
+AM-unreachable and receive a structural zero. Verified against Cube's own skims that fares
+are period-invariant on jointly-reachable pairs (79-99% identical to the cent), so the AM
+values are correct where defined; the zeros are the gap. This is a real demand exposure,
+not just a validation artifact. Fix in progress: per-period fare passes, enabled by
+pruning the fare graph's dead station copies.
+
+### 6.5 Reporting conventions
+
+- **Initial/transfer wait split**: the strategy yields one combined wait; it is split
+  proportionally to the per-boarding half-headway markers (first-boarding marker capped
+  per 6.2, transfer markers raw). A sequential split (initial wait gets first claim) was
+  tested and overshoots both components.
+- **Auxiliary walk** (median +0.26 min, correlations ~0.78): small-magnitude legs on
+  0-time funnel links; percent and correlation are harsh on 2-4 minute quantities.
+  Absolute differences are fractions of a minute.
+- **Early-morning cells** show the largest percentages on the smallest markets; absolute
+  differences remain the binding measure there.
 
 ## 7. Reproducibility
 

@@ -408,33 +408,37 @@ def build_transit_graph(
     else:
         board_fare = np.zeros(len(stops))
         tf_grp = np.zeros((G, len(stops)))
-    # IWAITMAX: Cube caps the headway feeding path choice (transit_combined_headways.block
-    # applies the 25-min wait cap BEFORE TRNBUILD, so its path builder never sees the raw
-    # headway).  Faithful analog: the capped headway hw_wait feeds BOTH the deterministic
-    # boarding cost and the S&F frequency, so a lone capped line prices at exactly
-    # wait_exp = wait_perceive*25 (Cube's number) while splits stay frequency-proportional.
-    # (Setting freq=INF instead breaks the attractive-set combination -- tested, backfired.)
-    hw_wait = np.where(np.isin(s_mode, IWAITMAX_MODES),
-                       np.minimum(s_hw, 2.0 * IWAITMAX_MIN), s_hw)
-    wait_exp = params.wait_perceive * hw_wait / 2.0  # expected perceived wait (IWAITMAX-capped)
-    half_hw = hw_wait / 2.0                           # actual per-line half-headway (capped)
-    w = params.spread_window
-    if w is None:
-        board_cost = np.zeros(len(stops))
-        board_freq = freq_scale / hw_wait
-    elif w <= 0:
-        board_cost = wait_exp
-        board_freq = np.full(len(stops), INF_FREQ)
-    elif w <= 1.0:
-        board_cost = np.maximum(wait_exp - w, 0.0)
-        board_freq = np.where(wait_exp > w, 1.0 / w, freq_scale / hw_wait)
-    else:
+    # IWAITMAX: Cube caps the INITIAL wait only (TRNBUILD `factor IWAITMAX[mode]`,
+    # transit_combined_headways.block: "people time their arrivals for the schedules").
+    # Faithful analog: FIRST-boarding edges of capped modes use the capped headway in BOTH
+    # the deterministic boarding cost and the S&F frequency (a lone capped line then prices
+    # at exactly wait_perceive*25, Cube's number, with splits staying frequency-
+    # proportional); RE-boarding (transfer) edges use the raw headway -- Cube charges the
+    # full transfer wait to board a sparse line mid-path.  (Setting freq=INF instead of
+    # capping the frequency's headway breaks attractive-set combination -- tested, backfired.)
+    hw_first = np.where(np.isin(s_mode, IWAITMAX_MODES),
+                        np.minimum(s_hw, 2.0 * IWAITMAX_MIN), s_hw)
+
+    def _board_cost_freq(hw):
+        wait_exp = params.wait_perceive * hw / 2.0   # expected perceived wait
+        w = params.spread_window
+        if w is None:
+            return np.zeros(len(stops)), freq_scale / hw
+        if w <= 0:
+            return wait_exp, np.full(len(stops), INF_FREQ)
+        if w <= 1.0:
+            return (np.maximum(wait_exp - w, 0.0),
+                    np.where(wait_exp > w, 1.0 / w, freq_scale / hw))
         # w > 1 acts as a frequency-inflation factor alpha: all line frequencies are
         # scaled up by alpha (shrinking the attractive-set window by ~alpha while
         # keeping frequency-PROPORTIONAL splits) and the removed share of the
         # expected wait is paid deterministically in the boarding cost.
-        board_cost = wait_exp * (1.0 - 1.0 / w)
-        board_freq = w * freq_scale / hw_wait
+        return wait_exp * (1.0 - 1.0 / w), w * freq_scale / hw
+
+    cost_first, freq_first = _board_cost_freq(hw_first)   # initial: IWAITMAX-capped
+    _, freq_xfer = _board_cost_freq(s_hw)                  # transfer kernel wait: raw headway
+    cost_xfer_capped = cost_first                          # deterministic slice stays capped
+    half_first, half_xfer = hw_first / 2.0, s_hw / 2.0    # iwait/xwait markers
 
     def _board(from_v, k, first, fare_arr):
         start = sum(len(f) for f in frames)
@@ -442,9 +446,16 @@ def build_transit_graph(
         # u - sk_edge). first vs re-boarding half-headways feed the iwait/xwait split.
         # fare = first-boarding XFARE (from walk) or the group-g transfer fare.  board=s_node
         # sets the rail boarding station (ignored for bus onboard) for the faremat lookup.
+        # transfers: raw headway drives the kernel frequency (real expected wait) and the
+        # xwait marker (Cube reports raw transfer waits), but the deterministic spread
+        # slice stays capped -- with w>1 that slice is charged per LINE, not per combined
+        # service, so raw sparse headways overcharge multi-pattern stops vs Cube's COMBINE
+        # (tested: raw slice collapses com recall 96.5% -> 84.9% via the 300-min cap).
+        board_cost = cost_first if first else cost_xfer_capped
+        board_freq = freq_first if first else freq_xfer
         add(from_v, ov(s_name, s_node, k + 1, board=s_node), board_cost + pens[k], board_freq,
             boards=1.0, sk_edge=np.full(len(stops), pens[k]),
-            w_first=(half_hw if first else 0.0), w_xfer=(0.0 if first else half_hw),
+            w_first=(half_first if first else 0.0), w_xfer=(0.0 if first else half_xfer),
             fare=fare_arr)
         for i, ln in enumerate(s_name):
             board_line_rows.setdefault(ln, []).append(start + i)
@@ -580,12 +591,17 @@ def skim_transit(
     boards = zmat("boards")
     w_first, w_xfer = zmat("w_first"), zmat("w_xfer")
     wsum = w_first + w_xfer
-    # IWAITMAX on the REPORTED wait: the capped half-headway markers (w_first/w_xfer carry
-    # hw_wait, capped at 25 for Caltrain/ferry) bound the reported wait.  For normal modes the
-    # marker sum >= the S&F combined wait, so this is a no-op; for long-headway capped modes it
-    # reports Cube's 25-capped wait instead of the uncapped frequency wait.
+    # IWAITMAX on the REPORTED wait: the half-headway markers bound the reported wait --
+    # w_first is IWAITMAX-capped (25 for Caltrain/ferry, Cube's initial-wait cap), w_xfer is
+    # the raw half-headway (Cube does NOT cap transfer waits).  For normal modes the marker
+    # sum >= the S&F combined wait, so this is a no-op; for long-headway capped modes it
+    # reports Cube's capped initial wait instead of the uncapped frequency wait.
     wait_u = np.maximum(u - zmat("sk_edge"), 0.0) / wait_perceive
     wait = np.minimum(wait_u, wsum)
+    # proportional iwait/xwait split by marker share.  (A sequential split -- iwait gets
+    # first claim up to its marker -- was tested and overshoots both ways: the w_first
+    # marker is a strategy expectation, not the realized first wait, so giving it full
+    # priority over-allocates iwait and starves xwait.)
     with np.errstate(divide="ignore", invalid="ignore"):
         frac_i = np.where(wsum > 0, w_first / wsum, 1.0)
     iwait, xwait = wait * frac_i, wait * (1.0 - frac_i)
