@@ -50,7 +50,17 @@ INF_FREQ = 1.0e20
 WALK_MODES = (1, 6, 3, 5)
 
 # Cube's escalating boarding penalties (perceived min); index = boardings so far.
-BOARD_PENALTIES = (0.0, 30.0, 45.0)   # 4th+ boardings disallowed (negligible in data)
+BOARD_PENALTIES = (0.0, 30.0, 45.0)   # legacy default (assignment); skims use the vectors below
+# Cube skim boardpen (TransitSkims.job): walk/walk access -> 0,20,...; any drive leg -> 0,30,...
+WALK_BOARD_PENALTIES = (0.0, 20.0, 45.0, 50.0, 60.0)
+DRIVE_BOARD_PENALTIES = (0.0, 30.0, 45.0, 50.0, 60.0)
+
+# Cube IWAITMAX (transit_combined_headways.block): cap the WAIT COST to board long-headway
+# Caltrain (mode 130) and ferry (100-104) at 25 min so their sparse schedules do not knock
+# commuter rail / ferry out of the choice set (Cube's own stated reason).  Caps the wait
+# cost only -- the line's real frequency still drives the attractive-set spreading.
+IWAITMAX_MIN = 25.0
+IWAITMAX_MODES = (100, 101, 102, 103, 104, 130)
 
 # Per-line-haul perceived-IVT factors and excluded mode ranges (TransitAssign.job
 # token_modefac / token_skipmodes).  Mode buckets: 10-79 local bus, 80-99 express,
@@ -229,7 +239,28 @@ def build_transit_graph(
     d0 = len(cidx)                              # destination copies of the centroids
     s0 = d0 + len(cidx)
     o0 = s0 + len(pidx) * n_states
-    n_vertices = o0 + len(obidx) * (n_layers - 1)
+
+    # premier-rail boarding-station tracking, for the exact FAREMAT[board][alight] OD fare.
+    # ONLY when a faremat exists for this line-haul (rail/ferry -- bus fare is a flat boarding
+    # charge, no OD matrix) and we are on a fare graph (fare_states != "none").  Rail onboard
+    # vertices then carry the boarding station; bus onboard does not.  Fares do not affect
+    # routing, so the path is unchanged -- only the accumulated fare differs.
+    _fb = fares.rail_band.get(params.linehaul or "") if fares is not None else None
+    track_board = bool(fare_states != "none" and fares is not None and _fb
+                       and (params.linehaul or "") in getattr(fares, "faremat", {}))
+    if track_board:
+        _lm = dict(zip(transit["name"], transit["mode"]))     # line -> mode
+        rail_keys = [k for k in obidx if _fb[0] <= _lm.get(k.split("|")[0], 0) <= _fb[1]]
+        bus_keys = [k for k in obidx if k not in set(rail_keys)]
+        bus_i = {k: i for i, k in enumerate(bus_keys)}
+        rail_i = {k: i for i, k in enumerate(rail_keys)}
+        fare_stations = sorted({int(k.split("|")[1]) for k in rail_keys})
+        stn_idx = {s: i for i, s in enumerate(fare_stations)}
+        nS, nb = len(stn_idx), len(bus_keys)
+        _rail0 = o0 + nb * (n_layers - 1)                     # rail onboard block start
+        n_vertices = _rail0 + len(rail_keys) * (n_layers - 1) * nS
+    else:
+        n_vertices = o0 + len(obidx) * (n_layers - 1)
 
     def cv(nodes):                              # origin centroid vertices
         return np.array([cidx[int(n)] for n in nodes])
@@ -249,9 +280,20 @@ def build_transit_graph(
     def cvw(nodes, k, g):               # state C(k, g): after transfer walk, group g
         return _stop(nodes, _c0 + (k - 1) * G + g)
 
-    def ov(names, nodes, j):
-        return o0 + np.array([obidx[f"{a}|{int(b)}"] for a, b in zip(names, nodes)]) \
-            * (n_layers - 1) + (j - 1)
+    def ov(names, nodes, j, board=None):
+        if not track_board:
+            return o0 + np.array([obidx[f"{a}|{int(b)}"] for a, b in zip(names, nodes)]) \
+                * (n_layers - 1) + (j - 1)
+        # bus onboard: (line-stop, layer); rail onboard: (line-stop, layer, boarding-station)
+        keys = [f"{a}|{int(b)}" for a, b in zip(names, nodes)]
+        out = np.empty(len(keys), dtype=np.int64)
+        for i, k in enumerate(keys):
+            if k in rail_i:
+                s = stn_idx[int(board[i])] if board is not None else 0
+                out[i] = _rail0 + (rail_i[k] * (n_layers - 1) + (j - 1)) * nS + s
+            else:
+                out[i] = o0 + bus_i[k] * (n_layers - 1) + (j - 1)
+        return out
 
     frames: list[pd.DataFrame] = []
 
@@ -328,9 +370,24 @@ def build_transit_graph(
         fl = np.array([fll.get((int(m), int(a), int(b)), 0.0)
                        for m, a, b in zip(mode, ta, tb)])
     for j in range(1, n_layers):
-        add(ov(tn, ta, j), ov(tn, tb, j), tt, INF_FREQ,
-            sk_edge=tt, ivt=t_actual, keyivt=ivt_key, ferryivt=ivt_ferry,
-            keydist=key_dist, fare=fl)
+        if not track_board:
+            add(ov(tn, ta, j), ov(tn, tb, j), tt, INF_FREQ,
+                sk_edge=tt, ivt=t_actual, keyivt=ivt_key, ferryivt=ivt_ferry,
+                keydist=key_dist, fare=fl)
+            continue
+        bm = ~is_fare                                  # bus ride links: single onboard copy
+        if bm.any():
+            add(ov(tn[bm], ta[bm], j), ov(tn[bm], tb[bm], j), tt[bm], INF_FREQ,
+                sk_edge=tt[bm], ivt=t_actual[bm], keyivt=ivt_key[bm],
+                ferryivt=ivt_ferry[bm], keydist=key_dist[bm], fare=fl[bm])
+        if is_fare.any():                              # rail: one copy per boarding station
+            rm = is_fare
+            for s in fare_stations:
+                sarr = np.full(int(rm.sum()), s)
+                add(ov(tn[rm], ta[rm], j, sarr), ov(tn[rm], tb[rm], j, sarr),
+                    tt[rm], INF_FREQ, sk_edge=tt[rm], ivt=t_actual[rm],
+                    keyivt=ivt_key[rm], ferryivt=ivt_ferry[rm],
+                    keydist=key_dist[rm], fare=fl[rm])
 
     # boarding (charges pens[k] for the (k+1)-th boarding) and alighting
     freq_scale = 2.0 / params.wait_perceive     # SF wait 1/freq == perceived half-headway
@@ -351,32 +408,41 @@ def build_transit_graph(
     else:
         board_fare = np.zeros(len(stops))
         tf_grp = np.zeros((G, len(stops)))
-    wait_exp = params.wait_perceive * s_hw / 2.0     # expected perceived wait
-    half_hw = s_hw / 2.0                              # actual per-line half-headway
+    # IWAITMAX: Cube caps the headway feeding path choice (transit_combined_headways.block
+    # applies the 25-min wait cap BEFORE TRNBUILD, so its path builder never sees the raw
+    # headway).  Faithful analog: the capped headway hw_wait feeds BOTH the deterministic
+    # boarding cost and the S&F frequency, so a lone capped line prices at exactly
+    # wait_exp = wait_perceive*25 (Cube's number) while splits stay frequency-proportional.
+    # (Setting freq=INF instead breaks the attractive-set combination -- tested, backfired.)
+    hw_wait = np.where(np.isin(s_mode, IWAITMAX_MODES),
+                       np.minimum(s_hw, 2.0 * IWAITMAX_MIN), s_hw)
+    wait_exp = params.wait_perceive * hw_wait / 2.0  # expected perceived wait (IWAITMAX-capped)
+    half_hw = hw_wait / 2.0                           # actual per-line half-headway (capped)
     w = params.spread_window
     if w is None:
         board_cost = np.zeros(len(stops))
-        board_freq = freq_scale / s_hw
+        board_freq = freq_scale / hw_wait
     elif w <= 0:
         board_cost = wait_exp
         board_freq = np.full(len(stops), INF_FREQ)
     elif w <= 1.0:
         board_cost = np.maximum(wait_exp - w, 0.0)
-        board_freq = np.where(wait_exp > w, 1.0 / w, freq_scale / s_hw)
+        board_freq = np.where(wait_exp > w, 1.0 / w, freq_scale / hw_wait)
     else:
         # w > 1 acts as a frequency-inflation factor alpha: all line frequencies are
         # scaled up by alpha (shrinking the attractive-set window by ~alpha while
         # keeping frequency-PROPORTIONAL splits) and the removed share of the
         # expected wait is paid deterministically in the boarding cost.
         board_cost = wait_exp * (1.0 - 1.0 / w)
-        board_freq = w * freq_scale / s_hw
+        board_freq = w * freq_scale / hw_wait
 
     def _board(from_v, k, first, fare_arr):
         start = sum(len(f) for f in frames)
         # sk_edge carries ONLY the non-wait boardpen (board_cost is wait -> stays inside
         # u - sk_edge). first vs re-boarding half-headways feed the iwait/xwait split.
-        # fare = first-boarding XFARE (from walk) or the group-g transfer fare.
-        add(from_v, ov(s_name, s_node, k + 1), board_cost + pens[k], board_freq,
+        # fare = first-boarding XFARE (from walk) or the group-g transfer fare.  board=s_node
+        # sets the rail boarding station (ignored for bus onboard) for the faremat lookup.
+        add(from_v, ov(s_name, s_node, k + 1, board=s_node), board_cost + pens[k], board_freq,
             boards=1.0, sk_edge=np.full(len(stops), pens[k]),
             w_first=(half_hw if first else 0.0), w_xfer=(0.0 if first else half_hw),
             fare=fare_arr)
@@ -388,12 +454,28 @@ def build_transit_graph(
         for g in range(G):
             _board(bv(s_node, k, g), k, False, tf_grp[g])
             _board(cvw(s_node, k, g), k, False, tf_grp[g])
+    fm_lh = fares.faremat.get(params.linehaul or "", {}) if (track_board and fares) else {}
     for j in range(1, n_layers):                # alight from line M -> B(j, group(M))
         for g in range(G):
             m = s_grp == g
-            if m.any():
+            if not m.any():
+                continue
+            if not track_board:
                 add(ov(s_name[m], s_node[m], j), bv(s_node[m], j, g),
                     np.zeros(int(m.sum())), INF_FREQ)
+                continue
+            mnm, mn = s_name[m], s_node[m]
+            is_r = np.array([f"{a}|{int(b)}" in rail_i for a, b in zip(mnm, mn)])
+            if (~is_r).any():                          # bus alight: no fare
+                add(ov(mnm[~is_r], mn[~is_r], j), bv(mn[~is_r], j, g),
+                    np.zeros(int((~is_r).sum())), INF_FREQ)
+            if is_r.any():                             # rail alight: charge FAREMAT[board][alight]
+                rnm, rmn = mnm[is_r], mn[is_r]
+                for s in fare_stations:                # one alight edge per boarding station
+                    sarr = np.full(len(rmn), s)
+                    farr = np.array([fm_lh.get((s, int(t)), 0.0) for t in rmn])
+                    add(ov(rnm, rmn, j, sarr), bv(rmn, j, g),
+                        np.zeros(len(rmn)), INF_FREQ, fare=farr)
 
     edges = pd.concat(frames, ignore_index=True)
     board_rows = {k: np.array(v) for k, v in board_line_rows.items()}
@@ -441,6 +523,7 @@ def skim_transit(
     n_zones: int = 1475,
     threads: int | None = None,
     max_path_min: float = 180.0,
+    max_perceived_min: float | None = None,
 ) -> dict[str, np.ndarray]:
     """Skim the layered SF graph into Cube-style component matrices (actual units).
 
@@ -495,9 +578,14 @@ def skim_transit(
     ivt, keyivt, ferryivt = zmat("ivt"), zmat("keyivt"), zmat("ferryivt")
     wacc, waux, wegr = zmat("wacc"), zmat("waux"), zmat("wegr")
     boards = zmat("boards")
-    wait = np.maximum(u - zmat("sk_edge"), 0.0) / wait_perceive
     w_first, w_xfer = zmat("w_first"), zmat("w_xfer")
     wsum = w_first + w_xfer
+    # IWAITMAX on the REPORTED wait: the capped half-headway markers (w_first/w_xfer carry
+    # hw_wait, capped at 25 for Caltrain/ferry) bound the reported wait.  For normal modes the
+    # marker sum >= the S&F combined wait, so this is a no-op; for long-headway capped modes it
+    # reports Cube's 25-capped wait instead of the uncapped frequency wait.
+    wait_u = np.maximum(u - zmat("sk_edge"), 0.0) / wait_perceive
+    wait = np.minimum(wait_u, wsum)
     with np.errstate(divide="ignore", invalid="ignore"):
         frac_i = np.where(wsum > 0, w_first / wsum, 1.0)
     iwait, xwait = wait * frac_i, wait * (1.0 - frac_i)
@@ -507,14 +595,18 @@ def skim_transit(
     # fare = accumulated boarding XFARE + farelinks (cents), plus the rail distance
     # curve on the key-mode in-vehicle distance for hvy/com (0 for bus/light rail).
     fare = zmat("fare")
-    if fares is not None:
+    # exact station-to-station faremat is accumulated in-graph (fare column); fall back to the
+    # distance curve only for line-hauls without a faremat.
+    if fares is not None and (linehaul or "") not in getattr(fares, "faremat", {}):
         fare = fare + fares.rail_fare(linehaul, zmat("keydist"))
 
     dtim, ddist = zmat("dtim"), zmat("ddist")     # drive access/egress time / distance
     reach = (keyivt > 0) if linehaul in KEY_BAND else (u > 0)
     actual_total = ivt + wait + wacc + waux + wegr + dtim
     keep = reach & (actual_total <= max_path_min)
+    if max_perceived_min is not None:            # Cube maxpathtime prune (perceived cost)
+        keep = keep & (u <= max_perceived_min)
     out = {"TOTIVT": ivt, "KEYIVT": keyivt, "FERRYIVT": ferryivt, "IWAIT": iwait,
-           "XWAIT": xwait, "WAUX": waux, "BOARDS": boards, "FARE": fare,
-           "DTIM": dtim, "DDIST": ddist}
+           "XWAIT": xwait, "WACC": wacc, "WAUX": waux, "WEGR": wegr, "BOARDS": boards,
+           "FARE": fare, "DTIM": dtim, "DDIST": ddist}
     return {k: np.where(keep, v, 0.0) for k, v in out.items()}

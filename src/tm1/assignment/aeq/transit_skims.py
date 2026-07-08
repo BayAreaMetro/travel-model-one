@@ -20,11 +20,27 @@ import numpy as np
 import pandas as pd
 
 from tm1.assignment.aeq.transit import (
+    DRIVE_BOARD_PENALTIES, WALK_BOARD_PENALTIES,
     TransitParams, build_transit_graph, skim_transit,
 )
 
 PERIODS = ("EA", "AM", "MD", "PM", "EV")
 LINEHAULS = ("loc", "lrf", "exp", "hvy", "com")
+
+# Cube SKIM perceived-cost settings (TransitSkims.job), distinct from assignment:
+# iwaitfac/xwaitfac = 2.0, maxpathtime = 300 (perceived).  IWAITMAX (Caltrain/ferry wait
+# cap) and modefac/skipmodes live in build_transit_graph.
+# TODO(perf): the 5-level boardpen grows the fare graph ~2x; once fidelity is locked in,
+# revisit trimming to 3 levels (0,20,45) -- 4th/5th boardings are ~2% of trips.
+SKIM_WAIT_PERCEIVE = 2.0
+SKIM_MAXPATH_PERCEIVED = 300.0
+
+
+def _skim_params(linehaul: str, access: str, egress: str, spread_window):
+    """SKIM-config TransitParams: Cube wait factor + access-dependent boardpen."""
+    boardpen = WALK_BOARD_PENALTIES if (access, egress) == ("wlk", "wlk") else DRIVE_BOARD_PENALTIES
+    return TransitParams(linehaul=linehaul, spread_window=spread_window,
+                         wait_perceive=SKIM_WAIT_PERCEIVE, board_penalties=boardpen)
 # run type -> (access token, line-haul, egress token, access mode, egress mode)
 ACCESS_EGRESS = (("wlk", "wlk", 1, 6), ("drv", "wlk", 2, 6), ("wlk", "drv", 1, 7))
 
@@ -115,25 +131,28 @@ def skim_all_runs(
             rt = f"{access}_{linehaul}_{egress}"
             sup = support_by_runtype[rt]
             # exact fare once per run type (static), reused for every period
+            params = _skim_params(linehaul, access, egress, spread_window)
             if rt not in fare_cache:
                 p0 = "AM"
                 links = _assemble(ride_links_by_period[p0], sup)
                 gf = build_transit_graph(
-                    links, headways_by_period[p0],
-                    TransitParams(linehaul=linehaul, spread_window=spread_window),
+                    links, headways_by_period[p0], params,
                     n_zones=n_zones, fares=fares, fare_states="operator",
                     access_mode=amode, egress_mode=emode)
-                fare_cache[rt] = skim_transit(gf, linehaul=linehaul, fares=fares,
-                                              n_zones=n_zones, threads=threads)["FARE"]
+                fare_cache[rt] = skim_transit(
+                    gf, linehaul=linehaul, fares=fares, n_zones=n_zones, threads=threads,
+                    wait_perceive=SKIM_WAIT_PERCEIVE,
+                    max_perceived_min=SKIM_MAXPATH_PERCEIVED)["FARE"]
             for period in PERIODS:
                 links = _assemble(ride_links_by_period[period], sup)
                 g = build_transit_graph(
-                    links, headways_by_period[period],
-                    TransitParams(linehaul=linehaul, spread_window=spread_window),
+                    links, headways_by_period[period], params,
                     n_zones=n_zones, fares=fares, fare_states="none",
                     access_mode=amode, egress_mode=emode)
-                sk = skim_transit(g, linehaul=linehaul, fares=fares,
-                                  n_zones=n_zones, threads=threads)
+                sk = skim_transit(
+                    g, linehaul=linehaul, fares=fares, n_zones=n_zones, threads=threads,
+                    wait_perceive=SKIM_WAIT_PERCEIVE,
+                    max_perceived_min=SKIM_MAXPATH_PERCEIVED)
                 out.update(pack_run_matrices(access, linehaul, egress, period, sk,
                                              fare=fare_cache[rt]))
     return out

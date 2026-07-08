@@ -39,7 +39,9 @@ from cubeio import read_tpp
 from tm1.assignment.aeq.fares import load_fares
 from tm1.assignment.aeq.transit import build_transit_graph, skim_transit, TransitParams
 from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
-from tm1.assignment.aeq.transit_skims import ACCESS_EGRESS, LINEHAULS, PERIODS, _assemble
+from tm1.assignment.aeq.transit_skims import (
+    ACCESS_EGRESS, LINEHAULS, PERIODS, SKIM_MAXPATH_PERCEIVED, SKIM_WAIT_PERCEIVE,
+    _assemble, _skim_params)
 
 # component -> (reference trnskm matrix, scale to actual units)
 _REFKEY = {"TOTIVT": ("ivt", 100), "IWAIT": ("iwait", 100), "XWAIT": ("xwait", 100),
@@ -145,18 +147,20 @@ def main() -> None:
     csv_f.write("run,period,comp,cube,aeq,pct,corr,n\n")
     for rt in run_types:
         lh, amode, emode = lh_of[rt]
+        access, _, egress = rt.split("_")
+        params = _skim_params(lh, access, egress, 1.5)
         sup = sl[sl["run_type"] == rt]
         fare_mat = None
         if not args.skip_fare:
             tb = time.time()
             _phase(f"{rt}: building fare graph", 90)
-            gf = build_transit_graph(_assemble(ride["AM"], sup), hw["AM"],
-                                     TransitParams(linehaul=lh, spread_window=1.5),
+            gf = build_transit_graph(_assemble(ride["AM"], sup), hw["AM"], params,
                                      n_zones=1475, fares=fares, fare_states="operator",
                                      access_mode=amode, egress_mode=emode)
             _phase(f"{rt}: skimming fare ({gf.n_vertices/1000:.0f}k verts)", gf.n_vertices / 4500)
             fare_mat = skim_transit(gf, linehaul=lh, fares=fares, threads=args.threads,
-                                    max_path_min=180.0)["FARE"]
+                                    max_path_min=180.0, wait_perceive=SKIM_WAIT_PERCEIVE,
+                                    max_perceived_min=SKIM_MAXPATH_PERCEIVED)["FARE"]
             _phase("")
             fare_secs += time.time() - tb
             fare_n += 1
@@ -164,12 +168,12 @@ def main() -> None:
             gc.collect()
         for p in PERIODS:
             tl = time.time()
-            g = build_transit_graph(_assemble(ride[p], sup), hw[p],
-                                    TransitParams(linehaul=lh, spread_window=1.5),
+            g = build_transit_graph(_assemble(ride[p], sup), hw[p], params,
                                     n_zones=1475, fares=fares, fare_states="none",
                                     access_mode=amode, egress_mode=emode)
             sk = skim_transit(g, linehaul=lh, fares=fares, threads=args.threads,
-                              max_path_min=180.0)
+                              max_path_min=180.0, wait_perceive=SKIM_WAIT_PERCEIVE,
+                              max_perceived_min=SKIM_MAXPATH_PERCEIVED)
             del g
             los_secs += time.time() - tl
             los_n += 1
@@ -205,14 +209,19 @@ def main() -> None:
     csv_f.close()
     _phase("")
     df = pd.DataFrame(rows, columns=["run", "period", "comp", "cube", "aeq", "pct", "corr", "n"])
+    # report ABSOLUTE (n-weighted cube/aeq means, in native units) alongside % and corr, so a
+    # big-% / small-minute residual is not mistaken for a real error (and vice versa).
     lines_out = [f"\nTRANSIT SKIM VALIDATION | {len(df)} cells | {time.time()-t0:.0f}s "
-                 f"@ {args.threads} threads", f"{'component':9s} {'runs':>4s} "
-                 f"{'%diff med':>9s} {'%diff mean':>10s} {'corr med':>9s}"]
+                 f"@ {args.threads} threads",
+                 f"{'component':9s} {'runs':>4s} {'cube':>8s} {'aeq':>8s} {'d(abs)':>8s} "
+                 f"{'%diff med':>9s} {'corr med':>9s}"]
     for c in ["TOTIVT", "KEYIVT", "IWAIT", "XWAIT", "WAUX", "BOARDS", "FARE", "DTIM", "DDIST"]:
         d = df[df["comp"] == c]
         if len(d):
-            lines_out.append(f"{c:9s} {len(d):4d} {d['pct'].median():+9.1f} "
-                             f"{d['pct'].mean():+10.1f} {d['corr'].median():9.3f}")
+            w = d["n"].to_numpy()
+            cu, ae = np.average(d["cube"], weights=w), np.average(d["aeq"], weights=w)
+            lines_out.append(f"{c:9s} {len(d):4d} {cu:8.2f} {ae:8.2f} {ae-cu:+8.2f} "
+                             f"{d['pct'].median():+9.1f} {d['corr'].median():9.3f}")
     summary = "\n".join(lines_out)
     Path(args.out).with_suffix(".txt").write_text(summary)
     log.info("\n  done in %.0fm  ->  %s.csv", (time.time() - t0) / 60, args.out)

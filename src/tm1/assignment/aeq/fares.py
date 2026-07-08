@@ -133,10 +133,25 @@ class TransitFares:
     farelinks: dict                         # (mode, a, b) -> cents
     rail_curve: dict = field(default_factory=dict)   # linehaul -> (a, b) cents, c/mi
     rail_band: dict = field(default_factory=dict)    # linehaul -> (lo, hi) fare modes
+    faremat: dict = field(default_factory=dict)      # linehaul -> {(from_node,to_node): cents}
+    # per line-haul, the exact station-to-station OD fare (Cube FAREMATI .far files).  Fare
+    # station ids ARE the network rail stop node ids, so board/alight nodes look up directly.
 
     def boarding_fare(self, access_mode: int, line_mode: int) -> float:
         """Walk/transfer boarding fare into ``line_mode`` from ``access_mode``."""
         return float(self.xfare[access_mode, line_mode])
+
+    def station_fare(self, linehaul: str | None, board_node: int, alight_node: int) -> float:
+        """Exact FAREMAT OD fare (cents) for a rail board->alight station pair; 0 if absent.
+
+        Falls back to the distance curve only when the exact pair is missing from the .far
+        (rare -- e.g. a station pair with no coded fare)."""
+        fm = self.faremat.get(linehaul or "")
+        if fm is not None:
+            f = fm.get((int(board_node), int(alight_node)))
+            if f is not None:
+                return f
+        return 0.0
 
     def rail_fare(self, linehaul: str | None, key_distance: np.ndarray) -> np.ndarray:
         """Distance-curve OD fare (cents) for a rail run's key-mode distance array."""
@@ -159,11 +174,21 @@ def load_fares(fares_dir: str | Path, link_dist: dict,
     farelinks = parse_farelinks(fares_dir / "farelinks.far")
     curves: dict = {}
     bands: dict = {}
+    faremat: dict = {}
     if lines is not None:
         for lh, (far_names, band) in RAIL_FARE.items():
             paths = [fares_dir / n for n in far_names if (fares_dir / n).exists()]
             if paths:
                 curves[lh] = fit_rail_curve(paths, lines, link_dist, band)
                 bands[lh] = band
+                # exact station-to-station fare (pooled across the band's operators); node
+                # ids match the network rail stop nodes, so this is a direct board->alight lookup.
+                fm: dict = {}
+                for p in paths:
+                    for (a, b), f in _parse_far_matrix(p).items():
+                        fm[(int(a), int(b))] = f
+                        fm.setdefault((int(b), int(a)), f)   # .far lists ONE direction; fares
+                        # are symmetric (B->A == A->B), so add the reverse if not already given
+                faremat[lh] = fm
     return TransitFares(xfare=xfare, farelinks=farelinks, rail_curve=curves,
-                        rail_band=bands)
+                        rail_band=bands, faremat=faremat)
