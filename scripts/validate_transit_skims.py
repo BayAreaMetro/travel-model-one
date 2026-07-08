@@ -41,7 +41,7 @@ from tm1.assignment.aeq.transit import build_transit_graph, skim_transit, Transi
 from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
 from tm1.assignment.aeq.transit_skims import (
     ACCESS_EGRESS, LINEHAULS, PERIODS, SKIM_MAXPATH_PERCEIVED, SKIM_WAIT_PERCEIVE,
-    _assemble, _skim_params)
+    _assemble, _skim_params, _union_service)
 
 # component -> (reference trnskm matrix, scale to actual units)
 _REFKEY = {"TOTIVT": ("ivt", 100), "IWAIT": ("iwait", 100), "XWAIT": ("xwait", 100),
@@ -131,6 +131,7 @@ def main() -> None:
     for p in PERIODS:
         ride[p], hw[p] = build_ride_links(lines, p, bus_time_table(links, p),
                                           link_dist, ref_time)
+    ride_u, hw_u = _union_service(ride, hw)
     _phase("")
     log.info("inputs ready -- starting %d skims (%d run types x %d periods)",
              total, len(run_types), len(PERIODS))
@@ -154,7 +155,9 @@ def main() -> None:
         if not args.skip_fare:
             tb = time.time()
             _phase(f"{rt}: building fare graph", 90)
-            gf = build_transit_graph(_assemble(ride["AM"], sup), hw["AM"], params,
+            # union-service network (all periods' lines at best headway): one fare pass
+            # covers every period's reachable pairs (fares are period-invariant)
+            gf = build_transit_graph(_assemble(ride_u, sup), hw_u, params,
                                      n_zones=1475, fares=fares, fare_states="operator",
                                      access_mode=amode, egress_mode=emode)
             _phase(f"{rt}: skimming fare ({gf.n_vertices/1000:.0f}k verts)", gf.n_vertices / 4500)
@@ -173,12 +176,14 @@ def main() -> None:
                                     access_mode=amode, egress_mode=emode)
             sk = skim_transit(g, linehaul=lh, fares=fares, threads=args.threads,
                               max_path_min=180.0, wait_perceive=SKIM_WAIT_PERCEIVE,
-                              max_perceived_min=SKIM_MAXPATH_PERCEIVED)
+                              max_perceived_min=SKIM_MAXPATH_PERCEIVED,
+                              rail_curve_fallback=True)
             del g
             los_secs += time.time() - tl
             los_n += 1
             if fare_mat is not None:
-                sk["FARE"] = fare_mat
+                # exact union-pass fare where available, LOS fare (XFARE + curve) else
+                sk["FARE"] = np.where(fare_mat > 0, fare_mat, sk["FARE"])
             done += 1
             try:
                 R = read_tpp(f"{ref}/skims/trnskm{p.lower()}_{rt}.tpp")["data"]

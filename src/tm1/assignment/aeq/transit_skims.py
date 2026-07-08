@@ -126,17 +126,22 @@ def skim_all_runs(
     """
     out: dict = {}
     fare_cache = {} if fare_cache is None else fare_cache
+    ride_u, hw_u = _union_service(ride_links_by_period, headways_by_period)
     for access, egress, amode, emode in ACCESS_EGRESS:
         for linehaul in LINEHAULS:
             rt = f"{access}_{linehaul}_{egress}"
             sup = support_by_runtype[rt]
-            # exact fare once per run type (static), reused for every period
+            # exact fare once per run type (static), reused for every period.  The pass
+            # runs on the UNION-service network (every period's lines, each at its best
+            # headway) so its coverage spans every period's reachable pairs -- an AM-only
+            # pass left structural fare=0 on the 7-20% of off-peak pairs AM cannot reach.
+            # Fares are period-invariant (Cube's own are 79-99% identical to the cent on
+            # jointly-reachable pairs across periods), so union-path fares hold everywhere.
             params = _skim_params(linehaul, access, egress, spread_window)
             if rt not in fare_cache:
-                p0 = "AM"
-                links = _assemble(ride_links_by_period[p0], sup)
+                links = _assemble(ride_u, sup)
                 gf = build_transit_graph(
-                    links, headways_by_period[p0], params,
+                    links, hw_u, params,
                     n_zones=n_zones, fares=fares, fare_states="operator",
                     access_mode=amode, egress_mode=emode)
                 fare_cache[rt] = skim_transit(
@@ -152,10 +157,36 @@ def skim_all_runs(
                 sk = skim_transit(
                     g, linehaul=linehaul, fares=fares, n_zones=n_zones, threads=threads,
                     wait_perceive=SKIM_WAIT_PERCEIVE,
-                    max_perceived_min=SKIM_MAXPATH_PERCEIVED)
+                    max_perceived_min=SKIM_MAXPATH_PERCEIVED, rail_curve_fallback=True)
+                # exact union-pass fare where available; LOS fare (XFARE + distance
+                # curve) fills the few pairs the union pass cannot reach
+                fare_p = np.where(fare_cache[rt] > 0, fare_cache[rt], sk["FARE"])
                 out.update(pack_run_matrices(access, linehaul, egress, period, sk,
-                                             fare=fare_cache[rt]))
+                                             fare=fare_p))
     return out
+
+
+def _union_service(ride_links_by_period: dict, headways_by_period: dict):
+    """Best-service network for the once-per-run-type fare pass.
+
+    Union of every period's line set, each line at its minimum headway across periods;
+    ride times come from AM where the line runs then, else from the first period that
+    has it (fares do not depend on ride time, only on reach and boarding structure).
+    """
+    hw: dict = {}
+    for per_hw in headways_by_period.values():
+        for ln, h in per_hw.items():
+            if ln not in hw or h < hw[ln]:
+                hw[ln] = h
+    frames: list[pd.DataFrame] = []
+    have: set = set()
+    for period in ("AM",) + tuple(p for p in PERIODS if p != "AM"):
+        r = ride_links_by_period[period]
+        extra = r if not have else r[~r["name"].isin(have)]
+        if len(extra):
+            frames.append(extra)
+            have |= set(extra["name"].unique())
+    return pd.concat(frames, ignore_index=True), hw
 
 
 def _assemble(ride: pd.DataFrame, support: pd.DataFrame) -> pd.DataFrame:

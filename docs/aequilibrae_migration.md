@@ -310,10 +310,15 @@ combination weight):
 toward Cube's MAXDIFF = 20 combine window) and repays the removed wait share
 deterministically per line. It is the deliberate accommodation standing in for COMBINE.
 Known bias: at stops where several patterns share the window, the per-line deterministic
-slice does not shrink with the combined headway, so boarding there is charged slightly
-more than Cube's combined service; at transfers to sparse modes this is bounded by the
-IWAITMAX cap (6.2). Deterministic best-path (window 0) was tested and is strictly worse
-against Cube (rail time -7.8% vs -1.4% at 1.5).
+slice does not shrink with the combined headway, so boarding there is charged more than
+Cube's combined service; at transfers to capped modes this is bounded by the IWAITMAX cap
+(6.2), on sparse uncapped modes (early-morning express) it over-reports transfer waits.
+The bias was bracketed experimentally on the worst cell (express drive-egress, early
+morning): the per-line slice gives +29% transfer wait, dividing by all lines at the stop
+over-corrects to -23%; Cube's COMBINE sits between because it merges only lines within
++-5 minutes of the fastest run. Reproducing that run-time window in the slice is the
+identified refinement if these cells need to close. Deterministic best-path (window 0)
+was tested and is strictly worse against Cube (rail time -7.8% vs -1.4% at 1.5).
 
 ### 6.4 Fares
 
@@ -324,13 +329,24 @@ remains for line-hauls with fare matrices. AM validation: local 0.0% r 0.98, lig
 rail/ferry +0.2% r 0.99, express -0.8% r 0.97, heavy rail +1.2% r 0.94, commuter -9.1%
 r 0.71 (the composition effect of 6.1a; the fare arithmetic on matched paths is exact).
 
-Off-peak fare cells degrade (to -37%, correlations to 0.01) because one AM fare pass is
-cached across periods while 7-20% of each other period's reachable pairs are
-AM-unreachable and receive a structural zero. Verified against Cube's own skims that fares
-are period-invariant on jointly-reachable pairs (79-99% identical to the cent), so the AM
-values are correct where defined; the zeros are the gap. This is a real demand exposure,
-not just a validation artifact. Fix in progress: per-period fare passes, enabled by
-pruning the fare graph's dead station copies.
+Off-peak fare cells originally degraded (to -37%, correlations to 0.01) because one AM
+fare pass was cached across periods while 7-20% of each other period's reachable pairs
+are AM-unreachable and received a structural zero. Verified against Cube's own skims that
+fares are period-invariant on jointly-reachable pairs (79-99% identical to the cent), so
+the AM values are correct where defined; the zeros were the gap -- a real demand exposure
+(free transit), not just a validation artifact. Fixed two ways, in precedence order:
+(1) the once-per-run-type fare pass now runs on the union-service network (every period's
+lines, each at its minimum headway), so its coverage spans every period's reachable pairs
+-- off-peak coverage zeros fall to 0-4% (peak periods) and fare quality becomes uniform
+across periods at the AM level; (2) the few pairs even the union pass cannot reach
+(premium mode leaves the strategy; 9-12% in the smallest periods) fall back to the LOS
+pass's fare with the fitted rail distance curve -- approximate, but bounded, and it
+eliminates the zeros (worst cell, commuter evening: -21.8% at r 0.26 before, -12.3% at
+r 0.58 after; covered-pair quality -9.5% r 0.70, the 6.1a composition residual). Note the
+per-period exact alternative (75 fare passes) was measured infeasible: the fare graph's
+cost is the operator-state multiplier (~25-30 distinct fare rows x boarding structure,
+2.9M vertices / 19M edges, ~29 min per pass), not the rail station copies, which are
+already pruned to each line's own stations.
 
 ### 6.5 Reporting conventions
 

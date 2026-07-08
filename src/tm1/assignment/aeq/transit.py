@@ -254,11 +254,23 @@ def build_transit_graph(
         bus_keys = [k for k in obidx if k not in set(rail_keys)]
         bus_i = {k: i for i, k in enumerate(bus_keys)}
         rail_i = {k: i for i, k in enumerate(rail_keys)}
-        fare_stations = sorted({int(k.split("|")[1]) for k in rail_keys})
-        stn_idx = {s: i for i, s in enumerate(fare_stations)}
-        nS, nb = len(stn_idx), len(bus_keys)
+        # per-LINE fare stations: a rail onboard vertex can only have boarded at a station
+        # on its own line, so its copies span that line's stops -- not the whole fare band
+        # (the band pools operators: all-band copies were ~4-8x dead vertices/edges).
+        line_stns: dict[str, list] = {}
+        for k in rail_keys:
+            ln, nd = k.split("|")
+            line_stns.setdefault(ln, set()).add(int(nd))
+        line_stns = {ln: sorted(v) for ln, v in line_stns.items()}
+        line_sidx = {ln: {s: i for i, s in enumerate(v)} for ln, v in line_stns.items()}
+        key_off: dict[str, int] = {}                          # copy-block offset per key
+        _tot = 0
+        for k in rail_keys:
+            key_off[k] = _tot
+            _tot += len(line_stns[k.split("|")[0]])
+        nb = len(bus_keys)
         _rail0 = o0 + nb * (n_layers - 1)                     # rail onboard block start
-        n_vertices = _rail0 + len(rail_keys) * (n_layers - 1) * nS
+        n_vertices = _rail0 + _tot * (n_layers - 1)
     else:
         n_vertices = o0 + len(obidx) * (n_layers - 1)
 
@@ -289,8 +301,10 @@ def build_transit_graph(
         out = np.empty(len(keys), dtype=np.int64)
         for i, k in enumerate(keys):
             if k in rail_i:
-                s = stn_idx[int(board[i])] if board is not None else 0
-                out[i] = _rail0 + (rail_i[k] * (n_layers - 1) + (j - 1)) * nS + s
+                ln = k.split("|")[0]
+                nsl = len(line_stns[ln])
+                s = line_sidx[ln][int(board[i])] if board is not None else 0
+                out[i] = _rail0 + key_off[k] * (n_layers - 1) + (j - 1) * nsl + s
             else:
                 out[i] = o0 + bus_i[k] * (n_layers - 1) + (j - 1)
         return out
@@ -380,14 +394,15 @@ def build_transit_graph(
             add(ov(tn[bm], ta[bm], j), ov(tn[bm], tb[bm], j), tt[bm], INF_FREQ,
                 sk_edge=tt[bm], ivt=t_actual[bm], keyivt=ivt_key[bm],
                 ferryivt=ivt_ferry[bm], keydist=key_dist[bm], fare=fl[bm])
-        if is_fare.any():                              # rail: one copy per boarding station
-            rm = is_fare
-            for s in fare_stations:
-                sarr = np.full(int(rm.sum()), s)
-                add(ov(tn[rm], ta[rm], j, sarr), ov(tn[rm], tb[rm], j, sarr),
-                    tt[rm], INF_FREQ, sk_edge=tt[rm], ivt=t_actual[rm],
-                    keyivt=ivt_key[rm], ferryivt=ivt_ferry[rm],
-                    keydist=key_dist[rm], fare=fl[rm])
+        if is_fare.any():                # rail: one copy per boarding station OF ITS LINE
+            for ln in np.unique(tn[is_fare]):
+                rm = is_fare & (tn == ln)
+                for s in line_stns[ln]:
+                    sarr = np.full(int(rm.sum()), s)
+                    add(ov(tn[rm], ta[rm], j, sarr), ov(tn[rm], tb[rm], j, sarr),
+                        tt[rm], INF_FREQ, sk_edge=tt[rm], ivt=t_actual[rm],
+                        keyivt=ivt_key[rm], ferryivt=ivt_ferry[rm],
+                        keydist=key_dist[rm], fare=fl[rm])
 
     # boarding (charges pens[k] for the (k+1)-th boarding) and alighting
     freq_scale = 2.0 / params.wait_perceive     # SF wait 1/freq == perceived half-headway
@@ -439,6 +454,11 @@ def build_transit_graph(
     _, freq_xfer = _board_cost_freq(s_hw)                  # transfer kernel wait: raw headway
     cost_xfer_capped = cost_first                          # deterministic slice stays capped
     half_first, half_xfer = hw_first / 2.0, s_hw / 2.0    # iwait/xwait markers
+    # Known bias (divergence ledger 6.3): the deterministic spread slice is charged per
+    # LINE; Cube's COMBINE charges the combined service (lines within +-5 min run time).
+    # On sparse uncapped modes this over-reports transfer waits (+29% worst cell);
+    # dividing by ALL lines at the node instead over-corrects to -23% -- the faithful
+    # normalization is COMBINE's run-time window, a candidate refinement.
 
     def _board(from_v, k, first, fare_arr):
         start = sum(len(f) for f in frames)
@@ -482,11 +502,13 @@ def build_transit_graph(
                     np.zeros(int((~is_r).sum())), INF_FREQ)
             if is_r.any():                             # rail alight: charge FAREMAT[board][alight]
                 rnm, rmn = mnm[is_r], mn[is_r]
-                for s in fare_stations:                # one alight edge per boarding station
-                    sarr = np.full(len(rmn), s)
-                    farr = np.array([fm_lh.get((s, int(t)), 0.0) for t in rmn])
-                    add(ov(rnm, rmn, j, sarr), bv(rmn, j, g),
-                        np.zeros(len(rmn)), INF_FREQ, fare=farr)
+                for ln in np.unique(rnm):              # one alight edge per boarding station
+                    lm2 = rnm == ln                    # of the alighting LINE
+                    for s in line_stns[ln]:
+                        sarr = np.full(int(lm2.sum()), s)
+                        farr = np.array([fm_lh.get((s, int(t)), 0.0) for t in rmn[lm2]])
+                        add(ov(rnm[lm2], rmn[lm2], j, sarr), bv(rmn[lm2], j, g),
+                            np.zeros(int(lm2.sum())), INF_FREQ, fare=farr)
 
     edges = pd.concat(frames, ignore_index=True)
     board_rows = {k: np.array(v) for k, v in board_line_rows.items()}
@@ -535,6 +557,7 @@ def skim_transit(
     threads: int | None = None,
     max_path_min: float = 180.0,
     max_perceived_min: float | None = None,
+    rail_curve_fallback: bool = False,
 ) -> dict[str, np.ndarray]:
     """Skim the layered SF graph into Cube-style component matrices (actual units).
 
@@ -613,7 +636,12 @@ def skim_transit(
     fare = zmat("fare")
     # exact station-to-station faremat is accumulated in-graph (fare column); fall back to the
     # distance curve only for line-hauls without a faremat.
-    if fares is not None and (linehaul or "") not in getattr(fares, "faremat", {}):
+    # rail fare: exact FAREMAT is charged on the operator fare graph's alight edges; the
+    # distance curve covers line-hauls without a fare matrix.  rail_curve_fallback adds
+    # the curve on LOS graphs for faremat line-hauls too -- used to fill the few pairs
+    # the union-service fare pass cannot reach (fare there would otherwise be 0).
+    if fares is not None and ((linehaul or "") not in getattr(fares, "faremat", {})
+                              or rail_curve_fallback):
         fare = fare + fares.rail_fare(linehaul, zmat("keydist"))
 
     dtim, ddist = zmat("dtim"), zmat("ddist")     # drive access/egress time / distance
