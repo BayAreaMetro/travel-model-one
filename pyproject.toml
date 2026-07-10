@@ -65,10 +65,15 @@ lint.ignore = [
     "FIX002",  # TODOs are tracked in code intentionally
     "TD002",   # TODO author not required
     "TD003",   # TODO issue link not required
+    "TC001",   # no `if TYPE_CHECKING:` import blocks -- plain runtime imports preferred
+    "TC002",   # (as above)
+    "TC003",   # (as above)
+    "FA100",   # no `from __future__ import annotations` -- Python floor is 3.11
+    "FA102",   # (as above)
 ]
 lint.pydocstyle.convention = "google"
 exclude = ["*.html", "uv.lock", "renv", "utilities", "core", "model-files"]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/**" = ["T201", "INP001", "D103"]    # Allow print(); standalone scripts, not packages; no docstrings needed
+"scripts/**" = ["T201", "INP001", "D103", "PLR0915"]  # print(), not packages, no docstrings, long mains OK in standalone scripts
 "tests/**" = ["T201", "S101", "INP001"]  # Allow print(), assert; not packages

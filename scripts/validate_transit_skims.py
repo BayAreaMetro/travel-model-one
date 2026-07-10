@@ -18,7 +18,6 @@ Monitor from another shell:
 quick ~20-minute LOS-only pass.  ``--runs wlk_loc_wlk,wlk_hvy_wlk`` limits the battery.
 """
 
-from __future__ import annotations
 
 import argparse
 import gc
@@ -37,11 +36,18 @@ import pandas as pd
 
 from cubeio import read_tpp
 from tm1.assignment.aeq.fares import load_fares
-from tm1.assignment.aeq.transit import build_transit_graph, skim_transit, TransitParams
+from tm1.assignment.aeq.transit import TransitParams, build_transit_graph, skim_transit
 from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
 from tm1.assignment.aeq.transit_skims import (
-    ACCESS_EGRESS, LINEHAULS, PERIODS, SKIM_MAXPATH_PERCEIVED, SKIM_WAIT_PERCEIVE,
-    _assemble, _skim_params, _union_service)
+    ACCESS_EGRESS,
+    LINEHAULS,
+    PERIODS,
+    SKIM_MAXPATH_PERCEIVED,
+    SKIM_WAIT_PERCEIVE,
+    _assemble,
+    _skim_params,
+    _union_service,
+)
 
 # component -> (reference trnskm matrix, scale to actual units)
 _REFKEY = {"TOTIVT": ("ivt", 100), "IWAIT": ("iwait", 100), "XWAIT": ("xwait", 100),

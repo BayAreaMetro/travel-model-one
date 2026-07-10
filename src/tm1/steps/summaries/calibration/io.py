@@ -9,8 +9,6 @@ names on load via :data:`COLUMN_MAPS` so that downstream summarize functions
 never need to know the source format.
 """
 
-from __future__ import annotations
-
 import logging
 import time
 from pathlib import Path

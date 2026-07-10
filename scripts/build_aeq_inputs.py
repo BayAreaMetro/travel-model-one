@@ -26,8 +26,6 @@ The reference run is used purely as a data source for one-time extraction; nothi
 here runs Cube.
 """
 
-from __future__ import annotations
-
 import argparse
 import shutil
 import sys

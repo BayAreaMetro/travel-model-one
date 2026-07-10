@@ -18,15 +18,13 @@ lines distribute their ``RUNTIME`` over links proportional to distance (falling 
 to the converted reference link times where RUNTIME is absent).
 """
 
-from __future__ import annotations
-
 import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-_LINE_RE = re.compile(r"LINE\s+(NAME=.*?)(?=LINE\s+NAME=|\Z)", re.S | re.I)
+_LINE_RE = re.compile(r"LINE\s+(NAME=.*?)(?=LINE\s+NAME=|\Z)", re.DOTALL | re.IGNORECASE)
 _ATTR_RE = re.compile(r"(\w+(?:\[\d\])?)\s*=\s*(\"[^\"]*\"|[^,\s]+)")
 
 # bus in-vehicle delay (min/mile) by area type, applied off-freeway (PrepHwyNet.job);
@@ -68,7 +66,7 @@ def bus_time_table(links: pd.DataFrame, period: str) -> dict:
     )
     a = links["a"].to_numpy(int)
     b = links["b"].to_numpy(int)
-    return {(int(x), int(y)): float(t) for x, y, t in zip(a, b, bus)}
+    return {(int(x), int(y)): float(t) for x, y, t in zip(a, b, bus, strict=False)}
 
 
 def parse_lin(path: str | Path) -> pd.DataFrame:
@@ -95,8 +93,7 @@ def parse_lin(path: str | Path) -> pd.DataFrame:
             node_txt = re.sub(r"\b(?!N\b)\w+(?:\[\d\])?\s*=\s*(\"[^\"]*\"|[^,\s]+)",
                               "", node_txt)
             node_txt = re.sub(r"\bN\s*=", "", node_txt)
-            for tok in re.findall(r"-?\d+", node_txt):
-                nodes.append(int(tok))
+            nodes.extend(int(tok) for tok in re.findall(r"-?\d+", node_txt))
         freqs = [float(attrs.get(f"FREQ[{i}]", 0) or 0) for i in range(1, 6)]
         rows.append({
             # TRNBUILD/Wrangler uppercase line names in built networks
@@ -136,7 +133,7 @@ def build_ride_links(
         Optional ``(a, b, line-mode-bucket) -> minutes`` fallback for rail links
         of lines without RUNTIME (from the one-time converted reference).
 
-    Returns
+    Returns:
     -------
     (links, headways): links has ``A, B, time, mode, stopA, stopB, name``;
     headways maps line name -> headway for lines running this period.
@@ -156,17 +153,20 @@ def build_ride_links(
             (ln.name, ln.nodes), (f"{ln.name}-", ln.nodes[::-1])]
         for dname, nodes in seqs:
             headways[dname] = hw
-            a = np.abs(np.array(nodes[:-1])); b = np.abs(np.array(nodes[1:]))
+            a = np.abs(np.array(nodes[:-1]))
+            b = np.abs(np.array(nodes[1:]))
             stop_a = (np.array(nodes[:-1]) > 0).astype(int)
             stop_b = (np.array(nodes[1:]) > 0).astype(int)
-            dist = np.array([link_dist.get((x, y), np.nan) for x, y in zip(a, b)])
+            ab = list(zip(a, b, strict=False))
+            dist = np.array([link_dist.get(xy, np.nan) for xy in ab])
             if ln.mode < 100:                       # street-running: congested times
-                t = np.array([street_time.get((x, y), np.nan) for x, y in zip(a, b)])
+                t = np.array([street_time.get(xy, np.nan) for xy in ab])
             elif np.isfinite(ln.runtime):           # rail/ferry with line RUNTIME
-                w = np.where(np.isfinite(dist), dist, np.nanmean(dist) if np.isfinite(dist).any() else 1.0)
+                w = np.where(np.isfinite(dist), dist,
+                             np.nanmean(dist) if np.isfinite(dist).any() else 1.0)
                 t = ln.runtime * w / w.sum()
             else:
-                t = np.array([(ref_time or {}).get((x, y), np.nan) for x, y in zip(a, b)])
+                t = np.array([(ref_time or {}).get(xy, np.nan) for xy in ab])
             out.append(pd.DataFrame({
                 "A": a, "B": b, "time": t, "mode": ln.mode,
                 "stopA": stop_a, "stopB": stop_b, "distance": dist, "name": dname,
@@ -177,8 +177,9 @@ def build_ride_links(
     # 20 mph distance-based estimate. NaN times must never reach the solver.
     miss = links["time"].isna()
     if miss.any() and ref_time:
-        links.loc[miss, "time"] = [ref_time.get((a, b), np.nan)
-                                   for a, b in zip(links.loc[miss, "A"], links.loc[miss, "B"])]
+        links.loc[miss, "time"] = [
+            ref_time.get((a, b), np.nan)
+            for a, b in zip(links.loc[miss, "A"], links.loc[miss, "B"], strict=False)]
         miss = links["time"].isna()
     if miss.any():
         links.loc[miss, "time"] = links.loc[miss, "distance"].fillna(0.25) / (20.0 / 60.0)
@@ -192,7 +193,8 @@ def assemble_run_network(
     """Concatenate ride + support links into the table build_transit_graph expects."""
     sup = support_links.rename(columns=str.strip)
     cols = ["A", "B", "time", "mode", "stopA", "stopB", "distance", "name"]
-    sup = sup.assign(stopA=0, stopB=0, name=None)[[c for c in cols if c in sup.columns or c in ("stopA", "stopB", "name")]]
+    keep = [c for c in cols if c in sup.columns or c in ("stopA", "stopB", "name")]
+    sup = sup.assign(stopA=0, stopB=0, name=None)[keep]
     for c in cols:
         if c not in sup.columns:
             sup[c] = np.nan

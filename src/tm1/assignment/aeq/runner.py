@@ -12,8 +12,6 @@ congested highway times, and merged into ``skims.omx`` alongside the highway mat
 a fully Cube-free closed loop.  Without it, existing transit matrices are preserved.
 """
 
-from __future__ import annotations
-
 import logging
 from pathlib import Path
 
@@ -27,7 +25,7 @@ from tm1.assignment.aeq.fares import load_fares
 from tm1.assignment.aeq.highway import equilibrium_assignment
 from tm1.assignment.aeq.network import build_cube_graph
 from tm1.assignment.aeq.skim import highway_skims
-from tm1.assignment.aeq.transit_network import bus_time_table, build_ride_links, parse_lin
+from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
 from tm1.assignment.aeq.transit_skims import skim_all_runs
 from tm1.assignment.aeq.vdf import congested_time
 
@@ -137,9 +135,11 @@ def _transit_skims(
     """
     lines = parse_lin(transit_dir / "transitLines.lin")
     ld = pd.read_parquet(transit_dir / "link_distance.parquet")
-    link_dist = {(int(a), int(b)): float(x) for a, b, x in zip(ld.A, ld.B, ld.distance)}
+    link_dist = {(int(a), int(b)): float(x)
+                 for a, b, x in zip(ld.A, ld.B, ld.distance, strict=False)}
     rtd = pd.read_parquet(transit_dir / "ref_ride_time.parquet")
-    ref_time = {(int(a), int(b)): float(t) for a, b, t in zip(rtd.A, rtd.B, rtd.time)}
+    ref_time = {(int(a), int(b)): float(t)
+                for a, b, t in zip(rtd.A, rtd.B, rtd.time, strict=False)}
     sl = pd.read_parquet(transit_dir / "support_links.parquet")
     support_by_runtype = {rt: sl[sl["run_type"] == rt] for rt in sl["run_type"].unique()}
     fares = load_fares(transit_dir / "fares", link_dist, lines)
@@ -152,8 +152,21 @@ def _transit_skims(
         hw_by_period[period] = hw
 
     fare_cache = _load_fare_cache(fare_cache_path)
+    # Both passes scale via worker concurrency (small sparse graphs): the 75 LOS skims
+    # ~1.9x at ~6 workers x 8 threads, the 15 one-time fare skims ~3x at 4 workers x 12
+    # threads (~7 min on TM2-B).  Split cores accordingly; small boxes run sequentially.
+    if cores and cores >= 16:
+        workers = min(6, cores // 8)
+        threads = max(4, cores // workers)
+        fare_workers = min(4, cores // 12)
+        fare_threads = max(8, cores // fare_workers)
+    else:
+        workers, threads = 1, cores
+        fare_workers, fare_threads = 1, cores
     mats = skim_all_runs(ride_by_period, support_by_runtype, hw_by_period, fares,
-                         n_zones=n_zones, threads=cores, fare_cache=fare_cache)
+                         n_zones=n_zones, threads=threads, fare_cache=fare_cache,
+                         workers=workers, fare_threads=fare_threads,
+                         fare_workers=fare_workers)
     _save_fare_cache(fare_cache_path, fare_cache)
     log.info("transit skims: %d matrices (%d run types cached fare)",
              len(mats), len(fare_cache))

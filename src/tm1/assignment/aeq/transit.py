@@ -45,10 +45,6 @@ from aequilibrae.paths.cython.public_transport import HyperpathGenerating
 
 INF_FREQ = 1.0e20
 
-# link mode codes (TransitAssign.job): walk access / egress / stop-to-stop transfer /
-# station walk funnel (aux node <-> platform; state-preserving in the NOX rules)
-WALK_MODES = (1, 6, 3, 5)
-
 # Cube's escalating boarding penalties (perceived min); index = boardings so far.
 BOARD_PENALTIES = (0.0, 30.0, 45.0)   # legacy default (assignment); skims use the vectors below
 # Cube skim boardpen (TransitSkims.job): walk/walk access -> 0,20,...; any drive leg -> 0,30,...
@@ -134,7 +130,6 @@ def build_transit_graph(
     headways: dict,
     params: TransitParams | None = None,
     *,
-    walk_modes: tuple = WALK_MODES,
     n_zones: int = 1475,
     fares=None,
     fare_states: str = "none",
@@ -145,7 +140,7 @@ def build_transit_graph(
 
     *links* has one row per directional link (``A, B, time, mode, stopA, stopB,
     name`` and optional ``distance``); transit links have ``mode >= 10`` and a line
-    ``name``, walk links carry ``mode`` in *walk_modes*.  *headways* maps line name ->
+    ``name``, walk/support links carry ``mode`` < 10.  *headways* maps line name ->
     headway (minutes).  *fares* is an optional :class:`fares.TransitFares`; when given,
     the ``fare`` skim column is populated (boarding ``XFARE`` + ``farelinks``) and
     ``keydist`` carries key-mode in-vehicle distance for the rail distance-curve fare.
@@ -158,7 +153,10 @@ def build_transit_graph(
       need fare.  Transfer fare is not resolved (kept 0).
     * ``"operator"`` -- one B(k)/C(k) copy per *present transit mode* (operator), so
       ``XFARE[prev_mode][cur_mode]`` is exact -- matches Cube.  Larger graph; fares are
-      static, so this pass is run once and cached rather than every iteration.
+      static, so this pass is run once and cached rather than every iteration.  Only the
+      REACHABLE (node, operator) state pairs are materialized (you can only "remember"
+      an operator whose line stops within a transfer walk), keeping the graph ~20x
+      smaller than the dense product with identical results.
     """
     params = params or TransitParams()
     pens = np.asarray(params.board_penalties, dtype=float)
@@ -216,9 +214,25 @@ def build_transit_graph(
 
     # one boarding point per (line, stop) -- see module docstring.  mode is carried so
     # the boarding fare (XFARE[access][line_mode]) can be charged per boarding edge.
-    sa = transit.loc[transit["stopA"] == 1, ["name", "A", "hw", "mode"]].rename(columns={"A": "node"})
-    sb = transit.loc[transit["stopB"] == 1, ["name", "B", "hw", "mode"]].rename(columns={"B": "node"})
+    sa = (transit.loc[transit["stopA"] == 1, ["name", "A", "hw", "mode"]]
+          .rename(columns={"A": "node"}))
+    sb = (transit.loc[transit["stopB"] == 1, ["name", "B", "hw", "mode"]]
+          .rename(columns={"B": "node"}))
     stops = pd.concat([sa, sb]).drop_duplicates(["name", "node"]).reset_index(drop=True)
+
+    # walk edges by NOX role: access (1) -> A; egress (6) from B(k) only;
+    # transfer walk (3) B(k) -> C(k) only. Other walk modes (funnels) state-preserving.
+    # (classified before vertex allocation: the reachable-state closure needs them)
+    wa, wb = walk["A"].to_numpy(), walk["B"].to_numpy()
+    w_actual = walk["time"].to_numpy()
+    w_dist = walk["distance"].to_numpy(dtype=float)
+    wt = w_actual * params.walk_factor
+    wm = walk["mode"].to_numpy()
+    acc = (wm == access_mode) & (wa <= n_zones) & (wb > n_zones)
+    egr = (wm == egress_mode) & (wa > n_zones) & (wb <= n_zones)
+    xfr = (wm == 3) & (wa > n_zones) & (wb > n_zones)
+    oth = ~(acc | egr | xfr)            # funnels etc.: preserve state (aux walk)
+    o_nc = oth & (wa > n_zones) & (wb > n_zones)
 
     # ---- vertex ids ----
     # stop states x layers: A (walk-accessed, layer 0, board-only), then per layer
@@ -231,14 +245,55 @@ def build_transit_graph(
     cidx = {c: i for i, c in enumerate(centroids)}
     pnodes = sorted({int(x) for x in all_nodes if x > n_zones})
     pidx = {n: i for i, n in enumerate(pnodes)}
+    pn = len(pidx)
     obk = pd.unique(pd.concat([transit["name"] + "|" + transit["A"].astype(str),
                                transit["name"] + "|" + transit["B"].astype(str)]))
     obidx = {k: i for i, k in enumerate(obk)}
-    n_states = 1 + 2 * (n_layers - 1) * G       # A, B(1..L-1, g), C(1..L-1, g)
-    _c0 = 1 + (n_layers - 1) * G                 # offset of the first C state
+
+    # ---- reachable (node, fare-group) states ----
+    # B(n, k, g) is enterable only by alighting from a group-g line at n or by a funnel
+    # walk from a node that can; C(n, k, g) only by a transfer walk out of an enterable
+    # B (then funnels).  States outside this closure have no in-edges -- dead weight --
+    # so the operator fare graph materializes only the reachable (node, g) pairs
+    # (measured ~24x fewer B/C states on the com run; results are identical).  LOS
+    # graphs (G=1) admit every state, preserving the validated dense topology exactly.
+    s_grp = np.array([fare_state_of[int(m)] for m in stops["mode"]])
+    pi_s = np.array([pidx[int(n)] for n in stops["node"]], dtype=np.int64)
+    pi_egr = np.array([pidx[int(n)] for n in wa[egr]], dtype=np.int64)
+    xa = np.array([pidx[int(n)] for n in wa[xfr]], dtype=np.int64)
+    xb = np.array([pidx[int(n)] for n in wb[xfr]], dtype=np.int64)
+    fa = np.array([pidx[int(n)] for n in wa[o_nc]], dtype=np.int64)
+    fb = np.array([pidx[int(n)] for n in wb[o_nc]], dtype=np.int64)
+    if fare_states == "operator" and fares is not None:
+        def _close(adm):                # fixpoint over funnel walks (short chains)
+            while True:
+                n0 = int(adm.sum())
+                np.logical_or.at(adm, fb, adm[fa])
+                if int(adm.sum()) == n0:
+                    return adm
+
+        admB = np.zeros((pn, G), dtype=bool)
+        admB[pi_s, s_grp] = True                       # alight from a group-g line
+        admB = _close(admB)
+        admC = np.zeros((pn, G), dtype=bool)
+        np.logical_or.at(admC, xb, admB[xa])           # transfer walk out of B
+        admC = _close(admC)
+    else:
+        admB = np.ones((pn, G), dtype=bool)
+        admC = np.ones((pn, G), dtype=bool)
+
+    # dense ids for the admitted states: each admitted (node, g) pair owns a block of
+    # KL = n_layers-1 consecutive vertices (one per layer k = 1..L-1)
+    KL = n_layers - 1
+    b_pair = np.full((pn, G), -1, dtype=np.int64)
+    b_pair[admB] = np.arange(int(admB.sum()))
+    c_pair = np.full((pn, G), -1, dtype=np.int64)
+    c_pair[admC] = np.arange(int(admC.sum()))
     d0 = len(cidx)                              # destination copies of the centroids
-    s0 = d0 + len(cidx)
-    o0 = s0 + len(pidx) * n_states
+    s0 = d0 + len(cidx)                         # A states: one per physical node
+    b0 = s0 + pn
+    c0v = b0 + int(admB.sum()) * KL
+    o0 = c0v + int(admC.sum()) * KL
 
     # premier-rail boarding-station tracking, for the exact FAREMAT[board][alight] OD fare.
     # ONLY when a faremat exists for this line-haul (rail/ferry -- bus fare is a flat boarding
@@ -249,7 +304,7 @@ def build_transit_graph(
     track_board = bool(fare_states != "none" and fares is not None and _fb
                        and (params.linehaul or "") in getattr(fares, "faremat", {}))
     if track_board:
-        _lm = dict(zip(transit["name"], transit["mode"]))     # line -> mode
+        _lm = dict(zip(transit["name"], transit["mode"], strict=False))     # line -> mode
         rail_keys = [k for k in obidx if _fb[0] <= _lm.get(k.split("|")[0], 0) <= _fb[1]]
         bus_keys = [k for k in obidx if k not in set(rail_keys)]
         bus_i = {k: i for i, k in enumerate(bus_keys)}
@@ -280,24 +335,21 @@ def build_transit_graph(
     def dvx(nodes):                             # destination centroid vertices
         return np.array([d0 + cidx[int(n)] for n in nodes])
 
-    def _stop(nodes, state_off):
-        return s0 + np.array([pidx[int(n)] for n in nodes]) * n_states + state_off
-
     def av(nodes):                      # state A: walk-accessed, 0 boardings
-        return _stop(nodes, 0)
+        return s0 + np.array([pidx[int(n)] for n in nodes])
 
-    def bv(nodes, k, g):                # state B(k, g): alighted from group-g line
-        return _stop(nodes, 1 + (k - 1) * G + g)
+    def bv(pi, k, g):                   # state B(k, g); pi = pidx array, (n, g) admitted
+        return b0 + b_pair[pi, g] * KL + (k - 1)
 
-    def cvw(nodes, k, g):               # state C(k, g): after transfer walk, group g
-        return _stop(nodes, _c0 + (k - 1) * G + g)
+    def cvw(pi, k, g):                  # state C(k, g); pi = pidx array, (n, g) admitted
+        return c0v + c_pair[pi, g] * KL + (k - 1)
 
     def ov(names, nodes, j, board=None):
         if not track_board:
-            return o0 + np.array([obidx[f"{a}|{int(b)}"] for a, b in zip(names, nodes)]) \
-                * (n_layers - 1) + (j - 1)
+            keys = [obidx[f"{a}|{int(b)}"] for a, b in zip(names, nodes, strict=False)]
+            return o0 + np.array(keys) * (n_layers - 1) + (j - 1)
         # bus onboard: (line-stop, layer); rail onboard: (line-stop, layer, boarding-station)
-        keys = [f"{a}|{int(b)}" for a, b in zip(names, nodes)]
+        keys = [f"{a}|{int(b)}" for a, b in zip(names, nodes, strict=False)]
         out = np.empty(len(keys), dtype=np.int64)
         for i, k in enumerate(keys):
             if k in rail_i:
@@ -319,19 +371,8 @@ def build_transit_graph(
             d[c] = v if hasattr(v, "__len__") else np.full(n, v, dtype=float)
         frames.append(pd.DataFrame(d))
 
-    # walk edges by NOX role: access (1) -> A; egress (6) from B(k) only;
-    # transfer walk (3) B(k) -> C(k) only. Other walk modes (funnels) state-preserving.
-    # skims: actual walk minutes to wacc/wegr/waux by role; sk_edge = perceived (x factor)
-    wa, wb = walk["A"].to_numpy(), walk["B"].to_numpy()
-    w_actual = walk["time"].to_numpy()
-    w_dist = walk["distance"].to_numpy(dtype=float)
-    wt = w_actual * params.walk_factor
-    wm = walk["mode"].to_numpy()
-    acc = (wm == access_mode) & (wa <= n_zones) & (wb > n_zones)
-    egr = (wm == egress_mode) & (wa > n_zones) & (wb <= n_zones)
-    xfr = (wm == 3) & (wa > n_zones) & (wb > n_zones)
-    oth = ~(acc | egr | xfr)            # funnels etc.: preserve state (aux walk)
-    o_nc = oth & (wa > n_zones) & (wb > n_zones)
+    # walk-edge skims: actual walk minutes to wacc/wegr/waux by role; sk_edge =
+    # perceived (x walk factor)
     acc_drive = access_mode in (2, 7)   # drive access -> dtim/ddist not wacc
     egr_drive = egress_mode in (2, 7)
     _acc_cols = ({"dtim": w_actual[acc], "ddist": w_dist[acc]} if acc_drive
@@ -340,24 +381,30 @@ def build_transit_graph(
                  else {"wegr": w_actual[egr]})
     if acc.any():
         add(cv(wa[acc]), av(wb[acc]), wt[acc], INF_FREQ, sk_edge=wt[acc], **_acc_cols)
-    # egress / transfer-walk / funnel emanate from every mode-group copy of B(k)/C(k);
-    # walking never changes the last-ridden mode, so the group g is preserved.
-    for k in range(1, n_layers):
-        for g in range(G):
-            if egr.any():
-                add(bv(wa[egr], k, g), dvx(wb[egr]), wt[egr], INF_FREQ,
-                    sk_edge=wt[egr], **_egr_cols)
-            if xfr.any():
-                add(bv(wa[xfr], k, g), cvw(wb[xfr], k, g), wt[xfr], INF_FREQ,
-                    sk_edge=wt[xfr], waux=w_actual[xfr])
-            if o_nc.any():
-                add(bv(wa[o_nc], k, g), bv(wb[o_nc], k, g), wt[o_nc], INF_FREQ,
-                    sk_edge=wt[o_nc], waux=w_actual[o_nc])
-                add(cvw(wa[o_nc], k, g), cvw(wb[o_nc], k, g), wt[o_nc], INF_FREQ,
-                    sk_edge=wt[o_nc], waux=w_actual[o_nc])
+    # egress / transfer-walk / funnel emanate from the ADMITTED mode-group copies of
+    # B(k)/C(k); walking never changes the last-ridden mode, so the group g is
+    # preserved (funnel/transfer targets admit g by the reachability closure).
+    dv_e, wt_e = dvx(wb[egr]), wt[egr]
+    wt_x, wa_x = wt[xfr], w_actual[xfr]
+    wt_f, wa_f = wt[o_nc], w_actual[o_nc]
+    for g in range(G):
+        mE, mX = admB[pi_egr, g], admB[xa, g]
+        mB, mC = admB[fa, g], admC[fa, g]
+        for k in range(1, n_layers):
+            if mE.any():
+                add(bv(pi_egr[mE], k, g), dv_e[mE], wt_e[mE], INF_FREQ,
+                    sk_edge=wt_e[mE], **{c: v[mE] for c, v in _egr_cols.items()})
+            if mX.any():
+                add(bv(xa[mX], k, g), cvw(xb[mX], k, g), wt_x[mX], INF_FREQ,
+                    sk_edge=wt_x[mX], waux=wa_x[mX])
+            if mB.any():
+                add(bv(fa[mB], k, g), bv(fb[mB], k, g), wt_f[mB], INF_FREQ,
+                    sk_edge=wt_f[mB], waux=wa_f[mB])
+            if mC.any():
+                add(cvw(fa[mC], k, g), cvw(fb[mC], k, g), wt_f[mC], INF_FREQ,
+                    sk_edge=wt_f[mC], waux=wa_f[mC])
     if o_nc.any():                       # state-A funnels (pre-first-board), no group yet
-        add(av(wa[o_nc]), av(wb[o_nc]), wt[o_nc], INF_FREQ,
-            sk_edge=wt[o_nc], waux=w_actual[o_nc])
+        add(av(wa[o_nc]), av(wb[o_nc]), wt_f, INF_FREQ, sk_edge=wt_f, waux=wa_f)
 
     # ride: onboard chains per layer 1..L-1.  skims: actual IVT to ivt (all) + keyivt /
     # ferryivt by mode band; sk_edge = perceived IVT (x ivf).
@@ -382,7 +429,7 @@ def build_transit_graph(
     if fares is not None and fares.farelinks:
         fll = fares.farelinks
         fl = np.array([fll.get((int(m), int(a), int(b)), 0.0)
-                       for m, a, b in zip(mode, ta, tb)])
+                       for m, a, b in zip(mode, ta, tb, strict=False)])
     for j in range(1, n_layers):
         if not track_board:
             add(ov(tn, ta, j), ov(tn, tb, j), tt, INF_FREQ,
@@ -411,8 +458,7 @@ def build_transit_graph(
     s_hw = stops["hw"].to_numpy()
     board_line_rows: dict[str, list] = {}
 
-    s_mode = stops["mode"].to_numpy()
-    s_grp = np.array([fare_state_of[int(m)] for m in s_mode])  # each stop's fare state
+    s_mode = stops["mode"].to_numpy()   # (s_grp / pi_s computed with the state closure)
     # first-boarding fare = XFARE[walk-access mode 1][line mode]; transfer fare from a
     # state-g line (prev mode fare_prev_mode[g]) into a stop's line = XFARE[prev][cur].
     # With fare_states="operator" this is exact per mode-pair (free for same operator,
@@ -460,54 +506,61 @@ def build_transit_graph(
     # dividing by ALL lines at the node instead over-corrects to -23% -- the faithful
     # normalization is COMBINE's run-time window, a candidate refinement.
 
-    def _board(from_v, k, first, fare_arr):
+    def _board(from_v, k, first, fare_arr, sel=None):
         start = sum(len(f) for f in frames)
         # sk_edge carries ONLY the non-wait boardpen (board_cost is wait -> stays inside
         # u - sk_edge). first vs re-boarding half-headways feed the iwait/xwait split.
-        # fare = first-boarding XFARE (from walk) or the group-g transfer fare.  board=s_node
-        # sets the rail boarding station (ignored for bus onboard) for the faremat lookup.
+        # fare = first-boarding XFARE (from walk) or the group-g transfer fare.  board=
+        # s_node sets the rail boarding station (ignored for bus onboard) for the faremat
+        # lookup.  sel restricts to the stops whose node admits the source (g) state.
         # transfers: raw headway drives the kernel frequency (real expected wait) and the
         # xwait marker (Cube reports raw transfer waits), but the deterministic spread
         # slice stays capped -- with w>1 that slice is charged per LINE, not per combined
         # service, so raw sparse headways overcharge multi-pattern stops vs Cube's COMBINE
         # (tested: raw slice collapses com recall 96.5% -> 84.9% via the 300-min cap).
-        board_cost = cost_first if first else cost_xfer_capped
-        board_freq = freq_first if first else freq_xfer
-        add(from_v, ov(s_name, s_node, k + 1, board=s_node), board_cost + pens[k], board_freq,
-            boards=1.0, sk_edge=np.full(len(stops), pens[k]),
-            w_first=(half_first if first else 0.0), w_xfer=(0.0 if first else half_xfer),
-            fare=fare_arr)
-        for i, ln in enumerate(s_name):
+        idx = np.arange(len(stops)) if sel is None else np.flatnonzero(sel)
+        board_cost = (cost_first if first else cost_xfer_capped)[idx]
+        board_freq = (freq_first if first else freq_xfer)[idx]
+        add(from_v, ov(s_name[idx], s_node[idx], k + 1, board=s_node[idx]),
+            board_cost + pens[k], board_freq,
+            boards=1.0, sk_edge=np.full(len(idx), pens[k]),
+            w_first=(half_first[idx] if first else 0.0),
+            w_xfer=(0.0 if first else half_xfer[idx]), fare=fare_arr[idx])
+        for i, ln in enumerate(s_name[idx]):
             board_line_rows.setdefault(ln, []).append(start + i)
 
     _board(av(s_node), 0, True, board_fare)     # first boarding from access state
-    for k in range(1, n_layers - 1):            # re-boarding from each group's B(k)/C(k)
-        for g in range(G):
-            _board(bv(s_node, k, g), k, False, tf_grp[g])
-            _board(cvw(s_node, k, g), k, False, tf_grp[g])
+    for g in range(G):                          # re-boarding from admitted B(k)/C(k)
+        selB, selC = admB[pi_s, g], admC[pi_s, g]
+        for k in range(1, n_layers - 1):
+            if selB.any():
+                _board(bv(pi_s[selB], k, g), k, False, tf_grp[g], selB)
+            if selC.any():
+                _board(cvw(pi_s[selC], k, g), k, False, tf_grp[g], selC)
     fm_lh = fares.faremat.get(params.linehaul or "", {}) if (track_board and fares) else {}
     for j in range(1, n_layers):                # alight from line M -> B(j, group(M))
         for g in range(G):
             m = s_grp == g
             if not m.any():
                 continue
+            pim = pi_s[m]
             if not track_board:
-                add(ov(s_name[m], s_node[m], j), bv(s_node[m], j, g),
+                add(ov(s_name[m], s_node[m], j), bv(pim, j, g),
                     np.zeros(int(m.sum())), INF_FREQ)
                 continue
             mnm, mn = s_name[m], s_node[m]
-            is_r = np.array([f"{a}|{int(b)}" in rail_i for a, b in zip(mnm, mn)])
+            is_r = np.array([f"{a}|{int(b)}" in rail_i for a, b in zip(mnm, mn, strict=False)])
             if (~is_r).any():                          # bus alight: no fare
-                add(ov(mnm[~is_r], mn[~is_r], j), bv(mn[~is_r], j, g),
+                add(ov(mnm[~is_r], mn[~is_r], j), bv(pim[~is_r], j, g),
                     np.zeros(int((~is_r).sum())), INF_FREQ)
             if is_r.any():                             # rail alight: charge FAREMAT[board][alight]
-                rnm, rmn = mnm[is_r], mn[is_r]
+                rnm, rmn, rpi = mnm[is_r], mn[is_r], pim[is_r]
                 for ln in np.unique(rnm):              # one alight edge per boarding station
                     lm2 = rnm == ln                    # of the alighting LINE
                     for s in line_stns[ln]:
                         sarr = np.full(int(lm2.sum()), s)
                         farr = np.array([fm_lh.get((s, int(t)), 0.0) for t in rmn[lm2]])
-                        add(ov(rnm[lm2], rmn[lm2], j, sarr), bv(rmn[lm2], j, g),
+                        add(ov(rnm[lm2], rmn[lm2], j, sarr), bv(rpi[lm2], j, g),
                             np.zeros(int(lm2.sum())), INF_FREQ, fare=farr)
 
     edges = pd.concat(frames, ignore_index=True)
@@ -539,7 +592,7 @@ def assign_transit(graph: TransitGraph, demand: np.ndarray, *,
     )
     hp.assign(ov[ok].astype(np.uint32), dv[ok].astype(np.uint32),
               vol[ok].astype(np.float64), threads=threads)
-    return hp._edges["volume"].values
+    return hp._edges["volume"].to_numpy()  # noqa: SLF001 -- fork exposes volumes via _edges only
 
 
 def boardings_by_line(volume: np.ndarray, graph: TransitGraph) -> pd.Series:

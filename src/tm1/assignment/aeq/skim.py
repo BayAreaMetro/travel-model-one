@@ -10,8 +10,6 @@ Output keys match the ActivitySim skim OMX (see :mod:`tm1.steps.convert_skims`):
 ``{SOV,HOV2,HOV3}[TOLL]_{TIME,DIST,BTOLL,VTOLL}`` (VTOLL only for toll classes).
 """
 
-from __future__ import annotations
-
 import logging
 
 import numpy as np
@@ -98,7 +96,7 @@ def highway_skims(
         skm.execute()
         res = skm.results.skims
 
-        def _mat(field: str) -> np.ndarray:
+        def _mat(field: str, res=res) -> np.ndarray:  # bind: called within this iteration
             m = np.asarray(res.get_matrix(field), dtype=np.float64)[:n_zones, :n_zones]
             return np.nan_to_num(m, nan=0.0, posinf=0.0, neginf=0.0)
 

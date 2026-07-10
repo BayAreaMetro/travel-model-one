@@ -14,14 +14,17 @@ Two graphs per run (see ``transit.build_transit_graph``):
   static, so it is skimmed once and cached, then merged into every iteration's matrices.
 """
 
-from __future__ import annotations
+from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 import pandas as pd
 
 from tm1.assignment.aeq.transit import (
-    DRIVE_BOARD_PENALTIES, WALK_BOARD_PENALTIES,
-    TransitParams, build_transit_graph, skim_transit,
+    DRIVE_BOARD_PENALTIES,
+    WALK_BOARD_PENALTIES,
+    TransitParams,
+    build_transit_graph,
+    skim_transit,
 )
 
 PERIODS = ("EA", "AM", "MD", "PM", "EV")
@@ -102,6 +105,9 @@ def skim_all_runs(
     threads: int | None = None,
     spread_window: float | None = 1.5,
     fare_cache: dict | None = None,
+    workers: int = 1,
+    fare_threads: int | None = None,
+    fare_workers: int = 1,
 ) -> dict:
     """Skim every run type x period into the ActivitySim matrix set.
 
@@ -118,52 +124,140 @@ def skim_all_runs(
     fares
         :class:`tm1.assignment.aeq.fares.TransitFares`.
     fare_cache
-        Optional ``run_type -> {period -> fare matrix}`` from a previous exact
-        operator-graph pass; if absent it is computed once here (period AM) and reused
-        across periods (fares are static).
+        Optional ``run_type -> fare matrix`` from a previous exact operator-graph
+        pass; missing run types are computed once here (union-service network, see
+        :func:`compute_fare_cache`) and reused across periods (fares are static).
+    fare_workers
+        Concurrent processes for the one-time fare pass (the sparse operator graphs
+        are LOS-sized and no longer bandwidth-bound, so workers scale: measured
+        21 min sequential @12T -> ~2.16x with 3 workers).
 
     Returns a flat ``{omx_matrix_name: n_zones x n_zones array}`` dict.
     """
     out: dict = {}
     fare_cache = {} if fare_cache is None else fare_cache
-    ride_u, hw_u = _union_service(ride_links_by_period, headways_by_period)
-    for access, egress, amode, emode in ACCESS_EGRESS:
-        for linehaul in LINEHAULS:
-            rt = f"{access}_{linehaul}_{egress}"
-            sup = support_by_runtype[rt]
-            # exact fare once per run type (static), reused for every period.  The pass
-            # runs on the UNION-service network (every period's lines, each at its best
-            # headway) so its coverage spans every period's reachable pairs -- an AM-only
-            # pass left structural fare=0 on the 7-20% of off-peak pairs AM cannot reach.
-            # Fares are period-invariant (Cube's own are 79-99% identical to the cent on
-            # jointly-reachable pairs across periods), so union-path fares hold everywhere.
-            params = _skim_params(linehaul, access, egress, spread_window)
-            if rt not in fare_cache:
-                links = _assemble(ride_u, sup)
-                gf = build_transit_graph(
-                    links, hw_u, params,
-                    n_zones=n_zones, fares=fares, fare_states="operator",
-                    access_mode=amode, egress_mode=emode)
-                fare_cache[rt] = skim_transit(
-                    gf, linehaul=linehaul, fares=fares, n_zones=n_zones, threads=threads,
-                    wait_perceive=SKIM_WAIT_PERCEIVE,
-                    max_perceived_min=SKIM_MAXPATH_PERCEIVED)["FARE"]
-            for period in PERIODS:
-                links = _assemble(ride_links_by_period[period], sup)
-                g = build_transit_graph(
-                    links, headways_by_period[period], params,
-                    n_zones=n_zones, fares=fares, fare_states="none",
-                    access_mode=amode, egress_mode=emode)
-                sk = skim_transit(
-                    g, linehaul=linehaul, fares=fares, n_zones=n_zones, threads=threads,
-                    wait_perceive=SKIM_WAIT_PERCEIVE,
-                    max_perceived_min=SKIM_MAXPATH_PERCEIVED, rail_curve_fallback=True)
-                # exact union-pass fare where available; LOS fare (XFARE + distance
-                # curve) fills the few pairs the union pass cannot reach
-                fare_p = np.where(fare_cache[rt] > 0, fare_cache[rt], sk["FARE"])
-                out.update(pack_run_matrices(access, linehaul, egress, period, sk,
-                                             fare=fare_p))
+    if fare_threads is None:
+        fare_threads = threads
+
+    missing = {f"{a}_{lh}_{e}" for a, e, _, _ in ACCESS_EGRESS
+               for lh in LINEHAULS} - set(fare_cache)
+    if missing:
+        fare_cache.update(compute_fare_cache(
+            ride_links_by_period, support_by_runtype, headways_by_period, fares,
+            n_zones=n_zones, threads=fare_threads, spread_window=spread_window,
+            workers=fare_workers, runs=missing))
+
+    # --- level-of-service skims (run type x period, refreshed every iteration): the graphs
+    # are small (~2 GB) so these scale well run CONCURRENTLY across run types (measured 1.9x,
+    # 30->16 min for the 75 skims).  Each worker skims at `threads` threads; `workers` of
+    # them run at once (workers * threads ~= cores).  workers=1 -> sequential (unchanged).
+    jobs = [(a, e, am, em, lh, p)
+            for a, e, am, em in ACCESS_EGRESS for lh in LINEHAULS for p in PERIODS]
+    ctx = {"ride": ride_links_by_period, "hw": headways_by_period,
+           "support": support_by_runtype, "fares": fares, "n_zones": n_zones,
+           "spread_window": spread_window, "threads": threads, "fare_cache": fare_cache}
+    if workers and workers > 1:
+        with ProcessPoolExecutor(max_workers=workers, initializer=_init_los_worker,
+                                 initargs=(ctx,)) as ex:
+            for res in ex.map(_skim_los_job, jobs):
+                out.update(res)
+    else:
+        _init_los_worker(ctx)
+        for job in jobs:
+            out.update(_skim_los_job(job))
     return out
+
+
+def compute_fare_cache(
+    ride_links_by_period: dict,
+    support_by_runtype: dict,
+    headways_by_period: dict,
+    fares,
+    *,
+    n_zones: int = 1475,
+    threads: int | None = None,
+    spread_window: float | None = 1.5,
+    workers: int = 1,
+    runs: set | None = None,
+) -> dict:
+    """One-time exact operator-graph fare pass: ``run_type -> FARE matrix`` (cents).
+
+    Runs on the UNION-service network (every period's lines at their best headway) so
+    coverage spans every period's reachable pairs -- an AM-only pass left structural
+    fare=0 on the 7-20% of off-peak pairs AM cannot reach; fares are period-invariant.
+
+    The sparse reachable-state operator graphs are LOS-sized (~1M edges, ~0.15 GB), so
+    unlike the earlier dense graphs this pass scales on both axes (measured: com skim
+    123.7s @12T -> 58.8s @48T; 3 workers @12T = 2.16x throughput).  ``workers``
+    processes each skim at ``threads`` threads; heavy line-hauls are dispatched first
+    for pool balance.  Fares are static: cache the result across iterations and across
+    runs of the same network.
+    """
+    ride_u, hw_u = _union_service(ride_links_by_period, headways_by_period)
+    heavy = {lh: i for i, lh in enumerate(("com", "hvy", "exp", "lrf", "loc"))}
+    jobs = sorted(((a, e, am, em, lh)
+                   for a, e, am, em in ACCESS_EGRESS for lh in LINEHAULS
+                   if runs is None or f"{a}_{lh}_{e}" in runs),
+                  key=lambda j: heavy[j[4]])
+    ctx = {"ride_u": ride_u, "hw_u": hw_u, "support": support_by_runtype,
+           "fares": fares, "n_zones": n_zones, "spread_window": spread_window,
+           "threads": threads}
+    if workers and workers > 1:
+        with ProcessPoolExecutor(max_workers=workers, initializer=_init_los_worker,
+                                 initargs=(ctx,)) as ex:
+            return dict(ex.map(_fare_job, jobs))
+    _init_los_worker(ctx)
+    return dict(map(_fare_job, jobs))
+
+
+def _fare_job(job: tuple) -> tuple:
+    """Skim one run type's exact operator-graph fare on the union-service network."""
+    access, egress, amode, emode, linehaul = job
+    c = _LOS_CTX
+    rt = f"{access}_{linehaul}_{egress}"
+    params = _skim_params(linehaul, access, egress, c["spread_window"])
+    links = _assemble(c["ride_u"], c["support"][rt])
+    gf = build_transit_graph(
+        links, c["hw_u"], params, n_zones=c["n_zones"], fares=c["fares"],
+        fare_states="operator", access_mode=amode, egress_mode=emode)
+    fare = skim_transit(
+        gf, linehaul=linehaul, fares=c["fares"], n_zones=c["n_zones"],
+        threads=c["threads"], wait_perceive=SKIM_WAIT_PERCEIVE,
+        max_perceived_min=SKIM_MAXPATH_PERCEIVED)["FARE"]
+    return rt, fare
+
+
+_LOS_CTX: dict = {}
+
+
+def _init_los_worker(ctx: dict) -> None:
+    """Pool initializer: stash the shared skim inputs in the worker process."""
+    _LOS_CTX.clear()
+    _LOS_CTX.update(ctx)
+
+
+def _skim_los_job(job: tuple) -> dict:
+    """Skim one (run type, period) level-of-service job -> packed matrices.
+
+    Reads the shared inputs from ``_LOS_CTX`` (set by :func:`_init_los_worker`).
+    """
+    access, egress, amode, emode, linehaul, period = job
+    c = _LOS_CTX
+    rt = f"{access}_{linehaul}_{egress}"
+    params = _skim_params(linehaul, access, egress, c["spread_window"])
+    links = _assemble(c["ride"][period], c["support"][rt])
+    g = build_transit_graph(
+        links, c["hw"][period], params, n_zones=c["n_zones"], fares=c["fares"],
+        fare_states="none", access_mode=amode, egress_mode=emode)
+    sk = skim_transit(
+        g, linehaul=linehaul, fares=c["fares"], n_zones=c["n_zones"], threads=c["threads"],
+        wait_perceive=SKIM_WAIT_PERCEIVE, max_perceived_min=SKIM_MAXPATH_PERCEIVED,
+        rail_curve_fallback=True)
+    # exact union-pass fare where available; LOS fare (XFARE + distance curve) fills the
+    # few pairs the union pass cannot reach
+    fare_c = c["fare_cache"][rt]
+    fare_p = np.where(fare_c > 0, fare_c, sk["FARE"])
+    return pack_run_matrices(access, linehaul, egress, period, sk, fare=fare_p)
 
 
 def _union_service(ride_links_by_period: dict, headways_by_period: dict):
@@ -180,7 +274,7 @@ def _union_service(ride_links_by_period: dict, headways_by_period: dict):
                 hw[ln] = h
     frames: list[pd.DataFrame] = []
     have: set = set()
-    for period in ("AM",) + tuple(p for p in PERIODS if p != "AM"):
+    for period in ("AM", *tuple(p for p in PERIODS if p != "AM")):
         r = ride_links_by_period[period]
         extra = r if not have else r[~r["name"].isin(have)]
         if len(extra):

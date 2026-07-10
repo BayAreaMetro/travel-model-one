@@ -21,12 +21,12 @@ on the graph); heavy/commuter rail (hvy/com) add the distance curve.  Everything
 derived from the ``.far`` inputs + link distances -- no Cube.
 """
 
-from __future__ import annotations
-
+import itertools
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 
@@ -40,10 +40,10 @@ RAIL_FARE = {
     "com": (["Caltrain.far", "Amtrak.far", "ACE.far", "SMART.far"], (130, 139)),
 }
 
-_XFARE_RE = re.compile(r"\s*XFARE\[(\d+)\]\s*=\s*(.+)", re.I)
+_XFARE_RE = re.compile(r"\s*XFARE\[(\d+)\]\s*=\s*(.+)", re.IGNORECASE)
 _FARELINK_RE = re.compile(
     r"\s*FARELINKS\s+FARE\s*=\s*(-?\d+)\s*,\s*L\s*=\s*(\d+)\s*-\s*(\d+)"
-    r"\s+MODES\s*=\s*(\d+)\s+ONEWAY\s*=\s*(\w)", re.I)
+    r"\s+MODES\s*=\s*(\d+)\s+ONEWAY\s*=\s*(\w)", re.IGNORECASE)
 _FAR_ROW_RE = re.compile(r"\s*(\d+)\s+(\d+)\s+(-?\d+)")
 
 
@@ -65,8 +65,7 @@ def parse_xfare(path: str | Path) -> np.ndarray:
 
 
 def parse_farelinks(path: str | Path) -> dict:
-    """Parse ``farelinks.far`` into ``{(mode, a, b): fare_cents}`` (both directions if
-    ``ONEWAY=N``)."""
+    """Parse ``farelinks.far`` into ``{(mode, a, b): cents}``, both ways if ``ONEWAY=N``."""
     out: dict = {}
     for ln in Path(path).read_text(encoding="latin-1").splitlines():
         m = _FARELINK_RE.match(ln)
@@ -100,8 +99,6 @@ def fit_rail_curve(far_paths, lines: pd.DataFrame, link_dist: dict,
     rail = Caltrain + Amtrak + ACE + SMART) their fare files are pooled into one blended
     curve.  Returns ``(a, b)`` in cents / cents-per-mile.
     """
-    import networkx as nx
-
     if isinstance(far_paths, (str, Path)):
         far_paths = [far_paths]
     lo, hi = mode_band
@@ -109,7 +106,7 @@ def fit_rail_curve(far_paths, lines: pd.DataFrame, link_dist: dict,
     g = nx.Graph()
     for nodes in rail["nodes"]:
         seq = [abs(int(n)) for n in nodes]
-        for a, b in zip(seq, seq[1:]):
+        for a, b in itertools.pairwise(seq):
             d = link_dist.get((a, b), link_dist.get((b, a)))
             if d:
                 g.add_edge(a, b, d=d)
@@ -145,7 +142,8 @@ class TransitFares:
         """Exact FAREMAT OD fare (cents) for a rail board->alight station pair; 0 if absent.
 
         Falls back to the distance curve only when the exact pair is missing from the .far
-        (rare -- e.g. a station pair with no coded fare)."""
+        (rare -- e.g. a station pair with no coded fare).
+        """
         fm = self.faremat.get(linehaul or "")
         if fm is not None:
             f = fm.get((int(board_node), int(alight_node)))

@@ -18,8 +18,6 @@ non-residential merge happen here, matching Cube's ``vol[]`` definitions:
     daav/s2av/s3av = 0   (this ActivitySim config folds TNC/AV into DA/SR)
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import numpy as np

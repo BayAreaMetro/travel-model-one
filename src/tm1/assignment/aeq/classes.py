@@ -16,8 +16,6 @@ export (``net2csv_avgload5period`` columns, incl. per-period ``toll{P}_*``,
 :func:`tm1.assignment.aeq.highway.equilibrium_assignment`.
 """
 
-from __future__ import annotations
-
 import numpy as np
 import pandas as pd
 
