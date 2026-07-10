@@ -139,7 +139,7 @@ documented accommodation applies:
 **Kernel speed fix.** AequilibraE's transit kernel spent almost all its time sorting edges
 by near-identical placeholder keys, degrading toward quadratic on this compiler. Sorting
 only the strategy's edges cut per-destination cost ~200×. It reproduces the library's
-results exactly and is in an upstream pull request.[^pr]
+results exactly and is merged upstream; this pipeline pins the merged commit.[^pr]
 
 **Two-graph fare.** The operator-labelled fare graph is exact and static, so it runs once
 and is cached; every other skim uses a fast graph refreshed each iteration. Cube recomputes

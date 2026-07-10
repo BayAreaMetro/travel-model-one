@@ -49,8 +49,8 @@ wheels = [
 
 [[package]]
 name = "aequilibrae"
-version = "1.6.2"
-source = { registry = "https://pypi.org/simple" }
+version = "1.7.0"
+source = { git = "https://github.com/AequilibraE/aequilibrae.git?rev=8b80c3f2e9b54cccdd3802bfef88fb65b1a8a75d#8b80c3f2e9b54cccdd3802bfef88fb65b1a8a75d" }
 dependencies = [
     { name = "geopandas" },
     { name = "numpy" },
@@ -64,12 +64,6 @@ dependencies = [
     { name = "scipy" },
     { name = "shapely" },
     { name = "tqdm" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/ec/b2feb408c935e9e1fa91129fa7802efabb03f4d84d2c026ec7465a2f5ce0/aequilibrae-1.6.2.tar.gz", hash = "sha256:054629e0a21f3bbcf359f44bda91625605c76dde74456214fd9cf3c0f027d4fe", size = 8645527, upload-time = "2026-04-07T07:43:00.076Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/db/5f21672b3fccb30de8f83fa8a5192458b66a2759275439a0f5b1435443d2/aequilibrae-1.6.2-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:623cb891539692ce2ee39ddc9c0f2b8a9f4c0e4b142f3ce2af907ccea26ebf06", size = 17708049, upload-time = "2026-04-07T07:42:35.484Z" },
-    { url = "https://files.pythonhosted.org/packages/af/63/67b69c297c156780fb2406aa006913b1756dbf254b47fc738c475199b2d2/aequilibrae-1.6.2-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9ce4869738d07f0ba239d00fb36e6c6ee58f02d0d3a9679e5763494e22d7f775", size = 17822454, upload-time = "2026-04-07T07:42:38.328Z" },
-    { url = "https://files.pythonhosted.org/packages/59/c7/57dc22635430fbf50c8cf7371b833ae16a01c35c3c42824cb60abe80a8e8/aequilibrae-1.6.2-cp311-cp311-win_amd64.whl", hash = "sha256:7c68411d2d822e8f2898da837c1e029da826dbf8edacdde37d298ba5af50ee75", size = 9821347, upload-time = "2026-04-07T07:42:40.888Z" },
 ]
 
 [[package]]
@@ -1731,6 +1725,16 @@ wheels = [
 ]
 
 [[package]]
+name = "simpleparse"
+version = "2.2.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/e3/54760b15d16a986a819408d2ba4f831ed1e47a25f7b0e39cfc8b3f8dcbfd/SimpleParse-2.2.4.tar.gz", hash = "sha256:892b2ef7cd182bef9197d9d47622978a7ff63e488bc1296e842a7f1f2d76fea6", size = 186285, upload-time = "2023-03-11T21:16:37.302Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/e5/31e56019d589e94c99f54324f4307a2df876d4715172a6de6c5480ffdecc/SimpleParse-2.2.4-cp311-cp311-win32.whl", hash = "sha256:22a1b4ab25c84f5c9da8e5162bf55f7ba49dbf018772c3f6f636cfd98ebd0dce", size = 240609, upload-time = "2023-03-11T21:16:16.366Z" },
+    { url = "https://files.pythonhosted.org/packages/03/a7/0cf1d4e3d52dbf38db0a98b3f5ecc0da55addab86a526c657f0804b9bb77/SimpleParse-2.2.4-cp311-cp311-win_amd64.whl", hash = "sha256:55bc695fdcf461965957af9556136350100b421e7a1a62bda5242c1a94a9a001", size = 245057, upload-time = "2023-03-11T21:16:18.369Z" },
+]
+
+[[package]]
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1945,6 +1949,13 @@ dependencies = [
     { name = "zstandard" },
 ]
 
+[package.optional-dependencies]
+transit = [
+    { name = "pywin32" },
+    { name = "simpleparse" },
+    { name = "xlrd" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
@@ -1955,15 +1966,19 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "activitysim", specifier = "==1.5.1" },
-    { name = "aequilibrae", specifier = ">=1.6.2" },
+    { name = "aequilibrae", git = "https://github.com/AequilibraE/aequilibrae.git?rev=8b80c3f2e9b54cccdd3802bfef88fb65b1a8a75d" },
     { name = "plotly", specifier = ">=6.7.0" },
     { name = "polars", specifier = ">=1.39.3" },
     { name = "populationsim", specifier = "==0.10.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "pywin32", marker = "extra == 'transit'", specifier = ">=304" },
+    { name = "simpleparse", marker = "extra == 'transit'", specifier = ">=2.2" },
     { name = "travel-diary-survey-tools", editable = "../travel-diary-survey-tools" },
+    { name = "xlrd", marker = "extra == 'transit'", specifier = ">=2.0" },
     { name = "xlwings", specifier = ">=0.35.1" },
     { name = "zstandard", specifier = ">=0.25.0" },
 ]
+provides-extras = ["transit"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2068,6 +2083,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/ec/e50d833518f10b0c24feb184b209bb6856f25b919ba8c1f89678b930b1cd/xarray-2025.6.1.tar.gz", hash = "sha256:a84f3f07544634a130d7dc615ae44175419f4c77957a7255161ed99c69c7c8b0", size = 3003185, upload-time = "2025-06-12T03:04:09.099Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/82/8a/6b50c1dd2260d407c1a499d47cf829f59f07007e0dcebafdabb24d1d26a5/xarray-2025.6.1-py3-none-any.whl", hash = "sha256:8b988b47f67a383bdc3b04c5db475cd165e580134c1f1943d52aee4a9c97651b", size = 1314739, upload-time = "2025-06-12T03:04:06.708Z" },
+]
+
+[[package]]
+name = "xlrd"
+version = "2.0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/5a/377161c2d3538d1990d7af382c79f3b2372e880b65de21b01b1a2b78691e/xlrd-2.0.2.tar.gz", hash = "sha256:08b5e25de58f21ce71dc7db3b3b8106c1fa776f3024c54e45b45b374e89234c9", size = 100167, upload-time = "2025-06-14T08:46:39.039Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/62/c8d562e7766786ba6587d09c5a8ba9f718ed3fa8af7f4553e8f91c36f302/xlrd-2.0.2-py2.py3-none-any.whl", hash = "sha256:ea762c3d29f4cca48d82df517b6d89fbce4db3107f9d78713e48cd321d5c9aa9", size = 96555, upload-time = "2025-06-14T08:46:37.766Z" },
 ]
 
 [[package]]

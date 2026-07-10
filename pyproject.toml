@@ -6,7 +6,10 @@ readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "activitysim==1.5.1",
-    "aequilibrae>=1.6.2",
+    # develop pin for the Windows transit-kernel qsort fix (upstream PR 806, merged
+    # 2026-07-10); the Spiess-Florian transit skimming our skims use (PR 620) is in
+    # 1.6.2+. Move to the plain PyPI release once 1.7.0 ships.
+    "aequilibrae @ git+https://github.com/AequilibraE/aequilibrae.git@8b80c3f2e9b54cccdd3802bfef88fb65b1a8a75d",
     "plotly>=6.7.0",
     "polars>=1.39.3",
     "populationsim==0.10.0",
