@@ -24,17 +24,13 @@ from tm1.assignment.aeq.demand import assemble_demand
 from tm1.assignment.aeq.fares import load_fares
 from tm1.assignment.aeq.highway import equilibrium_assignment
 from tm1.assignment.aeq.network import build_cube_graph
+from tm1.assignment.aeq.params import AeqParams, load_aeq_params
 from tm1.assignment.aeq.skim import highway_skims
 from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
 from tm1.assignment.aeq.transit_skims import skim_all_runs
 from tm1.assignment.aeq.vdf import congested_time
 
 log = logging.getLogger(__name__)
-
-PERIODS: tuple[str, ...] = ("EA", "AM", "MD", "PM", "EV")
-# capacity factor = hours represented in each period (HwyAssign capfac)
-CAPFAC: dict[str, float] = {"EA": 3.0, "AM": 4.0, "MD": 5.0, "PM": 4.0, "EV": 8.0}
-N_ZONES = 1475
 
 
 def _msa_average(
@@ -122,7 +118,7 @@ def _save_fare_cache(path: Path, cache: dict) -> None:
 def _transit_skims(
     transit_dir: Path,
     street_time_by_period: dict,
-    n_zones: int,
+    p: AeqParams,
     cores: int | None,
     fare_cache_path: Path,
 ) -> dict[str, np.ndarray]:
@@ -142,12 +138,13 @@ def _transit_skims(
                 for a, b, t in zip(rtd.A, rtd.B, rtd.time, strict=False)}
     sl = pd.read_parquet(transit_dir / "support_links.parquet")
     support_by_runtype = {rt: sl[sl["run_type"] == rt] for rt in sl["run_type"].unique()}
-    fares = load_fares(transit_dir / "fares", link_dist, lines)
+    fares = load_fares(transit_dir / "fares", link_dist, lines, rail_fare=p.rail_fare)
 
     ride_by_period: dict = {}
     hw_by_period: dict = {}
     for period, street_time in street_time_by_period.items():
-        ride, hw = build_ride_links(lines, period, street_time, link_dist, ref_time)
+        ride, hw = build_ride_links(lines, period, street_time, link_dist, ref_time,
+                                    bus_cfg=p.bus_time, freq_field=p.periods.freq_field)
         ride_by_period[period] = ride
         hw_by_period[period] = hw
 
@@ -164,7 +161,7 @@ def _transit_skims(
         workers, threads = 1, cores
         fare_workers, fare_threads = 1, cores
     mats = skim_all_runs(ride_by_period, support_by_runtype, hw_by_period, fares,
-                         n_zones=n_zones, threads=threads, fare_cache=fare_cache,
+                         params=p, threads=threads, fare_cache=fare_cache,
                          workers=workers, fare_threads=fare_threads,
                          fare_workers=fare_workers)
     _save_fare_cache(fare_cache_path, fare_cache)
@@ -180,18 +177,24 @@ def run_assignment_iteration(
     skims_omx_path: str | Path,
     *,
     iteration: int,
-    periods: tuple[str, ...] = PERIODS,
-    n_zones: int = N_ZONES,
+    periods: tuple[str, ...] | None = None,
+    n_zones: int | None = None,
     max_iter: int = 100,
     gap_target: float = 1e-4,
     av_pce: float = 1.0,
     cores: int | None = None,
     transit_inputs_dir: str | Path | None = None,
+    params_path: str | Path | None = None,
 ) -> dict[str, float]:
     """Run one AequilibraE highway assignment + skim iteration for all periods.
 
-    Returns a per-period ``{period: VMT}`` summary (also logged).
+    Model policy (periods/capfac, zones, transit cost, bus times, fares) comes from
+    ``aeq_params.yaml``; ``params_path`` selects an alternate copy.  Returns a
+    per-period ``{period: VMT}`` summary (also logged).
     """
+    p = load_aeq_params(params_path)
+    periods = tuple(periods) if periods else p.periods.names
+    n_zones = n_zones or p.n_taz
     network_csv = Path(network_csv)
     links = pd.read_csv(network_csv)
     log.info("aeq iteration %d: %d links, %d periods", iteration, len(links), len(periods))
@@ -204,13 +207,14 @@ def run_assignment_iteration(
     vmt: dict[str, float] = {}
     street_time_by_period: dict[str, dict] = {}
     for period in periods:
-        g, attrs = build_cube_graph(links, n_zones, capfac=CAPFAC[period])
-        demand = assemble_demand(asim_output_dir, nonres_dir, period, n_zones)
-        classes = build_vehicle_classes(demand, links, period, av_pce=av_pce)
+        g, attrs = build_cube_graph(links, n_zones, capfac=p.periods.capfac[period],
+                                    vdf=p.highway.vdf)
+        demand = assemble_demand(asim_output_dir, nonres_dir, period, n_zones, p.highway)
+        classes = build_vehicle_classes(demand, links, period, p.highway, av_pce=av_pce)
 
         res = equilibrium_assignment(
-            g, attrs, classes, n_zones, max_iter=max_iter, gap_target=gap_target,
-            cores=cores,
+            g, attrs, classes, n_zones, p.highway.vdf, max_iter=max_iter,
+            gap_target=gap_target, cores=cores,
         )
         vmt[period] = float((res.total_pce * attrs.distance).sum())
         log.info("aeq %s: gap %.2e in %d iters, VMT %.0f",
@@ -221,10 +225,11 @@ def run_assignment_iteration(
         # this is also what Cube's reference skims are built on.
         avg_pce = _msa_average(msa_state, period, res.total_pce, iteration)
         skim_time = congested_time(avg_pce / attrs.capacity, attrs.ft, attrs.t0,
-                                   attrs.distance, attrs.ffs, attrs.critspd)
+                                   attrs.distance, attrs.ffs, attrs.critspd,
+                                   p.highway.vdf)
 
         skims = highway_skims(g, attrs, classes, skim_time, links, period, n_zones,
-                              cores=cores)
+                              p.highway, cores=cores)
         for key, mat in skims.items():
             all_skims[f"{key}__{period}"] = mat
 
@@ -233,12 +238,12 @@ def run_assignment_iteration(
         if transit_inputs_dir is not None:
             links_ct = links.copy()
             links_ct[f"ctim{period}"] = skim_time
-            street_time_by_period[period] = bus_time_table(links_ct, period)
+            street_time_by_period[period] = bus_time_table(links_ct, period, p.bus_time)
 
     if transit_inputs_dir is not None:
         fare_cache_path = Path(skims_omx_path).with_name("aeq_transit_fare_cache.npz")
         all_skims.update(_transit_skims(Path(transit_inputs_dir), street_time_by_period,
-                                        n_zones, cores, fare_cache_path))
+                                        p, cores, fare_cache_path))
 
     _save_msa_state(msa_path, msa_state)
     _write_skims_omx(Path(skims_omx_path), all_skims, n_zones)

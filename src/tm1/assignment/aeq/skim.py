@@ -17,21 +17,10 @@ import pandas as pd
 from aequilibrae.paths import Graph
 from aequilibrae.paths.network_skimming import NetworkSkimming
 
-from tm1.assignment.aeq.classes import FIRST_VALUE_TOLLCLASS
 from tm1.assignment.aeq.highway import _EXCLUDED_COST, VehicleClass, _graph_order
+from tm1.assignment.aeq.params import Highway
 
 log = logging.getLogger(__name__)
-
-# skim class -> (assignment class name, ActivitySim mode prefix, is_toll)
-_SKIM_CLASSES = (
-    ("da", "SOV", False),
-    ("sr2", "HOV2", False),
-    ("sr3", "HOV3", False),
-    ("datoll", "SOVTOLL", True),
-    ("sr2toll", "HOV2TOLL", True),
-    ("sr3toll", "HOV3TOLL", True),
-)
-
 
 def highway_skims(
     g: Graph,
@@ -41,6 +30,7 @@ def highway_skims(
     links: pd.DataFrame,
     period: str,
     n_zones: int,
+    hw: Highway,
     cores: int | None = None,
 ) -> dict[str, np.ndarray]:
     """Skim TIME/DIST/BTOLL/VTOLL for each highway class off the converged network.
@@ -59,12 +49,14 @@ def highway_skims(
         Two-letter period (used only for logging).
     n_zones
         Centroid count; output matrices are ``(n_zones, n_zones)``.
+    hw
+        :class:`tm1.assignment.aeq.params.Highway` (skim classes + tollclass split).
     """
     by_name = {c.name: c for c in classes}
     order = _graph_order(g, attrs.link_id)
     gidx = g.graph.index[order]
     tollclass = links["tollclass"].to_numpy(float)
-    is_value = tollclass >= FIRST_VALUE_TOLLCLASS
+    is_value = tollclass >= hw.first_value_tollclass
 
     def gencost(cls: VehicleClass) -> np.ndarray:
         toll = cls.toll if cls.toll is not None else 0.0
@@ -74,7 +66,7 @@ def highway_skims(
         return gc
 
     skims: dict[str, np.ndarray] = {}
-    for cls_name, prefix, is_toll in _SKIM_CLASSES:
+    for cls_name, prefix, is_toll in hw.skim_classes:
         cls = by_name[cls_name]
         cls_toll = cls.toll if cls.toll is not None else np.zeros_like(attrs.distance)
         btoll = np.where(is_value, 0.0, cls_toll)

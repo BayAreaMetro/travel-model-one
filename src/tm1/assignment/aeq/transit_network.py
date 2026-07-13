@@ -27,18 +27,14 @@ import pandas as pd
 _LINE_RE = re.compile(r"LINE\s+(NAME=.*?)(?=LINE\s+NAME=|\Z)", re.DOTALL | re.IGNORECASE)
 _ATTR_RE = re.compile(r"(\w+(?:\[\d\])?)\s*=\s*(\"[^\"]*\"|[^,\s]+)")
 
-# bus in-vehicle delay (min/mile) by area type, applied off-freeway (PrepHwyNet.job);
-# freeways/expressways (FT 1, 2, 3, 8) get no bus delay.
-_BUS_DELAY_BY_AT = {0: 2.46, 1: 2.46, 2: 1.74, 3: 1.74, 4: 1.14, 5: 0.08}
-_MIN_SPEED, _MIN_SPEED_FWY = 3.0, 6.0     # congested-speed floors (mph)
 
-
-def bus_time_table(links: pd.DataFrame, period: str) -> dict:
+def bus_time_table(links: pd.DataFrame, period: str, bus_cfg) -> dict:
     """Port of PrepHwyNet.job's BUS_TIME: ``(a, b) -> bus in-vehicle minutes``.
 
     ``links`` is the highway link export (needs ``a, b, distance, ft, at, brt,
     fft, ctim{P}``).  Congested time gets Cube's slow-speed floors, then buses
     pay an area-type delay per mile (except freeways and BRT variants).
+    ``bus_cfg`` is :class:`tm1.assignment.aeq.params.BusTime` (aeq_params.yaml).
     """
     per = period.upper()
     dist = links["distance"].to_numpy(float)
@@ -52,16 +48,18 @@ def bus_time_table(links: pd.DataFrame, period: str) -> dict:
     with np.errstate(divide="ignore", invalid="ignore"):
         cspd = np.where(ctim > 0, dist / (ctim / 60.0), np.inf)
     fwy = (ft <= 4) | (ft == 8)
-    ctim = np.where(fwy & (cspd < _MIN_SPEED_FWY), dist / (_MIN_SPEED_FWY / 60.0), ctim)
-    ctim = np.where(~fwy & (cspd < _MIN_SPEED), dist / (_MIN_SPEED / 60.0), ctim)
+    ctim = np.where(fwy & (cspd < bus_cfg.min_speed_fwy),
+                    dist / (bus_cfg.min_speed_fwy / 60.0), ctim)
+    ctim = np.where(~fwy & (cspd < bus_cfg.min_speed),
+                    dist / (bus_cfg.min_speed / 60.0), ctim)
 
     delay = np.where(np.isin(ft, (1, 2, 3, 8)), 0.0,
-                     np.vectorize(lambda x: _BUS_DELAY_BY_AT.get(int(x), 0.0))(at))
+                     np.vectorize(lambda x: bus_cfg.delay_by_at.get(int(x), 0.0))(at))
     bus = np.select(
         [brt == 1, brt == 2, brt == 3],
         [fft + delay * dist * 0.5,
          ctim + delay * dist * 0.5,
-         np.minimum(ctim, dist / (35.0 / 60.0))],
+         np.minimum(ctim, dist / (bus_cfg.brt3_speed_cap / 60.0))],
         default=ctim + delay * dist,
     )
     a = links["a"].to_numpy(int)
@@ -109,15 +107,15 @@ def parse_lin(path: str | Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-PERIOD_FREQ = {"EA": "freq1", "AM": "freq2", "MD": "freq3", "PM": "freq4", "EV": "freq5"}
-
-
 def build_ride_links(
     lines: pd.DataFrame,
     period: str,
     street_time: dict,
     link_dist: dict,
     ref_time: dict | None = None,
+    *,
+    bus_cfg,
+    freq_field: dict,
 ) -> tuple[pd.DataFrame, dict]:
     """Build directional transit ride links for one period.
 
@@ -132,13 +130,17 @@ def build_ride_links(
     ref_time
         Optional ``(a, b, line-mode-bucket) -> minutes`` fallback for rail links
         of lines without RUNTIME (from the one-time converted reference).
+    bus_cfg
+        :class:`tm1.assignment.aeq.params.BusTime` (missing-link time fallbacks).
+    freq_field
+        ``period -> TRNBUILD headway attribute`` (aeq_params.yaml periods.freq_field).
 
     Returns:
     -------
     (links, headways): links has ``A, B, time, mode, stopA, stopB, name``;
     headways maps line name -> headway for lines running this period.
     """
-    fcol = PERIOD_FREQ[period.upper()]
+    fcol = freq_field[period.upper()]
     out = []
     headways: dict[str, float] = {}
     for ln in lines.itertuples(index=False):
@@ -182,7 +184,8 @@ def build_ride_links(
             for a, b in zip(links.loc[miss, "A"], links.loc[miss, "B"], strict=False)]
         miss = links["time"].isna()
     if miss.any():
-        links.loc[miss, "time"] = links.loc[miss, "distance"].fillna(0.25) / (20.0 / 60.0)
+        links.loc[miss, "time"] = (links.loc[miss, "distance"].fillna(bus_cfg.fallback_dist)
+                                   / (bus_cfg.fallback_speed / 60.0))
     return links, headways
 
 

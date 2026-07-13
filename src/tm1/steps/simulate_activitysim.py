@@ -6,6 +6,7 @@ Assignment is not yet implemented.
 """
 
 import logging
+import shutil
 import subprocess
 import sys
 from collections.abc import Callable
@@ -15,6 +16,39 @@ import pandas as pd
 import yaml
 
 log = logging.getLogger(__name__)
+
+_PERIODS = ("ea", "am", "md", "pm", "ev")
+
+
+def _archive_pre_assignment(arch_dir: Path, skims_omx: Path, asim_output_dir: Path,
+                            iteration: int) -> None:
+    """Archive loop provenance BEFORE assignment runs.
+
+    ``skims_iter0.omx`` = the seed skims the first ActivitySim run consumed (copied
+    once); ``trips_{p}_iter{N}.omx`` = the demand matrices ActivitySim run N produced
+    (the demand assignment iteration N is about to load). Copies are cheap (~1 GB
+    skims, ~25 MB demand) and make every iteration's inputs reconstructible.
+    """
+    arch_dir.mkdir(parents=True, exist_ok=True)
+    seed = arch_dir / "skims_iter0.omx"
+    if iteration == 1 and skims_omx.exists() and not seed.exists():
+        shutil.copy2(skims_omx, seed)
+    for period in _PERIODS:
+        src = asim_output_dir / f"trips_{period}.omx"
+        if src.exists():
+            shutil.copy2(src, arch_dir / f"trips_{period}_iter{iteration}.omx")
+
+
+def _archive_post_assignment(arch_dir: Path, skims_omx: Path, iteration: int) -> None:
+    """Archive the skims produced by assignment iteration N as ``skims_iter{N}.omx``.
+
+    The canonical ``skims.omx`` (what ActivitySim's config points at) is already
+    atomically replaced by the assignment; this copy is the per-iteration snapshot
+    that the next ActivitySim run (N+1) will consume.
+    """
+    if skims_omx.exists():
+        arch_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(skims_omx, arch_dir / f"skims_iter{iteration}.omx")
 
 
 def _check_checkpoints(checkpoints_file: Path, seen: set[str]) -> list[str]:
@@ -138,6 +172,11 @@ def _run_assignment(
       ``cube_proj_dir`` + a local Cube install).
     * ``"aeq"`` — the open-source AequilibraE highway assignment + skims (needs
       ``network_csv`` and frozen ``nonres_dir``); no Cube license required.
+
+    ``archive`` (default true) keeps per-iteration provenance copies under
+    ``archive_dir`` (default ``{skims dir}/skim_archive``): ``skims_iter{N}.omx``
+    (produced by assignment N, consumed by ActivitySim run N+1; ``iter0`` = the seed)
+    and ``trips_{p}_iter{N}.omx`` (demand from ActivitySim run N).
     """
     sim_cfg = cfg["steps"].get("simulate_activitysim", cfg["steps"].get("simulate", {}))
     asim_cfg = sim_cfg.get("activitysim", sim_cfg)
@@ -152,6 +191,12 @@ def _run_assignment(
     backend = asn.get("backend", "cube")
     asim_output_dir = Path(asim_cfg["output_dir"])
     skims_omx = Path(asn.get("skims_omx", Path(asim_cfg["data_dir"]) / "skims.omx"))
+    # per-iteration provenance snapshots (skims_iter{N}.omx + demand); the canonical
+    # skims.omx name never changes -- ActivitySim always reads the same path
+    archive = asn.get("archive", True)
+    arch_dir = Path(asn.get("archive_dir", skims_omx.parent / "skim_archive"))
+    if archive:
+        _archive_pre_assignment(arch_dir, skims_omx, asim_output_dir, iteration)
 
     if backend == "aeq":
         from tm1.assignment.aeq import run_assignment_iteration  # noqa: PLC0415
@@ -172,7 +217,10 @@ def _run_assignment(
             gap_target=asn.get("gap_target", 1e-4),
             cores=asn.get("cores"),
             transit_inputs_dir=asn.get("transit_inputs_dir"),
+            params_path=asn.get("params"),
         )
+        if archive:
+            _archive_post_assignment(arch_dir, skims_omx, iteration)
         return
 
     from tm1.assignment import run_assignment_iteration  # noqa: PLC0415
@@ -196,6 +244,8 @@ def _run_assignment(
         do_transit=asn.get("transit", True),
         transit_nodes=asn.get("transit_nodes", 15),
     )
+    if archive:
+        _archive_post_assignment(arch_dir, skims_omx, iteration)
 
 
 def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:

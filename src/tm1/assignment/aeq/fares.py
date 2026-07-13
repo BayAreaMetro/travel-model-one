@@ -30,15 +30,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-# rail fare modelled by a per-line-haul distance curve fitted from the OD fare files of
-# ALL systems in that line-haul's fare band: linehaul -> ([.far files], fare mode band).
-# The fare band is the DISTANCE-fare modes only: for lrf that is ferry (100-109), NOT the
-# light-rail 110-119 (flat, priced by boarding XFARE); com blends the four commuter rails.
-RAIL_FARE = {
-    "hvy": (["BART.far"], (120, 129)),
-    "lrf": (["Ferry.far"], (100, 109)),
-    "com": (["Caltrain.far", "Amtrak.far", "ACE.far", "SMART.far"], (130, 139)),
-}
+# Rail fares are modelled per line-haul from the OD fare files of ALL systems in that
+# line-haul's DISTANCE-fare mode band; which .far files and bands come from
+# aeq_params.yaml's `rail_fare` section (passed to load_fares).
 
 _XFARE_RE = re.compile(r"\s*XFARE\[(\d+)\]\s*=\s*(.+)", re.IGNORECASE)
 _FARELINK_RE = re.compile(
@@ -160,12 +154,14 @@ class TransitFares:
 
 
 def load_fares(fares_dir: str | Path, link_dist: dict,
-               lines: pd.DataFrame | None = None) -> TransitFares:
+               lines: pd.DataFrame | None = None,
+               rail_fare: dict | None = None) -> TransitFares:
     """Load ``xfare.far`` + ``farelinks.far`` and fit rail distance curves.
 
     ``link_dist`` is ``{(a, b): miles}`` (from the converted ``link_distance.parquet``);
     ``lines`` is :func:`parse_lin` output (needed for the rail station adjacency).  If
-    ``lines`` is None the rail curves are skipped (bus-only fares).
+    ``lines`` is None the rail curves are skipped (bus-only fares).  ``rail_fare`` is
+    aeq_params.yaml's section: ``linehaul -> {"far_files": [...], "band": (lo, hi)}``.
     """
     fares_dir = Path(fares_dir)
     xfare = parse_xfare(fares_dir / "xfare.far")
@@ -173,8 +169,9 @@ def load_fares(fares_dir: str | Path, link_dist: dict,
     curves: dict = {}
     bands: dict = {}
     faremat: dict = {}
-    if lines is not None:
-        for lh, (far_names, band) in RAIL_FARE.items():
+    if lines is not None and rail_fare:
+        for lh, cfg in rail_fare.items():
+            far_names, band = cfg["far_files"], tuple(cfg["band"])
             paths = [fares_dir / n for n in far_names if (fares_dir / n).exists()]
             if paths:
                 curves[lh] = fit_rail_curve(paths, lines, link_dist, band)

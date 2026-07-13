@@ -20,45 +20,44 @@ import numpy as np
 import pandas as pd
 
 from tm1.assignment.aeq.highway import VehicleClass
+from tm1.assignment.aeq.params import Highway
 
-# Cube constants (hwyParam.block / HwyAssign.job)
-VOT = 15.0             # auto value of time, $2000/hr
-TRUCK_VOT = 30.0       # truck value of time, $2000/hr
-SR2_SHARE = 1.75       # shared-ride-2 toll cost share (toll split across occupants)
-SR3_SHARE = 2.50       # shared-ride-3+ toll cost share
-TRUCK_PCE = 2.0        # combination-truck passenger-car-equivalent
-FIRST_VALUE_TOLLCLASS = 31   # tollclass >= this is a value-toll (express-lane) facility
-
-# The 13 classes in Cube's canonical order.
+# The 13 classes in Cube's canonical order (structural: demand/skim/highway contract).
 CLASS_ORDER = (
     "da", "sr2", "sr3", "sml", "lrg",
     "datoll", "sr2toll", "sr3toll", "smltoll", "lrgtoll",
     "daav", "s2av", "s3av",
 )
 
-# per-class (value-of-time, operating-cost field, toll source column, PCE, toll cost share)
-# toll_col is the suffix in ``toll{PERIOD}_{col}``; share divides the toll (SR occupancy).
-_CLASS_SPEC = {
-    "da":      (VOT,       "autoopc", "da",  1.0,       1.0),
-    "sr2":     (VOT,       "autoopc", "s2",  1.0,       SR2_SHARE),
-    "sr3":     (VOT,       "autoopc", "s3",  1.0,       SR3_SHARE),
-    "sml":     (TRUCK_VOT, "smtropc", "sml", 1.0,       1.0),
-    "lrg":     (TRUCK_VOT, "lrtropc", "lrg", TRUCK_PCE, 1.0),
-    "datoll":  (VOT,       "autoopc", "da",  1.0,       1.0),
-    "sr2toll": (VOT,       "autoopc", "s2",  1.0,       SR2_SHARE),
-    "sr3toll": (VOT,       "autoopc", "s3",  1.0,       SR3_SHARE),
-    "smltoll": (TRUCK_VOT, "smtropc", "sml", 1.0,       1.0),
-    "lrgtoll": (TRUCK_VOT, "lrtropc", "lrg", TRUCK_PCE, 1.0),
-    "daav":    (VOT,       "autoopc", "da",  None,      1.0),   # PCE filled from av_pce
-    "s2av":    (VOT,       "autoopc", "s2",  None,      SR2_SHARE),
-    "s3av":    (VOT,       "autoopc", "s3",  None,      SR3_SHARE),
-}
+
+def _class_spec(hw: Highway) -> dict:
+    """Per-class (value-of-time, operating-cost field, toll column, PCE, toll share).
+
+    toll_col is the suffix in ``toll{PERIOD}_{col}``; share divides the toll (SR
+    occupancy cost share).  Scalars come from aeq_params.yaml (hwyParam.block).
+    """
+    return {
+        "da":      (hw.vot,       "autoopc", "da",  1.0,          1.0),
+        "sr2":     (hw.vot,       "autoopc", "s2",  1.0,          hw.sr2_toll_share),
+        "sr3":     (hw.vot,       "autoopc", "s3",  1.0,          hw.sr3_toll_share),
+        "sml":     (hw.truck_vot, "smtropc", "sml", 1.0,          1.0),
+        "lrg":     (hw.truck_vot, "lrtropc", "lrg", hw.truck_pce, 1.0),
+        "datoll":  (hw.vot,       "autoopc", "da",  1.0,          1.0),
+        "sr2toll": (hw.vot,       "autoopc", "s2",  1.0,          hw.sr2_toll_share),
+        "sr3toll": (hw.vot,       "autoopc", "s3",  1.0,          hw.sr3_toll_share),
+        "smltoll": (hw.truck_vot, "smtropc", "sml", 1.0,          1.0),
+        "lrgtoll": (hw.truck_vot, "lrtropc", "lrg", hw.truck_pce, 1.0),
+        "daav":    (hw.vot,       "autoopc", "da",  None,         1.0),  # PCE from av_pce
+        "s2av":    (hw.vot,       "autoopc", "s2",  None,         hw.sr2_toll_share),
+        "s3av":    (hw.vot,       "autoopc", "s3",  None,         hw.sr3_toll_share),
+    }
 
 
 def build_vehicle_classes(
     demand: dict[str, np.ndarray],
     links: pd.DataFrame,
     period: str,
+    hw: Highway,
     *,
     av_pce: float = 1.0,
 ) -> list[VehicleClass]:
@@ -73,6 +72,8 @@ def build_vehicle_classes(
         and ``tollclass`` for the given ``period``.
     period
         Two-letter period (``EA``/``AM``/``MD``/``PM``/``EV``).
+    hw
+        :class:`tm1.assignment.aeq.params.Highway` policy (aeq_params.yaml).
     av_pce
         Passenger-car-equivalent for the AV classes (1.0 in the no-AV base).
     """
@@ -85,7 +86,7 @@ def build_vehicle_classes(
     hov = np.isin(use, [2, 3])          # any HOV-restricted link
     hov3 = use == 3                     # HOV3+-only link
     notruck = np.isin(use, [2, 3, 4])   # no-big-truck link
-    value_toll = tollclass >= FIRST_VALUE_TOLLCLASS
+    value_toll = tollclass >= hw.first_value_tollclass
 
     # value-toll-eligibility: a class may not use a value-toll link it isn't priced on
     vt_excl = {
@@ -114,8 +115,9 @@ def build_vehicle_classes(
     }
 
     classes: list[VehicleClass] = []
+    spec = _class_spec(hw)
     for name in CLASS_ORDER:
-        vot, opcost, toll_col, pce, share = _CLASS_SPEC[name]
+        vot, opcost, toll_col, pce, share = spec[name]
         classes.append(
             VehicleClass(
                 name=name,

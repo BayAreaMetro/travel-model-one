@@ -36,18 +36,10 @@ import pandas as pd
 
 from cubeio import read_tpp
 from tm1.assignment.aeq.fares import load_fares
-from tm1.assignment.aeq.transit import TransitParams, build_transit_graph, skim_transit
+from tm1.assignment.aeq.transit import build_transit_graph, skim_transit
 from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
-from tm1.assignment.aeq.transit_skims import (
-    ACCESS_EGRESS,
-    LINEHAULS,
-    PERIODS,
-    SKIM_MAXPATH_PERCEIVED,
-    SKIM_WAIT_PERCEIVE,
-    _assemble,
-    _skim_params,
-    _union_service,
-)
+from tm1.assignment.aeq.params import load_aeq_params
+from tm1.assignment.aeq.transit_skims import _assemble, _union_service, skim_params
 
 # component -> (reference trnskm matrix, scale to actual units)
 _REFKEY = {"TOTIVT": ("ivt", 100), "IWAIT": ("iwait", 100), "XWAIT": ("xwait", 100),
@@ -112,6 +104,10 @@ def main() -> None:
         handlers=[logging.StreamHandler(sys.stdout),
                   logging.FileHandler(args.log, mode="w")])
     inp, ref = Path(args.inputs), args.reference
+    P = load_aeq_params()
+    PERIODS = P.periods.names
+    ACCESS_EGRESS = P.skim_output.access_egress
+    LINEHAULS = P.skim_output.fare_linehauls
 
     run_types = [f"{a}_{lh}_{e}" for a, e, _, _ in ACCESS_EGRESS for lh in LINEHAULS]
     if args.runs:
@@ -131,13 +127,15 @@ def main() -> None:
     link_dist = {(int(a), int(b)): float(x) for a, b, x in zip(ld.A, ld.B, ld.distance)}
     rtd = pd.read_parquet(inp / "ref_ride_time.parquet")
     ref_time = {(int(a), int(b)): float(t) for a, b, t in zip(rtd.A, rtd.B, rtd.time)}
-    fares = load_fares(inp / "fares", link_dist, lines)
+    fares = load_fares(inp / "fares", link_dist, lines, rail_fare=P.rail_fare)
     sl = pd.read_parquet(inp / "support_links.parquet")
     ride, hw = {}, {}
     for p in PERIODS:
-        ride[p], hw[p] = build_ride_links(lines, p, bus_time_table(links, p),
-                                          link_dist, ref_time)
-    ride_u, hw_u = _union_service(ride, hw)
+        ride[p], hw[p] = build_ride_links(lines, p, bus_time_table(links, p, P.bus_time),
+                                          link_dist, ref_time,
+                                          bus_cfg=P.bus_time,
+                                          freq_field=P.periods.freq_field)
+    ride_u, hw_u = _union_service(ride, hw, P)
     _phase("")
     log.info("inputs ready -- starting %d skims (%d run types x %d periods)",
              total, len(run_types), len(PERIODS))
@@ -155,7 +153,7 @@ def main() -> None:
     for rt in run_types:
         lh, amode, emode = lh_of[rt]
         access, _, egress = rt.split("_")
-        params = _skim_params(lh, access, egress, 1.5)
+        params = skim_params(lh, access, egress, P)
         sup = sl[sl["run_type"] == rt]
         fare_mat = None
         if not args.skip_fare:
@@ -167,9 +165,12 @@ def main() -> None:
                                      n_zones=1475, fares=fares, fare_states="operator",
                                      access_mode=amode, egress_mode=emode)
             _phase(f"{rt}: skimming fare ({gf.n_vertices/1000:.0f}k verts)", gf.n_vertices / 4500)
-            fare_mat = skim_transit(gf, linehaul=lh, fares=fares, threads=args.threads,
-                                    max_path_min=180.0, wait_perceive=SKIM_WAIT_PERCEIVE,
-                                    max_perceived_min=SKIM_MAXPATH_PERCEIVED)["FARE"]
+            fare_mat = skim_transit(
+                gf, linehaul=lh, fares=fares, threads=args.threads,
+                max_path_min=P.transit_cost.skim_max_path_min,
+                wait_perceive=params.wait_perceive,
+                max_perceived_min=P.transit_cost.skim_max_perceived_min,
+                premier=params.key_band is not None)["FARE"]
             _phase("")
             fare_secs += time.time() - tb
             fare_n += 1
@@ -181,9 +182,11 @@ def main() -> None:
                                     n_zones=1475, fares=fares, fare_states="none",
                                     access_mode=amode, egress_mode=emode)
             sk = skim_transit(g, linehaul=lh, fares=fares, threads=args.threads,
-                              max_path_min=180.0, wait_perceive=SKIM_WAIT_PERCEIVE,
-                              max_perceived_min=SKIM_MAXPATH_PERCEIVED,
-                              rail_curve_fallback=True)
+                              max_path_min=P.transit_cost.skim_max_path_min,
+                              wait_perceive=params.wait_perceive,
+                              max_perceived_min=P.transit_cost.skim_max_perceived_min,
+                              rail_curve_fallback=True,
+                              premier=params.key_band is not None)
             del g
             los_secs += time.time() - tl
             los_n += 1

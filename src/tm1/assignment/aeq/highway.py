@@ -19,6 +19,7 @@ from aequilibrae.paths import Graph, allOrNothing
 from aequilibrae.paths.results import AssignmentResults
 
 from tm1.assignment.aeq.network import LinkAttrs
+from tm1.assignment.aeq.params import Vdf
 from tm1.assignment.aeq.vdf import congested_time
 
 log = logging.getLogger(__name__)
@@ -86,6 +87,7 @@ def _fw_step(
     total_pce: np.ndarray,
     aux_pce: np.ndarray,
     attrs: LinkAttrs,
+    vdf: Vdf,
 ) -> float:
     """Exact Frank-Wolfe line search: the Beckmann-minimising step in [0, 1].
 
@@ -102,7 +104,8 @@ def _fw_step(
 
     def sigma(lam: float) -> float:
         vc = (total_pce + lam * d) / attrs.capacity
-        t = congested_time(vc, attrs.ft, attrs.t0, attrs.distance, attrs.ffs, attrs.critspd)
+        t = congested_time(vc, attrs.ft, attrs.t0, attrs.distance, attrs.ffs,
+                           attrs.critspd, vdf)
         return float((t * d).sum())
 
     if sigma(0.0) >= 0.0:      # direction is not descending -> no move
@@ -124,6 +127,7 @@ def equilibrium_assignment(
     attrs: LinkAttrs,
     classes: list[VehicleClass],
     n_zones: int,
+    vdf: Vdf,
     *,
     max_iter: int = 100,
     gap_target: float = 1e-4,
@@ -148,7 +152,7 @@ def equilibrium_assignment(
     flows = {c.name: None for c in classes}
     total_pce = np.zeros_like(attrs.distance)
     tc = congested_time(np.zeros_like(attrs.distance), attrs.ft, attrs.t0,
-                        attrs.distance, attrs.ffs, attrs.critspd)
+                        attrs.distance, attrs.ffs, attrs.critspd, vdf)
     vc = np.zeros_like(attrs.distance)
     gap = np.nan
     it = 0
@@ -179,7 +183,7 @@ def equilibrium_assignment(
             step = 1.0 / it
         else:
             aux_pce = sum(c.pce * aux[c.name] for c in classes)
-            step = _fw_step(total_pce, aux_pce, attrs)
+            step = _fw_step(total_pce, aux_pce, attrs, vdf)
 
         for c in classes:
             cur = flows[c.name]
@@ -187,7 +191,8 @@ def equilibrium_assignment(
 
         total_pce = sum(c.pce * flows[c.name] for c in classes)
         vc = total_pce / attrs.capacity
-        tc = congested_time(vc, attrs.ft, attrs.t0, attrs.distance, attrs.ffs, attrs.critspd)
+        tc = congested_time(vc, attrs.ft, attrs.t0, attrs.distance, attrs.ffs,
+                            attrs.critspd, vdf)
         if it <= _LOG_FIRST or it % _LOG_EVERY == 0:
             log.info("aeq assign it %d: gap %.3e  step %.4f  VMT %.0f  maxV/C %.2f",
                      it, gap, step, float((total_pce * attrs.distance).sum()), vc.max())

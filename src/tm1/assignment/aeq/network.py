@@ -12,7 +12,9 @@ import numpy as np
 import pandas as pd
 from aequilibrae.paths import Graph
 
-from tm1.assignment.aeq.vdf import CRITSPD
+from tm1.assignment.aeq.params import Vdf
+from tm1.assignment.aeq.vdf import capclass as _capclass
+from tm1.assignment.aeq.vdf import crit_speed
 
 
 @dataclass
@@ -40,6 +42,7 @@ def build_cube_graph(
     n_zones: int,
     *,
     capfac: float,
+    vdf: Vdf,
     opcost_fields: tuple[str, ...] = ("autoopc", "smtropc", "lrtropc"),
 ) -> tuple[Graph, LinkAttrs]:
     """Build an AequilibraE graph + link attributes from a Cube link export.
@@ -59,8 +62,8 @@ def build_cube_graph(
     distance = links["distance"].astype(float).to_numpy()
     ffs = links["ffs"].astype(float).clip(lower=1.0).to_numpy()
     t0 = _clean_t0(links["fft"].astype(float).to_numpy(), ffs, distance)
-    capclass = np.minimum(at * 10 + ft, 62).astype(int)
-    critspd = np.array([CRITSPD.get(int(c), 47.087) for c in capclass], dtype=float)
+    cc = _capclass(at, ft, vdf)
+    critspd = crit_speed(cc, vdf)
     lanes = links["lanes"].astype(float).clip(lower=0).to_numpy()
     cap_per_lane = links["cap"].astype(float).to_numpy()
     capacity = cap_per_lane * lanes * capfac

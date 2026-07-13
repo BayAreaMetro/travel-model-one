@@ -25,19 +25,7 @@ import openmatrix as omx
 
 from cubeio import read_tpp
 from tm1.assignment.aeq.classes import CLASS_ORDER
-
-# ActivitySim OMX personal-trip table base name -> internal key used below
-_ASIM_MAIN = {
-    "DRIVEALONEFREE": "da",
-    "DRIVEALONEPAY": "datoll",
-    "SHARED2FREE": "sr2",
-    "SHARED2PAY": "sr2toll",
-    "SHARED3FREE": "sr3",
-    "SHARED3PAY": "sr3toll",
-}
-
-SR2_OCC = 2.0      # shared-ride-2 person->vehicle divisor
-SR3_OCC = 3.25     # shared-ride-3+ person->vehicle divisor (avg occupancy)
+from tm1.assignment.aeq.params import Highway
 
 
 def _pad(m: np.ndarray, n_zones: int) -> np.ndarray:
@@ -49,7 +37,8 @@ def _pad(m: np.ndarray, n_zones: int) -> np.ndarray:
     return full
 
 
-def _read_main(asim_output_dir: Path, period: str, n_zones: int) -> dict[str, np.ndarray]:
+def _read_main(asim_output_dir: Path, period: str, n_zones: int,
+               asim_tables: dict) -> dict[str, np.ndarray]:
     """Read personal DA/SR tables from ActivitySim ``trips_{period}.omx``."""
     omx_path = asim_output_dir / f"trips_{period.lower()}.omx"
     if not omx_path.exists():
@@ -59,7 +48,7 @@ def _read_main(asim_output_dir: Path, period: str, n_zones: int) -> dict[str, np
     with omx.open_file(str(omx_path), "r") as f:
         avail = set(f.list_matrices())
         zones = f.shape()[0]
-        for asim_name, key in _ASIM_MAIN.items():
+        for asim_name, key in asim_tables.items():
             tbl = f"{asim_name}_{period.upper()}"
             if tbl in avail:
                 out[key] = _pad(np.asarray(f[tbl], dtype=np.float64), n_zones)
@@ -93,11 +82,17 @@ def assemble_demand(
     nonres_dir: str | Path,
     period: str,
     n_zones: int,
+    hw: Highway,
 ) -> dict[str, np.ndarray]:
-    """Assemble the 13 vehicle-trip tables (keys :data:`CLASS_ORDER`) for a period."""
+    """Assemble the 13 vehicle-trip tables (keys :data:`CLASS_ORDER`) for a period.
+
+    Occupancy divisors and the ActivitySim table mapping come from ``hw``
+    (aeq_params.yaml ``highway:`` section).
+    """
     asim_output_dir = Path(asim_output_dir)
     nonres_dir = Path(nonres_dir)
-    m = _read_main(asim_output_dir, period, n_zones)
+    sr2_occ, sr3_occ = hw.occupancy["sr2"], hw.occupancy["sr3"]
+    m = _read_main(asim_output_dir, period, n_zones, hw.asim_tables)
     nr = _read_nonres(nonres_dir, period, n_zones)
     z = np.zeros((n_zones, n_zones), dtype=np.float64)
 
@@ -106,14 +101,14 @@ def assemble_demand(
 
     demand = {
         "da":      m["da"]              + nz("ix", "DA")      + nz("air", "DA"),
-        "sr2":     m["sr2"] / SR2_OCC    + nz("ix", "SR2")     + nz("air", "SR2"),
-        "sr3":     m["sr3"] / SR3_OCC    + nz("ix", "SR3")     + nz("air", "SR3"),
+        "sr2":     m["sr2"] / sr2_occ    + nz("ix", "SR2")     + nz("air", "SR2"),
+        "sr3":     m["sr3"] / sr3_occ    + nz("ix", "SR3")     + nz("air", "SR3"),
         "sml":     nz("trk", "VSTRUCK") + nz("trk", "STRUCK") + nz("trk", "MTRUCK"),
         "lrg":     nz("trk", "CTRUCK"),
         "datoll":  m["datoll"]           + nz("ix", "DATOLL")  + nz("air", "DATOLL"),
-        "sr2toll": m["sr2toll"] / SR2_OCC + nz("ix", "SR2TOLL") + nz("air", "SR2TOLL")
+        "sr2toll": m["sr2toll"] / sr2_occ + nz("ix", "SR2TOLL") + nz("air", "SR2TOLL")
         + nz("hsr", "taxi_veh"),
-        "sr3toll": m["sr3toll"] / SR3_OCC + nz("ix", "SR3TOLL") + nz("air", "SR3TOLL"),
+        "sr3toll": m["sr3toll"] / sr3_occ + nz("ix", "SR3TOLL") + nz("air", "SR3TOLL"),
         "smltoll": nz("trk", "VSTRUCKTOLL") + nz("trk", "STRUCKTOLL") + nz("trk", "MTRUCKTOLL"),
         "lrgtoll": nz("trk", "CTRUCKTOLL"),
         "daav":    z.copy(),

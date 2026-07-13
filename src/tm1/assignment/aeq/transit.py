@@ -11,7 +11,7 @@ Perceived-cost model (matched to ``TransitAssign.job``):
 * wait = half headway, perceived x ``wait_perceive`` (iwaitfac/xwaitfac = 2.8);
 * walk perceived x ``walk_factor`` (2.0);
 * in-vehicle time x a per-mode factor and modes excluded per line-haul run
-  (``modefac`` / ``skipmodes``, see :data:`RUN_COST`);
+  (``modefac`` / ``skipmodes``, from ``aeq_params.yaml`` via :class:`TransitParams`);
 * Cube's *escalating* boarding penalties (boardpen 0/30/45/...) via a **layered
   ("journey levels") graph**: layer k of a stop means "k boardings so far", and
   boarding is the only edge that moves up a layer, charging the k-th penalty.  This
@@ -45,46 +45,6 @@ from aequilibrae.paths.cython.public_transport import HyperpathGenerating
 
 INF_FREQ = 1.0e20
 
-# Cube's escalating boarding penalties (perceived min); index = boardings so far.
-BOARD_PENALTIES = (0.0, 30.0, 45.0)   # legacy default (assignment); skims use the vectors below
-# Cube skim boardpen (TransitSkims.job): walk/walk access -> 0,20,...; any drive leg -> 0,30,...
-WALK_BOARD_PENALTIES = (0.0, 20.0, 45.0, 50.0, 60.0)
-DRIVE_BOARD_PENALTIES = (0.0, 30.0, 45.0, 50.0, 60.0)
-
-# Cube IWAITMAX (transit_combined_headways.block): cap the WAIT COST to board long-headway
-# Caltrain (mode 130) and ferry (100-104) at 25 min so their sparse schedules do not knock
-# commuter rail / ferry out of the choice set (Cube's own stated reason).  Caps the wait
-# cost only -- the line's real frequency still drives the attractive-set spreading.
-IWAITMAX_MIN = 25.0
-IWAITMAX_MODES = (100, 101, 102, 103, 104, 130)
-
-# Per-line-haul perceived-IVT factors and excluded mode ranges (TransitAssign.job
-# token_modefac / token_skipmodes).  Mode buckets: 10-79 local bus, 80-99 express,
-# 100-109 ferry, 110-119 light rail, 120-129 heavy rail, 130-139 commuter rail.
-RUN_COST: dict[str, dict] = {
-    "com": {"skip": [],
-            "fac": [(10, 79, 1.5), (80, 99, 1.2), (100, 109, 1.1), (110, 119, 1.1),
-                    (120, 129, 1.1), (130, 139, 1.0)]},
-    "hvy": {"skip": [(130, 139)],
-            "fac": [(10, 79, 1.5), (80, 99, 1.2), (100, 109, 1.1), (110, 119, 1.1),
-                    (120, 129, 1.0)]},
-    "exp": {"skip": [(130, 139), (120, 129)],
-            "fac": [(10, 79, 1.5), (80, 99, 1.0), (100, 109, 1.5), (110, 119, 1.5)]},
-    "lrf": {"skip": [(130, 139), (120, 129), (80, 99)],
-            "fac": [(10, 79, 1.5), (100, 109, 1.0), (110, 119, 1.0)]},
-    "loc": {"skip": [(130, 139), (120, 129), (80, 99), (100, 119)],
-            "fac": [(10, 79, 1.0)]},
-}
-
-# "key" (premier line-haul) mode band per run type -> KEYIVT skim (in-vehicle time on
-# that band only).  loc has no separate key (all IVT is local); LRF additionally splits
-# out ferry (100-109) as FERRYIVT.  Bands match RUN_COST's mode buckets.
-KEY_BAND: dict[str, tuple] = {
-    "com": (130, 139), "hvy": (120, 129), "exp": (80, 99), "lrf": (100, 119),
-}   # lrf key = "Light rail/Ferry" combined (Cube ivtLRF spans 100-119); FERRYIVT below
-    # reports the ferry sub-band separately.
-FERRY_BAND = (100, 109)
-
 # ACTUAL-value component skim columns accumulated along the hyperpath (minutes / counts;
 # see skim_transit).  sk_edge = perceived NON-wait edge time (walk x factor, IVT x ivf,
 # boardpen -- NOT board_cost) so wait = (u - sk_edge) / wait_perceive stays exact under
@@ -98,12 +58,25 @@ SKIM_COLS = ("ivt", "keyivt", "ferryivt", "wacc", "waux", "wegr",
 
 @dataclass
 class TransitParams:
-    """Perceived-cost parameters (minutes), matched to ``TransitAssign.job``."""
+    """Perceived-cost parameters (minutes) for one transit graph build.
 
-    wait_perceive: float = 2.8            # iwaitfac / xwaitfac
-    walk_factor: float = 2.0              # perceived-time factor on walk links
-    board_penalties: tuple = BOARD_PENALTIES   # escalating boardpen (layered graph)
-    linehaul: str | None = None           # key into RUN_COST for modefac/skipmodes
+    All MODEL POLICY values (boarding penalties, per-line-haul mode factors and
+    exclusions, IWAITMAX, key bands) live in ``base-models/assignment/aeq_params.yaml``
+    and are resolved into this object by the caller (see
+    ``transit_skims.skim_params``); the neutral defaults below build a bare
+    no-policy graph.
+    """
+
+    wait_perceive: float = 1.0            # perceived factor on waits (iwaitfac/xwaitfac)
+    walk_factor: float = 1.0              # perceived factor on walk links
+    board_penalties: tuple = (0.0,)       # escalating boardpen (layered graph)
+    linehaul: str | None = None           # label; keys the fare structures (faremat)
+    skip: tuple = ()                      # ((lo, hi), ...) excluded mode ranges
+    fac: tuple = ()                       # ((lo, hi, factor), ...) perceived-IVT factors
+    key_band: tuple | None = None         # premier band -> KEYIVT; None = no premier
+    ferry_band: tuple | None = None       # ferry sub-band -> FERRYIVT
+    iwaitmax_min: float = 0.0             # initial-wait cost cap (min); 0 modes = off
+    iwaitmax_modes: tuple = ()            # modes whose first boarding is capped
     inveh_factor: dict = field(default_factory=dict)  # extra {mode: factor} overrides
     spread_window: float | None = None    # None: full S&F frequency spreading;
     # 0: fully deterministic expected wait (TRNBUILD best path, no spreading);
@@ -169,16 +142,15 @@ def build_transit_graph(
     transit["hw"] = transit["name"].map(headways)
     transit = transit[transit["hw"] > 0]
 
-    cost = RUN_COST.get(params.linehaul or "", {"skip": [], "fac": []})
     mode = transit["mode"].to_numpy()
-    if cost["skip"]:
+    if params.skip:
         drop = np.zeros(len(transit), dtype=bool)
-        for lo, hi in cost["skip"]:
+        for lo, hi in params.skip:
             drop |= (mode >= lo) & (mode <= hi)
         transit = transit[~drop]
         mode = transit["mode"].to_numpy()
     ivf = np.ones(len(transit))
-    for lo, hi, fac in cost["fac"]:
+    for lo, hi, fac in params.fac:
         ivf[(mode >= lo) & (mode <= hi)] = fac
     for m, fac in params.inveh_factor.items():
         ivf[mode == int(m)] = fac
@@ -413,9 +385,11 @@ def build_transit_graph(
     t_actual = transit["time"].to_numpy()
     t_dist = transit["distance"].to_numpy(dtype=float)
     tt = t_actual * ivf
-    kb = KEY_BAND.get(params.linehaul or "")
+    kb = params.key_band
     is_key = ((mode >= kb[0]) & (mode <= kb[1])) if kb else np.zeros(len(transit), bool)
-    is_ferry = (mode >= FERRY_BAND[0]) & (mode <= FERRY_BAND[1])
+    fyb = params.ferry_band
+    is_ferry = (((mode >= fyb[0]) & (mode <= fyb[1])) if fyb
+                else np.zeros(len(transit), bool))
     ivt_key = np.where(is_key, t_actual, 0.0)
     ivt_ferry = np.where(is_ferry, t_actual, 0.0)
     # distance for the rail fare curve accumulates over the FARE band (distance-priced
@@ -477,8 +451,8 @@ def build_transit_graph(
     # proportional); RE-boarding (transfer) edges use the raw headway -- Cube charges the
     # full transfer wait to board a sparse line mid-path.  (Setting freq=INF instead of
     # capping the frequency's headway breaks attractive-set combination -- tested, backfired.)
-    hw_first = np.where(np.isin(s_mode, IWAITMAX_MODES),
-                        np.minimum(s_hw, 2.0 * IWAITMAX_MIN), s_hw)
+    hw_first = np.where(np.isin(s_mode, params.iwaitmax_modes),
+                        np.minimum(s_hw, 2.0 * params.iwaitmax_min), s_hw)
 
     def _board_cost_freq(hw):
         wait_exp = params.wait_perceive * hw / 2.0   # expected perceived wait
@@ -611,6 +585,7 @@ def skim_transit(
     max_path_min: float = 180.0,
     max_perceived_min: float | None = None,
     rail_curve_fallback: bool = False,
+    premier: bool = False,
 ) -> dict[str, np.ndarray]:
     """Skim the layered SF graph into Cube-style component matrices (actual units).
 
@@ -625,10 +600,11 @@ def skim_transit(
     Cube's combined-headway window); ``None`` (full spread) is more behaviourally
     correct but reports ~10% lower wait.
 
-    ``linehaul`` (loc/lrf/exp/hvy/com) applies Cube's hierarchical filter: the premium
-    skim sets keep an OD only where the path actually uses that premier mode band
-    (verified 100% in the reference), so an OD without e.g. heavy rail is left to a
-    lower set.  ``loc`` (all-local) needs no premier filter.
+    ``premier`` applies Cube's hierarchical filter: a premium skim set keeps an OD
+    only where the path actually uses the premier mode band (KEYIVT > 0; verified
+    100% in the reference), so an OD without e.g. heavy rail is left to a lower set.
+    ``loc``/``trn`` (no key band) pass ``premier=False`` and keep every reachable OD.
+    ``linehaul`` labels the run and keys the fare structures (faremat / rail curve).
 
     Returns a dict of ``n_zones x n_zones`` arrays keyed by ActivitySim token:
     ``TOTIVT, KEYIVT, FERRYIVT, IWAIT, XWAIT, WAUX, BOARDS`` (minutes / boardings;
@@ -698,7 +674,7 @@ def skim_transit(
         fare = fare + fares.rail_fare(linehaul, zmat("keydist"))
 
     dtim, ddist = zmat("dtim"), zmat("ddist")     # drive access/egress time / distance
-    reach = (keyivt > 0) if linehaul in KEY_BAND else (u > 0)
+    reach = (keyivt > 0) if premier else (u > 0)
     actual_total = ivt + wait + wacc + waux + wegr + dtim
     keep = reach & (actual_total <= max_path_min)
     if max_perceived_min is not None:            # Cube maxpathtime prune (perceived cost)

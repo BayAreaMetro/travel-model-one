@@ -30,14 +30,8 @@ from cubeio import read_tpp
 from tm1.assignment.aeq.fares import load_fares
 from tm1.assignment.aeq.transit import build_transit_graph, skim_transit
 from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
-from tm1.assignment.aeq.transit_skims import (
-    PERIODS,
-    SKIM_MAXPATH_PERCEIVED,
-    SKIM_WAIT_PERCEIVE,
-    _assemble,
-    _skim_params,
-    _union_service,
-)
+from tm1.assignment.aeq.params import load_aeq_params
+from tm1.assignment.aeq.transit_skims import _assemble, _union_service, skim_params
 
 BLUE, ORANGE = "#2a78d6", "#eb6834"
 INK, MUTED, GRID, BASE, SURF = "#0b0b0b", "#898781", "#e1e0d9", "#c3c2b7", "#ffffff"
@@ -169,26 +163,29 @@ def make_od_scatter(inputs: str, reference: str, threads: int) -> None:
     rtd = pd.read_parquet(inp / "ref_ride_time.parquet")
     ref_time = {(int(a), int(b)): float(t) for a, b, t
                 in zip(rtd.A, rtd.B, rtd.time, strict=False)}
-    fares = load_fares(inp / "fares", link_dist, lines)
+    P = load_aeq_params()
+    fares = load_fares(inp / "fares", link_dist, lines, rail_fare=P.rail_fare)
     sl = pd.read_parquet(inp / "support_links.parquet")
     ride, hw = {}, {}
-    for p in PERIODS:
-        ride[p], hw[p] = build_ride_links(lines, p, bus_time_table(links, p),
-                                          link_dist, ref_time)
-    ride_u, hw_u = _union_service(ride, hw)
+    for p in P.periods.names:
+        ride[p], hw[p] = build_ride_links(lines, p, bus_time_table(links, p, P.bus_time),
+                                          link_dist, ref_time, bus_cfg=P.bus_time,
+                                          freq_field=P.periods.freq_field)
+    ride_u, hw_u = _union_service(ride, hw, P)
 
     def one_run(rt: str) -> dict:
         access, lh, egress = rt.split("_")
-        params = _skim_params(lh, access, egress, 1.5)
+        params = skim_params(lh, access, egress, P)
         sup = sl[sl["run_type"] == rt]
         kw = {"linehaul": lh, "fares": fares, "threads": threads,
-              "wait_perceive": SKIM_WAIT_PERCEIVE,
-              "max_perceived_min": SKIM_MAXPATH_PERCEIVED}
+              "wait_perceive": params.wait_perceive,
+              "max_perceived_min": P.transit_cost.skim_max_perceived_min,
+              "premier": params.key_band is not None}
         g = build_transit_graph(_assemble(ride["AM"], sup), hw["AM"], params,
-                                n_zones=1475, fares=fares, fare_states="none",
+                                n_zones=P.n_taz, fares=fares, fare_states="none",
                                 access_mode=1, egress_mode=6)
         sk = skim_transit(g, rail_curve_fallback=True, **kw)
-        gf = build_transit_graph(_assemble(ride_u, sup), hw_u, params, n_zones=1475,
+        gf = build_transit_graph(_assemble(ride_u, sup), hw_u, params, n_zones=P.n_taz,
                                  fares=fares, fare_states="operator",
                                  access_mode=1, egress_mode=6)
         fare = skim_transit(gf, **kw)["FARE"]
