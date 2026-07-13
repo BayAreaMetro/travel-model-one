@@ -133,11 +133,11 @@ ax.legend(handles=handles, frameon=False, fontsize=9, loc="upper right")
 ax.grid(axis="y", visible=False)
 ax.set_title("Runtime per iteration  (Cube recomputes fare every iteration; Aeq caches it)",
              fontsize=10, color=INK)
-fig.text(0.01, -0.02, "Aeq measured on TM2-B (LOS skims run as ~5 concurrent workers); "
-         "Cube from reference-run logs (15 single-threaded cluster processes; identical "
-         "Xeon Gold 6338 cores on both machines). Dashed = exact-fare pass (~7 min, "
-         "worker pool), run once and cached across iterations and repeat runs of the "
-         "same network - Cube redoes fare each iteration.",
+fig.text(0.01, -0.04,
+         "Hardware: Both Xeon Gold 6338 (TM2-B: 24 cores/48 vCPUs; TM3-C: 8 cores/16 vCPUs).\n"
+         "Cube hard-capped at 15 single-threaded processes; Aeq scales to 48 threads "
+         "(6 workers x 8 threads for LOS, 4 workers x 12 threads for fare).\n"
+         "Dashed = one-time exact-fare pass (cached); Cube recomputes fare each iteration.",
          fontsize=7.3, color=MUTED)
 fig.tight_layout()
 fig.savefig(OUT / "perf_bars.png", dpi=140, bbox_inches="tight")
