@@ -28,9 +28,9 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 from cubeio import read_tpp
 from tm1.assignment.aeq.fares import load_fares
+from tm1.assignment.aeq.params import load_aeq_params
 from tm1.assignment.aeq.transit import build_transit_graph, skim_transit
 from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
-from tm1.assignment.aeq.params import load_aeq_params
 from tm1.assignment.aeq.transit_skims import _assemble, _union_service, skim_params
 
 BLUE, ORANGE = "#2a78d6", "#eb6834"
@@ -180,7 +180,8 @@ def make_od_scatter(inputs: str, reference: str, threads: int) -> None:
         kw = {"linehaul": lh, "fares": fares, "threads": threads,
               "wait_perceive": params.wait_perceive,
               "max_perceived_min": P.transit_cost.skim_max_perceived_min,
-              "premier": params.key_band is not None}
+              "premier": params.key_band is not None,
+              "combine_wait": P.transit_cost.linehauls[lh].wait_pool}
         g = build_transit_graph(_assemble(ride["AM"], sup), hw["AM"], params,
                                 n_zones=P.n_taz, fares=fares, fare_states="none",
                                 access_mode=1, egress_mode=6)

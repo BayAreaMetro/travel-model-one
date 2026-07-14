@@ -37,11 +37,11 @@ def skim_params(linehaul: str, access: str, egress: str, p: AeqParams) -> Transi
     boardpen = (tc.walk_board_penalties if (access, egress) == ("wlk", "wlk")
                 else tc.drive_board_penalties)
     return TransitParams(
-        linehaul=linehaul, spread_window=tc.spread_window,
+        linehaul=linehaul, spread_window=lh.spread_window,
         wait_perceive=tc.skim_wait_perceive, walk_factor=tc.walk_factor,
         board_penalties=boardpen, skip=lh.skip, fac=lh.fac, key_band=lh.key_band,
         ferry_band=tc.ferry_band, iwaitmax_min=tc.iwaitmax_min,
-        iwaitmax_modes=tc.iwaitmax_modes)
+        iwaitmax_modes=tc.iwaitmax_modes, wait_combine=tc.wait_combine)
 
 
 def run_prefix(access: str, linehaul: str, egress: str) -> str:
@@ -219,7 +219,8 @@ def _fare_job(job: tuple) -> tuple:
         threads=c["threads"], wait_perceive=tp.wait_perceive,
         max_path_min=p.transit_cost.skim_max_path_min,
         max_perceived_min=p.transit_cost.skim_max_perceived_min,
-        premier=tp.key_band is not None)["FARE"]
+        premier=tp.key_band is not None,
+        combine_wait=p.transit_cost.linehauls[linehaul].wait_pool)["FARE"]
     return rt, fare
 
 
@@ -251,7 +252,8 @@ def _skim_los_job(job: tuple) -> dict:
         wait_perceive=tp.wait_perceive,
         max_path_min=p.transit_cost.skim_max_path_min,
         max_perceived_min=p.transit_cost.skim_max_perceived_min,
-        rail_curve_fallback=True, premier=tp.key_band is not None)
+        rail_curve_fallback=True, premier=tp.key_band is not None,
+        combine_wait=p.transit_cost.linehauls[linehaul].wait_pool)
     # exact union-pass fare where available; LOS fare (XFARE + distance curve) fills the
     # few pairs the union pass cannot reach.  trn has no fare pass (and publishes no FARE).
     fare_c = c["fare_cache"].get(rt)

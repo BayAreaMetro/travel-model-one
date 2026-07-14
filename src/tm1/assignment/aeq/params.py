@@ -23,6 +23,8 @@ class LinehaulCost:
     skip: tuple                 # ((lo, hi), ...) excluded mode ranges
     fac: tuple                  # ((lo, hi, factor), ...) perceived-IVT factors
     key_band: tuple | None      # premier mode band; None = no premier filter
+    spread_window: float | None  # overrides transit_cost.spread_window
+    wait_pool: bool             # COMBINE the boarded lines' headways (Cube MAXDIFF)
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,7 @@ class TransitCost:
     iwaitmax_min: float
     iwaitmax_modes: tuple
     ferry_band: tuple
+    wait_combine: str           # "line" | "service" | "node" (COMBINE pooling rule)
     linehauls: dict             # name -> LinehaulCost
 
 
@@ -135,8 +138,11 @@ def load_aeq_params(path: str | Path | None = None) -> AeqParams:
 
     tc = raw["transit_cost"]
     linehauls = {
-        name: LinehaulCost(skip=_tuples(lh["skip"]), fac=_tuples(lh["fac"]),
-                           key_band=tuple(lh["key_band"]) if lh["key_band"] else None)
+        name: LinehaulCost(
+            skip=_tuples(lh["skip"]), fac=_tuples(lh["fac"]),
+            key_band=tuple(lh["key_band"]) if lh["key_band"] else None,
+            spread_window=lh.get("spread_window", tc["spread_window"]),
+            wait_pool=bool(lh.get("wait_pool", True)))
         for name, lh in tc["linehauls"].items()
     }
     transit_cost = TransitCost(
@@ -152,6 +158,7 @@ def load_aeq_params(path: str | Path | None = None) -> AeqParams:
         iwaitmax_min=float(tc["iwaitmax"]["max_min"]),
         iwaitmax_modes=tuple(tc["iwaitmax"]["modes"]),
         ferry_band=tuple(tc["ferry_band"]),
+        wait_combine=str(tc.get("wait_combine", "line")),
         linehauls=linehauls,
     )
 

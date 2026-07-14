@@ -31,8 +31,11 @@ transit_cost:
   drive_board_penalties: [0.0, 30.0, 45.0, 50.0, 60.0] # TransitSkims.job, any drive leg
   skim_max_perceived_min: 300.0    # TransitSkims.job maxpathtime (perceived)
   skim_max_path_min: 180.0         # actual-time path prune
-  spread_window: 1.5               # S&F frequency-spreading cap emulating TRNBUILD's
-                                   # combined-headways window (see transit.TransitParams)
+  # S&F frequency inflation: shrinks the attractive set toward the lines Cube's COMBINE
+  # would pool.  Calibrated with the pooled wait reporting below (AM, trip-weighted:
+  # heavy-rail initial wait +0.01 min, transfer wait +0.20 min vs Cube).  Per-line-haul
+  # overrides allowed under `linehauls:`.
+  spread_window: 2.0
   # IWAITMAX (transit_combined_headways.block): cap the wait COST to board long-headway
   # Caltrain / ferry so sparse schedules stay in the choice set
   iwaitmax:
@@ -45,12 +48,20 @@ transit_cost:
   # hierarchical premier filter; null = keep every reachable OD).
   # 'trn' is Cube's generic all-modes skim-only path (feeds the accessibility
   # composite); it has no key band and no exact fare pass.
+  # COMBINE (transit_combined_headways.block): Cube pools the lines waited for together
+  # at a stop into ONE service and charges half their COMBINED headway -- but
+  # `MAXDIFF = 130*20.0` with `MAXDIFF[130] = 10` means commuter-rail patterns do NOT
+  # pool ("don't combine baby bullets with slow lines if they're significantly slower"),
+  # while every other mode does.  wait_pool encodes exactly that: true -> report the
+  # combined headway of the boarded services; false -> the boarded line's own headway.
   linehauls:
     com:
       skip: []
       fac: [[10, 79, 1.5], [80, 99, 1.2], [100, 109, 1.1], [110, 119, 1.1],
             [120, 129, 1.1], [130, 139, 1.0]]
       key_band: [130, 139]
+      wait_pool: false          # MAXDIFF[130]=10: bullets do not pool with locals
+      spread_window: 1.5
     hvy:
       skip: [[130, 139]]
       fac: [[10, 79, 1.5], [80, 99, 1.2], [100, 109, 1.1], [110, 119, 1.1],

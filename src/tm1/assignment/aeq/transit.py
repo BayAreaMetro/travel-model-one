@@ -52,8 +52,12 @@ INF_FREQ = 1.0e20
 # split.  boards counts boardings.  fare = boarding XFARE + farelinks (cents); keydist =
 # key-mode in-vehicle distance (miles) for the rail distance-curve fare.
 SKIM_COLS = ("ivt", "keyivt", "ferryivt", "wacc", "waux", "wegr",
-             "boards", "sk_edge", "w_first", "w_xfer", "fare", "keydist",
+             "boards", "sk_edge", "detwait", "w_first", "w_xfer", "fare", "keydist",
              "dtim", "ddist")   # dtim/ddist = drive access/egress time (min) / dist (mi)
+# detwait = the DETERMINISTIC boarding wait slice (perceived).  It is part of the routing
+# cost (so it stays out of sk_edge), but it is subtracted back out when reporting the wait:
+# see skim_transit -- what remains is the S&F frequency term, which IS Cube's
+# combined-headway wait (deflated by exactly spread_window, so rescaling recovers it).
 
 
 @dataclass
@@ -77,6 +81,11 @@ class TransitParams:
     ferry_band: tuple | None = None       # ferry sub-band -> FERRYIVT
     iwaitmax_min: float = 0.0             # initial-wait cost cap (min); 0 modes = off
     iwaitmax_modes: tuple = ()            # modes whose first boarding is capped
+    wait_combine: str = "line"            # how boarding lines pool for the wait charge:
+    # "line"    -- each line alone (deterministic slice = half its own headway);
+    # "service" -- lines leaving the stop toward the SAME next stop pool into one
+    #              service, charged half their COMBINED headway (Cube's COMBINE);
+    # "node"    -- every line at the stop pools (over-pools where routes diverge)
     inveh_factor: dict = field(default_factory=dict)  # extra {mode: factor} overrides
     spread_window: float | None = None    # None: full S&F frequency spreading;
     # 0: fully deterministic expected wait (TRNBUILD best path, no spreading);
@@ -96,6 +105,9 @@ class TransitGraph:
     # origins and destinations are split so no path can pass THROUGH a centroid
     # (egress -> re-access would reset the boarding-count/state machine)
     board_rows: dict                    # line name -> np.ndarray of boarding-edge rows
+    spread_window: float | None = None  # the frequency inflation this graph was built with;
+    # skim_transit rescales the frequency wait by it (see the detwait note above), so it is
+    # carried on the graph rather than passed separately -- they must never disagree.
 
 
 def build_transit_graph(
@@ -454,8 +466,22 @@ def build_transit_graph(
     hw_first = np.where(np.isin(s_mode, params.iwaitmax_modes),
                         np.minimum(s_hw, 2.0 * params.iwaitmax_min), s_hw)
 
+    # COMBINE (transit_combined_headways.block): Cube pools the lines a rider waits for
+    # together at a stop into ONE service and charges half their COMBINED headway -- four
+    # 15-min BART lines through the same tunnel are a 3.75-min service, not four 15-min
+    # ones.  The S&F frequency term below already does exactly that (its wait is
+    # 1/sum(freq) over the attractive set); what breaks the reported wait is the
+    # DETERMINISTIC slice, a per-boarding constant that acts as a floor and does not
+    # shrink as lines are added (+100% at a 4-line rail station).  That slice is required
+    # in the ROUTING cost -- it is what keeps the perceived cost of waiting correct while
+    # the inflated frequencies shrink the attractive set -- so it is charged here and
+    # carried as the `detwait` skim column, then subtracted back out when the wait is
+    # reported (see skim_transit).  Pooling it over a static group instead was tested and
+    # fails: any structural pool (shared next stop, whole node) is far larger than the
+    # destination-dependent attractive set, over-correcting to -26% / -64% on rail waits.
     def _board_cost_freq(hw):
-        wait_exp = params.wait_perceive * hw / 2.0   # expected perceived wait
+        """Deterministic wait slice + S&F frequency, from the line's own headway."""
+        wait_exp = params.wait_perceive * hw / 2.0        # expected perceived wait
         w = params.spread_window
         if w is None:
             return np.zeros(len(stops)), freq_scale / hw
@@ -465,20 +491,15 @@ def build_transit_graph(
             return (np.maximum(wait_exp - w, 0.0),
                     np.where(wait_exp > w, 1.0 / w, freq_scale / hw))
         # w > 1 acts as a frequency-inflation factor alpha: all line frequencies are
-        # scaled up by alpha (shrinking the attractive-set window by ~alpha while
-        # keeping frequency-PROPORTIONAL splits) and the removed share of the
-        # expected wait is paid deterministically in the boarding cost.
+        # scaled up by alpha (shrinking the attractive-set window by ~alpha while keeping
+        # frequency-PROPORTIONAL splits) and the removed share of the expected wait is
+        # paid deterministically in the boarding cost.
         return wait_exp * (1.0 - 1.0 / w), w * freq_scale / hw
 
     cost_first, freq_first = _board_cost_freq(hw_first)   # initial: IWAITMAX-capped
-    _, freq_xfer = _board_cost_freq(s_hw)                  # transfer kernel wait: raw headway
-    cost_xfer_capped = cost_first                          # deterministic slice stays capped
-    half_first, half_xfer = hw_first / 2.0, s_hw / 2.0    # iwait/xwait markers
-    # Known bias (divergence ledger 6.3): the deterministic spread slice is charged per
-    # LINE; Cube's COMBINE charges the combined service (lines within +-5 min run time).
-    # On sparse uncapped modes this over-reports transfer waits (+29% worst cell);
-    # dividing by ALL lines at the node instead over-corrects to -23% -- the faithful
-    # normalization is COMBINE's run-time window, a candidate refinement.
+    _, freq_xfer = _board_cost_freq(s_hw)                 # transfer kernel: raw headway
+    cost_xfer_capped = cost_first                         # deterministic slice stays capped
+    half_first, half_xfer = hw_first / 2.0, s_hw / 2.0    # iwait/xwait split markers
 
     def _board(from_v, k, first, fare_arr, sel=None):
         start = sum(len(f) for f in frames)
@@ -497,7 +518,7 @@ def build_transit_graph(
         board_freq = (freq_first if first else freq_xfer)[idx]
         add(from_v, ov(s_name[idx], s_node[idx], k + 1, board=s_node[idx]),
             board_cost + pens[k], board_freq,
-            boards=1.0, sk_edge=np.full(len(idx), pens[k]),
+            boards=1.0, sk_edge=np.full(len(idx), pens[k]), detwait=board_cost,
             w_first=(half_first[idx] if first else 0.0),
             w_xfer=(0.0 if first else half_xfer[idx]), fare=fare_arr[idx])
         for i, ln in enumerate(s_name[idx]):
@@ -543,7 +564,7 @@ def build_transit_graph(
     dest_vertex = {c: d0 + cidx[c] for c in centroids}
     return TransitGraph(edges=edges, n_vertices=n_vertices,
                         centroid_vertex=centroid_vertex, dest_vertex=dest_vertex,
-                        board_rows=board_rows)
+                        board_rows=board_rows, spread_window=params.spread_window)
 
 
 def assign_transit(graph: TransitGraph, demand: np.ndarray, *,
@@ -586,6 +607,7 @@ def skim_transit(
     max_perceived_min: float | None = None,
     rail_curve_fallback: bool = False,
     premier: bool = False,
+    combine_wait: bool = True,
 ) -> dict[str, np.ndarray]:
     """Skim the layered SF graph into Cube-style component matrices (actual units).
 
@@ -648,7 +670,23 @@ def skim_transit(
     # the raw half-headway (Cube does NOT cap transfer waits).  For normal modes the marker
     # sum >= the S&F combined wait, so this is a no-op; for long-headway capped modes it
     # reports Cube's capped initial wait instead of the uncapped frequency wait.
-    wait_u = np.maximum(u - zmat("sk_edge"), 0.0) / wait_perceive
+    # Cube's COMBINE wait, recovered exactly: (u - sk_edge) is the perceived wait the
+    # router paid = the S&F FREQUENCY term + the DETERMINISTIC slice.  The frequency term
+    # alone is 1/sum(freq) over the attractive set = half its combined headway, deflated
+    # by exactly `spread_window` (every line's frequency was inflated by it).  So strip
+    # the deterministic slice and rescale by that same factor: what comes back is half the
+    # attractive set's COMBINED headway -- Cube's formula -- with routing untouched.
+    # (A lone line is unchanged: freq term = w x half-headway, rescaled -> half-headway.)
+    # combine_wait=False reproduces Cube's MAXDIFF[130]=10: commuter-rail patterns are
+    # NOT combined for the headway calculation (a bullet does not pool with a local), so
+    # the wait stays the boarded line's own -- i.e. the deterministic slice is kept.
+    if combine_wait:
+        sw = graph.spread_window
+        freq_wait = np.maximum(u - zmat("sk_edge") - zmat("detwait"), 0.0)
+        scale = sw if (sw and sw > 1.0) else 1.0
+        wait_u = scale * freq_wait / wait_perceive
+    else:
+        wait_u = np.maximum(u - zmat("sk_edge"), 0.0) / wait_perceive
     wait = np.minimum(wait_u, wsum)
     # proportional iwait/xwait split by marker share.  (A sequential split -- iwait gets
     # first claim up to its marker -- was tested and overshoots both ways: the w_first

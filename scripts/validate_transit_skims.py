@@ -36,9 +36,9 @@ import pandas as pd
 
 from cubeio import read_tpp
 from tm1.assignment.aeq.fares import load_fares
+from tm1.assignment.aeq.params import load_aeq_params
 from tm1.assignment.aeq.transit import build_transit_graph, skim_transit
 from tm1.assignment.aeq.transit_network import build_ride_links, bus_time_table, parse_lin
-from tm1.assignment.aeq.params import load_aeq_params
 from tm1.assignment.aeq.transit_skims import _assemble, _union_service, skim_params
 
 # component -> (reference trnskm matrix, scale to actual units)
@@ -54,7 +54,7 @@ log = logging.getLogger("validate")
 _PHASE = {"label": "", "t0": 0.0, "exp": 1.0}
 
 
-def _phase(label: str, exp: float = 1.0):
+def _phase(label: str, exp: float = 1.0) -> None:
     # only slow phases (>=30s: input load, fare graph) get a live bar; fast LOS skims
     # just print their result line.  The bar redraws one line in place on stderr, so it
     # never floods the log.
@@ -64,7 +64,7 @@ def _phase(label: str, exp: float = 1.0):
     _PHASE.update(label=label if exp >= 30 else "", t0=time.time(), exp=max(exp, 1.0))
 
 
-def _ticker():
+def _ticker() -> None:
     while True:
         time.sleep(2)
         lbl = _PHASE["label"]
@@ -124,9 +124,9 @@ def main() -> None:
     links.columns = [c.strip() for c in links.columns]
     lines = parse_lin(inp / "transitLines.lin")
     ld = pd.read_parquet(inp / "link_distance.parquet")
-    link_dist = {(int(a), int(b)): float(x) for a, b, x in zip(ld.A, ld.B, ld.distance)}
+    link_dist = {(int(a), int(b)): float(x) for a, b, x in zip(ld.A, ld.B, ld.distance, strict=False)}
     rtd = pd.read_parquet(inp / "ref_ride_time.parquet")
-    ref_time = {(int(a), int(b)): float(t) for a, b, t in zip(rtd.A, rtd.B, rtd.time)}
+    ref_time = {(int(a), int(b)): float(t) for a, b, t in zip(rtd.A, rtd.B, rtd.time, strict=False)}
     fares = load_fares(inp / "fares", link_dist, lines, rail_fare=P.rail_fare)
     sl = pd.read_parquet(inp / "support_links.parquet")
     ride, hw = {}, {}
@@ -170,7 +170,8 @@ def main() -> None:
                 max_path_min=P.transit_cost.skim_max_path_min,
                 wait_perceive=params.wait_perceive,
                 max_perceived_min=P.transit_cost.skim_max_perceived_min,
-                premier=params.key_band is not None)["FARE"]
+                premier=params.key_band is not None,
+                combine_wait=P.transit_cost.linehauls[lh].wait_pool)["FARE"]
             _phase("")
             fare_secs += time.time() - tb
             fare_n += 1
@@ -186,7 +187,8 @@ def main() -> None:
                               wait_perceive=params.wait_perceive,
                               max_perceived_min=P.transit_cost.skim_max_perceived_min,
                               rail_curve_fallback=True,
-                              premier=params.key_band is not None)
+                              premier=params.key_band is not None,
+                              combine_wait=P.transit_cost.linehauls[lh].wait_pool)
             del g
             los_secs += time.time() - tl
             los_n += 1
