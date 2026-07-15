@@ -112,8 +112,10 @@ def main() -> None:
     df = pd.DataFrame(rows, columns=["period", "class", "cube", "aeq", "pct", "corr"])
     cl = df[df["class"] != "TOT_PCE"]; tp = df[df["class"] == "TOT_PCE"]
     log.info("\n=== HIGHWAY ASSIGNMENT SUMMARY ===")
-    log.info("  per-class link vol: |%%| med %.1f%%   corr med %.3f", cl.pct.abs().median(), cl.corr.median())
-    log.info("  total-PCE link vol: |%%| med %.1f%%   corr med %.3f", tp.pct.abs().median(), tp.corr.median())
+    log.info("  per-class link vol: |%%| med %.1f%%   corr med %.3f",
+             cl["pct"].abs().median(), cl["corr"].median())      # "corr" collides with DataFrame.corr
+    log.info("  total-PCE link vol: |%%| med %.1f%%   corr med %.3f",
+             tp["pct"].abs().median(), tp["corr"].median())
 
 
 if __name__ == "__main__":

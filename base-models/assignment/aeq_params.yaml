@@ -144,7 +144,9 @@ highway:
   first_value_tollclass: 31    # tollclass >= this is a value-toll (express-lane) facility
   # person-trip -> vehicle-trip occupancy divisors (HwyAssign vol[] definitions)
   occupancy: {sr2: 2.0, sr3: 3.25}
-  # ActivitySim OMX personal-trip table -> assignment class
+  # ActivitySim OMX personal-trip table -> assignment class.  NOTE: write_trip_matrices
+  # already divides the shared-ride tables by occupancy, so these OMX tables are
+  # VEHICLE trips (DA is occ-1, undivided); assemble_demand does NOT divide them again.
   asim_tables:
     DRIVEALONEFREE: da
     DRIVEALONEPAY: datoll
@@ -152,6 +154,18 @@ highway:
     SHARED2PAY: sr2toll
     SHARED3FREE: sr3
     SHARED3PAY: sr3toll
+  # Ride-hail (TNC/taxi) person-trip -> vehicle-trip folding, mirroring PrepAssign.job
+  # steps 3-5: split each ride-hail mode's person-trips across occupancy bins (da=occ1,
+  # s2=occ2, s3=occ3), convert to vehicles, add the zero-passenger (deadhead) empty
+  # vehicles, and route taxi into the toll classes / TNC into the AV classes.  Shares and
+  # the ZPV factor are the MTC params (params.properties Taxi.*/TNC.*.share, TNC_ZPV_fac).
+  ridehail:
+    zpv_factor: 0.70                          # TNC_ZPV_fac: deadhead (empty) vehicle factor
+    tables: {taxi: TAXI, single: TNC_SINGLE, shared: TNC_SHARED}
+    shares:                                   # occupancy-bin split of each mode's persons
+      taxi:   {da: 0.00, s2: 0.53, s3: 0.47}  # taxi -> toll DA/SR2/SR3
+      single: {da: 0.53, s2: 0.29, s3: 0.18}  # TNC_SINGLE -> AV DA/SR2/SR3
+      shared: {da: 0.09, s2: 0.29, s3: 0.62}  # TNC_SHARED  -> AV DA/SR2/SR3
   # highway level-of-service skim classes: (assignment class, OMX prefix, is_toll)
   skim_classes: [[da, SOV, false], [sr2, HOV2, false], [sr3, HOV3, false],
                  [datoll, SOVTOLL, true], [sr2toll, HOV2TOLL, true],

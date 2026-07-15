@@ -32,6 +32,9 @@ Description,Target,Expression
 ,WALK_EXP_DRIVE_EA,((trips.trip_mode == 'DRIVE_EXP') & is_ea & ~trips.outbound) * tour_participants
 ,WALK_DRIVE_HVY_EA,((trips.trip_mode == 'DRIVE_HVY') & is_ea & ~trips.outbound) * tour_participants
 ,WALK_COM_DRIVE_EA,((trips.trip_mode == 'DRIVE_COM') & is_ea & ~trips.outbound) * tour_participants
+,TAXI_EA,((trips.trip_mode == 'TAXI') & is_ea) * tour_participants
+,TNC_SINGLE_EA,((trips.trip_mode == 'TNC_SINGLE') & is_ea) * tour_participants
+,TNC_SHARED_EA,((trips.trip_mode == 'TNC_SHARED') & is_ea) * tour_participants
 # am trips,,
 ,DRIVEALONEFREE_AM,((trips.trip_mode == 'DRIVEALONEFREE') & is_am) * tour_participants
 ,DRIVEALONEPAY_AM,((trips.trip_mode == 'DRIVEALONEPAY') & is_am) * tour_participants
@@ -56,6 +59,9 @@ Description,Target,Expression
 ,WALK_EXP_DRIVE_AM,((trips.trip_mode == 'DRIVE_EXP') & is_am & ~trips.outbound) * tour_participants
 ,WALK_DRIVE_HVY_AM,((trips.trip_mode == 'DRIVE_HVY') & is_am & ~trips.outbound) * tour_participants
 ,WALK_COM_DRIVE_AM,((trips.trip_mode == 'DRIVE_COM') & is_am & ~trips.outbound) * tour_participants
+,TAXI_AM,((trips.trip_mode == 'TAXI') & is_am) * tour_participants
+,TNC_SINGLE_AM,((trips.trip_mode == 'TNC_SINGLE') & is_am) * tour_participants
+,TNC_SHARED_AM,((trips.trip_mode == 'TNC_SHARED') & is_am) * tour_participants
 # md trips,,
 ,DRIVEALONEFREE_MD,((trips.trip_mode == 'DRIVEALONEFREE') & is_md) * tour_participants
 ,DRIVEALONEPAY_MD,((trips.trip_mode == 'DRIVEALONEPAY') & is_md) * tour_participants
@@ -80,6 +86,9 @@ Description,Target,Expression
 ,WALK_EXP_DRIVE_MD,((trips.trip_mode == 'DRIVE_EXP') & is_md & ~trips.outbound) * tour_participants
 ,WALK_DRIVE_HVY_MD,((trips.trip_mode == 'DRIVE_HVY') & is_md & ~trips.outbound) * tour_participants
 ,WALK_COM_DRIVE_MD,((trips.trip_mode == 'DRIVE_COM') & is_md & ~trips.outbound) * tour_participants
+,TAXI_MD,((trips.trip_mode == 'TAXI') & is_md) * tour_participants
+,TNC_SINGLE_MD,((trips.trip_mode == 'TNC_SINGLE') & is_md) * tour_participants
+,TNC_SHARED_MD,((trips.trip_mode == 'TNC_SHARED') & is_md) * tour_participants
 # pm trips,,
 ,DRIVEALONEFREE_PM,((trips.trip_mode == 'DRIVEALONEFREE') & is_pm) * tour_participants
 ,DRIVEALONEPAY_PM,((trips.trip_mode == 'DRIVEALONEPAY') & is_pm) * tour_participants
@@ -104,6 +113,9 @@ Description,Target,Expression
 ,WALK_EXP_DRIVE_PM,((trips.trip_mode == 'DRIVE_EXP') & is_pm & ~trips.outbound) * tour_participants
 ,WALK_DRIVE_HVY_PM,((trips.trip_mode == 'DRIVE_HVY') & is_pm & ~trips.outbound) * tour_participants
 ,WALK_COM_DRIVE_PM,((trips.trip_mode == 'DRIVE_COM') & is_pm & ~trips.outbound) * tour_participants
+,TAXI_PM,((trips.trip_mode == 'TAXI') & is_pm) * tour_participants
+,TNC_SINGLE_PM,((trips.trip_mode == 'TNC_SINGLE') & is_pm) * tour_participants
+,TNC_SHARED_PM,((trips.trip_mode == 'TNC_SHARED') & is_pm) * tour_participants
 # ev trips,,
 ,DRIVEALONEFREE_EV,((trips.trip_mode == 'DRIVEALONEFREE') & is_ev) * tour_participants
 ,DRIVEALONEPAY_EV,((trips.trip_mode == 'DRIVEALONEPAY') & is_ev) * tour_participants
@@ -128,3 +140,6 @@ Description,Target,Expression
 ,WALK_EXP_DRIVE_EV,((trips.trip_mode == 'DRIVE_EXP') & is_ev & ~trips.outbound) * tour_participants
 ,WALK_DRIVE_HVY_EV,((trips.trip_mode == 'DRIVE_HVY') & is_ev & ~trips.outbound) * tour_participants
 ,WALK_COM_DRIVE_EV,((trips.trip_mode == 'DRIVE_COM') & is_ev & ~trips.outbound) * tour_participants
+,TAXI_EV,((trips.trip_mode == 'TAXI') & is_ev) * tour_participants
+,TNC_SINGLE_EV,((trips.trip_mode == 'TNC_SINGLE') & is_ev) * tour_participants
+,TNC_SHARED_EV,((trips.trip_mode == 'TNC_SHARED') & is_ev) * tour_participants

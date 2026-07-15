@@ -98,6 +98,15 @@ class Vdf:
 
 
 @dataclass(frozen=True)
+class RideHail:
+    """Ride-hail (TNC/taxi) person->vehicle folding (PrepAssign.job steps 3-5)."""
+
+    zpv_factor: float           # zero-passenger (deadhead) empty-vehicle factor
+    tables: dict                # {"taxi": "TAXI", "single": "TNC_SINGLE", "shared": "TNC_SHARED"}
+    shares: dict                # {mode: {"da":.., "s2":.., "s3":..}} occupancy-bin split
+
+
+@dataclass(frozen=True)
 class Highway:
     """Highway assignment policy (hwyParam.block / HwyAssign.job)."""
 
@@ -109,6 +118,7 @@ class Highway:
     first_value_tollclass: int
     occupancy: dict             # {"sr2": ..., "sr3": ...} person->vehicle divisors
     asim_tables: dict           # ActivitySim OMX table -> assignment class
+    ridehail: RideHail          # TNC/taxi folding constants
     skim_classes: tuple         # ((class, OMX prefix, is_toll), ...)
     vdf: Vdf
 
@@ -203,6 +213,13 @@ def load_aeq_params(path: str | Path | None = None) -> AeqParams:
         critspd_by_capclass={int(k): float(v)
                              for k, v in hw["vdf"]["critspd_by_capclass"].items()},
     )
+    rh = hw["ridehail"]
+    ridehail = RideHail(
+        zpv_factor=float(rh["zpv_factor"]),
+        tables=dict(rh["tables"]),
+        shares={mode: {k: float(v) for k, v in sh.items()}
+                for mode, sh in rh["shares"].items()},
+    )
     highway = Highway(
         vot=float(hw["vot"]), truck_vot=float(hw["truck_vot"]),
         sr2_toll_share=float(hw["sr2_toll_share"]),
@@ -211,6 +228,7 @@ def load_aeq_params(path: str | Path | None = None) -> AeqParams:
         first_value_tollclass=int(hw["first_value_tollclass"]),
         occupancy={k: float(v) for k, v in hw["occupancy"].items()},
         asim_tables=dict(hw["asim_tables"]),
+        ridehail=ridehail,
         skim_classes=_tuples(hw["skim_classes"]),
         vdf=vdf,
     )

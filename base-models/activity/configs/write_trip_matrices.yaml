@@ -62,6 +62,12 @@ MATRICES:
         data_field: WALK_DRIVE_HVY_EA
       - name: WALK_COM_DRIVE_EA
         data_field: WALK_COM_DRIVE_EA
+      - name: TAXI_EA
+        data_field: TAXI_EA
+      - name: TNC_SINGLE_EA
+        data_field: TNC_SINGLE_EA
+      - name: TNC_SHARED_EA
+        data_field: TNC_SHARED_EA
   - file_name: trips_am.omx
     tables:
       - name: DRIVEALONEFREE_AM
@@ -110,6 +116,12 @@ MATRICES:
         data_field: WALK_DRIVE_HVY_AM
       - name: WALK_COM_DRIVE_AM
         data_field: WALK_COM_DRIVE_AM
+      - name: TAXI_AM
+        data_field: TAXI_AM
+      - name: TNC_SINGLE_AM
+        data_field: TNC_SINGLE_AM
+      - name: TNC_SHARED_AM
+        data_field: TNC_SHARED_AM
   - file_name: trips_md.omx
     tables:
       - name: DRIVEALONEFREE_MD
@@ -158,6 +170,12 @@ MATRICES:
         data_field: WALK_DRIVE_HVY_MD
       - name: WALK_COM_DRIVE_MD
         data_field: WALK_COM_DRIVE_MD
+      - name: TAXI_MD
+        data_field: TAXI_MD
+      - name: TNC_SINGLE_MD
+        data_field: TNC_SINGLE_MD
+      - name: TNC_SHARED_MD
+        data_field: TNC_SHARED_MD
   - file_name: trips_pm.omx
     tables:
       - name: DRIVEALONEFREE_PM
@@ -206,6 +224,12 @@ MATRICES:
         data_field: WALK_DRIVE_HVY_PM
       - name: WALK_COM_DRIVE_PM
         data_field: WALK_COM_DRIVE_PM
+      - name: TAXI_PM
+        data_field: TAXI_PM
+      - name: TNC_SINGLE_PM
+        data_field: TNC_SINGLE_PM
+      - name: TNC_SHARED_PM
+        data_field: TNC_SHARED_PM
   - file_name: trips_ev.omx
     tables:
       - name: DRIVEALONEFREE_EV
@@ -254,6 +278,12 @@ MATRICES:
         data_field: WALK_DRIVE_HVY_EV
       - name: WALK_COM_DRIVE_EV
         data_field: WALK_COM_DRIVE_EV
+      - name: TAXI_EV
+        data_field: TAXI_EV
+      - name: TNC_SINGLE_EV
+        data_field: TNC_SINGLE_EV
+      - name: TNC_SHARED_EV
+        data_field: TNC_SHARED_EV
 
 CONSTANTS:
   time_periods:
