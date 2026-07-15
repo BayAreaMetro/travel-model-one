@@ -27,20 +27,23 @@ extend past the original scope.
 
 ### 1. Port the skims — cubeless TPP ↔ OMX converter — **DONE**
 
-Pure-Python Cube Voyager matrix I/O, no DLLs and no Cube install (`src/cubeio/`):
+* Pure-Python Cube Voyager matrix I/O, no DLLs and no Cube install (`src/cubeio/`):
 `tpp_read.py` decodes every TPP block type, `tpp_write.py` writes them back, `omx.py`
-bridges to OMX. Validated bit-exact against Cube CSV dumps (golden pairs in
-`tests/data/golden/`). The `tm1.steps.convert_skims` step reads the ~96 reference TPPs and
+bridges to OMX. 
+* Validated bit-exact against Cube CSV dumps (golden pairs in
+`tests/data/golden/`). 
+* The `tm1.steps.convert_skims` step reads the ~96 reference TPPs and
 emits a single 1-based `skims.omx` for ActivitySim.
+* When using CUBE backend assignment, `tm1.steps.convert_skims` also reads the ActivitySim skims and writes them back to TPP for Cube assignment.
 
 - Mapping: [`docs/SKIM_MAPPING.md`](docs/SKIM_MAPPING.md).
 
 ### 2. Convert the UECs to ActivitySim — **DONE**
 
-Ported the CT-RAMP utility expression calculators (`.xls` UEC workbooks) to ActivitySim
-specs, submodel by submodel: auto ownership, work-from-home, CDAP, mandatory/non-mandatory
-tour location, tour & trip mode choice, at-work subtours. To make "did the coefficient move,
-or just the expression algebra?" answerable, I built a **coefficient viewer / comparator**
+* Ported the CT-RAMP utility expression calculators (`.xls` UEC workbooks) to ActivitySim
+specs, submodel by submodel.
+* A bit tedious because sometimes the a past modelers took different approaches to compute the same number (e.g., define global constants vs hardcode in the expression or a pre-computed value versus compute on the fly). The ActivitySim spec is more explicit and verbose, but the CT-RAMP UECs are more compact and sometimes opaque. The goal was to match the outputs, not the implementation.
+* Built a crude coefficient viewer / comparator
 (`scripts/migration_validation/activitysim/compare_coefficients.py`, `uec_mappings.py`,
 `compare_template.html`) that parses the CT-RAMP `.xls` and the ActivitySim spec side by side.
 
@@ -59,8 +62,6 @@ in a stage's output sent me back to fix a coefficient or expression, then re-run
 - Submodels aligned one at a time (auto ownership → WFH → CDAP → work/school location →
   tour/trip mode → non-work destination → at-work subtours), each landing at CT-RAMP parity.
 
-**Open item:** this config does not model TNC/ride-hail as a mode (skims zeroed). CT-RAMP
-models it, so ActivitySim should too — see [Open items](#known-gaps--open-items).
 
 ### 4. Assignment — wire in the Cube launcher via Python — **DONE**
 
@@ -73,14 +74,21 @@ Python and close the loop: ActivitySim trip OMX → TPP demand → Cube assignme
 - `src/tm1/assignment/cube/{highway,transit,runner}.py` — faithful Cube highway + transit
   assignment and network prep, wired into the feedback loop in `simulate_activitysim`.
 
-### Bonus 1 — Wire in PopulationSim directly — **PARTIAL** (runs end-to-end, cached)
+
+### BONUSES
+
+#### Bonus 1 — Sidegrade CT-RAMP — **DONE**
+Made CT-RAMP run headless from the Python harness, so we can run a reference CT-RAMP run in the same way.
+
+
+#### Bonus 2 — Wire in PopulationSim directly — **PARTIAL** (runs end-to-end, cached)
 
 `src/tm1/steps/populationsim.py` + `base-models/population/` produce a synthetic population
 from PUMS + controls. The end-to-end chain (land use → PopulationSim → ActivitySim →
 assignment) runs, with PopulationSim output cached between runs. Not yet fully harmonized —
 see [Open items](#known-gaps--open-items).
 
-### Bonus 2 — AequilibraE as the assignment alternative — **IN VALIDATION**
+#### Bonus 3 — AequilibraE as the assignment alternative — **IN VALIDATION**
 
 A Cube-free, Python-native assignment backend (`src/tm1/assignment/aeq/`), selectable with
 `backend=aeq`, so the skims → ActivitySim → assignment → skims loop can run without Cube.
@@ -96,11 +104,10 @@ isolate the assignment from any demand difference (`scripts/migration_validation
 | Transit assignment | Spiess–Florian optimal strategy | boardings med 2.2% r 0.97; link vol med 2.9% r 0.99 | ~11 min/iter | ~6 min/iter |
 | Transit skims | cost along the strategy | median component within ~1%, r 0.91–0.99 | ~3.7 hr/iter | ~16 min/iter + one-time ~7 min fare pass |
 
-**Not signed off.** These are engine-level comparisons, not a full vetting. Replacing Cube in
-production requires a validation package that will withstand review, beyond aggregate PCE:
+**Not signed off.** These are engine-level comparisons, not a full vetting. Beyond aggregate
+PCE, highway **per-class** link volumes are now validated across all five periods (median |Δ|
+0.6%, r 0.97; TOT_PCE r 0.99). Remaining for a production sign-off:
 
-- highway **per-class** link volumes across all five periods (AM per-class proven ±2.3%; the
-  full battery is the open item), not just the PCE total;
 - distributional checks (screenlines, volume-vs-count by facility type, congested speeds)
   rather than summary medians;
 - documented resolution of every entry in the divergence ledger.
@@ -112,12 +119,6 @@ primer: [`docs/assignment_primer.md`](docs/assignment_primer.md).
 
 ## Known gaps / open items
 
-- **Add TNC to ActivitySim.** The current config omits TNC/ride-hail as a mode (skims zeroed,
-  "not in scope" in `docs/OUTPUT_MAPPING.md`). CT-RAMP models it (~204k person-trips/period →
-  ~99k highway vehicle-trips as AV classes). CT-RAMP modeled it, so ActivitySim should match:
-  add a ride-hail mode to the mode-choice UECs to reproduce the reference demand composition.
-  This is a demand-side change, not an assignment defect — the aeq engine reproduces Cube's
-  link volumes when fed Cube's demand.
 - **PopulationSim harmonization.** Runs end-to-end but not tidy:
   - `person_id` post-processing is unnecessary (ActivitySim handles indexing) — drop it.
   - `occupation` (SOC→1–6) is computed but consumed by nothing in ActivitySim — drop it.

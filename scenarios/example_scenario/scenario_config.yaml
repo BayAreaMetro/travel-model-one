@@ -26,6 +26,7 @@ proj_dir: "E:/Tests/example_wfh_boost"
 # │  PIPELINE STEPS                                                            │
 # └─────────────────────────────────────────────────────────────────────────────┘
 steps:
+  # --- 1. Setup: copy inputs + convert Cube skims to OMX for ActivitySim ---
   setup:
     copy_inputs:
       land_use:
@@ -38,12 +39,13 @@ steps:
         from: "{reference_run}/popsyn/personFile.csv"
         to: "{proj_dir}/data/persons.csv"
 
-  convert_skims:
-    skim_tpp_dir: "{reference_run}/skims"
-    output: "{proj_dir}/data/skims.omx"
+    convert_skims:
+      skim_tpp_dir: "{reference_run}/skims"
+      output: "{proj_dir}/data/skims.omx"
 
+  # --- 2. Simulate: run ActivitySim, then feed the assignment loop below ---
   simulate_activitysim:
-    iterations: 0
+    iterations: 1  # 0 = static skims; >0 enables the assignment feedback loop below
     activitysim:
       data_dir: "{proj_dir}/data"
       output_dir: "{proj_dir}/output"
@@ -51,3 +53,27 @@ steps:
         - "scenarios/example_scenario/activitysim"  # ← scenario overrides
         - "base-models/activity/configs_mp"
         - "base-models/activity/configs"
+
+    # Highway assignment feedback (used only when iterations > 0).
+    # backend "aeq" = open-source AequilibraE (no Cube license); "cube" = legacy loop.
+    assignment:
+      backend: aeq
+      network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
+      nonres_dir: "{reference_run}/nonres"
+      skims_omx: "{proj_dir}/data/skims.omx"
+      # Cube-free transit LOS skims from the source network (omit to preserve
+      # existing transit matrices); built once by scripts/build_aeq_inputs.py
+      transit_inputs_dir: "E:/aeq_inputs"
+      archive: true
+      cores: 48
+      max_iter: 100
+      gap_target: 0.001
+      # --- To use the legacy Cube Voyager loop instead (requires a local Cube
+      # install + license): delete/comment the aeq keys above except skims_omx
+      # and archive, then uncomment:
+      # backend: cube
+      # cube_proj_dir: "{reference_run}"
+      # cluster_nodes: 12
+      # assign_job: "HwyAssign.job"
+      # transit: true
+      # transit_nodes: 15

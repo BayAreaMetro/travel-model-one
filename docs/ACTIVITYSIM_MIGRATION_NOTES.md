@@ -21,7 +21,7 @@ The last CTRAMP model run, used as the benchmark for validation:
 |---|---|
 | `src/cubeio` | Pure-Python Cube Voyager I/O (TPP reader, OMX converter) |
 | `src/tm1` | TM1-specific utilities (config, Slack, output shimming, CLI) |
-| `src/tm1/steps/` | Pipeline steps: setup, convert_skims, simulate, summarize |
+| `src/tm1/steps/` | Pipeline steps: setup (copy_inputs, convert_skims), simulate, summarize |
 | `scripts/run_model.py` | Convenience entry point — runs full pipeline |
 | `scripts/migration_validation/` | Coefficient comparison, ablation, calibration tools |
 

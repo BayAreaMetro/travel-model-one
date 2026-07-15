@@ -76,8 +76,8 @@ Everything else derives from these two variables.
 
 | Step | Description |
 |------|-------------|
-| `setup` | Copy input files (land use, households, persons) from reference run |
-| `convert_skims` | Convert CUBE .tpp skims to OMX format |
+| `setup.copy_inputs` | Copy input files (land use, households, persons) from reference run |
+| `setup.convert_skims` | Convert CUBE .tpp skims to OMX format |
 | `prepare_survey` | Clean and format BATS 2023 survey to CTRAMP structure |
 | `simulate_activitysim` | Run ActivitySim (iterates with highway assignment when iterations > 0) |
 | `summaries` | Generate calibration report comparing survey, ActivitySim, and CTRAMP |

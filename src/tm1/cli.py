@@ -3,7 +3,7 @@
 Usage::
 
     tm1 run --scenario base_2023_activitysim
-    tm1 run --scenario base_2023_activitysim --steps setup convert_skims
+    tm1 run --scenario base_2023_activitysim --steps setup
     tm1 run --scenario base_2023_activitysim --iterations 3
     tm1 run --scenario base_2023_activitysim --force --slack verbose
 """

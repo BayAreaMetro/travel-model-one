@@ -19,25 +19,24 @@ asim_output_dir: "{proj_dir}/output_full"
 # │  PIPELINE STEPS                                                            │
 # └─────────────────────────────────────────────────────────────────────────────┘
 steps:
-  # --- 1. Setup: copy inputs from reference run into project directory ---
+  # --- 1. Setup: copy inputs + convert CUBE .tpp skims to OMX ---
   setup:
     copy_inputs:
       land_use:
         from: "{reference_run}/landuse/tazData.csv"
         to: "{proj_dir}/data/land_use.csv"
-      households:      
+      households:
         from: "{reference_run}/popsyn/hhFile.csv"
         to: "{proj_dir}/data/households.csv"
       persons:
         from: "{reference_run}/popsyn/personFile.csv"
         to: "{proj_dir}/data/persons.csv"
 
-  # --- 2. Convert skims: CUBE .tpp → OMX for ActivitySim ---
-  convert_skims:
-    skim_tpp_dir: "{reference_run}/skims"
-    output: "{proj_dir}/data/skims.omx"
+    convert_skims:
+      skim_tpp_dir: "{reference_run}/skims"
+      output: "{proj_dir}/data/skims.omx"
 
-  # --- 3. Prepare survey: clean BATS 2023, reformat to CTRAMP structure ---
+  # --- 2. Prepare survey: clean BATS 2023, reformat to CTRAMP structure ---
   prepare_survey:
     config_path: "bats_config.yaml"  # resolved relative to scenario_dir
     cache_dir: ".cache/survey"
@@ -56,10 +55,10 @@ steps:
       - "{survey_output_dir}/ctramp_2023/JointTourData.csv"
       - "{survey_output_dir}/ctramp_2023/JointTripData.csv"
 
-  # --- 4. PopulationSim: synthesize households/persons from PUMS ---
+  # --- 3. PopulationSim: synthesize households/persons from PUMS ---
   # Using pre-built synthetic population from reference run (2023_v12).
 
-  # --- 5. Simulate: run ActivitySim demand model ---
+  # --- 4. Simulate: run ActivitySim demand model ---
   simulate_activitysim:
     iterations: 0  # 0 = static skims (no highway assignment feedback loop)
     activitysim:
@@ -73,10 +72,29 @@ steps:
         - "base-models/activity/configs_mp"   # multiprocessing defaults
         - "base-models/activity/configs"      # full model specification (lowest priority)
 
+    # Highway assignment feedback (used only when iterations > 0). This scenario
+    # calibrates against static skims, so assignment is off by default — bump
+    # iterations above and uncomment one backend below to enable it.
+    # backend "aeq" = open-source AequilibraE (no Cube license); "cube" = legacy loop.
     # assignment:
-    #   # Highway assignment feedback (future — requires Cube or equivalent)
+    #   backend: aeq
+    #   network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
+    #   nonres_dir: "{reference_run}/nonres"
+    #   skims_omx: "{proj_dir}/data/skims.omx"
+    #   transit_inputs_dir: "E:/aeq_inputs"
+    #   archive: true
+    #   cores: 48
+    #   max_iter: 100
+    #   gap_target: 0.001
+    #   # --- or use the legacy Cube Voyager loop instead: ---
+    #   # backend: cube
+    #   # cube_proj_dir: "{reference_run}"
+    #   # cluster_nodes: 12
+    #   # assign_job: "HwyAssign.job"
+    #   # transit: true
+    #   # transit_nodes: 15
 
-  # --- 6. Summaries: generate calibration report ---
+  # --- 5. Summaries: generate calibration report ---
   summaries:
 
     calibration:

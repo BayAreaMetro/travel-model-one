@@ -6,7 +6,7 @@ assignment, and compares per-link volumes to Cube's loaded network
 ``hwy/iter3/avgload5period_vehclasses.csv`` -- per class AND the PCE-combined total.  The
 network file *is* the aeq input ``highway_links.csv`` (same node order), so links join by row.
 
-    python scripts/validate_highway_assignment.py --cores 16 --out scorecard_hwy_assign
+    python scripts/validate_highway_assignment.py --cores 16
 
 Writes ``{--out}.csv`` (class x period) + a summary.
 """
@@ -69,7 +69,7 @@ def main() -> None:
     ap.add_argument("--inputs", default=r"E:\aeq_inputs")
     ap.add_argument("--reference", default=r"E:\ref_2023_TM161")
     ap.add_argument("--cores", type=int, default=16)
-    ap.add_argument("--out", default="scorecard_hwy_assign")
+    ap.add_argument("--out", default="scripts/migration_validation/assignment/scorecard_hwy_assign")
     ap.add_argument("--log", default="hwy_assign_val.log")
     ap.add_argument("--periods", default="AM,MD,PM,EV,EA")
     ap.add_argument("--max-iter", type=int, default=100)

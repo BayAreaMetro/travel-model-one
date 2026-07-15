@@ -34,8 +34,10 @@ def _fmt_elapsed(seconds: float) -> str:
 
 
 STEPS = {
-    "setup": setup_step,
-    "convert_skims": convert_skims_step,
+    "setup": {
+        "copy_inputs": setup_step,
+        "convert_skims": convert_skims_step,
+    },
     "prepare_survey": prepare_survey_step,
     "populationsim": populationsim_step,
     "simulate_activitysim": simulate_activitysim_step,

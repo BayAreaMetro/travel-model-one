@@ -23,7 +23,7 @@ asim_output_dir: "{proj_dir}/output_full"
 # │  PIPELINE STEPS                                                            │
 # └─────────────────────────────────────────────────────────────────────────────┘
 steps:
-  # --- 1. Setup: copy inputs from reference run into project directory ---
+  # --- 1. Setup: copy inputs + convert CUBE .tpp skims to OMX ---
   # NOTE: land_use and skims still come from the reference run.
   # Only the population is regenerated from newer PUMS.
   setup:
@@ -32,12 +32,11 @@ steps:
         from: "{reference_run}/landuse/tazData.csv"
         to: "{proj_dir}/data/land_use.csv"
 
-  # --- 2. Convert skims: CUBE .tpp → OMX for ActivitySim ---
-  convert_skims:
-    skim_tpp_dir: "{reference_run}/skims"
-    output: "{proj_dir}/data/skims.omx"
+    convert_skims:
+      skim_tpp_dir: "{reference_run}/skims"
+      output: "{proj_dir}/data/skims.omx"
 
-  # --- 3. PopulationSim: synthesize from PUMS 2019-2023 (5-year ACS) ---
+  # --- 2. PopulationSim: synthesize from PUMS 2019-2023 (5-year ACS) ---
   populationsim:
     pums:
       # Pre-crosswalked 2019-2023 5-year PUMS with 2020-vintage PUMAs.
@@ -55,7 +54,7 @@ steps:
       - "base-models/population/configs_mp"
       - "base-models/population/configs"
 
-  # --- 4. Simulate: run ActivitySim demand model ---
+  # --- 3. Simulate: run ActivitySim demand model ---
   simulate_activitysim:
     iterations: 0  # 0 = static skims; >0 enables the assignment feedback loop below
     activitysim:
@@ -81,6 +80,15 @@ steps:
       cores: 48
       max_iter: 100
       gap_target: 0.001
+      # --- To use the legacy Cube Voyager loop instead (requires a local Cube
+      # install + license): delete/comment the aeq keys above except skims_omx
+      # and archive, then uncomment:
+      # backend: cube
+      # cube_proj_dir: "{reference_run}"
+      # cluster_nodes: 12
+      # assign_job: "HwyAssign.job"
+      # transit: true
+      # transit_nodes: 15
 
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  CALIBRATION / VALIDATION                                                  │

@@ -1,9 +1,12 @@
 """Convert Cube TPP skims to a single ActivitySim OMX file.
 
-Reads ``cfg["convert_skims"]`` for source TPP directory and output path.
-Idempotent: skips if OMX already has all expected keys unless ``force=True``.
+Reads ``cfg["steps"]["setup"]["convert_skims"]`` for source TPP directory and
+output path. Idempotent: skips if OMX already has all expected keys unless
+``force=True``.
 
-This step can be dropped once native assignment produces OMX skims directly.
+Nested as a ``setup`` sub-step (alongside ``copy_inputs``) since it's just
+another "get inputs ready" step. This step can be dropped once native
+assignment produces OMX skims directly.
 """
 
 import logging
@@ -107,7 +110,7 @@ def run(
     """Convert Cube TPP skims to OMX."""
     force = kwargs.get("force", False)
 
-    skim_cfg = cfg.get("steps", {}).get("convert_skims", {})
+    skim_cfg = cfg.get("steps", {}).get("setup", {}).get("convert_skims", {})
     tpp_dir = Path(skim_cfg["skim_tpp_dir"])
     skims_path = Path(skim_cfg["output"])
 
