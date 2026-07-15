@@ -1,8 +1,134 @@
-# Repo Layout Notes
+# Dev Notes
 
-This is where I keep notes for myself and others about the proposed repo layout, and the rationale behind it. This is a living document, and will likely change as I go. But for now, this is the general direction I'm thinking about.
+Working notes on the Travel Model One → Python migration (branch `activitysim_revival`):
+scope, progress to date, and the status of each component.
 
-## Existing
+## Goal
+
+Replace the Cube Voyager + Java CT-RAMP stack with an open-source Python stack
+(PopulationSim + ActivitySim + AequilibraE, driven by a `tm1` CLI). Two hard requirements:
+
+1. **Match Cube results.** Faithful replication, not a rebuild. Every divergence requires a
+   documented, falsifiable justification.
+2. **Match or exceed Cube performance.**
+
+**Reference run** — the last CT-RAMP run, the benchmark for every comparison:
+
+```
+\\MODEL3-C\Model3C-Share\Projects\2023_TM161_IPA_35_testrun     (local mirror: E:\ref_2023_TM161)
+```
+
+---
+
+## The migration journey
+
+Progress to date, with current status. Steps 1–4 are the core sequence; the two bonus tracks
+extend past the original scope.
+
+### 1. Port the skims — cubeless TPP ↔ OMX converter — **DONE**
+
+Pure-Python Cube Voyager matrix I/O, no DLLs and no Cube install (`src/cubeio/`):
+`tpp_read.py` decodes every TPP block type, `tpp_write.py` writes them back, `omx.py`
+bridges to OMX. Validated bit-exact against Cube CSV dumps (golden pairs in
+`tests/data/golden/`). The `tm1.steps.convert_skims` step reads the ~96 reference TPPs and
+emits a single 1-based `skims.omx` for ActivitySim.
+
+- Mapping: [`docs/SKIM_MAPPING.md`](docs/SKIM_MAPPING.md).
+
+### 2. Convert the UECs to ActivitySim — **DONE**
+
+Ported the CT-RAMP utility expression calculators (`.xls` UEC workbooks) to ActivitySim
+specs, submodel by submodel: auto ownership, work-from-home, CDAP, mandatory/non-mandatory
+tour location, tour & trip mode choice, at-work subtours. To make "did the coefficient move,
+or just the expression algebra?" answerable, I built a **coefficient viewer / comparator**
+(`scripts/migration_validation/activitysim/compare_coefficients.py`, `uec_mappings.py`,
+`compare_template.html`) that parses the CT-RAMP `.xls` and the ActivitySim spec side by side.
+
+- Notes: [`docs/ACTIVITYSIM_MIGRATION_NOTES.md`](docs/ACTIVITYSIM_MIGRATION_NOTES.md).
+
+### 3. Validate ActivitySim against CT-RAMP on frozen skims — **DONE** (iterates on #2)
+
+With the reference `skims.omx` frozen (no assignment, no feedback), run both engines on the
+same inputs and diff stage by stage. This is where step 2 got its feedback loop: a mismatch
+in a stage's output sent me back to fix a coefficient or expression, then re-run.
+
+- CT-RAMP runs **headless** via `src/tm1/steps/simulate_ctramp.py`.
+- The **ablation harness** (`scripts/migration_validation/activitysim/ablation_activitysim.py`,
+  `ablation_ctramp.py`, `evaluate_stages.py`) freezes upstream stages to CT-RAMP output and
+  isolates one submodel at a time, so a diff can't hide behind an upstream diff.
+- Submodels aligned one at a time (auto ownership → WFH → CDAP → work/school location →
+  tour/trip mode → non-work destination → at-work subtours), each landing at CT-RAMP parity.
+
+**Open item:** this config does not model TNC/ride-hail as a mode (skims zeroed). CT-RAMP
+models it, so ActivitySim should too — see [Open items](#known-gaps--open-items).
+
+### 4. Assignment — wire in the Cube launcher via Python — **DONE**
+
+Rather than reimplement Cube assignment first, drive the *existing* Cube `.job` scripts from
+Python and close the loop: ActivitySim trip OMX → TPP demand → Cube assignment → skims back.
+
+- `src/tm1/cube.py` — runs Cube Voyager jobs over SSH via the `schtasks` interactive-session
+  launcher (the Bentley license pipe is unreachable from SSH/VS Code), with license recovery
+  and MatReaderOpen hang detection. Cluster jobs go through `DistributeMultistep`.
+- `src/tm1/assignment/cube/{highway,transit,runner}.py` — faithful Cube highway + transit
+  assignment and network prep, wired into the feedback loop in `simulate_activitysim`.
+
+### Bonus 1 — Wire in PopulationSim directly — **PARTIAL** (runs end-to-end, cached)
+
+`src/tm1/steps/populationsim.py` + `base-models/population/` produce a synthetic population
+from PUMS + controls. The end-to-end chain (land use → PopulationSim → ActivitySim →
+assignment) runs, with PopulationSim output cached between runs. Not yet fully harmonized —
+see [Open items](#known-gaps--open-items).
+
+### Bonus 2 — AequilibraE as the assignment alternative — **IN VALIDATION**
+
+A Cube-free, Python-native assignment backend (`src/tm1/assignment/aeq/`), selectable with
+`backend=aeq`, so the skims → ActivitySim → assignment → skims loop can run without Cube.
+Policy constants live in `base-models/assignment/aeq_params.yaml` (never in `src`), loaded via
+`params.py`.
+
+Preliminary parity against the reference run is strong. Validators feed Cube's *own* demand to
+isolate the assignment from any demand difference (`scripts/migration_validation/assignment/`):
+
+| Component | Method | Parity vs Cube (preliminary) | Cube time | Aeq time |
+|---|---|---|---|---|
+| Highway assignment | Frank-Wolfe user equilibrium | VMT +0.1 to +0.2%; PCE link vol r 0.997 (AM) | ~26 min/iter | ~10 min/iter |
+| Transit assignment | Spiess–Florian optimal strategy | boardings med 2.2% r 0.97; link vol med 2.9% r 0.99 | ~11 min/iter | ~6 min/iter |
+| Transit skims | cost along the strategy | median component within ~1%, r 0.91–0.99 | ~3.7 hr/iter | ~16 min/iter + one-time ~7 min fare pass |
+
+**Not signed off.** These are engine-level comparisons, not a full vetting. Replacing Cube in
+production requires a validation package that will withstand review, beyond aggregate PCE:
+
+- highway **per-class** link volumes across all five periods (AM per-class proven ±2.3%; the
+  full battery is the open item), not just the PCE total;
+- distributional checks (screenlines, volume-vs-count by facility type, congested speeds)
+  rather than summary medians;
+- documented resolution of every entry in the divergence ledger.
+
+Write-up + divergence ledger: [`docs/aequilibrae_migration.md`](docs/aequilibrae_migration.md);
+primer: [`docs/assignment_primer.md`](docs/assignment_primer.md).
+
+---
+
+## Known gaps / open items
+
+- **Add TNC to ActivitySim.** The current config omits TNC/ride-hail as a mode (skims zeroed,
+  "not in scope" in `docs/OUTPUT_MAPPING.md`). CT-RAMP models it (~204k person-trips/period →
+  ~99k highway vehicle-trips as AV classes). CT-RAMP modeled it, so ActivitySim should match:
+  add a ride-hail mode to the mode-choice UECs to reproduce the reference demand composition.
+  This is a demand-side change, not an assignment defect — the aeq engine reproduces Cube's
+  link volumes when fed Cube's demand.
+- **PopulationSim harmonization.** Runs end-to-end but not tidy:
+  - `person_id` post-processing is unnecessary (ActivitySim handles indexing) — drop it.
+  - `occupation` (SOC→1–6) is computed but consumed by nothing in ActivitySim — drop it.
+  - `pemploy`, `pstudent`, `ptype`, `num_workers`, `income` must stay pre-computed.
+  - Scenario config section is written but commented out in `base_2023_activitysim`.
+
+---
+
+## Repo layout
+
+### Existing (legacy)
 
 ```text
 travel-model-one/
@@ -11,124 +137,52 @@ travel-model-one/
 |-- utilities/     one-off analysis, calibration, GIS, data-prep scripts
 ```
 
-## Proposed
+### Target
 
 ```text
 travel-model-one/
-|-- base-model/    base configs, specs, lookup tables, default assets
-|-- scenarios/     scenario overrides only
-|-- scripts/       run/prep/export entrypoints
-`-- src/           shared Python code used by scripts/tooling
+|-- base-models/   base configs, specs, lookup tables, default assets (activity/ assignment/ population/)
+|-- scenarios/     scenario overrides only (base_2023_activitysim, base_2023_ctramp, ...)
+|-- scripts/       run/prep/export entrypoints + migration_validation/{activitysim,assignment}
+`-- src/           shared Python: cubeio/, tm1/ (steps, assignment/{cube,aeq})
 ```
 
-## Diffs
+### Diffs from legacy → target
 
-- `core/` -> retire from day-to-day layout; use installable `activitysim` where possible
-- `model-files/model/` -> `base-models/`
-- `model-files/runtime/` -> split between `base-models/` and `scripts/`
-- `model-files/scripts/` -> move into `scripts/` or `src/`
-- `utilities/` -> cherry-pick only maintained pieces into `scripts/` or `src/`
-- `utilities/RTP/config_RTP2025/` -> `scenarios/RTP2025/`
+- `core/` → retire from day-to-day layout; use installable `activitysim` where possible.
+- `model-files/model/` → `base-models/`.
+- `model-files/runtime/` → split between `base-models/` and `scripts/`.
+- `model-files/scripts/` → move into `scripts/` or `src/`.
+- `utilities/` → cherry-pick only maintained pieces into `scripts/` or `src/`.
+- `utilities/RTP/config_RTP2025/` → `scenarios/RTP2025/`.
 
-## Working principle
+### Working principle
 
-The general direction is to separate:
+Separate (1) base model assets, (2) scenario deltas, (3) operational scripts, (4) shared code.
+That keeps the repo reasonable to reason about and makes eventual deletions obvious.
 
-1. Base model assets.
-2. Scenario deltas.
-3. Operational scripts.
-4. Shared code.
+### What dies (eventually)
 
-That should make the repo easier to reason about and highlight eventual file deletions.
+- `RunModel.bat`, `RunIteration.bat`, `RuntimeConfiguration.py`
+- JPPF/Java startup, `PrepAssign.job`, `core/` Java code
+- All `.job` files (Cube skims, assignment, nonres, preprocessing) — once `backend=aeq` fully
+  replaces the Cube launcher
+- Anything not in `base-models/`, `scenarios/`, `scripts/`, or `src/`
 
-## CTRAMP → ActivitySim migration plan
+---
 
-No Cube on the development machine. The plan is designed around that constraint:
-use frozen reference skims, validate ActivitySim against CTRAMP outputs, and
-only bring in assignment (AequilibraE or something similar) once proven equivalent.
+## CLI
 
-### Reference model run
+Installed via `pyproject.toml` → `tm1` command; `run_model.py` at repo root is a thin alias.
 
-The last CTRAMP model run, used as the benchmark for validation:
-
-```
-\\MODEL3-C\Model3C-Share\Projects\2023_TM161_IPA_35_testrun
-```
-
-### Step 0: Pure-Python TPP reader (`src/tm1/tpp.py`)
-- Pure-Python reader for Cube Voyager TPP binary matrices — no DLLs, no Cube.
-- Decodes all 6 block types (0x00, 0x40, 0x80, 0xC0, 0xC8, 0xE8).
-- Validated bit-exact against Cube CSV dumps (17,700 checks, 0 errors).
-- Portable golden test suite: 7 TPP/CSV pairs in `tests/data/golden/`.
-- **STATUS: DONE.** Reader is complete, optimized, committed.
-
-### Step 0.5: Build `skims.omx` from reference TPPs (`scripts/build_omx_skims.py`)
-- Read ~96 TPP files from reference run via `read_tpp()`
-- Rename Cube table names → ActivitySim skim keys (mapping in `docs/skim_conversion_mapping.md`)
-- Write single `skims.omx` with 1-based zone mapping
-- One-time conversion — output goes into the scenario data directory
-- **STATUS: DONE.**
-
-### Step 1: Validate ActivitySim against CTRAMP (frozen skims, no assignment)
-- Wire `skims.omx` into ActivitySim configs (`network_los.yaml` already expects it)
-- Map CTRAMP `.properties` → ActivitySim settings/configs (~30 params)
-- Run ActivitySim single-shot (no feedback loop — frozen skims, no assignment)
-- Compare ActivitySim outputs to CTRAMP reference using existing summarizers
-- Iterate on UECs until ActivitySim results are comparable to CTRAMP
-- **STATUS: DONE.** All coefficients aligned (1 accepted structural diff). See `docs/ACTIVITYSIM_MIGRATION_NOTES.md`.
-
-
-### Step 2: Pythonify summarizers (OMX-native)
-- Rewrite core summaries / validation scripts in Python reading OMX directly
-- Drop Cube dependency from post-processing entirely
-- Integrate with `travel-diary-survey-tools` for calibration analyses
-- **STATUS: PAUSED.** Started migrating some scripts, but was too slow and clunky for development, so I created a separate lightweight summarizer specifically for UEC alignment in Step 1.
-
-
-### Step 3: Wire in existing CUBE assignment
-- Write OMX back to TPP
-- Run existing Cube assignment via subprocess, using TPPs as input and output
-- Write back to OMX for next iteration (YUCK!)
-
-
-## Would like to do:
-### Compare alternative Traffic Assignment tool (AequilibraE?)
-- Replace Cube highway assignment with AequilibraE (Python-native)
-- Close the feedback loop: skims → ActivitySim → assignment → new skims
-- Full iteration now runs without Cube on any machine
-
-### Wire in PopulationSim and land use
-- PopulationSim produces synthetic population from census PUMS + control totals
-- Land use inputs (UrbanSim or static) feed both PopulationSim and ActivitySim
-- End-to-end: land use → PopulationSim → ActivitySim → assignment
-- **STATUS: Step runner created** (`src/tm1/steps/populationsim.py`), base configs in `base-models/population/configs/`.
-  Scenario config section written (commented out in `base_2023_activitysim`). Not yet wired up.
-- **TODO: Harmonization**
-  - `person_id` post-processing is unnecessary (ActivitySim handles indexing)
-  - `occupation` (SOC→1-6) is computed but never consumed by any ActivitySim component — drop it
-  - `pemploy`, `pstudent`, `ptype`, `num_workers`, `income` must remain (ActivitySim expects pre-computed)
-  - Long-term: if PopulationSim adds annotation CSV support, row-level derivations could move to config.
-    The 3 cross-table operations (num_workers agg, PINCP→HINCP, GQ weight) will always need code.
-
-## What dies (eventually)
-- RunModel.bat, RunIteration.bat, RuntimeConfiguration.py
-- JPPF/Java startup, PrepAssign.job, core/ Java code
-- All `.job` files (Cube skims, assignment, nonres, preprocessing)
-- Anything not in `base-model/`, `scenarios/`, `scripts/`, or `src/`
-
-
-### CLI design
-- Installed via pyproject.toml → `tm1` command
-- `run_model.py` at repo root as convenience alias (thin wrapper)
-
-CLI usage examples:
 ```
 tm1 run --scenario scenarios/base_2023_activitysim
 tm1 run --scenario scenarios/base_2023_activitysim --max-iterations 1 --sample-rate 0.1
 tm1 batch scenarios/scenario_batches.yaml
 ```
 
-Batch manifest example:
+Batch manifest:
+
 ```yaml
 # scenarios/scenario_batches.yaml
 scenarios:
@@ -139,10 +193,12 @@ common_overrides:
   max_iterations: 3
 ```
 
-## Migration Notes
+---
 
-Detailed migration notes (input/output mapping, skim conversion, runtime fixes,
-coefficient alignment) live in `docs/`:
-- [`docs/ACTIVITYSIM_MIGRATION_NOTES.md`](docs/ACTIVITYSIM_MIGRATION_NOTES.md)
-- [`docs/OUTPUT_MAPPING.md`](docs/OUTPUT_MAPPING.md)
-- [`docs/SKIM_MAPPING.md`](docs/SKIM_MAPPING.md)
+## Detailed docs
+
+- [`docs/ACTIVITYSIM_MIGRATION_NOTES.md`](docs/ACTIVITYSIM_MIGRATION_NOTES.md) — UEC/coefficient alignment
+- [`docs/SKIM_MAPPING.md`](docs/SKIM_MAPPING.md) — Cube TPP → ActivitySim skim keys
+- [`docs/OUTPUT_MAPPING.md`](docs/OUTPUT_MAPPING.md) — output/skim mapping (incl. TNC scoping)
+- [`docs/aequilibrae_migration.md`](docs/aequilibrae_migration.md) — AequilibraE parity + divergence ledger
+- [`docs/assignment_primer.md`](docs/assignment_primer.md) — assignment concepts primer
