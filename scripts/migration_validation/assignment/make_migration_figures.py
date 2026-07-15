@@ -24,7 +24,7 @@ mpl.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO / "src"))
 from cubeio import read_tpp
 from tm1.assignment.aeq.fares import load_fares

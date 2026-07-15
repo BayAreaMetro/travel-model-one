@@ -105,6 +105,8 @@ class TransitGraph:
     # origins and destinations are split so no path can pass THROUGH a centroid
     # (egress -> re-access would reset the boarding-count/state machine)
     board_rows: dict                    # line name -> np.ndarray of boarding-edge rows
+    ride_rows: pd.DataFrame | None = None  # ride edges -> (line, A, B) physical link, for
+    # per-link assignment volumes (link_volumes); only populated on fare_states="none" graphs
     spread_window: float | None = None  # the frequency inflation this graph was built with;
     # skim_transit rescales the frequency wait by it (see the detwait note above), so it is
     # carried on the graph rather than passed separately -- they must never disagree.
@@ -416,11 +418,14 @@ def build_transit_graph(
         fll = fares.farelinks
         fl = np.array([fll.get((int(m), int(a), int(b)), 0.0)
                        for m, a, b in zip(mode, ta, tb, strict=False)])
+    ride_meta: list = []                 # (row_start, line, A, B) per ride add, for link_volumes
     for j in range(1, n_layers):
         if not track_board:
+            _rs = sum(len(f) for f in frames)
             add(ov(tn, ta, j), ov(tn, tb, j), tt, INF_FREQ,
                 sk_edge=tt, ivt=t_actual, keyivt=ivt_key, ferryivt=ivt_ferry,
                 keydist=key_dist, fare=fl)
+            ride_meta.append((_rs, tn, ta, tb))
             continue
         bm = ~is_fare                                  # bus ride links: single onboard copy
         if bm.any():
@@ -560,11 +565,19 @@ def build_transit_graph(
 
     edges = pd.concat(frames, ignore_index=True)
     board_rows = {k: np.array(v) for k, v in board_line_rows.items()}
+    ride_rows = None
+    if ride_meta:                        # ride edge -> physical (line, A, B), for link_volumes
+        ride_rows = pd.DataFrame({
+            "row": np.concatenate([np.arange(s, s + len(t)) for s, t, _, _ in ride_meta]),
+            "line": np.concatenate([t for _, t, _, _ in ride_meta]),
+            "A": np.concatenate([a for _, _, a, _ in ride_meta]),
+            "B": np.concatenate([b for _, _, _, b in ride_meta])})
     centroid_vertex = {c: cidx[c] for c in centroids}
     dest_vertex = {c: d0 + cidx[c] for c in centroids}
     return TransitGraph(edges=edges, n_vertices=n_vertices,
                         centroid_vertex=centroid_vertex, dest_vertex=dest_vertex,
-                        board_rows=board_rows, spread_window=params.spread_window)
+                        board_rows=board_rows, ride_rows=ride_rows,
+                        spread_window=params.spread_window)
 
 
 def assign_transit(graph: TransitGraph, demand: np.ndarray, *,
@@ -593,6 +606,20 @@ def assign_transit(graph: TransitGraph, demand: np.ndarray, *,
 def boardings_by_line(volume: np.ndarray, graph: TransitGraph) -> pd.Series:
     """Total boardings per line = sum of volume over that line's boarding edges."""
     return pd.Series({ln: float(volume[rows].sum()) for ln, rows in graph.board_rows.items()})
+
+
+def link_volumes(volume: np.ndarray, graph: TransitGraph, *, by_line: bool = False) -> pd.DataFrame:
+    """Per physical directional transit link (A, B) passenger volume, summed over all
+    boarding layers (and lines, unless ``by_line``).  Mirrors Cube ``trnlink`` ``AB_VOL``.
+
+    Requires an assignment graph (``fare_states="none"``, which populates ``ride_rows``)."""
+    rr = graph.ride_rows
+    if rr is None:
+        raise ValueError("graph has no ride_rows; build with fare_states='none' for assignment")
+    df = pd.DataFrame({"A": rr["A"].to_numpy(), "B": rr["B"].to_numpy(),
+                       "line": rr["line"].to_numpy(), "vol": volume[rr["row"].to_numpy()]})
+    keys = ["A", "B", "line"] if by_line else ["A", "B"]
+    return df.groupby(keys, as_index=False)["vol"].sum()
 
 
 def skim_transit(

@@ -7,19 +7,19 @@ demand model with no re-calibration. This brief is the evidence that it reproduc
 results and matches or beats its runtime.
 
 Same algorithms in both; the new pipeline differs only in implementation and in a few
-documented accommodations (Section 5) where the open-source library cannot reproduce a Cube
+documented accommodations (Section 6) where the open-source library cannot reproduce a Cube
 behaviour exactly. All figures are against a 2023 reference Cube run (`2023_TM161_IPA_35`).
 
 | Step | Algorithm (both) | Fit vs Cube | Cube | Aeq |
 |---|---|---|---|---|
 | Highway assignment | Frank-Wolfe user equilibrium | VMT +0.1 to +0.2%, skim r 0.98-1.00 | 25-28 min/iter | ~10 min/iter |
-| Transit assignment | Spiess-Florian optimal strategy | boardings +0.1%, per-line r 0.98 | ~11 min/iter | ~6 min/iter |
+| Transit assignment | Spiess-Florian optimal strategy | same trips → boardings med 2.2% r 0.97, link volumes med 2.9% r 0.99 (Section 3) | ~11 min/iter | ~6 min/iter |
 | Transit skims | cost accumulated along the strategy | median component within ~1%, r 0.91-0.99 | ~3.7 hr/iter | ~16 min/iter (concurrent) + one-time ~7 min fare pass |
 
 **Environment.** Aeq measured on TM2-B; Cube from reference-run logs on MODEL3-C. The two
 are VMs with identical CPUs (Xeon Gold 6338, 2.0 GHz; TM2-B 48 vCPU / 512 GB, MODEL3-C
 16 vCPU / 196 GB), and Cube's transit step runs as 15 single-threaded cluster processes —
-fully provisioned on both — so the timings compare like-for-like silicon (Section 3).
+fully provisioned on both — so the timings compare like-for-like silicon (Section 4).
 
 ---
 
@@ -48,12 +48,12 @@ the legal fare range, and 100% of off-grid values fall between two adjacent lega
 fares.
 
 Across all 610 run-component cells the differences cluster inside ±5%; the tails are the
-named families of Section 6 (transfer wait/walk, off-peak commuter fare), each with a
+named families of Section 7 (transfer wait/walk, off-peak commuter fare), each with a
 verified mechanism:
 
 ![Distribution of per-cell % difference](figures/fit_dist.png)
 
-Median cell per component (mean over jointly-reachable OD pairs; see Section 4):
+Median cell per component (mean over jointly-reachable OD pairs; see Section 5):
 
 | Component | Cube | Aeq | Δ abs | Δ % | r |
 |---|---|---|---|---|---|
@@ -69,9 +69,42 @@ Median cell per component (mean over jointly-reachable OD pairs; see Section 4):
 
 Every median component is within ~1% at correlation 0.91-0.99 (transfer walk 0.84 on
 2-4 minute legs). 90 of 610 cells lie beyond 5% with correlation under 0.90; all belong to
-the Section 6 families.
+the Section 7 families.
 
-## 3. Performance
+## 3. Assignment: same trips, same paths and modes
+
+Section 2 checks the *cost* matrices; this checks the *loaded network* — given the same
+trips, does aeq route them onto the same transit lines and links as Cube? Cube's own
+per-run-type trip tables (`main/trips{period}.tpp`) are fed to the aeq Spiess-Florian
+assignment, isolating the assignment from any demand difference. The result is scored
+against Cube's loaded network: per-line boardings vs `trnline.csv`, per-link volumes vs
+`trnlink.csv` (`AB_VOL`), over all 75 run-type × period combinations.
+
+![Assignment: aeq vs Cube given the same trips](figures/assign_scatter.png)
+
+| | median \|Δ%\| | median r |
+|---|---|---|
+| Per-line boardings | 2.2% | 0.968 |
+| Per-link volume | 2.9% | 0.990 |
+
+Total boardings across all 75 cells: aeq 1,047,112 vs Cube 1,040,408 (**+0.6%**). Per line-
+haul, boardings/link correlations: heavy rail 0.96/1.00, commuter 0.99/0.98, light-rail/
+ferry 0.98/0.97, local 0.95/0.99, express 0.97/0.99. Walk-access/egress is tightest
+(boardings 0.8%, r 0.98); drive legs spread more (3-4%) as the strategy admits more path
+options.
+
+The same best-path-vs-strategy convention from the fares (Section 7.1) applies: Cube loads
+the single best path, aeq the strategy-expected flow, so per-line/link *totals* agree while
+the tail spreads. The eight cells beyond 15% boarding difference are 0.7% of all boardings
+— tiny early-morning markets where a percent is a handful of trips (the worst,
+`wlk_loc_drv` early-AM, is 5 vs 16 boardings) plus sparse express service with drive
+access, where aeq spreads ~20% more boardings across the corridor's patterns. Correlations
+there stay 0.89-0.99.
+
+*Highway link volumes are pending; highway assignment is validated at the VMT level
+(+0.1-0.2%, Section 1) and the per-class link comparison is a later item.*
+
+## 4. Performance
 
 ![Runtime per iteration, Cube vs Aeq](figures/perf_bars.png)
 
@@ -107,7 +140,7 @@ logs on MODEL3-C. Both are VMs on identical Xeon Gold 6338 cores, and Cube's 15
 single-threaded cluster processes are fully provisioned on both machines, so its
 per-core-bound timings transfer directly; residual bias is VM host-load noise.
 
-## 4. How the comparison is defined
+## 5. How the comparison is defined
 
 A **cell** is one component of one run (access × line-haul × egress × period). Over the OD
 pairs both models reach:
@@ -120,7 +153,7 @@ rows may land on different runs). *Example:* transfer wait, median run — Cube 
 can offset (hence the correlation column); pairs are equal-weighted, so these figures are
 skim fidelity, not demand-weighted mode-choice impact.
 
-## 5. Method and accommodations
+## 6. Method and accommodations
 
 Ground truth is one reference Cube run. `scripts/build_aeq_inputs.py` converts the Cube-era
 inputs into a self-contained set (converted once, no Cube at run time); bus in-vehicle times
@@ -145,7 +178,7 @@ results exactly and is merged upstream; this pipeline pins the merged commit. ([
 and is cached; every other skim uses a fast graph refreshed each iteration. Cube recomputes
 everything, fare included, each iteration.
 
-## 6. Divergence ledger
+## 7. Divergence ledger
 
 Every known difference from Cube with its verified mechanism. Standard of proof: a
 divergence is "explained" only once a falsifiable test isolates its cause. The median cell
@@ -175,11 +208,12 @@ fare (a bounded average over the attractive set). 64% match to the cent; every o
 fare interpolates between two adjacent legal station fares. Both are valid reporting
 conventions of the same optimal strategy.
 
-## 7. Reproducibility
+## 8. Reproducibility
 
 - **Inputs:** `scripts/build_aeq_inputs.py` converts a reference Cube run into the
   self-contained input set.
 - **Run:** assignment and skimming run through the repository CLI, selected by
   configuration; no Cube software required.
-- **Validate:** `scripts/validate_transit_skims.py` rebuilds every transit skim from source
-  and writes the CUBE/Aeq/%/correlation scorecard (`docs/aeq_scorecards/`).
+- **Validate:** `scripts/validate_transit_skims.py` rebuilds every transit skim and
+  `scripts/validate_transit_assignment.py` re-assigns Cube's own trips, each writing the
+  CUBE/Aeq/%/correlation scorecard.
