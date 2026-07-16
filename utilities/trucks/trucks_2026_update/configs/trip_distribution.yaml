@@ -10,39 +10,69 @@ model_settings:
   output_dir: models/trip_distribution
 
 inputs:
-  pa_path: data/interim/trip_distribution/sw/SW_trip_generation_TAZ1454.parquet
-  skim_path: data/interim/trip_distribution/sw/blend_time_skims.omx
-  # geo_agg_cols:                  # omit entirely to skip all geo-aggregated outputs
+  pa_path: data/processed/trip_distribution_inputs/SW_trip_generation_TAZ1454.parquet
+  skim_path: data/processed/trip_distribution_inputs/mtc_blended_skims.omx
+  # geo_agg_cols:                
   #   - county_id
   #   - district_id
 
 runs:
-  - name: light_trucks            # full name, used in output filenames and parquet columns
-    short_name: LT                # used as Excel tab prefix (keep <= 4 chars)
-    productions_column: light_trucks_production
-    attractions_column: light_trucks_attraction
-    skim_column: blend_time_struck      # must exist as a table in the OMX file
+# DISTANCE-BASED 
+  - name: distance_small_trucks            # full name, used in output filenames and parquet columns
+    short_name: LT_distance                # used as Excel tab prefix (keep <= 4 chars)
+    productions_column: small_trucks_production
+    attractions_column: small_trucks_attraction
+    skim_column: blended_distance_strucks      # must exist as a table in the OMX file
     gamma_b0: -0.50               # initial value for optimizer
     gamma_c0: -0.05               # initial value for optimizer
-    tlfd_path: data/interim/trip_distribution/sw/tlfd_light_trucks.csv
+    tlfd_path: data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_strucks.csv
     # target_od_path: data/interim/trip_distribution/sw/statewide_od_light.parquet
 
-  - name: medium_trucks
-    short_name: MD
+  - name: distance_medium_trucks
+    short_name: MD_distance
     productions_column: medium_trucks_production
     attractions_column: medium_trucks_attraction
-    skim_column: blend_time_medium
+    skim_column: blended_distance_mtrucks
     gamma_b0: -1.00
     gamma_c0: -0.03
-    tlfd_path: data/interim/trip_distribution/sw/tlfd_medium_trucks.csv
+    tlfd_path: data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_mtrucks.csv
     # no target_od_path — OD outputs skipped for this run
 
-  - name: heavy_trucks
-    short_name: HT
-    productions_column: heavy_trucks_production
-    attractions_column: heavy_trucks_attraction
-    skim_column: blend_time_large
+  - name: distance_large_trucks
+    short_name: HT_distance
+    productions_column: large_trucks_production
+    attractions_column: large_trucks_attraction
+    skim_column: blended_distance_ctrucks
     gamma_b0: -1.20
     gamma_c0: -0.02
-    tlfd_path: data/interim/trip_distribution/sw/tlfd_heavy_trucks.csv
+    tlfd_path: data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_ctrucks.csv
     # target_od_path: data/interim/trip_distribution/statewide_od_heavy.parquet
+
+  - name: time_small_trucks            # full name, used in output filenames and parquet columns
+    short_name: LT_time             # used as Excel tab prefix (keep <= 4 chars)
+    productions_column: small_trucks_production
+    attractions_column: small_trucks_attraction
+    skim_column: blended_time_strucks     # must exist as a table in the OMX file
+    gamma_b0: -0.50               # initial value for optimizer
+    gamma_c0: -0.05               # initial value for optimizer
+    tlfd_path: data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_time_strucks.csv
+    # target_od_path: data/interim/trip_distribution/sw/statewide_od_light.parquet
+
+  - name: time_medium_trucks
+    short_name: MD_time
+    productions_column: medium_trucks_production
+    attractions_column: medium_trucks_attraction
+    skim_column: blended_time_mtrucks
+    gamma_b0: -1.00
+    gamma_c0: -0.03
+    tlfd_path: data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_time_mtrucks.csv
+    # no target_od_path — OD outputs skipped for this run
+
+  - name: time_large_trucks
+    short_name: HT_time
+    productions_column: large_trucks_production
+    attractions_column: large_trucks_attraction
+    skim_column: blended_time_ctrucks
+    gamma_b0: -1.20
+    gamma_c0: -0.02
+    tlfd_path: data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_time_ctrucks.csv
