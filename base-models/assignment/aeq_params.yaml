@@ -157,15 +157,18 @@ highway:
   # Ride-hail (TNC/taxi) person-trip -> vehicle-trip folding, mirroring PrepAssign.job
   # steps 3-5: split each ride-hail mode's person-trips across occupancy bins (da=occ1,
   # s2=occ2, s3=occ3), convert to vehicles, add the zero-passenger (deadhead) empty
-  # vehicles, and route taxi into the toll classes / TNC into the AV classes.  Shares and
-  # the ZPV factor are the MTC params (params.properties Taxi.*/TNC.*.share, TNC_ZPV_fac).
+  # vehicles, and route taxi into the toll classes / TNC into the AV classes.
+  # Shares and ZPV are the reference run's own values (2023_TM161_IPA_35_testrun:
+  # INPUT/params.properties Taxi.*/TNC.*.share + TNC_ZPV_fac, as emitted to its generated
+  # taxi_tnc_occ_factors.csv).  Every da share is 0.00, so the daav class carries only the
+  # deadhead empty vehicles -- matching Cube, whose da_tnc is essentially all ZPV.
   ridehail:
     zpv_factor: 0.70                          # TNC_ZPV_fac: deadhead (empty) vehicle factor
     tables: {taxi: TAXI, single: TNC_SINGLE, shared: TNC_SHARED}
     shares:                                   # occupancy-bin split of each mode's persons
-      taxi:   {da: 0.00, s2: 0.53, s3: 0.47}  # taxi -> toll DA/SR2/SR3
-      single: {da: 0.53, s2: 0.29, s3: 0.18}  # TNC_SINGLE -> AV DA/SR2/SR3
-      shared: {da: 0.09, s2: 0.29, s3: 0.62}  # TNC_SHARED  -> AV DA/SR2/SR3
+      taxi:   {da: 0.00, s2: 0.53, s3: 0.47}  # taxi -> toll SR2/SR3
+      single: {da: 0.00, s2: 0.53, s3: 0.47}  # TNC_SINGLE -> AV SR2/SR3
+      shared: {da: 0.00, s2: 0.18, s3: 0.82}  # TNC_SHARED  -> AV SR2/SR3
   # highway level-of-service skim classes: (assignment class, OMX prefix, is_toll)
   skim_classes: [[da, SOV, false], [sr2, HOV2, false], [sr3, HOV3, false],
                  [datoll, SOVTOLL, true], [sr2toll, HOV2TOLL, true],
