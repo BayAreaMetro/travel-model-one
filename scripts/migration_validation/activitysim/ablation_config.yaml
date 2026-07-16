@@ -2,9 +2,9 @@
 # Machine-specific paths — edit for your environment.
 
 # --- Paths ---
-activitysim_project_dir: "E:/Tests/tm1a_test"
-ctramp_project_dir: "E:/Tests/tm1_ctramp_test"
-survey_dir: "E:/Tests/tm1a_test/survey/ctramp_2023"
+activitysim_project_dir: "E:/Tests/base_2023_frozen_popsim"
+ctramp_project_dir: "E:/Tests/base_2023_ctramp"
+survey_dir: "E:/Tests/base_2023_frozen_popsim/survey/ctramp_2023"
 output_dir: "E:/Tests/ablation_calibration"
 
 # --- ActivitySim model configs (relative to repo root) ---

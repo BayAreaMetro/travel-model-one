@@ -119,11 +119,18 @@ primer: [`docs/assignment_primer.md`](docs/assignment_primer.md).
 
 ## Known gaps / open items
 
-- **PopulationSim harmonization.** Runs end-to-end but not tidy:
-  - `person_id` post-processing is unnecessary (ActivitySim handles indexing) — drop it.
-  - `occupation` (SOC→1–6) is computed but consumed by nothing in ActivitySim — drop it.
+- **PopulationSim harmonization.** Runs end-to-end. `_create_seed_population` (PUMS→seed
+  ETL) is irreducible — PopulationSim's `input_pre_processor` only supports rename/drop/
+  keep/recode, no groupby/merge/arithmetic, so the cross-table work (worker counts, income
+  deflation, GQ classification, PUMA crosswalk) has nowhere else to live.
+  - `person_id` post-processing IS required, not droppable — ActivitySim's `index_col:
+    person_id` needs a real column at read time, and PopulationSim's
+    `write_synthetic_population` never generates a unique per-person id (unlike households,
+    which get `synthetic_hh_id`).
   - `pemploy`, `pstudent`, `ptype`, `num_workers`, `income` must stay pre-computed.
-  - Scenario config section is written but commented out in `base_2023_activitysim`.
+  - Two real remaining opportunities: bake `numhh_gq`/`hh_size_1_gq` into the source TAZ
+    control CSV instead of computing them in `_prepare_controls`; move the `HHT` NaN-fill
+    into `annotate_households.csv` (declarative, where ActivitySim already classifies HHT).
 
 ---
 

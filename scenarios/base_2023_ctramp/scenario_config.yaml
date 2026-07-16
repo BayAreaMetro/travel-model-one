@@ -14,7 +14,7 @@ slack: "off"
 # │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
 # └─────────────────────────────────────────────────────────────────────────────┘
 reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
-proj_dir: "E:/tm1_ctramp_test"
+proj_dir: "E:/Tests/base_2023_ctramp"
 
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  DERIVED PATHS — generally no need to change                               │

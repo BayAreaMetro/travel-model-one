@@ -67,7 +67,7 @@ Edit the top of `scenario_config.yaml` to set paths for your machine:
 
 ```yaml
 reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
-proj_dir: "E:/tm1a_test"
+proj_dir: "E:/Tests/base_2023_frozen_popsim"
 ```
 
 Everything else derives from these two variables.
