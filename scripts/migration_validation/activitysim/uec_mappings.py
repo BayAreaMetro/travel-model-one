@@ -1324,4 +1324,41 @@ SIZE_TERMS_CROSSWALK: dict[tuple[str, str], tuple[str, str]] = {
     ("atwork", "atwork"):       ("atwork", "atwork"),
 }
 
+# ActivitySim YAML CONSTANTS -> CTRAMP runtime property.
+#
+# These never reach the UEC as ``c_*`` tokens -- CTRAMP reads them straight from
+# mtcTourBased.properties (RuntimeConfiguration.py resolves them from params.properties),
+# so the token/coefficient comparison cannot see them.  That blind spot is how the
+# ride-hail wait-time standard deviations sat at 0 against a reference of 6.4/4.1/2.0.
+#
+# kind:
+#   "scalar"        - single float, compared directly
+#   "reversed_list" - CTRAMP lists these by density RURAL->DENSE, while our config keys
+#                     them 1..5 with 1 = DENSEST (see the pd.cut labels=[5,4,3,2,1] in
+#                     tour_mode_choice_annotate_choosers_preprocessor).  So our {1..5}
+#                     must equal the CTRAMP list REVERSED.
+PROPERTY_CROSSWALK: dict[str, tuple[str, str]] = {
+    "Taxi_baseFare":            ("taxi.baseFare",                  "scalar"),
+    "Taxi_costPerMile":         ("taxi.costPerMile",               "scalar"),
+    "Taxi_costPerMinute":       ("taxi.costPerMinute",             "scalar"),
+    "TNC_single_baseFare":      ("TNC.single.baseFare",            "scalar"),
+    "TNC_single_costPerMile":   ("TNC.single.costPerMile",         "scalar"),
+    "TNC_single_costPerMinute": ("TNC.single.costPerMinute",       "scalar"),
+    "TNC_single_costMinimum":   ("TNC.single.costMinimum",         "scalar"),
+    "TNC_shared_baseFare":      ("TNC.shared.baseFare",            "scalar"),
+    "TNC_shared_costPerMile":   ("TNC.shared.costPerMile",         "scalar"),
+    "TNC_shared_costPerMinute": ("TNC.shared.costPerMinute",       "scalar"),
+    "TNC_shared_costMinimum":   ("TNC.shared.costMinimum",         "scalar"),
+    "TNC_shared_IVTFactor":     ("Mobility.TNC.shared.IVTFactor",  "scalar"),
+    "Taxi_waitTime_mean":       ("Taxi.waitTime.mean",             "reversed_list"),
+    "Taxi_waitTime_sd":         ("Taxi.waitTime.sd",               "reversed_list"),
+    "TNC_single_waitTime_mean": ("TNC.single.waitTime.mean",       "reversed_list"),
+    "TNC_single_waitTime_sd":   ("TNC.single.waitTime.sd",         "reversed_list"),
+    "TNC_shared_waitTime_mean": ("TNC.shared.waitTime.mean",       "reversed_list"),
+    "TNC_shared_waitTime_sd":   ("TNC.shared.waitTime.sd",         "reversed_list"),
+}
+
+# Submodels whose YAML CONSTANTS are checked against PROPERTY_CROSSWALK.
+PROPERTY_CHECK_SUBMODELS = ("Tour Mode Choice", "Trip Mode Choice")
+
 # fmt: on

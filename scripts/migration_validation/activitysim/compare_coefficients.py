@@ -25,6 +25,8 @@ from uec_mappings import (
     LABEL_TO_EXPECTED_ALTS,
     MAPPINGS,
     NOTES,
+    PROPERTY_CHECK_SUBMODELS,
+    PROPERTY_CROSSWALK,
     SIZE_TERMS_CROSSWALK,
     get_token_map,
 )
@@ -201,6 +203,115 @@ def read_uec_tokens(ctramp_dir: Path, filename: str, sheet_names: list[str]) -> 
     return result
 
 
+_NEST_LABELS = ("nest0", "nest1", "nest2", "nestCoeff0", "nestCoeff1", "nestCoeff2")
+_NEST_TOL = 1e-9          # float tolerance for "is this nest coefficient 1.0?"
+
+
+def _drop_degenerate(coeffs: list[float]) -> list[float]:
+    """Drop nests with coefficient 1.0.
+
+    A nest whose coefficient is 1.0 imposes no correlation, so it is equivalent to
+    attaching its alternatives directly to the parent.  CTRAMP spells such nests out
+    explicitly (e.g. WALK/BIKE each sit in their own 1.0 nest); ActivitySim omits them.
+    Normalising both sides this way keeps the comparison about real structure.
+    """
+    return [c for c in coeffs if abs(c - 1.0) > _NEST_TOL]
+
+
+def _uec_chain(block: dict[str, list], alts: list[str], i: int) -> list[float]:
+    """Nest-coefficient chain (root-most first) for alternative ``i`` of a UEC sheet."""
+    chain: list[float] = []
+    for level in (2, 1, 0):          # root-most level first
+        ids = block.get(f"nest{level}")
+        cfs = block.get(f"nestCoeff{level}")
+        if not ids or not cfs:
+            continue
+        nest_id = ids[i]
+        if nest_id == "" or nest_id is None:
+            continue
+        # the nest's coefficient is written once, on the first alt of the nest
+        value = next((cfs[j] for j in range(len(alts))
+                      if ids[j] == nest_id and cfs[j] not in ("", None)), None)
+        if value is None:
+            continue
+        with contextlib.suppress(TypeError, ValueError):
+            chain.append(float(value))
+    return _drop_degenerate(chain)
+
+
+def read_uec_nests(ctramp_dir: Path, filename: str,
+                   sheet_names: list[str]) -> dict[str, dict[str, list[float]]]:
+    """Parse the UEC nesting block into a per-alternative chain of nest coefficients.
+
+    The block (``nest0/1/2`` + ``nestCoeff0/1/2``) carries its label in column 1 and
+    leaves column 0 empty, so :func:`read_uec_sheets` -- which keys off the row number
+    in column 0 -- skips it.  Nesting is therefore invisible to the 1:1 coefficient
+    comparison, which is why a wrong nest coefficient can pass as "aligned".
+
+    Returns ``{sheet: {alt_name: [coeff, ...]}}`` ordered root-most first, with
+    degenerate (1.0) nests dropped.
+    """
+    path = ctramp_dir / filename
+    if not path.exists():
+        return {}
+    wb = xlrd.open_workbook(path)
+    out: dict[str, dict[str, list[float]]] = {}
+    for sn in sheet_names:
+        try:
+            sh = wb.sheet_by_name(sn)
+        except xlrd.biffh.XLRDError:
+            continue
+        alts = [str(sh.cell(ALT_NAMES_ROW, c).value).strip()
+                for c in range(FIRST_ALT_COL, sh.ncols)]
+        block: dict[str, list] = {}
+        for r in range(sh.nrows):
+            label = str(sh.cell(r, 1).value).strip()
+            if label in _NEST_LABELS:
+                block[label] = [sh.cell(r, FIRST_ALT_COL + i).value
+                                for i in range(len(alts))]
+        if not block:
+            continue
+        out[sn] = {alt: _uec_chain(block, alts, i)
+                   for i, alt in enumerate(alts) if alt}
+    return out
+
+
+def read_asim_nests(dirs: list[Path], yaml_file: str,
+                    coeff_file: str) -> dict[str, list[float]]:
+    """Parse the ActivitySim ``NESTS`` block into per-alternative nest-coefficient chains.
+
+    Returns ``{alt_name: [coeff, ...]}`` ordered root-most first, degenerate nests
+    dropped -- directly comparable to :func:`read_uec_nests`.
+    """
+    ypath = _resolve(dirs, yaml_file)
+    cpath = _resolve(dirs, coeff_file)
+    if not ypath or not cpath:
+        return {}
+    spec = yaml.safe_load(ypath.read_text(encoding="utf-8")) or {}
+    nests = spec.get("NESTS")
+    if not nests:
+        return {}
+    coeffs: dict[str, float] = {}
+    with cpath.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            name = (row.get("coefficient_name") or "").strip()
+            with contextlib.suppress(TypeError, ValueError):
+                coeffs[name] = float(row.get("value"))
+    paths: dict[str, list[float]] = {}
+
+    def walk(node: dict | str, chain: list[float]) -> None:
+        if isinstance(node, str):                      # leaf alternative
+            paths[node] = _drop_degenerate(chain)
+            return
+        value = coeffs.get(node.get("coefficient"))
+        below = [*chain, value] if value is not None else list(chain)
+        for alt in node.get("alternatives", []):
+            walk(alt, below)
+
+    walk(nests, [])
+    return paths
+
+
 # -- ActivitySim reader --------------------------------------------------------
 
 def _resolve(dirs: list[Path], filename: str) -> Path | None:
@@ -259,6 +370,21 @@ def _read_yaml_constants(configs_dirs: list[Path], yaml_file: str) -> dict[str, 
             for k, v in consts.items():
                 if isinstance(v, (int, float)):
                     merged[k] = v
+    return merged
+
+
+def _read_yaml_constants_raw(configs_dirs: list[Path], yaml_file: str) -> dict:
+    """Read CONSTANTS keeping non-scalar values (e.g. the ``{1..5: value}`` wait maps).
+
+    :func:`_read_yaml_constants` keeps only scalars -- its callers want numbers -- which
+    silently drops the density-keyed wait-time maps.  The properties crosswalk needs them.
+    """
+    merged: dict = {}
+    for d in reversed(configs_dirs):          # overlay (first in list) wins
+        p = d / yaml_file
+        if p.exists():
+            cfg = yaml.safe_load(p.read_text(encoding="utf-8", errors="replace")) or {}
+            merged.update(cfg.get("CONSTANTS", {}) or {})
     return merged
 
 
@@ -1588,6 +1714,161 @@ def _constants_table(
 
 # -- HTML rendering ------------------------------------------------------------
 
+def _chain_str(chain: list[float] | None) -> str:
+    """Render a nest-coefficient chain, root-most first."""
+    if chain is None:
+        return "&mdash;"
+    return " &rarr; ".join(f"{c:g}" for c in chain) if chain else "(no nest)"
+
+
+def _nests_table(uec_nests: dict[str, dict[str, list[float]]],
+                 asim_nests: dict[str, list[float]]) -> str:
+    """Compare the nesting structure: CTRAMP UEC nest block vs the ASim NESTS block.
+
+    Compares, per alternative, the chain of nest coefficients from the root down.  That
+    catches a wrong coefficient, a collapsed nest, and a re-parented alternative alike --
+    none of which the 1:1 coefficient comparison can see, since it only reads numbered
+    utility rows.  Sheets with identical nesting are collapsed into one block.
+    """
+    if not uec_nests or not asim_nests:
+        return ""
+
+    # group sheets by identical nesting, so purposes that agree render once
+    by_signature: dict[str, list[str]] = {}
+    for sheet, paths in uec_nests.items():
+        sig = repr(sorted((a, tuple(c)) for a, c in paths.items()))
+        by_signature.setdefault(sig, []).append(sheet)
+
+    blocks = ""
+    total_diffs = 0
+    for sheets in by_signature.values():
+        paths = uec_nests[sheets[0]]
+        # group alternatives sharing the same (ctramp, asim) chain pair
+        groups: dict[tuple, list[str]] = {}
+        for alt in sorted(set(paths) | set(asim_nests)):
+            key = (tuple(paths.get(alt)) if alt in paths else None,
+                   tuple(asim_nests.get(alt)) if alt in asim_nests else None)
+            groups.setdefault(key, []).append(alt)
+
+        rows = ""
+        n_diff = 0
+        for (c_chain, a_chain), alts in groups.items():
+            ok = c_chain is not None and a_chain is not None and c_chain == a_chain
+            if not ok:
+                n_diff += len(alts)
+            cls = "match" if ok else "diff"
+            if c_chain is None:
+                status = "ASim only"
+            elif a_chain is None:
+                status = "CTRAMP only"
+            else:
+                status = "match" if ok else "DIFFERS"
+            rows += (
+                f"<tr class='{cls}'>"
+                f"<td>{esc(', '.join(alts))}</td>"
+                f"<td class='num'>{_chain_str(list(c_chain) if c_chain is not None else None)}</td>"
+                f"<td class='num'>{_chain_str(list(a_chain) if a_chain is not None else None)}</td>"
+                f"<td>{esc(status)}</td></tr>"
+            )
+        total_diffs += n_diff
+        headline = (f"<b>{n_diff} alternative(s) with mismatched nesting</b>"
+                    if n_diff else "<b>nesting matches</b>")
+        blocks += (
+            f"<div style='margin:6px 0'>"
+            f"<div style='font-size:13px;color:#555;margin-bottom:4px'>"
+            f"Sheets: <code>{esc(', '.join(sheets))}</code> &bull; {headline}</div>"
+            f"<table><tr><th>Alternative(s)</th><th>CTRAMP nest chain</th>"
+            f"<th>ActivitySim nest chain</th><th>Status</th></tr>{rows}</table></div>"
+        )
+
+    summary = (f"{total_diffs} mismatch(es)" if total_diffs else "all nests match")
+    return (
+        f"<details class='mapping-notes mapping-notes-lg'{' open' if total_diffs else ''}>"
+        f"<summary>Nesting structure &mdash; {esc(summary)}</summary>"
+        f"<div style='font-size:12px;color:#666;margin:4px 0 8px'>"
+        f"Chain of nesting coefficients from the root down to each alternative "
+        f"(root-most first). Nests with coefficient 1.0 are dropped on both sides: they "
+        f"impose no correlation, so CTRAMP's explicit 1.0 nests and ActivitySim's omission "
+        f"of them are equivalent. The UEC nest block has no row number in column 0, so the "
+        f"1:1 coefficient comparison below never sees it.</div>"
+        f"{blocks}</details>"
+    )
+
+
+def _properties_table(yaml_constants: dict, ctramp_props: dict[str, str],
+                      submodel_name: str) -> str:
+    """Compare YAML CONSTANTS against the CTRAMP runtime properties they mirror.
+
+    CTRAMP reads these straight from mtcTourBased.properties rather than through a UEC
+    ``c_*`` token, so the token/coefficient crosswalk never sees them -- which is how the
+    ride-hail wait-time sds sat at 0 against a reference of 6.4/4.1/2.0.  Values the
+    properties file leaves unresolved (the repo template ships
+    ``set_by_RuntimeConfiguration.py`` placeholders) are reported as unresolved rather
+    than counted as differences.
+    """
+    if submodel_name not in PROPERTY_CHECK_SUBMODELS or not ctramp_props:
+        return ""
+
+    rows, n_diff, n_unresolved = "", 0, 0
+    for const, (prop, kind) in PROPERTY_CROSSWALK.items():
+        raw = ctramp_props.get(prop)
+        ours = yaml_constants.get(const)
+        if raw is None or ours is None:
+            continue
+        if kind == "reversed_list":
+            try:
+                ref = [float(x) for x in str(raw).split(",")]
+            except ValueError:
+                n_unresolved += 1
+                continue
+            want = list(reversed(ref))               # CTRAMP lists rural->dense; we key 1=densest
+            got = [ours.get(i) for i in range(1, len(want) + 1)] if isinstance(ours, dict) else None
+            ok = (got is not None and len(got) == len(want)
+                  and all(g is not None and abs(float(g) - w) < 1e-6
+                          for g, w in zip(want, got, strict=False)))
+            c_txt = ", ".join(f"{v:g}" for v in want) + "  (reversed)"
+            a_txt = ", ".join("?" if g is None else f"{float(g):g}" for g in (got or []))
+        else:
+            try:
+                want_v = float(raw)
+            except ValueError:
+                n_unresolved += 1
+                rows += (f"<tr class='diff'><td><code>{esc(const)}</code></td>"
+                         f"<td><code>{esc(prop)}</code></td>"
+                         f"<td class='num'>{esc(str(raw))}</td>"
+                         f"<td class='num'>{_fmt(ours)}</td><td>unresolved</td></tr>")
+                continue
+            ok = abs(float(ours) - want_v) < 1e-6
+            c_txt, a_txt = f"{want_v:g}", f"{float(ours):g}"
+        if not ok:
+            n_diff += 1
+        rows += (
+            f"<tr class='{'match' if ok else 'diff'}'>"
+            f"<td><code>{esc(const)}</code></td><td><code>{esc(prop)}</code></td>"
+            f"<td class='num'>{esc(c_txt)}</td><td class='num'>{esc(a_txt)}</td>"
+            f"<td>{'match' if ok else 'DIFFERS'}</td></tr>"
+        )
+    if not rows:
+        return ""
+
+    bits = [f"{n_diff} mismatch(es)"] if n_diff else ["all match"]
+    if n_unresolved:
+        bits.append(f"{n_unresolved} unresolved")
+    return (
+        f"<details class='mapping-notes mapping-notes-lg'{' open' if n_diff else ''}>"
+        f"<summary>Runtime properties &mdash; {esc(', '.join(bits))}</summary>"
+        f"<div style='font-size:12px;color:#666;margin:4px 0 8px'>"
+        f"YAML <code>CONSTANTS</code> vs the CTRAMP runtime properties they mirror. CTRAMP "
+        f"reads these directly from <code>mtcTourBased.properties</code>, never as a UEC "
+        f"<code>c_*</code> token, so the crosswalk below cannot see them. Wait-time lists "
+        f"are stored rural&rarr;dense in CTRAMP but keyed 1=densest here, so the CTRAMP "
+        f"column is shown reversed for comparison.</div>"
+        f"<table><tr><th>ActivitySim constant</th><th>CTRAMP property</th>"
+        f"<th>CTRAMP value</th><th>ActivitySim value</th><th>Status</th></tr>"
+        f"{rows}</table></details>"
+    )
+
+
 def _fmt(v: float | str) -> str:
     if isinstance(v, float):
         if v == int(v) and abs(v) < 1000:
@@ -1855,6 +2136,23 @@ def build_report(cfg: dict) -> Path:
 
         mapped_html = _mapped_table(sm["name"], sheets, spec, template_resolve=tpl_resolve, ctramp_props=ctramp_props, tokens_by_sheet=tokens_by_sheet, yaml_constants=yaml_consts)
 
+        # Nesting structure (invisible to the 1:1 comparison -- the UEC nest block
+        # carries no row number, so read_uec_sheets skips it)
+        model_yaml = sm["asim_spec"].replace(".csv", ".yaml")
+        nests_html = ""
+        asim_nests = read_asim_nests(dirs, model_yaml, sm["asim_coefficients"])
+        if asim_nests:
+            nests_html = _nests_table(
+                read_uec_nests(ctramp_dir, sm["ctramp_file"], sm["ctramp_sheets"]),
+                asim_nests,
+            )
+
+        # Runtime properties CTRAMP reads directly (never a UEC c_* token), so the
+        # token crosswalk below is blind to them -- e.g. the ride-hail wait-time sds
+        properties_html = _properties_table(
+            _read_yaml_constants_raw(dirs, model_yaml), ctramp_props, sm["name"],
+        )
+
         # Constants crosswalk for template-based models
         constants_html = ""
         if tpl_file and tpl_resolve:
@@ -1884,7 +2182,8 @@ def build_report(cfg: dict) -> Path:
             f"CTRAMP: {n_uec} rows / {len(sheets)} sheet(s) &bull; "
             f"ActivitySim: {len(spec['rows'])} rows</div>"
         )
-        return paths_html + notes_html + constants_html + mapped_html + summary + "\n".join(parts)
+        return (paths_html + notes_html + nests_html + properties_html + constants_html
+                + mapped_html + summary + "\n".join(parts))
 
     # Determine overlay: first dir is the scenario overlay, rest are base.
     has_overlay = len(asim_dirs) > 1
