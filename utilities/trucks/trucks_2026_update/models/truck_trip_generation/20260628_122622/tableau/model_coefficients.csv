@@ -142,4 +142,3 @@ TM-1.7 - Small Truck - Freight - Production,"LT_FR_CA_OFF_production +  LT_FR_CA
 ",AGREMPN,0.050985227,0.046744482,1.090721844,0.275395296,0.05099
 TM-1.7 - Small Truck - Freight - Production,"LT_FR_CA_OFF_production +  LT_FR_CA_AM_production + LT_FR_CA_MID_production + LT_FR_CA_PM_production 
 ",FPSEMPN * CIACRE / 1_000_000,3.756867097,2.417235278,1.554200012,0.120136715,3.75687
-,,,,,,,
