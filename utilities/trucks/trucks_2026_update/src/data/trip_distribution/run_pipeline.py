@@ -154,10 +154,15 @@ def main() -> None:
     trips_path = "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrk{tod}x.omx"
     long_format_trips = read_mtc_trips(trips_path)
     long_format_trips = long_format_trips[(long_format_trips["origin"] <= internal_tazs) & (long_format_trips["destination"] <= internal_tazs)]
+    long_format_trips["total_trips"] = long_format_trips.filter(regex=r'^(vstruck|struck|mtruck|ctruck)').sum(axis = 1)
+    long_format_trips["very_small_trucks"] = long_format_trips.filter(regex=r'^(vstruck)').sum(axis = 1)
+    long_format_trips["small_trucks"] = long_format_trips.filter(regex=r'^(struck)').sum(axis = 1)
+    long_format_trips["medium_trucks"] = long_format_trips.filter(regex=r'^(mtruck)').sum(axis = 1)
+    long_format_trips["large_trucks"] = long_format_trips.filter(regex=r'^(ctruck)').sum(axis = 1)
 
-    productions = df.groupby('origin')[["small_trucks", "medium_trucks", "large_trucks"]].sum().add_suffix("_production")
+    productions = long_format_trips.groupby('origin')[["small_trucks", "medium_trucks", "large_trucks"]].sum().add_suffix("_production")
     productions.index.name = "TAZ1454"
-    attractions = df.groupby('destination')[["small_trucks", "medium_trucks", "large_trucks"]].sum().add_suffix("_attraction")
+    attractions = long_format_trips.groupby('destination')[["small_trucks", "medium_trucks", "large_trucks"]].sum().add_suffix("_attraction")
     attractions.index.name = "TAZ1454"
     pa = pd.concat([productions, attractions], axis = 1)
     pa.to_csv(Path(output_dir, "SW_trip_generation_TAZ1454.csv"))
@@ -167,11 +172,11 @@ def main() -> None:
     # Output 3. Frequency Distributions
     #-------------------------------------
     df = long_format_trips.merge(long_format_skims, how = "left", on = ["origin", "destination"]) 
-    df["total_trips"] = df.filter(regex=r'^(vstruck|struck|mtruck|ctruck)').sum(axis = 1)
-    df["very_small_trucks"] = df.filter(regex=r'^(vstruck)').sum(axis = 1)
-    df["small_trucks"] = df.filter(regex=r'^(struck)').sum(axis = 1)
-    df["medium_trucks"] = df.filter(regex=r'^(mtruck)').sum(axis = 1)
-    df["large_trucks"] = df.filter(regex=r'^(ctruck)').sum(axis = 1)
+    # df["total_trips"] = df.filter(regex=r'^(vstruck|struck|mtruck|ctruck)').sum(axis = 1)
+    # df["very_small_trucks"] = df.filter(regex=r'^(vstruck)').sum(axis = 1)
+    # df["small_trucks"] = df.filter(regex=r'^(struck)').sum(axis = 1)
+    # df["medium_trucks"] = df.filter(regex=r'^(mtruck)').sum(axis = 1)
+    # df["large_trucks"] = df.filter(regex=r'^(ctruck)').sum(axis = 1)
 
     frequency_distribution_pairs = [
         {"small_trucks": "blended_time_strucks"}, 
@@ -183,8 +188,8 @@ def main() -> None:
         ]
     
     for pair in frequency_distribution_pairs:
-        # bins_width = 1 means one mile for distance, or 1 min for time
-        frequency_distributions = compute_weighted_histograms(df, pair, bins_width = 1)
+        # bins_width = 5 means five mile for distance, or five min for time
+        frequency_distributions = compute_weighted_histograms(df, pair, bins_width = 5)
         name =  f"observed_frequency_distribution_{list(pair.values())[0]}.csv"
         out = Path(output_dir, name)
         frequency_distributions.to_csv(out, index = False)
