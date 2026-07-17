@@ -65,7 +65,7 @@ run pgm = tripgen
    phase = iloop
    
       ; non-garage-based, or linked trips, or Non-Freight - productions (very small updated with NAICS coefficients)
-      linkedVerySmallP = round(0.4 * (0.95409 * zi.1.RETEMPN + 0.54333 * zi.1.FPSEMPN + 0.50769 * zi.1.HEREMPN + 
+      linkedVerySmallP = round(1.0 * (0.95409 * zi.1.RETEMPN + 0.54333 * zi.1.FPSEMPN + 0.50769 * zi.1.HEREMPN + 
                                0.63558 * zi.1.OTHEMPN + 1.10181 * zi.1.AGREMPN + 0.81576 * zi.1.MWTEMPN +
                                0.26565 * ZI.1.TOTHH) )
       

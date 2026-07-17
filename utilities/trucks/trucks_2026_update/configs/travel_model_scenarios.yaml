@@ -28,7 +28,6 @@ scenarios:
     skip_if_exists: True
     replacements:
       - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_truck_toll_choice.bat"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/travel_model/RunIteration.bat"
         destination: "CTRAMP/RunIteration.bat"
       - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkAMx.tpp"
         destination: "nonres/TripsTrkAMx.tpp"
@@ -45,70 +44,75 @@ scenarios:
     skip_if_exists: False
     replacements:
       - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration.bat"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/travel_model/RunIteration.bat"
         destination: "CTRAMP/RunIteration.bat"
       - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTimeOfDay.job"
         destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
-      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripDistribution.job"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job
         destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripGeneration.job"
-      #   destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
-      # - source: "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job"
-      - source: "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/travel-model-one/utilities/trucks/trucks_2026_update/src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_REEST.job"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_REEST.job"
         destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
         # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
         # This file is build from the estimated gamma function
         # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
         # in CUBE gravity model. 
-      - source: "data/interim/truckFF_new.dat"
-        destination: "nonres/truckFF_new.dat"
+      - source: "models/trip_distribution/truckFF_distance_based.dat"
+        destination: "nonres/truckFF_distance_based.dat"
 
   - name: TM-1.7_GEN_NEWSPEC
     skip_if_exists: False
     replacements:
       - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration.bat"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/travel_model/RunIteration.bat"
         destination: "CTRAMP/RunIteration.bat"
       - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTimeOfDay.job"
         destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
-      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripDistribution.job"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job
         destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripGeneration.job"
-      #   destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
-      # - source: "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job"
-      - source: "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/travel-model-one/utilities/trucks/trucks_2026_update/src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC.job"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC.job"
         destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
         # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
         # This file is build from the estimated gamma function
         # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
         # in CUBE gravity model. 
-      - source: "data/interim/truckFF_new.dat"
-        destination: "nonres/truckFF_new.dat"
+      - source: "models/trip_distribution/truckFF_distance_based.dat"
+        destination: "nonres/truckFF_distance_based.dat"
 
   - name: TM-1.7_GEN_IX
     skip_if_exists: False
     replacements:
       - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_nonres_ixforecast.bat"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/travel_model/RunIteration.bat"
         destination: "CTRAMP/RunIteration.bat"
       - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTimeOfDay.job"
         destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
-      - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripDistribution.job"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job
         destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
-      # - source: "https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/model-files/scripts/nonres/TruckTripGeneration.job"
-      #   destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
-      # - source: "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job"
-      - source: "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/travel-model-one/utilities/trucks/trucks_2026_update/src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC.job"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC.job"
         destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
         # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
         # This file is build from the estimated gamma function
         # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
         # in CUBE gravity model. 
-      - source: "data/interim/truckFF_new.dat"
-        destination: "nonres/truckFF_new.dat"
-      - source: "C:/Users/USJC173858/WSP O365/MTC_TM1.7 - Documents/travel-model-one/utilities/trucks/trucks_2026_update/src/models/travel_model/TruckTripGeneration_scripts/IxTimeOfDay_IX.job"
+      - source: "models/trip_distribution/truckFF_distance_based.dat"
+        destination: "nonres/truckFF_distance_based.dat"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/IxTimeOfDay_IX.job"
+        destination: "CTRAMP/scripts/nonres/IxTimeOfDay.job"
+
+  - name: TM-1.7_GEN_IX_NVF
+    skip_if_exists: False
+    replacements:
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_nonres_ixforecast.bat"
+        destination: "CTRAMP/RunIteration.bat"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
+        destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job
+        destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC_NO_ADJ_VST.job"
+        destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
+        # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
+        # This file is build from the estimated gamma function
+        # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
+        # in CUBE gravity model. 
+      - source: "models/trip_distribution/truckFF_distance_based.dat"
+        destination: "nonres/truckFF_distance_based.dat"
+      - source: "src/models/travel_model/TruckTripGeneration_scripts/IxTimeOfDay_IX.job"
         destination: "CTRAMP/scripts/nonres/IxTimeOfDay.job"
 
