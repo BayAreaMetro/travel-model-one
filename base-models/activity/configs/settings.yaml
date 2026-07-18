@@ -91,6 +91,8 @@ input_table_list:
       - COLLPTE
       - TOPOLOGY
       - TERMINAL
+      - walk_short_share
+      - walk_long_share
 
 # convert input CSVs to HDF5 format and save to outputs directory
 # create_input_store: True
@@ -110,7 +112,10 @@ check_for_variability: False
 # turn shadow_pricing on and off for all models (e.g. school and work)
 # shadow pricing is deprecated for less than full samples
 # see shadow_pricing.yaml for additional settings
-use_shadow_pricing: False
+#
+# The CT-RAMP reference runs WITH shadow pricing (warm-started, 2 iterations,
+# grade school excluded) — keep True to match; scenarios/ablations may override.
+use_shadow_pricing: True
 
 # turn writing of sample_tables on and off for all models
 # (if True, tables will be written if DEST_CHOICE_SAMPLE_TABLE_NAME is specified in individual model settings)

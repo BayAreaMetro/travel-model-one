@@ -36,6 +36,13 @@ steps:
       skim_tpp_dir: "{reference_run}/skims"
       output: "{proj_dir}/data/skims.omx"
 
+    # Merge CT-RAMP walk-to-transit subzone shares into land_use (after copy).
+    # The mode-choice preprocessors sample each tour end's walk segment from
+    # these shares to replicate CT-RAMP's transit availability gates.
+    walk_access_buffers:
+      from: "{reference_run}/INPUT/landuse/walkAccessBuffers.float.csv"
+      into: "{proj_dir}/data/land_use.csv"
+
   # --- 2. PopulationSim: synthesize from PUMS 2019-2023 (5-year ACS) ---
   populationsim:
     pums:

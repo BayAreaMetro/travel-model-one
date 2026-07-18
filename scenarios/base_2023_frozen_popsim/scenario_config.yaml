@@ -12,7 +12,9 @@ proj_dir: "E:/Tests/base_2023_frozen_popsim"
 # │  DERIVED PATHS — generally no need to change                               │
 # └─────────────────────────────────────────────────────────────────────────────┘
 survey_output_dir: "{proj_dir}/survey"
-asim_output_dir: "{proj_dir}/output_full"
+# Calibration reads the latest simulate_activitysim output (was output_full,
+# a stale April snapshot — reports were silently grading an old run).
+asim_output_dir: "{proj_dir}/output"
 
 
 # ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -35,6 +37,13 @@ steps:
     convert_skims:
       skim_tpp_dir: "{reference_run}/skims"
       output: "{proj_dir}/data/skims.omx"
+
+    # Merge CT-RAMP walk-to-transit subzone shares into land_use (after copy).
+    # The mode-choice preprocessors sample each tour end's walk segment from
+    # these shares to replicate CT-RAMP's transit availability gates.
+    walk_access_buffers:
+      from: "{reference_run}/INPUT/landuse/walkAccessBuffers.float.csv"
+      into: "{proj_dir}/data/land_use.csv"
 
   # --- 2. Prepare survey: clean BATS 2023, reformat to CTRAMP structure ---
   prepare_survey:

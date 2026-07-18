@@ -25,13 +25,31 @@ local,_DF_IS_TOUR,'tour_type' in df.columns
 ,terminal_time,"reindex(land_use.TERMINAL, df[dest_col_name])"
 ,dest_density_index,"reindex(land_use.density_index, df[dest_col_name])"
 ,origin_density_index,"reindex(land_use.density_index, df[orig_col_name])"
-# FIXME no transit subzones for ONE_ZONE version so all zones short walk to transit,,
-,_origin_distance_to_transit,"reindex(land_use.access_dist_transit, df[orig_col_name]) if 'access_dist_transit' in land_use else shortWalk"
-,_destination_distance_to_transit,"reindex(land_use.access_dist_transit, df[dest_col_name]) if 'access_dist_transit' in land_use else shortWalk"
-,walk_transit_available,(_origin_distance_to_transit > 0) & (_destination_distance_to_transit > 0)
-,drive_transit_available,(_destination_distance_to_transit > 0) & (df.auto_ownership > 0)
-,origin_walk_time,_origin_distance_to_transit*60/walkSpeed
-,destination_walk_time,_destination_distance_to_transit*60/walkSpeed
+# CT-RAMP walk-to-transit subzones -- shares from walkAccessBuffers.float.csv carried in land_use.,,
+# One segment per (household. zone) via deterministic hash draw; mirrors CT-RAMP sampling once,,
+# per household home zone and once per person-location (Household.java / Person.java).,,
+# Segments: 1 = short walk. 2 = long walk. 0 = cannot walk to transit.,,
+,_orig_short_share,"reindex(land_use.walk_short_share, df[orig_col_name])"
+,_orig_long_share,"reindex(land_use.walk_long_share, df[orig_col_name])"
+,_dest_short_share,"reindex(land_use.walk_short_share, df[dest_col_name])"
+,_dest_long_share,"reindex(land_use.walk_long_share, df[dest_col_name])"
+# Hash key: household_id (suffixed household_id_x in some merges; person-indexed choosers fall back to index).,,
+,_wsk_hh,"df.get('household_id', df.get('household_id_x', pd.Series(df.index, index=df.index))).to_numpy().astype(np.uint64)"
+,_wsk_o1,_wsk_hh * np.uint64(8192) + df[orig_col_name].to_numpy().astype(np.uint64)
+,_wsk_o2,(_wsk_o1 ^ (_wsk_o1 >> np.uint64(33))) * np.uint64(0xff51afd7ed558ccd)
+,_wsk_o3,(_wsk_o2 ^ (_wsk_o2 >> np.uint64(33))) * np.uint64(0xc4ceb9fe1a85ec53)
+,_r_orig,(_wsk_o3 ^ (_wsk_o3 >> np.uint64(33))) / 18446744073709551616.0
+,_wsk_d1,_wsk_hh * np.uint64(8192) + df[dest_col_name].to_numpy().astype(np.uint64)
+,_wsk_d2,(_wsk_d1 ^ (_wsk_d1 >> np.uint64(33))) * np.uint64(0xff51afd7ed558ccd)
+,_wsk_d3,(_wsk_d2 ^ (_wsk_d2 >> np.uint64(33))) * np.uint64(0xc4ceb9fe1a85ec53)
+,_r_dest,(_wsk_d3 ^ (_wsk_d3 >> np.uint64(33))) / 18446744073709551616.0
+,origin_walk_segment,"np.where(_r_orig < _orig_short_share, 1, np.where(_r_orig < _orig_short_share + _orig_long_share, 2, 0))"
+,destination_walk_segment,"np.where(_r_dest < _dest_short_share, 1, np.where(_r_dest < _dest_short_share + _dest_long_share, 2, 0))"
+,walk_transit_available,(origin_walk_segment > 0) & (destination_walk_segment > 0)
+,drive_transit_available,(destination_walk_segment > 0) & (df.auto_ownership > 0)
+# Walk time tokens (UEC originWalkTime / destinationWalkTime): short = 6.67 min. long = 20 min.,,
+,origin_walk_time,"np.where(origin_walk_segment == 2, (shortWalk + 0.5 * (longWalk - shortWalk)) * 2.0, shortWalk) * 60 / walkSpeed"
+,destination_walk_time,"np.where(destination_walk_segment == 2, (shortWalk + 0.5 * (longWalk - shortWalk)) * 2.0, shortWalk) * 60 / walkSpeed"
 # RIDEHAIL,,
 ,origin_density_measure,"(reindex(land_use.TOTPOP, df[orig_col_name]) + reindex(land_use.TOTEMP, df[orig_col_name])) / (reindex(land_use.TOTACRE, df[orig_col_name]) / 640)"
 ,dest_density_measure,"(reindex(land_use.TOTPOP, df[dest_col_name]) + reindex(land_use.TOTEMP, df[dest_col_name])) / (reindex(land_use.TOTACRE, df[dest_col_name]) / 640)"
