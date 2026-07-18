@@ -10,6 +10,13 @@ Same algorithms in both; the new pipeline differs only in implementation and in 
 documented accommodations (Section 6) where the open-source library cannot reproduce a Cube
 behaviour exactly. All figures are against a 2023 reference Cube run (`2023_TM161_IPA_35`).
 
+**Scope and isolation.** This brief covers the assignment/skimming layer only, and every
+comparison holds everything else at the Cube reference: skims are built on the reference
+network, and assignments are fed Cube's own trip tables, so any difference shown here is
+attributable to the engine swap alone. The demand-model migration (CT-RAMP to ActivitySim)
+is a separate workstream with its own validation (see DEV_NOTES); its status has no bearing
+on the results below, and vice versa.
+
 | Step | Algorithm (both) | Fit vs Cube | Cube | Aeq |
 |---|---|---|---|---|
 | Highway assignment | Frank-Wolfe user equilibrium | VMT +0.1 to +0.2%, skim r 0.98-1.00 | 25-28 min/iter | ~10 min/iter |
@@ -93,7 +100,7 @@ ferry 0.98/0.97, local 0.95/0.99, express 0.97/0.99. Walk-access/egress is tight
 (boardings 0.8%, r 0.98); drive legs spread more (3-4%) as the strategy admits more path
 options.
 
-The same best-path-vs-strategy convention from the fares (Section 7.1) applies: Cube loads
+The same best-path-vs-strategy convention from the fares (Section 7, family 1) applies: Cube loads
 the single best path, aeq the strategy-expected flow, so per-line/link *totals* agree while
 the tail spreads. The eight cells beyond 15% boarding difference are 0.7% of all boardings
 — tiny early-morning markets where a percent is a handful of trips (the worst,
@@ -101,8 +108,44 @@ the tail spreads. The eight cells beyond 15% boarding difference are 0.7% of all
 access, where aeq spreads ~20% more boardings across the corridor's patterns. Correlations
 there stay 0.89-0.99.
 
-*Highway link volumes are pending; highway assignment is validated at the VMT level
-(+0.1-0.2%, Section 1) and the per-class link comparison is a later item.*
+**Highway, per-class link volumes.** Same convention as transit above — Cube's own
+`main/trips{period}.tpp` demand fed to the aeq Frank-Wolfe assignment, scored against
+Cube's loaded network per vehicle class, across all five periods
+(`scripts/migration_validation/assignment/validate_highway_assignment.py`, scorecard in
+`scripts/migration_validation/assignment/scorecard_hwy_assign.csv`).
+
+| | median \|Δ%\| | median r |
+|---|---|---|
+| Per-class link volume | 0.6% | 0.971 |
+| Total-PCE link volume | 1.2% | 0.990 |
+
+The median cell is at parity; a handful of small-volume toll classes carry the tail —
+worst cells are `PM datoll` (+44.9%), `MD sr2toll` (-9.8%), and `EA sr2toll`/`sr3toll`
+(-8.3%/-8.9%, r 0.19-0.24). These aren't yet in the divergence ledger (Section 7 below is
+transit-only) — root cause is an open item.
+
+### Multi-path assignment
+
+AequilibraE performs **multi-path (hyperpath) transit assignment**, the same class of
+method as Cube's Public Transport / TRNBUILD. This is not a commercial-only capability: it
+is the Spiess-Florian *optimal-strategy* algorithm (Spiess & Florian, 1989), the canonical
+hyperpath formulation, implemented natively in the open-source library.
+
+Multi-path means each origin-destination demand is carried by a *set* of attractive
+paths rather than a single best route: a rider boards whichever attractive line arrives
+first, so the strategy spans several lines and the demand splits across them by boarding
+probability (this is also what produces the combined-headway wait time). The evidence above
+is a direct demonstration — aeq spreads the same demand across the same lines and links as
+Cube (per-line boardings r 0.97, per-link volumes r 0.99).
+
+The one distinction is in reporting, not capability: **Cube collapses its strategy to the
+single best path** (integer boardings, discrete station-pair skims), while **aeq reports the
+probability-weighted expectation over the full attractive path set** (fractional flows, a
+bounded average skim). The multi-path representation is the optimal strategy itself; the
+probability-weighted spread is how that structure surfaces in the outputs. aeq is, if
+anything, the more explicit of the two. The only substantive difference is *how the path
+set is formed* — Cube's `COMBINE` frequency window versus Spiess-Florian's attractive-set
+rule — reconciled by one documented accommodation (Section 6, the combined-headway window).
 
 ## 4. Performance
 
@@ -187,7 +230,7 @@ is at parity; this ledger accounts for the 90 tail cells.
 | # | Family | Size (worst cell) | Absolute | Mechanism | Status |
 |---|---|---|---|---|---|
 | 1 | Commuter-rail path composition | fare -9% (AM), KEYIVT -2 to -3% | ~-60c | S&F rides cost-optimal Caltrain pattern; Cube COMBINE rides the frequency-blended pattern | both valid (see below) |
-| 2 | Reported waits under-pool | IWAIT -1 to -2 min (dense stops) | ~-1.5 min | S&F pools all attractive lines; Cube's window pools fewer | accommodation (§5, `w`) |
+| 2 | Reported waits under-pool | IWAIT -1 to -2 min (dense stops) | ~-1.5 min | S&F pools all attractive lines; Cube's window pools fewer | accommodation (§6, `w`) |
 | 3 | Spread-slice vs COMBINE window | express off-peak XWAIT +29% | ~+8 min | S&F charges the boarded line's wait; Cube charges a blend over near-equal services | convention difference, bounded |
 | 4 | Transfer-walk link timing | WAUX +30-40% (express) | ~+24 sec | transfer connectors timed slightly longer; **not routing** (boardings identical, r(excess)≈0) | input-timing convention, bounded |
 | 5 | Reachability edges | com recall 94-97% | | near path-time limits S&F and single-path cost fall opposite sides; Aeq also reaches pairs Cube misses | intrinsic, bounded |
@@ -214,6 +257,8 @@ conventions of the same optimal strategy.
   self-contained input set.
 - **Run:** assignment and skimming run through the repository CLI, selected by
   configuration; no Cube software required.
-- **Validate:** `scripts/validate_transit_skims.py` rebuilds every transit skim and
-  `scripts/validate_transit_assignment.py` re-assigns Cube's own trips, each writing the
-  CUBE/Aeq/%/correlation scorecard.
+- **Validate:** the battery under `scripts/migration_validation/assignment/` —
+  `validate_transit_skims.py` rebuilds every transit skim,
+  `validate_transit_assignment.py` re-assigns Cube's own transit trips, and
+  `validate_highway_assignment.py` re-assigns Cube's own highway demand per vehicle
+  class — each writing the CUBE/Aeq/%/correlation scorecard.

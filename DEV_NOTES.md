@@ -49,7 +49,7 @@ specs, submodel by submodel.
 
 - Notes: [`docs/ACTIVITYSIM_MIGRATION_NOTES.md`](docs/ACTIVITYSIM_MIGRATION_NOTES.md).
 
-### 3. Validate ActivitySim against CT-RAMP on frozen skims — **DONE** (iterates on #2)
+### 3. Validate ActivitySim against CT-RAMP on frozen skims — **IN VALIDATION** (iterates on #2)
 
 With the reference `skims.omx` frozen (no assignment, no feedback), run both engines on the
 same inputs and diff stage by stage. This is where step 2 got its feedback loop: a mismatch
@@ -60,7 +60,14 @@ in a stage's output sent me back to fix a coefficient or expression, then re-run
   `ablation_ctramp.py`, `evaluate_stages.py`) freezes upstream stages to CT-RAMP output and
   isolates one submodel at a time, so a diff can't hide behind an upstream diff.
 - Submodels aligned one at a time (auto ownership → WFH → CDAP → work/school location →
-  tour/trip mode → non-work destination → at-work subtours), each landing at CT-RAMP parity.
+  tour/trip mode → non-work destination → at-work subtours).
+- Full-model checks: population, auto ownership, trip generation, and trip-length
+  distributions all match CT-RAMP within ~2%; major mode shares (auto, walk) within ±4%.
+  A disaggregate mode-share parity check — now a standing table in the calibration report —
+  exposed over-prediction of the minor transit modes and led to the one CT-RAMP subsystem
+  the port had missed entirely: **walk-to-transit subzones** (`walkAccessBuffers`), which
+  gate transit availability and set access walk times. Ported (segments sampled per
+  household-location in the mode-choice preprocessors); re-validation in progress.
 
 
 ### 4. Assignment — wire in the Cube launcher via Python — **DONE**
