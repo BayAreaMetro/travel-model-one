@@ -751,6 +751,48 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     break
             return ""
 
+        def _check_cell_placement(ar: dict | None, ctramp_nos: list, sheet_name: str) -> str | None:
+            """Compare which alternative columns the ASim row and its mapped
+            CTRAMP row(s) place coefficients in.
+
+            Matching values are not enough: the transit-hesitance rows matched
+            numerically for months while their drive-side coefficients sat one
+            mode column to the right (DRIVE_EXP's on DRIVE_HVY, ... commuter's
+            on TAXI). Only comparable when both sides share the same alt-name
+            vocabulary (the mode-choice UECs label their alt columns with the
+            ASim mode names).
+
+            Returns a warning string on mismatch, "" when compared and clean,
+            or None when the two sides are not comparable.
+            """
+            if not ar or not ar.get("coeffs"):
+                return None
+            uec_cols: set[str] = set()
+            for spec_ in ctramp_nos:
+                # Per-sheet dicts use raw row data, mirroring the value
+                # comparison (desc-matching may remap plain row numbers).
+                if isinstance(spec_, dict):
+                    no_ = spec_.get(sheet_name, spec_.get("*"))
+                    cr_ = _raw_by_sheet_no.get((sheet_name, no_)) if no_ else None
+                else:
+                    no_ = spec_
+                    cr_ = ctramp_by_sheet_no.get((sheet_name, no_)) if no_ else None
+                if cr_ and cr_.get("coeffs"):
+                    uec_cols |= set(cr_["coeffs"])
+            asim_cols = set(ar["coeffs"])
+            if not uec_cols or not (uec_cols & set(spec.get("alt_names", [])) or asim_cols & set(sheets[0].get("alt_names", []))):
+                return None  # different alt vocabularies — not comparable
+            missing = uec_cols - asim_cols
+            stray = asim_cols - uec_cols
+            if missing or stray:
+                bits = []
+                if missing:
+                    bits.append(f"UEC places it on {sorted(missing)}")
+                if stray:
+                    bits.append(f"spec places it on {sorted(stray)}")
+                return "⚠ CELL PLACEMENT: " + "; ".join(bits)
+            return ""
+
         def _resolve_ctramp_formula_val(row: dict, sheet_name: str = "") -> float | str:
             """Extract the effective numeric coefficient from a CTRAMP UEC row.
 
@@ -996,6 +1038,23 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
             ar = asim_by_label.get(asim_label)
             used_asim.add(asim_label)
 
+            # Cell-placement cross-check: the union of the mapped CTRAMP rows'
+            # alt columns must equal the ASim row's coefficient columns.
+            # None = not comparable (fall back to the label heuristic);
+            # "" = compared clean (suppresses the weaker label heuristic).
+            # Try each sheet until one is comparable (joint-tour rows have no
+            # Work-sheet mapping, for example).
+            _placement_verdict = None
+            for _sn in seg_names:
+                _placement_verdict = _check_cell_placement(ar, ctramp_nos, _sn)
+                if _placement_verdict is not None:
+                    break
+            _placement_warn = _placement_verdict or ""
+            if _placement_warn:
+                n_total += 1
+                n_diff += 1
+                _DIFF_RECORDS.append((name, asim_label, None, seg_names[0], _placement_warn, "", "CELL_PLACEMENT"))
+
             for i, ctramp_no_spec in enumerate(ctramp_nos):
                 # Resolve per-sheet row number helper
                 def _row_for_sheet(sn: str, spec=ctramp_no_spec) -> int | None:
@@ -1015,7 +1074,7 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
 
                 # Per-purpose numeric comparison
                 val_cells = ""
-                _alt_mismatch_warn = ""
+                _alt_mismatch_warn = _placement_warn if i == 0 else ""
                 for sn, purpose in zip(seg_names, purposes):
                     sheet_row = _row_for_sheet(sn)
                     # Per-sheet dicts use raw row data (unmodified by desc-matching)
@@ -1024,9 +1083,9 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
                     # Mark the actual resolved row number as used (may differ from sheet_row due to desc-matching)
                     if cr is not None:
                         used_ctramp.add(cr["no"])
-                        # Cross-validate: check the CTRAMP row's alt columns
-                        # match the alternative implied by the ASim label.
-                        if not _alt_mismatch_warn:
+                        # Cross-validate via the label heuristic only when the
+                        # direct cell-placement comparison was not possible.
+                        if _placement_verdict is None and not _alt_mismatch_warn:
                             _alt_mismatch_warn = _check_alt_column_match(
                                 asim_label, cr, sheets[0].get("alt_names", []))
                     c_val = _resolve_ctramp_formula_val(cr, sheet_name=sn)
@@ -1113,7 +1172,8 @@ def _mapped_table(name: str, sheets: list[dict], spec: dict, template_resolve: d
 
                 # Log alt-column mismatch as a warning diff (values may match
                 # numerically but the CTRAMP row applies to a different mode).
-                if _alt_mismatch_warn:
+                # Placement warnings are already recorded as CELL_PLACEMENT.
+                if _alt_mismatch_warn and _alt_mismatch_warn != _placement_warn:
                     _DIFF_RECORDS.append((name, asim_label, display_no, seg_names[0], _alt_mismatch_warn, "", "ALT_MISMATCH"))
 
                 body += "<tr>"

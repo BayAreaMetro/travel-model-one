@@ -10,6 +10,7 @@ from .helpers import (
     esc,
     esc_js,
     fit_table,
+    mode_parity_table,
     pick_datasets,
     pp_delta_cell,
     render_pairs,
@@ -37,6 +38,8 @@ def _render_pair(
     parts: list[str] = [
         "<h3>Trip Mode Shares by Purpose</h3>",
         _mode_share_table(obs, mod, obs_label, mod_label),
+        "<h3>Mode Parity (all 21 modes, all purposes)</h3>",
+        mode_parity_table(obs, mod, obs_label, mod_label, "trip_mode", "num_trips"),
         "<h3>Goodness of Fit</h3>",
         _fit_section(obs, mod),
         "<h3>Mode Share Chart</h3>",

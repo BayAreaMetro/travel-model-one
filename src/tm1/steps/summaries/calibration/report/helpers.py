@@ -111,6 +111,67 @@ def count_cell(val: float | None) -> str:
     return f"<td>{val:,.0f}</td>"
 
 
+def rel_share_delta_cell(obs: float, mod: float, *, min_pp: float = 0.01) -> str:
+    """Relative share-difference cell for mode parity tables.
+
+    Flags amber > 10%, red > 50%. Differences under *min_pp* percentage points
+    are shown unflagged — relative error on a vanishing share is noise.
+    """
+    if abs(obs) < _NEAR_ZERO:
+        return "<td>—</td>"
+    diff = (mod - obs) / obs * 100
+    magnitude = abs(diff)
+    cls = ""
+    if abs(mod - obs) * 100 >= min_pp:
+        if magnitude > 50:
+            cls = " class='err-bad'"
+        elif magnitude > 10:
+            cls = " class='err-warn'"
+    sign = "+" if diff >= 0 else ""
+    return f"<td{cls}>{sign}{diff:.0f}%</td>"
+
+
+def mode_parity_table(
+    obs: pl.DataFrame,
+    mod: pl.DataFrame,
+    obs_label: str,
+    mod_label: str,
+    mode_col: str,
+    count_col: str,
+) -> str:
+    """Disaggregate (21-mode) share parity table across all purposes.
+
+    The grouped shares table flags percentage-point deltas, which cannot
+    surface a large relative error on a minor mode — a 3x over-prediction of
+    a 0.2%-share mode moves the grouped table by well under a point. This
+    table keeps every mode separate and flags relative differences.
+    """
+    def shares(df: pl.DataFrame) -> dict[int, float]:
+        g = df.group_by(mode_col).agg(pl.col(count_col).sum())
+        total = g[count_col].sum() or 1
+        return {r[mode_col]: r[count_col] / total for r in g.to_dicts()}
+
+    obs_shares = shares(obs)
+    mod_shares = shares(mod)
+
+    out = (
+        "<table class='cal-table'><thead><tr>"
+        f"<th>Mode</th><th>{esc(obs_label)}</th><th>{esc(mod_label)}</th>"
+        "<th>Delta (pp)</th><th>Delta (relative)</th>"
+        "</tr></thead><tbody>"
+    )
+    for m in CTRAMPModeType:
+        o = obs_shares.get(m.id, 0.0)
+        d = mod_shares.get(m.id, 0.0)
+        out += (
+            f"<tr><td>{esc(m.label)}</td>"
+            f"<td>{o:.2%}</td><td>{d:.2%}</td>"
+            f"{pp_delta_cell(o, d)}{rel_share_delta_cell(o, d)}</tr>"
+        )
+    out += "</tbody></table>"
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Dataset helpers
 # ---------------------------------------------------------------------------
