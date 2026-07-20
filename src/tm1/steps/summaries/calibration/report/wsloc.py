@@ -33,6 +33,23 @@ def render(
         parts.append("<h3>Average Trip Lengths (miles)</h3>")
         parts.append(render_pairs(avg_datasets, _render_avg_pair))
 
+    # WFH-split work distance parity — both engines keep a usual-workplace TAZ
+    # for WFH workers, so a faithful WFH model reproduces the higher WFH-worker
+    # distance. Regional work distance washes out (~+0.6%); per-county residual
+    # is destination-allocation, not a WFH defect.
+    wfh_datasets = pick_datasets(per_label, labels, "wfh_split_work")
+    if len(wfh_datasets) >= 2:  # noqa: PLR2004
+        parts.append("<h3>Work Distance by WFH Status (miles)</h3>")
+        parts.append(_wfh_split_table(wfh_datasets))
+        parts.append(
+            "<p class='note'>* Both models assign a usual-workplace TAZ to "
+            "work-from-home workers (WFH is an overlay, not an exclusion — "
+            "verified 100% of CTRAMP wfh=1 keep a WorkLocation). WFH workers "
+            "commute farther on average, and ActivitySim reproduces that split; "
+            "a close match here isolates any per-county gap to destination "
+            "allocation rather than the WFH model.</p>"
+        )
+
     # Fit metrics across all datasets
     fit_rows: list[dict] = []
     trip_purposes = [
@@ -121,6 +138,43 @@ def _render_avg_pair(
     mod: pl.DataFrame,
 ) -> str:
     return _avg_trip_table(obs, mod, obs_label, mod_label)
+
+
+def _wfh_split_table(datasets: list[tuple[int, str, pl.DataFrame]]) -> str:
+    """Render mean work distance by WFH status, one column per dataset.
+
+    A ``%Δ`` column compares the last two datasets (ActivitySim vs CTRAMP in
+    the default config order), which is the migration-validation pair.
+    """
+    categories = ["Regular", "Work-from-home"]
+    # label -> {category: mean_dist}
+    by_label: dict[str, dict[str, float]] = {}
+    for _idx, label, df in datasets:
+        by_label[label] = {
+            r["category"]: r["mean_dist"] for r in df.to_dicts()
+        }
+    labels = [lbl for _i, lbl, _d in datasets]
+    show_diff = len(labels) >= 2  # noqa: PLR2004
+
+    header = "<table class='cal-table'><thead><tr><th>WFH status</th>"
+    for lbl in labels:
+        header += f"<th>{esc(lbl)}</th>"
+    if show_diff:
+        header += f"<th>%&Delta; ({esc(labels[-2])}&rarr;{esc(labels[-1])})</th>"
+    header += "</tr></thead><tbody>"
+
+    body = ""
+    for cat in categories:
+        body += f"<tr><td>{esc(cat)}</td>"
+        for lbl in labels:
+            v = by_label.get(lbl, {}).get(cat)
+            body += f"<td>{v:.2f}</td>" if v is not None else "<td>&mdash;</td>"
+        if show_diff:
+            ref = by_label.get(labels[-1], {}).get(cat, 0) or 0
+            mod = by_label.get(labels[-2], {}).get(cat, 0) or 0
+            body += pct_change_cell(ref, mod)
+        body += "</tr>"
+    return header + body + "</tbody></table>"
 
 
 def _tlfd_grid(

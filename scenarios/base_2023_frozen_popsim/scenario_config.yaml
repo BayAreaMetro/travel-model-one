@@ -138,7 +138,11 @@ steps:
 
         - label: "ActivitySim"
           format: activitysim
-          sampleshare: 0.5
+          # ActivitySim runs the FULL synthetic population (7.46M persons =
+          # 2x the CT-RAMP reference, whose mandatory outputs are a 50% sample).
+          # Tag must match the actual output sample rate or every absolute count
+          # is doubled relative to CT-RAMP. Households are identical (2.95M).
+          sampleshare: 1.0
           paths:
             taz_data: "{reference_run}/INPUT/landuse/tazData.csv"
             dist_skim: "{reference_run}/skims/nonmotskm.tpp"
@@ -158,6 +162,9 @@ steps:
             dist_skim: "{reference_run}/skims/nonmotskm.tpp"
             wsloc_results: "{reference_run}/main/wsLocResults_3.csv"
             households: "{reference_run}/INPUT/popsyn/hhFile.2023_v12.csv"
+            # personData carries wfh_choice (0/1) — without this path the WFH
+            # submodel has no CT-RAMP column and renders 0% across the board.
+            persons: "{reference_run}/main/personData_3.csv"
             ao_results: "{reference_run}/main/aoResults.csv"
             cdap_results: "{reference_run}/main/cdapResults.csv"
             indiv_tour_data: "{reference_run}/main/indivTourData_3.csv"

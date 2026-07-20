@@ -93,6 +93,11 @@ COLUMN_MAPS: dict[str, dict[str, dict[str, str]]] = {
             "household_id": "hh_id",
             "person_id": "person_id",
             "home_zone_id": "home_taz",
+            # Use assigned_workplace_zone_id: CTRAMP keeps a WorkLocation for
+            # WFH workers too (wfh_choice is an overlay, not an exclusion —
+            # verified 100% of CTRAMP wfh=1 have WorkLocation>0), so ActivitySim
+            # must likewise keep WFH workers at their assigned work TAZ for the
+            # work-distance TLFD to be apples-to-apples (counts match to 0.04%).
             "assigned_workplace_zone_id": "work_location",
             "workplace_zone_id": "_workplace_zone_id_raw",
             "school_zone_id": "school_location",
@@ -295,6 +300,19 @@ def load_bundle(dataset_cfg: object) -> object:
         persons_cols = set(bundle.persons.collect_schema().names())
         if "work_from_home" not in cdap_cols and "work_from_home" in persons_cols:
             bundle.cdap_results = bundle.cdap_results.join(
+                bundle.persons.select("person_id", "work_from_home"),
+                on="person_id",
+                how="left",
+            )
+
+    # Post-load: merge WFH onto wsloc_results too, so the work-distance summary
+    # can split by work-from-home status. CTRAMP carries wfh only on personData
+    # (wfh_choice), not wsLocResults; ActivitySim final_persons already has it.
+    if bundle.wsloc_results is not None and bundle.persons is not None:
+        wsloc_cols = set(bundle.wsloc_results.collect_schema().names())
+        persons_cols = set(bundle.persons.collect_schema().names())
+        if "work_from_home" not in wsloc_cols and "work_from_home" in persons_cols:
+            bundle.wsloc_results = bundle.wsloc_results.join(
                 bundle.persons.select("person_id", "work_from_home"),
                 on="person_id",
                 how="left",

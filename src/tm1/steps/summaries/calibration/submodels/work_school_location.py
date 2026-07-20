@@ -135,16 +135,56 @@ def summarize(
         )
         dist_samples[trip_type] = sampled
 
+    # -- WFH-split work distance parity ------------------------------------
+    # Mean home->work distance for work-from-home vs regular workers. Both
+    # CTRAMP and ActivitySim keep a usual-workplace TAZ for WFH workers, so a
+    # faithful WFH model should reproduce the (higher) WFH-worker distance.
+    wfh_split = _wfh_split_work(wsloc, weight_col)
+
     return {
         "county_summary": county_summary,
         "trip_tlfd_work": trip_tlfds.get("work"),
         "trip_tlfd_univ": trip_tlfds.get("univ"),
         "trip_tlfd_school": trip_tlfds.get("school"),
         "avg_trip_lengths": avg_trip_lengths,
+        "wfh_split_work": wfh_split,
         "dist_samples_work": dist_samples.get("work"),
         "dist_samples_univ": dist_samples.get("univ"),
         "dist_samples_school": dist_samples.get("school"),
     }
+
+
+def _wfh_split_work(wsloc: pl.DataFrame, weight_col: str) -> pl.DataFrame | None:
+    """Weighted mean work distance split by work-from-home status.
+
+    Returns a 2-row frame (category, workers, mean_dist) or None when the
+    dataset carries no work_from_home column (e.g. survey).
+    """
+    if "work_from_home" not in wsloc.columns:
+        return None
+    workers = wsloc.filter(
+        (pl.col("work_location") > 0) & pl.col("work_dist").is_not_null()
+    )
+    if workers.height == 0:
+        return None
+    split = (
+        workers.group_by(pl.col("work_from_home").cast(pl.Int64))
+        .agg(
+            (pl.col(weight_col).sum()).alias("workers"),
+            (
+                (pl.col("work_dist") * pl.col(weight_col)).sum()
+                / pl.col(weight_col).sum()
+            ).alias("mean_dist"),
+        )
+        .with_columns(
+            pl.col("work_from_home")
+            .replace_strict({0: "Regular", 1: "Work-from-home"}, default="Unknown")
+            .alias("category"),
+        )
+        .select("category", "workers", "mean_dist")
+        .sort("category")
+    )
+    return split
 
 
 # ---------------------------------------------------------------------------
