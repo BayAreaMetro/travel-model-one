@@ -81,18 +81,27 @@ the Section 7 families.
 ## 3. Assignment: same trips, same paths and modes
 
 Section 2 checks the *cost* matrices; this checks the *loaded network* — given the same
-trips, does aeq route them onto the same transit lines and links as Cube? Cube's own
-per-run-type trip tables (`main/trips{period}.tpp`) are fed to the aeq Spiess-Florian
-assignment, isolating the assignment from any demand difference. The result is scored
-against Cube's loaded network: per-line boardings vs `trnline.csv`, per-link volumes vs
-`trnlink.csv` (`AB_VOL`), over all 75 run-type × period combinations.
+trips, does aeq route them onto the same links, lines, and modes as Cube? Cube's own trip
+tables (`main/trips{period}.tpp`) are fed to both engines, isolating the assignment from any
+demand difference. **Highway:** the 13 vehicle classes (folded from the `.tpp` exactly as
+`HwyAssign.job` does) go through aeq's Frank-Wolfe equilibrium and are scored per link
+against Cube's loaded network `avgload5period_vehclasses.csv`, per class and PCE-combined.
+**Transit:** the per-run-type tables go through Spiess-Florian and are scored per-line
+against `trnline.csv` and per-link against `trnlink.csv` (`AB_VOL`), over all 75 run-type ×
+period combinations. Both scorecards, and this figure, are reproducible —
+`scripts/migration_validation/assignment/{validate_highway_assignment,validate_transit_assignment,make_assign_figure}.py`.
 
 ![Assignment: aeq vs Cube given the same trips](figures/assign_scatter.png)
 
 | | median \|Δ%\| | median r |
 |---|---|---|
-| Per-line boardings | 2.2% | 0.968 |
-| Per-link volume | 2.9% | 0.990 |
+| Highway link volume (per class) | 0.8% | 1.00 |
+| Per-line boardings (transit) | 2.2% | 0.968 |
+| Per-link volume (transit) | 2.9% | 0.990 |
+
+Highway per-link volumes land within a percent across four orders of magnitude; PCE-combined
+totals run +1.1 to +1.7% by period (r 0.99–1.00), loosening only in the lowest-volume
+early-AM window (EA +3.7%, r 0.97).
 
 Total boardings across all 75 cells: aeq 1,047,112 vs Cube 1,040,408 (**+0.6%**). Per line-
 haul, boardings/link correlations: heavy rail 0.96/1.00, commuter 0.99/0.98, light-rail/
@@ -214,7 +223,7 @@ documented accommodation applies:
 
 **Kernel speed fix.** AequilibraE's transit kernel spent almost all its time sorting edges
 by near-identical placeholder keys, degrading toward quadratic on this compiler. Sorting
-only the strategy's edges cut per-destination cost ~200×. It reproduces the library's
+only the strategy's edges cut per-destination cost ~200× (for Windows machines, Linux was already fast). It reproduces the library's
 results exactly and is merged upstream; this pipeline pins the merged commit. ([AequilibraE pull request 806](https://github.com/AequilibraE/aequilibrae/pull/806))
 
 **Two-graph fare.** The operator-labelled fare graph is exact and static, so it runs once

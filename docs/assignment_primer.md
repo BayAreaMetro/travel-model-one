@@ -510,5 +510,5 @@ brief's divergence ledger.
 - [`base-models/assignment/aeq_params.yaml`](../base-models/assignment/aeq_params.yaml):
   every model parameter, with the Cube file it came from. The best map of "what decisions
   does this model actually make".
-- `src/tm1/assignment/aeq/transit.py`: the module docstring is the deepest explanation of
-  the transit graph construction.
+- [`aequilibrae_usage.md`](aequilibrae_usage.md): how to run, configure, and modify the
+  assignment/skimming track.
