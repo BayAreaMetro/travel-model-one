@@ -6,11 +6,21 @@ sample-rate-expanded to full population and already split by period.  The legacy
 Cube assignment instead consumes ``main/trips{PERIOD}.tpp`` — the 29-table matrix
 that ``PrepAssign.job`` built from the CT-RAMP trip lists.
 
-:func:`build_trip_matrices` is the faithful replacement for PrepAssign in the
-ActivitySim flow: it renames the 23 ActivitySim tables to the Cube assignment
-class names HwyAssign/TransitAssign read by name, and appends the 6 TNC/AV
-classes HwyAssign references as zeros (this ActivitySim config folds TNC/taxi/AV
-demand into the drive-alone/shared-ride modes, so they carry no separate trips).
+:func:`build_trip_matrices` is the faithful replacement for PrepAssign (steps 3-5)
+in the ActivitySim flow.  It maps the ActivitySim tables to the Cube assignment
+class names HwyAssign/TransitAssign read by name, applying two conversions the
+legacy PrepAssign did and a straight rename would miss:
+
+* ActivitySim's shared-ride OMX tables are already VEHICLE trips
+  (``write_trip_matrices`` divides by occupancy), but ``trips{P}.tpp`` holds PERSON
+  trips that HwyAssign divides again (``mi.1.sr2 / 2``) -- so sr2/sr3 are restored
+  to person trips (x2, x3.25) here.
+* ride-hail (taxi/TNC) person trips are folded across occupancy bins: taxi into
+  the toll classes, TNC into the da_tnc/s2_tnc/s3_tnc classes, with the
+  zero-passenger deadhead vehicles in da_tnc (PrepAssign steps 3-5).
+
+Only the owned-AV classes (da_av/s2_av/s3_av) are unmodelled and written as zeros.
+Shares/occupancy/ZPV come from ``base-models/assignment/aeq_params.yaml``.
 """
 
 import logging
@@ -33,16 +43,11 @@ PERIODS: tuple[str, ...] = ("EA", "AM", "MD", "PM", "EV")
 _NODES_ASSIGN = 48
 _NODES_PERIOD = 5
 
-# ActivitySim write_trip_matrices table base-name -> trips{PERIOD}.tpp table name
-# (the period suffix is appended to the ActivitySim name, e.g. DRIVEALONEFREE_AM).
-# Order matches PrepAssign.job's final mato; HwyAssign/TransitAssign read by name.
-_ASIM_TO_CUBE: dict[str, str] = {
-    "DRIVEALONEFREE": "da",
-    "DRIVEALONEPAY": "datoll",
-    "SHARED2FREE": "sr2",
-    "SHARED2PAY": "sr2toll",
-    "SHARED3FREE": "sr3",
-    "SHARED3PAY": "sr3toll",
+# ActivitySim write_trip_matrices table base-name -> trips{PERIOD}.tpp table name,
+# for the classes that pass through UNCHANGED (walk, bike, the 15 transit access/
+# line-haul/egress combos).  The period suffix is appended to the ActivitySim name
+# (e.g. WALK_LOC_WALK_AM).  These are person trips in both OMX and the tpp.
+_DIRECT_MAP: dict[str, str] = {
     "WALK": "walk",
     "BIKE": "bike",
     "WALK_LOC_WALK": "wlk_loc_wlk",
@@ -62,12 +67,18 @@ _ASIM_TO_CUBE: dict[str, str] = {
     "WALK_COM_DRIVE": "wlk_com_drv",
 }
 
-# The 6 TNC/AV classes HwyAssign references but this ActivitySim config does not
-# model separately -> written as zero tables so the name lookups resolve.
-_ZERO_CLASSES: tuple[str, ...] = ("da_tnc", "s2_tnc", "s3_tnc", "da_av", "s2_av", "s3_av")
+# Owned-AV classes HwyAssign references but this ActivitySim config does not model
+# -> always zero.  (The da_tnc/s2_tnc/s3_tnc TNC classes ARE modelled and are built
+# from the ride-hail demand below; they are NOT zero.)
+_ZERO_CLASSES: tuple[str, ...] = ("da_av", "s2_av", "s3_av")
 
-# Canonical 29-table order (PrepAssign.job step five).
-_TABLE_ORDER: tuple[str, ...] = (*_ASIM_TO_CUBE.values(), *_ZERO_CLASSES)
+# Canonical 29-table order (PrepAssign.job step five): auto, walk/bike, 15 transit,
+# TNC, owned-AV.  HwyAssign/TransitAssign read tables by name.
+_AUTO_CLASSES: tuple[str, ...] = ("da", "datoll", "sr2", "sr2toll", "sr3", "sr3toll")
+_TNC_CLASSES: tuple[str, ...] = ("da_tnc", "s2_tnc", "s3_tnc")
+_TABLE_ORDER: tuple[str, ...] = (
+    *_AUTO_CLASSES, *_DIRECT_MAP.values(), *_TNC_CLASSES, *_ZERO_CLASSES,
+)
 
 
 def build_trip_matrices(
@@ -94,6 +105,14 @@ def build_trip_matrices(
     main_dir = Path(main_dir)
     main_dir.mkdir(parents=True, exist_ok=True)
 
+    # Ride-hail / occupancy policy (PrepAssign.job steps 3-5), from aeq_params.yaml
+    # so the Cube and aeq demand paths share one source of truth.
+    from tm1.assignment.aeq.params import load_aeq_params  # noqa: PLC0415
+
+    hw = load_aeq_params().highway
+    occ2, occ3 = hw.occupancy["sr2"], hw.occupancy["sr3"]
+    rh = hw.ridehail
+
     written: list[Path] = []
     for period in periods:
         omx_path = asim_output_dir / f"trips_{period.lower()}.omx"
@@ -105,15 +124,47 @@ def build_trip_matrices(
             avail = set(f.list_matrices())
             zones = f.shape()[0]
             zero = np.zeros((zones, zones), dtype=np.float64)
-            data: dict[str, np.ndarray] = {}
             missing: list[str] = []
-            for asim_name, cube_name in _ASIM_TO_CUBE.items():
+
+            def _t(asim_name: str) -> np.ndarray:
+                """Read an ActivitySim OMX table for this period (0 if absent)."""
                 key = f"{asim_name}_{period}"
                 if key in avail:
-                    data[cube_name] = np.asarray(f[key], dtype=np.float64)
-                else:
-                    data[cube_name] = zero
-                    missing.append(key)
+                    return np.asarray(f[key], dtype=np.float64)
+                missing.append(key)
+                return zero
+
+            data: dict[str, np.ndarray] = {}
+            # Pass-through classes (walk, bike, transit): person trips, unchanged.
+            for asim_name, cube_name in _DIRECT_MAP.items():
+                data[cube_name] = _t(asim_name)
+
+            # Auto classes: ActivitySim OMX shared-ride tables are VEHICLE trips
+            # (write_trip_matrices already divides by occupancy); the Cube tpp holds
+            # PERSON trips (HwyAssign divides again by /2, /3.25). Restore persons.
+            # Taxi folds into the toll classes by occupancy share (PrepAssign step 5).
+            taxi = _t(rh.tables["taxi"])
+            single = _t(rh.tables["single"])
+            shared = _t(rh.tables["shared"])
+            ts = rh.shares["taxi"]
+            data["da"] = _t("DRIVEALONEFREE")
+            data["datoll"] = _t("DRIVEALONEPAY") + taxi * ts["da"]
+            data["sr2"] = _t("SHARED2FREE") * occ2
+            data["sr2toll"] = _t("SHARED2PAY") * occ2 + taxi * ts["s2"]
+            data["sr3"] = _t("SHARED3FREE") * occ3
+            data["sr3toll"] = _t("SHARED3PAY") * occ3 + taxi * ts["s3"]
+
+            # TNC classes: split each mode's person trips across occupancy bins.
+            # da_tnc holds only the zero-passenger deadhead (occ-1 share is 0): the
+            # per-occupancy person trips converted to vehicles, transposed to the
+            # return leg, times the ZPV factor. s2_tnc/s3_tnc stay as person trips
+            # (HwyAssign divides them). da/s2/s3_av are unmodelled -> zero.
+            ss, sh = rh.shares["single"], rh.shares["shared"]
+            s2_tnc = single * ss["s2"] + shared * sh["s2"]
+            s3_tnc = single * ss["s3"] + shared * sh["s3"]
+            data["da_tnc"] = (s2_tnc / occ2 + s3_tnc / occ3).T * rh.zpv_factor
+            data["s2_tnc"] = s2_tnc
+            data["s3_tnc"] = s3_tnc
             for cls in _ZERO_CLASSES:
                 data[cls] = zero
 
