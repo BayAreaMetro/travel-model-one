@@ -64,7 +64,7 @@ NESTS:
 
 CONSTANTS:
     #valueOfTime: 8.00
-    costPerMile: 18.29
+    costPerMile: 15.44   # year-2000 cents/mile; matches CT-RAMP reference AutoOpCost (was 18.29 prototype_mtc default)
     costShareSr2: 1.75
     costShareSr3: 2.50
     waitThresh: 10.00
