@@ -268,7 +268,7 @@ class CalibrationConfig:
             e.g. ``{1: "San Francisco", 2: "San Mateo", ...}``.
         """
         # Use canonical county labels from shared CTRAMP codebook.
-        return {county.id: county.label for county in CTRAMPCounty}
+        return {county.value: county.label for county in CTRAMPCounty}
     
     def get_submodel_config(self, submodel: str) -> Optional[Dict[str, str]]:
         """Return the configuration block for a specific submodel, or None.

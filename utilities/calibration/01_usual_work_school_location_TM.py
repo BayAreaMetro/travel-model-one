@@ -5,9 +5,9 @@ submodel of CT-RAMP by comparing modeled destination TAZ distributions against
 observed BATS survey data.  It produces three outputs:
 
 - A home-to-work county-to-county flow matrix.
-- Trip Length Frequency Distributions (TLFDs) by county for work, university,
-  and K–12 school trips, binned in 1-mile increments.
-- Average trip lengths by county and trip type.
+- Tour Length Frequency Distributions (TLFDs) by county for work, university,
+  and K–12 school tours, binned in 1-mile increments.
+- Average Tour lengths by county and tour type.
 
 When ``bats_data`` is ``true`` in the submodel config the script reads person-
 weighted BATS 2023 survey records and writes results to the ``BATS_Summaries``
@@ -34,8 +34,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from calibration_framework import CalibrationBase, create_histogram_tlfd, add_county_info
 from calibration_data_models import (
     CountyTripSummary,
-    TripLengthFrequency,
-    AverageTripLength,
+    TourLengthFrequency,
+    AverageTourLength,
     validate_dataframe
 )
 
@@ -106,9 +106,9 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         4. Optionally merge BATS person weights (``bats_data`` mode only).
         5. Compute a home-county × work-county flow matrix.
         6. Build per-county and total TLFDs (1-mile bins) for work, university,
-           and K–12 school trip types.
-        7. Compute weighted (BATS) or unweighted/scaled (model) average trip
-           lengths by county and trip type.
+           and K–12 school tour types.
+        7. Compute weighted (BATS) or unweighted/scaled (model) average tour
+           lengths by county and tour type.
 
         Returns:
             A dict with the following keys:
@@ -116,15 +116,15 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             ``county_summary``
                 Wide-format DataFrame of home→work county flows
                 (rows = home county, columns = work county).
-            ``trip_tlfd_work``
-                TLFD DataFrame for work trips
+            ``tour_tlfd_work``
+                TLFD DataFrame for work tour
                 (distbin column + one column per county + ``Total``).
-            ``trip_tlfd_univ``
-                TLFD DataFrame for university trips (college or higher).
-            ``trip_tlfd_school``
-                TLFD DataFrame for K–12 school trips (grade or high school).
-            ``avg_trip_lengths``
-                Wide-format DataFrame of mean trip distances
+            ``tour_tlfd_univ``
+                TLFD DataFrame for university tour (college or higher).
+            ``tour_tlfd_school``
+                TLFD DataFrame for K–12 school tour (grade or high school).
+            ``avg_tour_lengths``
+                Wide-format DataFrame of mean tour distances
                 (rows = county, columns = ``work`` / ``univ`` / ``school``).
         """
         # Load input data
@@ -198,118 +198,118 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         wsloc_results.to_csv(wsloc_with_dist_file, index=False)
         self.logger.info(f"Saved wsloc results with distances to {wsloc_with_dist_file}")
 
-        # Process trip length distributions and averages
-        self.logger.info("Processing trip length distributions...")
-        trip_types = ['work', 'univ', 'school']
-        trip_tlfd_results = {}
-        avg_trip_lengths = []
+        # Process tour length distributions and averages
+        self.logger.info("Processing tour length distributions...")
+        tour_types = ['work', 'univ', 'school']
+        tour_tlfd_results = {}
+        avg_tour_lengths = []
         
-        for trip_type in trip_types:
-            # Filter data based on trip type and use attached distances           
-            if trip_type == 'work':
+        for tour_type in tour_types:
+            # Filter data based on tour type and use attached distances           
+            if tour_type == 'work':
                 filter_cols = ['HomeCounty_name', 'EmploymentCategory', 'WorkDist']
                 if self.bats_data:
                     filter_cols.append('person_weight')
-                trip_dists = wsloc_results[wsloc_results['WorkLocation'] > 0][filter_cols].copy()
-                trip_dists = trip_dists.rename(columns={'WorkDist': 'DIST'})
-            elif trip_type == 'univ':
+                tour_dists = wsloc_results[wsloc_results['WorkLocation'] > 0][filter_cols].copy()
+                tour_dists = tour_dists.rename(columns={'WorkDist': 'DIST'})
+            elif tour_type == 'univ':
                 filter_cols = ['HomeCounty_name', 'StudentCategory', 'SchoolDist']
                 if self.bats_data:
                     filter_cols.append('person_weight')
-                trip_dists = wsloc_results[
+                tour_dists = wsloc_results[
                     (wsloc_results['SchoolLocation'] > 0) & 
                     (wsloc_results['StudentCategory'] == "College or higher")
                 ][filter_cols].copy()
-                trip_dists = trip_dists.rename(columns={'SchoolDist': 'DIST'})
-            elif trip_type == 'school':
+                tour_dists = tour_dists.rename(columns={'SchoolDist': 'DIST'})
+            elif tour_type == 'school':
                 filter_cols = ['HomeCounty_name', 'StudentCategory', 'SchoolDist']
                 if self.bats_data:
                     filter_cols.append('person_weight')
-                trip_dists = wsloc_results[
+                tour_dists = wsloc_results[
                     (wsloc_results['SchoolLocation'] > 0) & 
                     (wsloc_results['StudentCategory'] == "Grade or high school")
                 ][filter_cols].copy()
-                trip_dists = trip_dists.rename(columns={'SchoolDist': 'DIST'})
+                tour_dists = tour_dists.rename(columns={'SchoolDist': 'DIST'})
             
-            # Calculate trip length frequency distribution
+            # Calculate tour length frequency distribution
             if self.bats_data:
-                trip_tlfd = pd.DataFrame({'distbin': range(1, 52)})
+                tour_tlfd = pd.DataFrame({'distbin': range(1, 52)})
             else:
-                trip_tlfd = pd.DataFrame({'distbin': range(1, 151)})
+                tour_tlfd = pd.DataFrame({'distbin': range(1, 151)})
             
             # Process by county
             for county in self.county_lookup.values():
-                county_trip_dists = trip_dists[trip_dists['HomeCounty_name'] == county]
+                county_tour_dists = tour_dists[tour_dists['HomeCounty_name'] == county]
                 
-                if len(county_trip_dists) > 0:
+                if len(county_tour_dists) > 0:
                     if self.bats_data:
-                        hist_df = create_histogram_tlfd(county_trip_dists['DIST'], bins = range(52),
-                                                       weights=county_trip_dists['person_weight'])
+                        hist_df = create_histogram_tlfd(county_tour_dists['DIST'], bins = range(52),
+                                                       weights=county_tour_dists['person_weight'])
                         # Weighted average
-                        weighted_mean = np.average(county_trip_dists['DIST'], 
-                                                  weights=county_trip_dists['person_weight'])
+                        weighted_mean = np.average(county_tour_dists['DIST'], 
+                                                  weights=county_tour_dists['person_weight'])
                     else:
-                        hist_df = create_histogram_tlfd(county_trip_dists['DIST'], 
+                        hist_df = create_histogram_tlfd(county_tour_dists['DIST'], 
                                                        sampleshare=self.sampleshare)
-                        weighted_mean = county_trip_dists['DIST'].mean()
+                        weighted_mean = county_tour_dists['DIST'].mean()
                     
                     # Remove county prefix for column name
                     col_name = county
                     hist_df = hist_df.rename(columns={'count': col_name})
-                    trip_tlfd = trip_tlfd.merge(hist_df, on='distbin', how='left')
+                    tour_tlfd = tour_tlfd.merge(hist_df, on='distbin', how='left')
                     
-                    # Add to average trip lengths
-                    avg_trip_lengths.append({
+                    # Add to average tour lengths
+                    avg_tour_lengths.append({
                         'county': col_name,
-                        'trip_type': trip_type,
-                        'mean_trip_length': weighted_mean
+                        'tour_type': tour_type,
+                        'mean_tour_length': weighted_mean
                     })
             
             # Total across all counties
-            if len(trip_dists) > 0:
+            if len(tour_dists) > 0:
                 if self.bats_data:
-                    hist_df = create_histogram_tlfd(trip_dists['DIST'], bins = range(52),
-                                                   weights=trip_dists['person_weight'])
+                    hist_df = create_histogram_tlfd(tour_dists['DIST'], bins = range(52),
+                                                   weights=tour_dists['person_weight'])
                     # Weighted average
-                    total_weighted_mean = np.average(trip_dists['DIST'], 
-                                                    weights=trip_dists['person_weight'])
+                    total_weighted_mean = np.average(tour_dists['DIST'], 
+                                                    weights=tour_dists['person_weight'])
                 else:
-                    hist_df = create_histogram_tlfd(trip_dists['DIST'], 
+                    hist_df = create_histogram_tlfd(tour_dists['DIST'], 
                                                    sampleshare=self.sampleshare)
-                    total_weighted_mean = trip_dists['DIST'].mean()
+                    total_weighted_mean = tour_dists['DIST'].mean()
                 
                 hist_df = hist_df.rename(columns={'count': 'Total'})
-                trip_tlfd = trip_tlfd.merge(hist_df, on='distbin', how='left')
+                tour_tlfd = tour_tlfd.merge(hist_df, on='distbin', how='left')
                 
-                avg_trip_lengths.append({
+                avg_tour_lengths.append({
                     'county': 'Total',
-                    'trip_type': trip_type,
-                    'mean_trip_length': total_weighted_mean
+                    'tour_type': tour_type,
+                    'mean_tour_length': total_weighted_mean
                 })
             
             # Reorder columns and fill NaN
-            county_cols = sorted([col for col in trip_tlfd.columns if col not in ['distbin', 'Total']])
-            col_order = ['distbin'] + county_cols + (['Total'] if 'Total' in trip_tlfd.columns else [])
-            trip_tlfd = trip_tlfd[col_order].fillna(0)
+            county_cols = sorted([col for col in tour_tlfd.columns if col not in ['distbin', 'Total']])
+            col_order = ['distbin'] + county_cols + (['Total'] if 'Total' in tour_tlfd.columns else [])
+            tour_tlfd = tour_tlfd[col_order].fillna(0)
             
-            trip_tlfd_results[trip_type] = trip_tlfd
+            tour_tlfd_results[tour_type] = tour_tlfd
 
 
-        # Process average trip lengths
-        avg_trip_lengths_df = pd.DataFrame(avg_trip_lengths)
-        avg_triplen_spread = avg_trip_lengths_df.pivot(index='county', columns='trip_type', values='mean_trip_length')
-        avg_triplen_spread = avg_triplen_spread.reset_index()
+        # Process average tour lengths
+        avg_tour_lengths_df = pd.DataFrame(avg_tour_lengths)
+        avg_tourlen_spread = avg_tour_lengths_df.pivot(index='county', columns='tour_type', values='mean_tour_length')
+        avg_tourlen_spread = avg_tourlen_spread.reset_index()
         
         # Reorder columns
-        desired_cols = ['county'] + [col for col in ['work', 'univ', 'school'] if col in avg_triplen_spread.columns]
-        avg_triplen_spread = avg_triplen_spread[desired_cols]
+        desired_cols = ['county'] + [col for col in ['work', 'univ', 'school'] if col in avg_tourlen_spread.columns]
+        avg_tourlen_spread = avg_tourlen_spread[desired_cols]
         
         return {
             'county_summary': wsloc_county_spread,
-            'trip_tlfd_work': trip_tlfd_results.get('work'),
-            'trip_tlfd_univ': trip_tlfd_results.get('univ'),
-            'trip_tlfd_school': trip_tlfd_results.get('school'),
-            'avg_trip_lengths': avg_triplen_spread
+            'tour_tlfd_work': tour_tlfd_results.get('work'),
+            'tour_tlfd_univ': tour_tlfd_results.get('univ'),
+            'tour_tlfd_school': tour_tlfd_results.get('school'),
+            'avg_tour_lengths': avg_tourlen_spread
         }
     
     def validate_outputs(self, results: dict):
@@ -323,10 +323,10 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         Validates:
 
         - ``county_summary``   → :class:`CountyTripSummary`
-        - ``trip_tlfd_work``   → :class:`TripLengthFrequency`  (51 rows for BATS, 150 for model)
-        - ``trip_tlfd_univ``   → :class:`TripLengthFrequency`
-        - ``trip_tlfd_school`` → :class:`TripLengthFrequency`
-        - ``avg_trip_lengths`` → :class:`AverageTripLength`
+        - ``tour_tlfd_work``   → :class:`TourLengthFrequency`  (51 rows for BATS, 150 for model)
+        - ``tour_tlfd_univ``   → :class:`TourLengthFrequency`
+        - ``tour_tlfd_school`` → :class:`TourLengthFrequency`
+        - ``avg_tour_lengths`` → :class:`AverageTourLength`
 
         Args:
             results: The dict returned by :meth:`process_data`.
@@ -339,31 +339,31 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             validate_dataframe(results['county_summary'], CountyTripSummary)
             self.logger.info("✓ County Summary Validated")
 
-        # Validate trip length frequency distribution
+        # Validate tour length frequency distribution
         expected_rows = 51 if self.bats_data else 150
-        for trip_type in ['work', 'univ', 'school']:
-            df = results[f'trip_tlfd_{trip_type}']
+        for tour_type in ['work', 'univ', 'school']:
+            df = results[f'tour_tlfd_{tour_type}']
             if df is not None:
-                validate_dataframe(df, TripLengthFrequency, expected_rows)
-                self.logger.info(f"✓ {trip_type.capitalize()} TLFD validated")
+                validate_dataframe(df, TourLengthFrequency, expected_rows)
+                self.logger.info(f"✓ {tour_type.capitalize()} TLFD validated")
         
-        # Validate average trip lengths
-        if results['avg_trip_lengths'] is not None:
-            validate_dataframe(results['avg_trip_lengths'], AverageTripLength, )
-            self.logger.info("✓ Average Trip Length Summary Validated")
+        # Validate average tour lengths
+        if results['avg_tour_lengths'] is not None:
+            validate_dataframe(results['avg_tour_lengths'], AverageTourLength, )
+            self.logger.info("✓ Average Tour Length Summary Validated")
 
     def generate_outputs(self, results: dict):
         """Write validated results to CSV files and update the calibration workbook.
 
         In **BATS mode** (``bats_data: true``) outputs are written to
         ``<output_dir>/`` and the corresponding sheets in the Excel workbook
-        ("BATS 2023 TLFD", "BATS 2023 AvgTripLen") are updated:
+        ("BATS 2023 TLFD", "BATS 2023 AvgTourLen") are updated:
 
         - ``workTLFD.csv``, ``univTLFD.csv``, ``schoolTLFD.csv``
-        - ``AvgTripLen.csv``
+        - ``AvgTourLen.csv``
 
         In **model mode** (``bats_data: false``) the county flow matrix, per-
-        trip-type TLFDs, and average trip lengths are written to
+        tour-type TLFDs, and average tour lengths are written to
         ``<output_dir>/`` and the ``modeldata`` sheet of the workbook is
         updated with column offsets that match the template layout.
 
@@ -378,22 +378,22 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
 
         if (self.bats_data):
-            trip_types = [('work', 2), ('univ', 15), ('school', 28)]
-            for trip_type, col in trip_types:
-                if results[f'trip_tlfd_{trip_type}'] is not None:
-                    tlfd_file = f"{self.output_dir}/{trip_type}TLFD.csv"
-                    results[f'trip_tlfd_{trip_type}'].to_csv(tlfd_file, index = False)
-                    self.write_dataframe_to_sheet(results[f'trip_tlfd_{trip_type}'], start_row= 4,  start_col=col, sheet_name="BATS 2023 TLFD",
+            tour_types = [('work', 2), ('univ', 15), ('school', 28)]
+            for tour_type, col in tour_types:
+                if results[f'tour_tlfd_{tour_type}'] is not None:
+                    tlfd_file = f"{self.output_dir}/{tour_type}TLFD.csv"
+                    results[f'tour_tlfd_{tour_type}'].to_csv(tlfd_file, index = False)
+                    self.write_dataframe_to_sheet(results[f'tour_tlfd_{tour_type}'], start_row= 4,  start_col=col, sheet_name="BATS 2023 TLFD",
                                                  source_row=2, source_col=col, source_text=f"Source: {tlfd_file}")
                     
-                    self.logger.info(f"Saving trip length frequency distributions for {trip_type} to {tlfd_file}")     
+                    self.logger.info(f"Saving tour length frequency distributions for {tour_type} to {tlfd_file}")     
         
-            # Average trip lengths
-            avg_length_file = f"{self.output_dir}/AvgTripLen.csv"
-            results['avg_trip_lengths'].to_csv(avg_length_file, index = False)
-            self.write_dataframe_to_sheet(results['avg_trip_lengths'], start_row=3, start_col=1, sheet_name="BATS 2023 AvgTripLen",
+            # Average tour lengths
+            avg_length_file = f"{self.output_dir}/AvgTourLen.csv"
+            results['avg_tour_lengths'].to_csv(avg_length_file, index = False)
+            self.write_dataframe_to_sheet(results['avg_tour_lengths'], start_row=3, start_col=1, sheet_name="BATS 2023 AvgTourLen",
                                         source_row=1, source_col=1, source_text=f"Source: {avg_length_file}")
-            self.logger.info(f"Saving average trip lengths to {avg_length_file}")     
+            self.logger.info(f"Saving average tour lengths to {avg_length_file}")     
                 
         else: 
             # County summary
@@ -407,23 +407,23 @@ class WorkSchoolLocationCalibration(CalibrationBase):
                                         source_row=1, source_col=1, source_text=f"Source: {county_file}")
 
             self.logger.info(f"Saving county summary to {county_file}")            
-            # Trip length frequency distributions
-            trip_types = [('work', 1), ('univ', 14), ('school', 27)]
-            for trip_type, col in trip_types:
-                if results[f'trip_tlfd_{trip_type}'] is not None:
+            # Tour length frequency distributions
+            tour_types = [('work', 1), ('univ', 14), ('school', 27)]
+            for tour_type, col in tour_types:
+                if results[f'tour_tlfd_{tour_type}'] is not None:
 
-                    tlfd_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_{trip_type}_TLFD.csv"
-                    results[f'trip_tlfd_{trip_type}'].to_csv(tlfd_file, index = False)
-                    self.write_dataframe_to_sheet(results[f'trip_tlfd_{trip_type}'], start_row=19, start_col=col,
+                    tlfd_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_{tour_type}_TLFD.csv"
+                    results[f'tour_tlfd_{tour_type}'].to_csv(tlfd_file, index = False)
+                    self.write_dataframe_to_sheet(results[f'tour_tlfd_{tour_type}'], start_row=19, start_col=col,
                                                 source_row=17, source_col=col, source_text=f"Source: {tlfd_file}")
-                    self.logger.info(f"Saving trip length frequency distributions for {trip_type} to {tlfd_file}")            
+                    self.logger.info(f"Saving tour length frequency distributions for {tour_type} to {tlfd_file}")            
 
-            # Average trip lengths
-            avg_length_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_avgtriplen.csv"
-            results['avg_trip_lengths'].to_csv(avg_length_file, index = False)
-            self.write_dataframe_to_sheet(results['avg_trip_lengths'], start_row=4, start_col=14,
+            # Average tour lengths
+            avg_length_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_avgtourlen.csv"
+            results['avg_tour_lengths'].to_csv(avg_length_file, index = False)
+            self.write_dataframe_to_sheet(results['avg_tour_lengths'], start_row=4, start_col=14,
                                         source_row=3, source_col=14, source_text=f"Source: {avg_length_file}")
-            self.logger.info(f"Saving average trip lengths to {avg_length_file}")            
+            self.logger.info(f"Saving average tour lengths to {avg_length_file}")            
             
 
 

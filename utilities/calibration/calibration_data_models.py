@@ -18,7 +18,7 @@ from data_canon.codebook.ctramp import (
     CTRAMPPersonType,
     CTRAMPActivityPattern,
     CTRAMPSimplePurpose,
-    CTRAMPPurpose,
+    CTRAMPTourPurpose,
     CTRAMPModeType,
     CTRAMPTransitMode,
     IndivJoint,
@@ -44,8 +44,8 @@ class CountyTripSummary(BaseModel):
     Sonoma: float = Field(ge=0)
     Marin: float = Field(ge=0)
     
-class TripLengthFrequency(BaseModel):
-    """Model for trip length frequency distribution."""
+class TourLengthFrequency(BaseModel):
+    """Model for tour length frequency distribution."""
     model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
 
     distbin: int = Field(ge=1, description = "Distance bin")
@@ -63,8 +63,8 @@ class TripLengthFrequency(BaseModel):
     # Total column - REQUIRED
     Total: float = Field(ge=0, description="Total across all counties")
 
-class AverageTripLength(BaseModel):
-    """Model for average trip length by county and type."""
+class AverageTourLength(BaseModel):
+    """Model for average tour length by county and type."""
     county: CTRAMPCounty | Literal['Total']
     work: float
     univ: float
@@ -112,13 +112,13 @@ class CDAPSummaryBATS(BaseModel):
 
 
 # Non-Work Choice Destination 
-class NonMandAvgTripLength(BaseModel):
+class NonMandAvgTourLength(BaseModel):
     model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
 
-    trip_purpose: Literal['escort', 'shop', 'maintenance', 'eatout', 'visit', 'discretionary', 'atwork'] = Field(alias='trip_type')
-    avg_trip_length: float = Field(ge=0, alias = 'mean_trip_length')
+    tour_purpose: Literal['escort', 'shop', 'maintenance', 'eatout', 'visit', 'discretionary', 'atwork'] = Field(alias='tour_type')
+    avg_tour_length: float = Field(ge=0, alias = 'mean_tour_length')
 
-class NonMandTripLengthFrequency(BaseModel):
+class NonMandTourLengthFrequency(BaseModel):
     model_config = ConfigDict(validate_by_name = True, validate_by_alias = True)
 
     distbin: int = Field(ge = 1, description = 'Distance bin')
@@ -133,7 +133,7 @@ class NonMandTripLengthFrequency(BaseModel):
 # Tour Mode Choice
 class TourModeChoiceModel(BaseModel):
     indiv_joint: IndivJoint
-    tour_purpose: CTRAMPPurpose
+    tour_purpose: CTRAMPTourPurpose
     zero_auto: float = Field(alias = ('Autos=0'))
     autos_less_than_workers: float = Field(alias = ('Autos<Workers'))
     autos_greater_than_workers: float = Field(alias = ('Autos>=Workers'))
@@ -148,7 +148,7 @@ class TourModeTransitSummary(TourModeChoiceModel):
 # Trip Mode Choice
 class TripModeSummary(BaseModel):
     indiv_joint: IndivJoint
-    tour_purpose: CTRAMPPurpose	
+    tour_purpose: CTRAMPTourPurpose	
     tour_mode: CTRAMPModeType
     trip_mode: CTRAMPModeType
     num_trips: float
