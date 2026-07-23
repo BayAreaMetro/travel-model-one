@@ -68,20 +68,20 @@ run pgm = matrix
    
    ; compute the blended travel distance for each truck class
    ;   - very small
-   mw[1] = (mi.2.distanceVSM) * (1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
-           (mi.2.tolldistanceVSM) * (    TRUCK_DISTRIB_LOS_TOLL_PART)
+   mw[1] = (mi.2.DISTVSM) * (1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
+           (mi.2.TOLLDISTVSM) * (    TRUCK_DISTRIB_LOS_TOLL_PART)
    
    ;   - small
-   mw[2] = (mi.2.distanceSML) * (1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
-           (mi.2.tolldistanceSML) * (    TRUCK_DISTRIB_LOS_TOLL_PART)
+   mw[2] = (mi.2.DISTSML) * (1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
+           (mi.2.TOLLDISTSML) * (    TRUCK_DISTRIB_LOS_TOLL_PART)
    
    ;   - medium
-   mw[3] = (mi.2.distanceMED) * (1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
-           (mi.2.tolldistanceMED) * (TRUCK_DISTRIB_LOS_TOLL_PART)
+   mw[3] = (mi.2.DISTMED) * (1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
+           (mi.2.TOLLDISTMED) * (TRUCK_DISTRIB_LOS_TOLL_PART)
 
    ;   - large
-   mw[4] = (mi.2.distanceLRG) * (1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
-           (mi.2.tolldistanceLRG) * (TRUCK_DISTRIB_LOS_TOLL_PART)
+   mw[4] = (mi.2.DISTLRG) * (1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
+           (mi.2.TOLLDISTLRG) * (TRUCK_DISTRIB_LOS_TOLL_PART)
 endrun
 
 ; step two: apply the distribution models
