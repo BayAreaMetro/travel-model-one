@@ -16,6 +16,7 @@ CONVERTMAT FROM='nonres/TripsTrkEAx.tpp' TO='nonres/TripsTrkEAx.omx' FORMAT=OMX 
 CONVERTMAT FROM='nonres/ixDailyx4.tpp' TO='nonres/ixDailyx4.omx' FORMAT=OMX COMPRESSION=4
 CONVERTMAT FROM='nonres/ixDailyx4_truck.tpp' TO='nonres/ixDailyx4_truck.omx' FORMAT=OMX COMPRESSION=4
 CONVERTMAT FROM='nonres/DailyTruckTrips.tpp' TO='nonres/DailyTruckTrips.omx' FORMAT=OMX COMPRESSION=4
+CONVERTMAT FROM='nonres/blendedTruckTime.tpp' TO='nonres/blendedTruckTime.omx' FORMAT=OMX COMPRESSION=4
 
 ;ENDRUN
 
