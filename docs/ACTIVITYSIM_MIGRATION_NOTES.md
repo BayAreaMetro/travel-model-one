@@ -174,145 +174,75 @@ back to 0–4 vehicle count for downstream models.
 
 ---
 
-## Runtime Fixes
+## Shadow Pricing & Location-Choice Parity
 
-### Fix 1: CDAP M-pattern leak → invalid mandatory tours
+Location choice is balanced by an iterative *shadow-price* loop (a per-zone size-term
+multiplier nudged toward a target count). CT-RAMP and ActivitySim share the same `ctramp`
+update.
 
-**Problem:** `mandatory_tour_scheduling` crashes with "probabilities do not add
-up to 1" for ~600 work tours.
+**Parity is proven with a frozen jig.** Freeze skims (corr 1.00000) and load CT-RAMP's own
+`ShadowPricing_7` (`LOAD_SAVED_SHADOW_PRICES: True`, 1 pass, no re-solve): ActivitySim then
+reproduces CT-RAMP — **work +0.6%, university +2.0%, school +0.1%** mean distance, every
+county within a few percent (Solano univ fill 0.89 vs CT 0.92). *Same prices in ⇒ same
+placement out* — the model is at parity, independent of whether the price algorithm converges.
 
-**Cause:** `cdap_fixed_relative_proportions.csv` assigns M pattern to persons
-in 5+ member households using only `ptype`, ignoring whether they have a valid
-mandatory destination. When all MTF alternatives get −999 simultaneously, the
-penalties cancel in softmax and MTF picks an alternative with `destination = -1`.
+**The algorithm does not converge — for either model.** The undamped update
+`price *= scaledSize/modeled` (`DAMPING_FACTOR: 1`) is not a contraction and has no fixed
+point. Per-iteration price change plateaus above zero and individual zones oscillate
+indefinitely (89% reverse direction ≥3× over 18 iterations):
 
-**Fix:** `annotate_persons_cdap.csv` — resets `cdap_activity` from 'M' to 'N'
-for persons where `workplace_zone_id < 0 AND school_zone_id < 0`.
+![Shadow prices do not converge: per-iteration change plateaus above zero (left) and individual zones oscillate (right)](figures/shadow_price_oscillation.png)
 
-**Impact:** ~600 persons (~0.04%). No effect on CTRAMP comparison.
+Consequences:
+CT-RAMP's reference prices are a **stopping artifact** (it halts at ~7 iterations regardless
+of fit: `ShadowPricing_5` + 2), not an equilibrium; and running ActivitySim *longer* drifts
+*away* from them (price r vs CT-RAMP peaks 0.987 @ iter 8, falls to 0.958 @ 18; work error
+grows +2.6%→+4.5% from 12→18 iters). `check_fit` never converges because `max_fail` is a
+constant threshold, not a fit measure. **We do not try to fix this in CT-RAMP** — forcing
+convergence would need damping (`DAMPING_FACTOR < 1`), which does converge but to a
+*different* equilibrium than the undamped reference, so ActivitySim would no longer match the
+reference `wsLocResults`. Production seeds the reference prices and runs a few iterations —
+CT-RAMP's own practice.
 
----
+**Accommodations applied for parity** (ActivitySim/tm1 settings, not CT-RAMP changes):
 
-### Fix 2: Tour mode choice density preprocessor NaN crash
+| # | Item | Why | How |
+|---|---|---|---|
+| 1 | `SCALE_SIZE_TABLE: True` | ActivitySim default `False`; ctramp compares modeled *counts* to a size target that must be scaled to chooser population. Unscaled → mis-normalized targets (univ 0.60×, work_veryhigh 2.25×) → campus sinks (Solano fill 1.51). | set True (full-pop runs); Solano → 0.80 |
+| 2 | Grade school unpriced | CT-RAMP excludes grade school (assignment, not choice) — *accidentally*: flag key misspelled `GradeSChool` (`UsualWorkSchoolLocationChoiceModel.java:41`) always throws → excluded unconditionally. ActivitySim prices all school segments; pricing it inflates school error (+3.3%, SF +20.8%). | hold grade-school price = 1.0 → +1.5%, SF −0.2%, via version-guarded `tm1` override (asim pinned to a wheel) |
+| 3 | Preschoolers | 307k preschoolers (ptype 8) inflate our grade-school target (1.26M vs CT ~954k); CT-RAMP classes them `Not student`. Only matters *because* we price grade school. | subsumed by #2 |
+| 4 | Price granularity | CT-RAMP prices per `(zone, subzone)`; ActivitySim per TAZ. Aggregate parity holds. | intrinsic, accepted |
 
-**Problem:** `tour_mode_choice_simulate` crashes in `pd.cut()` with "cannot
-convert float NaN to integer" for tours with destination = -1.
+**Validation jig vs production** (kept as separate scenario setups):
 
-**Cause:** Same M-pattern leak → zone -1 not in land_use index → NaN density.
-
-**Fix:** `tour_mode_choice_annotate_choosers_preprocessor.csv` uses
-`.cat.add_categories(0).fillna(0).astype(int)` as defensive handling.
-
----
-
-### Fix 3: Person type label alignment
-
-**Problem:** CDAP calibration report dropped person types 4, 6, 7.
-
-**Cause:** `PTYPE_LABELS` in `ctramp_output.py` used different strings than
-`CTRAMPPersonType` enum. Additionally, ptypes 6 and 7 were swapped in the enum.
-
-**Fix:** Aligned all labels: "Driving-age child" (6), "Pre-driving-age child"
-(7), "Nonworker" (4).
-
----
-
-### Fix 4: `work_location` column mapping
-
-**Problem:** `evaluate_stages.py` crashed with `ColumnNotFoundError:
-work_location` in stage 1.
-
-**Cause:** Column map expected `assigned_workplace_zone_id` (post-WFH) but
-stage 1 only has `workplace_zone_id`.
-
-**Fix:** `io.py` maps both columns, prefers `assigned_workplace_zone_id` when
-present.
+| | Validation jig | Production |
+|---|---|---|
+| Skims | frozen (reference final) | live (assignment loop) |
+| Shadow prices | frozen (`ShadowPricing_7`, 1 pass) | seed reference + few iters |
+| Grade-school pricing | as-reference (excluded) | excluded (override) |
+| Purpose | isolate model for CT-RAMP comparison | forecast |
 
 ---
 
-### Fix 5: Trip MC at-work c_ivt divisor error
+## Divergence & Fix Ledger
 
-**Problem:** 10 at-work sub-tour time/cost multipliers in
-`trip_mode_choice_coefficients.csv` were wrong.
+Every divergence from CT-RAMP found during migration, with its resolution. Rows 1–11 are
+corrected bugs (ActivitySim now matches CT-RAMP); details in git history
+(`git log --grep "mode choice"`). Shadow-pricing accommodations are in the section above.
 
-**Cause:** Upstream prototype_mtc divided CTRAMP absolute values by Tour MC
-`c_ivt` (-0.0134) instead of Trip MC `c_ivt` (-0.0279), producing values like
-1.35 instead of the correct 2.00.
-
-**Fix:** Corrected coefficients (e.g., `coef_walktimeshort_atwork`: 1.35 → 2.00,
-`coef_biketimeshort_atwork`: 2.70 → 4.00, etc.).
-
----
-
-### Fix 6: Trip MC transit ASC coefficient swap
-
-**Problem:** Several `heavy_rail` and `express_bus` per-purpose ASC coefficients
-were pulled from the wrong CTRAMP row (`light_rail`) during original migration.
-
-**Fix:** Corrected in `trip_mode_choice_coefficients.csv`.
-
----
-
-### Fix 7: Trip MC "didn't drive to work" dead code
-
-**Problem:** CTRAMP WorkBased sheet has `didn't_drive_to_work` rows with coeff
-0.0 (dead code), but ASim had −999.
-
-**Fix:** Changed ASim to 0.0 to match CTRAMP.
-
----
-
-### Fix 8: Trip MC hesitance rows
-
-10 hesitance constant rows added to `trip_mode_choice.csv` with supporting
-coefficients (IVT multipliers for LRT/ferry, work transit hesitance, rail
-transit hesitance).
-
----
-
-### Fix 9: Transit hesitance constants
-
-`tour_mode_choice.yaml` adds explicit constants ported from CTRAMP Java
-properties:
-- `work_transit_hesitance: 55.0`
-- `nonwork_transit_hesitance: 0.0`
-- `rail_transit_hesitance: 108.0`
-
-Not present in prototype_mtc.
-
----
-
-### Fix 10: Trip MC CONSTANTS corrections
-
-`trip_mode_choice.yaml` CONSTANTS differ from tour MC (matching CTRAMP's
-different treatment of trip-level sensitivity):
-- `xfers_wlk_multiplier: 15` (tour MC: 30)
-- `xfers_drv_multiplier: 20` (tour MC: 40)
-- `origin_density_index_multiplier: -0.6` (tour MC: -0.1)
-- `ivt_exp_multiplier: 1.0`, `ivt_com_multiplier: 0.7`
-
----
-
-### Fix 11: `write_trip_matrices` duplicate `tour_id` index
-
-**Problem:** `write_trip_matrices` crashes with `InvalidIndexError: Reindexing
-only valid with uniquely valued Index objects`.
-
-**Cause:** Joint tours share `tour_id` across participants → duplicate index.
-pandas 2.x rejects `.map()` on non-unique indexes (pandas 1.x used first match
-silently).
-
-**Fix:** Deduplicate before mapping:
-```python
-trips.tour_id.map(
-    tours.reset_index()
-    .drop_duplicates(subset='tour_id')
-    .set_index('tour_id')
-    .number_of_participants
-)
-```
-
-Upstream prototype_mtc has the same bug (as of April 2026).
+| # | Area | Divergence from CT-RAMP | Resolution |
+|---|---|---|---|
+| 1 | CDAP | 5+‑person HHs assigned M pattern with no valid mandatory dest → invalid tours (~600, 0.04%) | reset `cdap_activity` M→N when no work/school zone (`annotate_persons_cdap.csv`) |
+| 2 | Tour MC | same M-leak → dest −1 → NaN density → `pd.cut` crash | defensive `fillna(0)` in density preprocessor |
+| 3 | CDAP report | person-type labels mismatched; ptypes 6/7 swapped in enum | aligned `PTYPE_LABELS` / `CTRAMPPersonType` |
+| 4 | Plumbing | `work_location` column absent in stage 1 | `io.py` maps both `workplace_zone_id` / `assigned_workplace_zone_id` |
+| 5 | Trip MC | at-work coeffs divided by tour `c_ivt` (−0.0134) not trip `c_ivt` (−0.0279) — upstream prototype_mtc error | corrected 10 coeffs (e.g. `walktimeshort_atwork` 1.35→2.00) |
+| 6 | Trip MC | `heavy_rail`/`express_bus` per-purpose ASCs pulled from `light_rail` row | corrected ASCs |
+| 7 | Trip MC | "didn't drive to work" rows −999 vs CT-RAMP 0.0 (dead code) | set 0.0 |
+| 8 | Trip MC | missing hesitance constant rows | added 10 rows + IVT multipliers (LRT/ferry) |
+| 9 | Tour MC | transit hesitance constants absent in prototype_mtc | added work 55.0 / rail 108.0 / nonwork 0.0 |
+| 10 | Trip MC | trip-level CONSTANTS inherited tour-MC values | set trip values (`xfers_wlk` 15, `origin_density` −0.6, …) |
+| 11 | Plumbing | joint tours share `tour_id` → duplicate-index crash (pandas 2.x; also an upstream bug) | dedup before `.map()` in `write_trip_matrices` |
 
 ---
 

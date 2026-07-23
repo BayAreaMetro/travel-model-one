@@ -1,6 +1,8 @@
 """Work / School Location tab renderer."""
 
 import json
+import logging
+from collections.abc import Sequence
 
 import polars as pl
 
@@ -17,6 +19,8 @@ from .helpers import (
     tlfd_traces_nway,
     wrap_chart,
 )
+
+log = logging.getLogger(__name__)
 
 
 def render(
@@ -37,7 +41,14 @@ def render(
     # for WFH workers, so a faithful WFH model reproduces the higher WFH-worker
     # distance. Regional work distance washes out (~+0.6%); per-county residual
     # is destination-allocation, not a WFH defect.
-    wfh_datasets = pick_datasets(per_label, labels, "wfh_split_work")
+    # _wfh_split_work() returns None when a dataset carries no work_from_home
+    # column. In a FULL run every dataset has one (BATS + CTRAMP via wfh_choice,
+    # ActivitySim via the work_from_home model), so this only bites on a PARTIAL
+    # run that stops before work_from_home executes -- e.g. a location-models-only
+    # or early-ablation run. Drop those before deciding a comparison is possible.
+    wfh_datasets = _usable_wfh_datasets(
+        pick_datasets(per_label, labels, "wfh_split_work"),
+    )
     if len(wfh_datasets) >= 2:  # noqa: PLR2004
         parts.append("<h3>Work Distance by WFH Status (miles)</h3>")
         parts.append(_wfh_split_table(wfh_datasets))
@@ -138,6 +149,42 @@ def _render_avg_pair(
     mod: pl.DataFrame,
 ) -> str:
     return _avg_trip_table(obs, mod, obs_label, mod_label)
+
+
+def _usable_wfh_datasets(
+    picked: Sequence[tuple[int, str, pl.DataFrame | None]],
+) -> list[tuple[int, str, pl.DataFrame]]:
+    """Drop datasets with no WFH split, loudly distinguishing broken from expected.
+
+    ``_wfh_split_work()`` returns None when a dataset carries no work_from_home
+    column. Two very different situations produce that:
+
+    * **Mixed** (some datasets have it, some don't) -- never expected in a real
+      comparison, since every dataset supplies WFH in a full run. Logged as an
+      ERROR: the parity table would otherwise silently compare an incomplete set.
+    * **Uniformly absent** -- a partial run (location-models-only, or an ablation
+      stage before work_from_home). Legitimate; logged at INFO.
+    """
+    present = [(i, label, df) for i, label, df in picked if df is not None]
+    missing = [label for _, label, df in picked if df is None]
+    if missing and present:
+        log.error(
+            "!!!!! WFH SPLIT IS BROKEN -- A REAL PROBLEM, NOT A HARMLESS SKIP !!!!! "
+            "dataset(s) %s carry NO work_from_home column while %s DO. Every "
+            "dataset supplies it in a full run (BATS/CTRAMP via wfh_choice, "
+            "ActivitySim via the work_from_home model), so a mixed state means "
+            "something is wrong -- check that work_from_home actually executed and "
+            "that the dataset paths point at a complete run. The WFH table EXCLUDES "
+            "%s and is therefore NOT a like-for-like comparison.",
+            missing, [lbl for _, lbl, _ in present], missing,
+        )
+    elif missing:
+        log.info(
+            "Skipping WFH split: no dataset carries work_from_home (%s) -- expected "
+            "for a location-models-only or early-ablation partial run.",
+            ", ".join(missing),
+        )
+    return present
 
 
 def _wfh_split_table(datasets: list[tuple[int, str, pl.DataFrame]]) -> str:

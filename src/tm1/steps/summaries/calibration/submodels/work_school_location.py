@@ -157,8 +157,11 @@ def summarize(
 def _wfh_split_work(wsloc: pl.DataFrame, weight_col: str) -> pl.DataFrame | None:
     """Weighted mean work distance split by work-from-home status.
 
-    Returns a 2-row frame (category, workers, mean_dist) or None when the
-    dataset carries no work_from_home column (e.g. survey).
+    Returns a 2-row frame (category, workers, mean_dist), or None when the
+    dataset carries no work_from_home column. In a full run every dataset has
+    one (BATS + CTRAMP supply wfh_choice, ActivitySim the work_from_home model),
+    so None only arises on a partial run that stops before work_from_home --
+    e.g. a location-models-only or early-ablation run.
     """
     if "work_from_home" not in wsloc.columns:
         return None
