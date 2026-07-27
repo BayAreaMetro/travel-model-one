@@ -22,11 +22,11 @@ override files in later directories (first wins, whole-file replacement):
 ```
 configs chain (highest priority first):
   1. scenarios/base_2023/activitysim/   ← scenario-specific overrides
-  2. base-models/activity/configs_mp/   ← multiprocessing defaults
-  3. base-models/activity/configs/      ← full model specification
+  2. default-configs/activity/configs_mp/   ← multiprocessing defaults
+  3. default-configs/activity/configs/      ← full model specification
 ```
 
-To override a setting, copy the relevant file from `base-models/` into
+To override a setting, copy the relevant file from `default-configs/` into
 this scenario's `activitysim/` directory and edit it there.
 
 ### Example: run a small sample for testing

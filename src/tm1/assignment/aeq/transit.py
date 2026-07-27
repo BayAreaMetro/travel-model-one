@@ -65,7 +65,7 @@ class TransitParams:
     """Perceived-cost parameters (minutes) for one transit graph build.
 
     All MODEL POLICY values (boarding penalties, per-line-haul mode factors and
-    exclusions, IWAITMAX, key bands) live in ``base-models/assignment/aeq_params.yaml``
+    exclusions, IWAITMAX, key bands) live in ``default-configs/assignment/aeq_params.yaml``
     and are resolved into this object by the caller (see
     ``transit_skims.skim_params``); the neutral defaults below build a bare
     no-policy graph.

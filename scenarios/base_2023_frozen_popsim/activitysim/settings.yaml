@@ -3,7 +3,7 @@
 # Legacy scenario: ActivitySim demand on the FROZEN reference popsyn population
 # (copied from the reference run), as opposed to base_2023_activitysim which
 # regenerates the population with PopulationSim. Kept as the CT-RAMP correctness
-# anchor. The full model specification lives in base-models/activity/configs/.
+# anchor. The full model specification lives in default-configs/activity/configs/.
 
 inherit_settings: True
 

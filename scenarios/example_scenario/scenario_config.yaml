@@ -6,7 +6,7 @@
 #
 # Only files that differ from the base model need to be included here.
 # ActivitySim's config directory chain means any file placed in activitysim/
-# will override the same-named file from base-models/activity/configs/.
+# will override the same-named file from default-configs/activity/configs/.
 #
 # Structure:
 #   scenarios/example_scenario/
@@ -51,8 +51,8 @@ steps:
       output_dir: "{proj_dir}/output"
       configs:
         - "scenarios/example_scenario/activitysim"  # ← scenario overrides
-        - "base-models/activity/configs_mp"
-        - "base-models/activity/configs"
+        - "default-configs/activity/configs_mp"
+        - "default-configs/activity/configs"
 
     # Highway assignment feedback (used only when iterations > 0).
     # backend "aeq" = open-source AequilibraE (no Cube license); "cube" = legacy loop.

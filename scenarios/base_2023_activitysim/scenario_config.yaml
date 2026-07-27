@@ -58,8 +58,8 @@ steps:
     output_dir: "{proj_dir}/data"
     configs:
       - "scenarios/base_2023_activitysim/populationsim"
-      - "base-models/population/configs_mp"
-      - "base-models/population/configs"
+      - "default-configs/population/configs_mp"
+      - "default-configs/population/configs"
 
   # --- 3. Simulate: run ActivitySim demand model ---
   simulate_activitysim:
@@ -67,8 +67,8 @@ steps:
     activitysim:
       configs:
         - "scenarios/base_2023_activitysim/activitysim"
-        - "base-models/activity/configs_mp"
-        - "base-models/activity/configs"
+        - "default-configs/activity/configs_mp"
+        - "default-configs/activity/configs"
       data_dir: "{proj_dir}/data"
       output_dir: "{proj_dir}/output"
     # Highway assignment feedback (used only when iterations > 0).

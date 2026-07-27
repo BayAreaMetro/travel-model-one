@@ -1,7 +1,7 @@
 """Typed loader for the AequilibraE assignment/skim model parameters.
 
 All model policy ported from the legacy Cube job files lives in
-``base-models/assignment/aeq_params.yaml`` (provenance documented there), NOT in the
+``default-configs/assignment/aeq_params.yaml`` (provenance documented there), NOT in the
 engine modules.  Entry points call :func:`load_aeq_params` once (optionally with a
 scenario-supplied alternate path) and pass the object down.
 """
@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 
 DEFAULT_PARAMS_PATH = (Path(__file__).resolve().parents[4]
-                       / "base-models" / "assignment" / "aeq_params.yaml")
+                       / "default-configs" / "assignment" / "aeq_params.yaml")
 
 
 @dataclass(frozen=True)

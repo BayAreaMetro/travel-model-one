@@ -7,7 +7,7 @@ This module drives :func:`tm1.assignment.aeq.transit.skim_transit` over the acce
 line-haul / egress run types x periods and packs the result into that naming.
 
 All run-type structure, cost policy, and publishing conventions come from
-``base-models/assignment/aeq_params.yaml`` (see :mod:`tm1.assignment.aeq.params`).
+``default-configs/assignment/aeq_params.yaml`` (see :mod:`tm1.assignment.aeq.params`).
 
 Two graphs per run (see ``transit.build_transit_graph``):
 

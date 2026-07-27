@@ -11,8 +11,8 @@ output_dir: "E:/Tests/ablation_calibration"
 repo_root: "E:/GitHub/travel-model-one"
 asim_config_dirs:
   - "scenarios/base_2023_frozen_popsim/activitysim"
-  - "base-models/activity/configs_mp"
-  - "base-models/activity/configs"
+  - "default-configs/activity/configs_mp"
+  - "default-configs/activity/configs"
 
 # --- Run parameters ---
 sample_rate: 0.15
@@ -222,7 +222,7 @@ coefficient_comparison:
   ctramp_properties_file: "model-files/runtime/mtcTourBased.properties"  # relative to repo_root; use ctramp_project_dir override for resolved values
   asim_configs_dirs:  # searched in priority order (first match wins)
     - "scenarios/base_2023_frozen_popsim/activitysim"
-    - "base-models/activity/configs"
+    - "default-configs/activity/configs"
   submodels:
     - name: Workplace Location
       ctramp_file: DestinationChoice.xls

@@ -14,7 +14,7 @@ behaviour exactly. All figures are against a 2023 reference Cube run (`2023_TM16
 comparison holds everything else at the Cube reference: skims are built on the reference
 network, and assignments are fed Cube's own trip tables, so any difference shown here is
 attributable to the engine swap alone. The demand-model migration (CT-RAMP to ActivitySim)
-is a separate workstream with its own validation (see DEV_NOTES); its status has no bearing
+is a separate workstream with its own validation (see MIGRATION_NOTES.md); its status has no bearing
 on the results below, and vice versa.
 
 | Step | Algorithm (both) | Fit vs Cube | Cube | Aeq |

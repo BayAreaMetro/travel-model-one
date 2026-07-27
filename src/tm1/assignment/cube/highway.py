@@ -20,7 +20,7 @@ legacy PrepAssign did and a straight rename would miss:
   zero-passenger deadhead vehicles in da_tnc (PrepAssign steps 3-5).
 
 Only the owned-AV classes (da_av/s2_av/s3_av) are unmodelled and written as zeros.
-Shares/occupancy/ZPV come from ``base-models/assignment/aeq_params.yaml``.
+Shares/occupancy/ZPV come from ``default-configs/assignment/aeq_params.yaml``.
 """
 
 import logging

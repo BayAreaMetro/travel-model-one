@@ -1,4 +1,4 @@
-# base-models
+# default-configs
 
 This is where the base model assets live. The base model is the starting point for all scenarios, and should be a complete, runnable model. It should include all the necessary configs, specs, lookup tables, and default assets to run the model end-to-end; **EXCEPT** data files, which are kept out of the repo and should be fetched/referenced separately. The only acceptable data files in the base model are small (e.g. <1MB), not expected to change often, and do not contain personally identifiable information (PII).
 

@@ -88,7 +88,7 @@ The `0.6/VOT` factor converts cents to minutes (`60 min/hr ÷ 100 ¢/$ ÷ VOT $/
 > shares), `HwyAssign.job` (the class definitions, exclusion groups, generalised-cost
 > formula, capacity factors), `SpeedFlowCurve.block` (the VDF curves below) and
 > `FreeFlowSpeed.block` (critical speeds). Each sits in
-> [`aeq_params.yaml`](../base-models/assignment/aeq_params.yaml) with its source file noted.
+> [`aeq_params.yaml`](../default-configs/assignment/aeq_params.yaml) with its source file noted.
 >
 > What is *not* ported, and is therefore an assumption: (a) the **solver**, Frank–Wolfe
 > with an exact line search, converged to a relative gap of 1e-3. Cube's own solver and
@@ -108,7 +108,7 @@ slow it gets. MTC uses different curves for different roads:
 - **Connectors**: fixed time. They are bookkeeping artefacts, not real roads.
 
 → `vdf.py`. Curve constants live in
-[`base-models/assignment/aeq_params.yaml`](../base-models/assignment/aeq_params.yaml).
+[`default-configs/assignment/aeq_params.yaml`](../default-configs/assignment/aeq_params.yaml).
 
 ### Solving it: Frank–Wolfe
 The standard algorithm:
@@ -413,7 +413,7 @@ runner.py          the iteration: orchestrates everything below
 
 **No model policy lives in the code.** Every ported Cube constant (value of time, mode
 factors, boarding penalties, VDF curves, fare bands) is in
-[`base-models/assignment/aeq_params.yaml`](../base-models/assignment/aeq_params.yaml), with a
+[`default-configs/assignment/aeq_params.yaml`](../default-configs/assignment/aeq_params.yaml), with a
 comment saying which Cube file it came from. The engine reads it at start-up. A scenario can
 point at a different copy.
 
@@ -507,7 +507,7 @@ brief's divergence ledger.
 - [`aequilibrae_migration.md`](aequilibrae_migration.md): the evidence for how closely this
   reproduces Cube, where it differs, and why. Read its divergence ledger before trusting
   any single number.
-- [`base-models/assignment/aeq_params.yaml`](../base-models/assignment/aeq_params.yaml):
+- [`default-configs/assignment/aeq_params.yaml`](../default-configs/assignment/aeq_params.yaml):
   every model parameter, with the Cube file it came from. The best map of "what decisions
   does this model actually make".
 - [`aequilibrae_usage.md`](aequilibrae_usage.md): how to run, configure, and modify the

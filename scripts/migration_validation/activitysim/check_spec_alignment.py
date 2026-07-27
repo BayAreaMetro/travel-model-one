@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 
-_CONFIGS = Path(__file__).resolve().parents[3] / "base-models" / "activity" / "configs"
+_CONFIGS = Path(__file__).resolve().parents[3] / "default-configs" / "activity" / "configs"
 FILES = [
     _CONFIGS / "tour_mode_choice.csv",
     _CONFIGS / "trip_mode_choice.csv",

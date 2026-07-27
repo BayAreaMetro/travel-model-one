@@ -78,8 +78,8 @@ steps:
       # Scenario-specific overrides go in activitysim/ within this scenario folder.
       configs:
         - "scenarios/base_2023_frozen_popsim/activitysim"   # ← scenario overrides (highest priority)
-        - "base-models/activity/configs_mp"   # multiprocessing defaults
-        - "base-models/activity/configs"      # full model specification (lowest priority)
+        - "default-configs/activity/configs_mp"   # multiprocessing defaults
+        - "default-configs/activity/configs"      # full model specification (lowest priority)
 
     # Highway assignment feedback (used only when iterations > 0). This scenario
     # calibrates against static skims, so assignment is off by default — bump

@@ -32,13 +32,13 @@ import yaml
 
 log = logging.getLogger(__name__)
 
-_CONFIGS_DIR = Path(__file__).resolve().parents[3] / "base-models" / "population" / "configs"
+_CONFIGS_DIR = Path(__file__).resolve().parents[3] / "default-configs" / "population" / "configs"
 
 
 def _resolve_config(filename: str, config_dirs: list[Path]) -> Path:
     """Resolve a config file across the config-dir chain (first match wins).
 
-    Falls back to the base-models configs dir if not found in the chain. This
+    Falls back to the default-configs configs dir if not found in the chain. This
     lets a scenario override ``geo_cross_walk.csv`` / ``pums_encoding.yaml`` by
     placing its own copy earlier in the chain (e.g. for a different PUMA vintage).
     """
@@ -311,7 +311,7 @@ def run(
         controls.region: path/URL to region control totals
         working_dir: intermediate files directory
         output_dir: final output directory
-        configs: list of config directories (optional, defaults to base-models)
+        configs: list of config directories (optional, defaults to default-configs)
     """
     step_cfg = cfg.get("steps", {}).get("populationsim", {})
     if not step_cfg:

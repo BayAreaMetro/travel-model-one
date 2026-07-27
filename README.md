@@ -38,8 +38,8 @@ This branch (`activitysim_revival`) replaces the Java-based CTRAMP demand model 
 ### Repository Layout
 
 ```
-base-models/activity/configs/    # Canonical ActivitySim configs (specs, coefficients, YAML)
-scenarios/{name}/activitysim/    # Scenario overrides ONLY (inherits from base-models)
+default-configs/activity/configs/    # Canonical ActivitySim configs (specs, coefficients, YAML)
+scenarios/{name}/activitysim/    # Scenario overrides ONLY (inherits from default-configs)
 scenarios/{name}/populationsim/  # PopulationSim overrides
 src/tm1/                         # Python package (CLI, runner)
 src/cubeio/                      # Cube skim/matrix I/O
@@ -49,7 +49,7 @@ model-files/                     # Legacy CTRAMP batch files (retained for refer
 
 ### Key Concept: Config Inheritance
 
-ActivitySim resolves configs in directory order. The scenario `settings.yaml` sets `inherit_settings: True`, so only files you **override** need to exist in the scenario folder. Everything else falls through to `base-models/activity/configs/`.
+ActivitySim resolves configs in directory order. The scenario `settings.yaml` sets `inherit_settings: True`, so only files you **override** need to exist in the scenario folder. Everything else falls through to `default-configs/activity/configs/`.
 
 - **YAMLs merge** — you only specify the keys that differ.
 - **CSVs replace** — you must copy the entire file and modify it in place.

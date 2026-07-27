@@ -24,7 +24,7 @@ skims, with **no Cube license, no Cube binaries, and no network shares**.
 | `PrepHwyNet` net2csv, TRNBUILD build | one-time input extraction | `scripts/build_aeq_inputs.py` |
 
 The engine (`src/tm1/assignment/aeq/`) is **generic**; all MTC policy lives in
-`base-models/assignment/aeq_params.yaml` (see §4). This separation is deliberate — never
+`default-configs/assignment/aeq_params.yaml` (see §4). This separation is deliberate — never
 put policy constants in `src/`.
 
 ---
@@ -102,7 +102,7 @@ knob.
 
 ## 4. How to modify it
 
-### Policy (the common case) — `base-models/assignment/aeq_params.yaml`
+### Policy (the common case) — `default-configs/assignment/aeq_params.yaml`
 
 Every model knob lives here, with per-block provenance noting the Cube job it came from.
 Load via `tm1.assignment.aeq.params.load_aeq_params()`. Highlights:

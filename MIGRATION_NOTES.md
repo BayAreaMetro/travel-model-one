@@ -1,16 +1,81 @@
-# Dev Notes
+# Migration Notes
 
 Working notes on the Travel Model One → Python migration (branch `activitysim_revival`):
-scope, progress to date, and the status of each component.
+scope, progress to date, and the status of each component. This is a living log, not a fixed
+plan or a PR description — it covers the whole multi-year journey and will lag behind the
+code between updates. For a specific PR's scope, write a dedicated summary rather than
+pointing at this whole file.
+
+## Phases
+
+The migration lands in five linear phases. Phases 2 and 4 are Track A and Track B (below)
+going live in production; phase 1 is the platform both eventually run on; phase 3 is the
+legacy cleanup that follows once track A has landed and CT-RAMP's remaining lifespan is
+clearer.
+
+| # | Phase | Status |
+|---|---|---|
+| 1 | Modernize the model runtime pipeline | **in progress — this PR** |
+| 2 | ActivitySim swap-in | not started — pending phase 1 + full PBA50 review |
+| 3 | Housekeeping: legacy triage | not started |
+| 4 | Assignment backend upgrade (Track B live) | prototype only (Bonus 3) — needs buy-in |
+| 5 | Beyond: network enhancements, etc. | not scoped |
+
+### 1. Modernize the model runtime pipeline
+
+Dual purpose:
+- Streamline the runtime and eliminate the `.bat` script chain, while CT-RAMP + Cube remain
+  in production, unchanged, throughout.
+- Stand up the platform ActivitySim swaps into once current calibration work wraps up,
+  without disrupting that work.
+
+Open question: how scenario-specific pre/post-processing scripts (currently scattered across
+`utilities/` and `model-files/scripts/`) get carried forward — cherry-pick the maintained
+ones into `scripts/` now, or leave them in place until phase 3's triage.
+
+### 2. ActivitySim swap-in
+
+Enable ActivitySim as the production demand model, after a thorough review against **PBA50**
+CT-RAMP runs — broader than the 2023 reference run validated against so far (see
+[The migration journey](#the-migration-journey) below for that validation detail).
+
+### 3. Housekeeping
+
+Go through `core/`, `model-files/`, `utilities/` file by file: decide what's worth keeping
+(and where it moves — `scripts/`, `src/`, `default-configs/`) vs what gets deleted (retained
+in git history, never truly gone). This is where the [Repo layout](#repo-layout) "Existing →
+Target" mapping below actually gets executed, not just documented. Deliberately sequenced
+*after* phase 2, not alongside phase 1 — moving legacy CT-RAMP/Cube paths while they're still
+production-critical risks breaking scheduled runs for no functional gain.
+
+### 4. Assignment backend upgrade
+
+Currently runs on Cube. AequilibraE is viable (Bonus 3 below) but replacing Cube in
+production requires buy-in beyond engine-level parity — this phase doesn't start until that
+buy-in exists.
+
+### 5. Beyond
+
+Network enhancements and whatever else follows once the core migration is done. Not scoped.
+
+---
 
 ## Goal
 
-Replace the Cube Voyager + Java CT-RAMP stack with an open-source Python stack
-(PopulationSim + ActivitySim + AequilibraE, driven by a `tm1` CLI). Two hard requirements:
+Two independent moving pieces:
 
-1. **Match Cube results.** Faithful replication, not a rebuild. Every divergence requires a
-   documented, falsifiable justification.
-2. **Match or exceed Cube performance.**
+- **Piece A — demand model.** Java CT-RAMP → Python ActivitySim (+ PopulationSim for the
+  synthetic population). This is the committed direction.
+- **Piece B — assignment/skimming.** Cube Voyager → a Python-native alternative.
+  **Not yet decided.** AequilibraE is the current prototype/candidate (Bonus 3 below); Cube
+  driven headlessly from the `tm1` Python harness (step 4) is also a viable long-term state
+  if nothing beats it convincingly. Piece B's status has no bearing on Piece A and vice versa.
+
+Both tracks share two hard requirements:
+
+1. **Match Cube/CT-RAMP results.** Faithful replication, not a rebuild. Every divergence
+   requires a documented, falsifiable justification.
+2. **Match or exceed Cube/CT-RAMP performance.**
 
 **Reference run** — the last CT-RAMP run, the benchmark for every comparison:
 
@@ -23,7 +88,9 @@ Replace the Cube Voyager + Java CT-RAMP stack with an open-source Python stack
 ## The migration journey
 
 Progress to date, with current status. Steps 1–4 are the core sequence; the two bonus tracks
-extend past the original scope.
+extend past the original scope. Engineering detail, not a second phase numbering — nearly all
+of it is phase 1 (runtime/pipeline) work, except Bonus 3 (AequilibraE), which is phase 4
+prototyping done ahead of schedule.
 
 ### 1. Port the skims — cubeless TPP ↔ OMX converter — **DONE**
 
@@ -68,6 +135,11 @@ in a stage's output sent me back to fix a coefficient or expression, then re-run
   the port had missed entirely: **walk-to-transit subzones** (`walkAccessBuffers`), which
   gate transit availability and set access walk times. Ported (segments sampled per
   household-location in the mode-choice preprocessors); re-validation in progress.
+- Cost-per-mile coefficient corrected to match CT-RAMP (tour/trip mode choice).
+- Location-choice shadow pricing: parity is proven under a frozen jig (loading CT-RAMP's own
+  converged prices, one pass, no re-solve), but the underlying update rule doesn't converge
+  for *either* engine — it's an undamped, fixed-point-free iteration, not an ActivitySim
+  defect. Full write-up: [`docs/ACTIVITYSIM_MIGRATION_NOTES.md`](docs/ACTIVITYSIM_MIGRATION_NOTES.md#shadow-pricing--location-choice-parity).
 
 
 ### 4. Assignment — wire in the Cube launcher via Python — **DONE**
@@ -90,7 +162,7 @@ Made CT-RAMP run headless from the Python harness, so we can run a reference CT-
 
 #### Bonus 2 — Wire in PopulationSim directly — **PARTIAL** (runs end-to-end, cached)
 
-`src/tm1/steps/populationsim.py` + `base-models/population/` produce a synthetic population
+`src/tm1/steps/populationsim.py` + `default-configs/population/` produce a synthetic population
 from PUMS + controls. The end-to-end chain (land use → PopulationSim → ActivitySim →
 assignment) runs, with PopulationSim output cached between runs. Not yet fully harmonized —
 see [Open items](#known-gaps--open-items).
@@ -99,7 +171,7 @@ see [Open items](#known-gaps--open-items).
 
 A Cube-free, Python-native assignment backend (`src/tm1/assignment/aeq/`), selectable with
 `backend=aeq`, so the skims → ActivitySim → assignment → skims loop can run without Cube.
-Policy constants live in `base-models/assignment/aeq_params.yaml` (never in `src`), loaded via
+Policy constants live in `default-configs/assignment/aeq_params.yaml` (never in `src`), loaded via
 `params.py`.
 
 Preliminary parity against the reference run is strong. Validators feed Cube's *own* demand to
@@ -120,7 +192,8 @@ PCE, highway **per-class** link volumes are now validated across all five period
 - documented resolution of every entry in the divergence ledger.
 
 Write-up + divergence ledger: [`docs/aequilibrae_migration.md`](docs/aequilibrae_migration.md);
-primer: [`docs/assignment_primer.md`](docs/assignment_primer.md).
+primer: [`docs/assignment_primer.md`](docs/assignment_primer.md); rerunnable scorecards +
+usage guide: [`docs/aequilibrae_usage.md`](docs/aequilibrae_usage.md).
 
 ---
 
@@ -156,7 +229,7 @@ travel-model-one/
 
 ```text
 travel-model-one/
-|-- base-models/   base configs, specs, lookup tables, default assets (activity/ assignment/ population/)
+|-- default-configs/   base configs, specs, lookup tables, default assets (activity/ assignment/ population/)
 |-- scenarios/     scenario overrides only (base_2023_activitysim, base_2023_ctramp, ...)
 |-- scripts/       run/prep/export entrypoints + migration_validation/{activitysim,assignment}
 `-- src/           shared Python: cubeio/, tm1/ (steps, assignment/{cube,aeq})
@@ -165,8 +238,8 @@ travel-model-one/
 ### Diffs from legacy → target
 
 - `core/` → retire from day-to-day layout; use installable `activitysim` where possible.
-- `model-files/model/` → `base-models/`.
-- `model-files/runtime/` → split between `base-models/` and `scripts/`.
+- `model-files/model/` → `default-configs/`.
+- `model-files/runtime/` → split between `default-configs/` and `scripts/`.
 - `model-files/scripts/` → move into `scripts/` or `src/`.
 - `utilities/` → cherry-pick only maintained pieces into `scripts/` or `src/`.
 - `utilities/RTP/config_RTP2025/` → `scenarios/RTP2025/`.
@@ -182,7 +255,7 @@ That keeps the repo reasonable to reason about and makes eventual deletions obvi
 - JPPF/Java startup, `PrepAssign.job`, `core/` Java code
 - All `.job` files (Cube skims, assignment, nonres, preprocessing) — once `backend=aeq` fully
   replaces the Cube launcher
-- Anything not in `base-models/`, `scenarios/`, `scripts/`, or `src/`
+- Anything not in `default-configs/`, `scenarios/`, `scripts/`, or `src/`
 
 ---
 
@@ -216,4 +289,5 @@ common_overrides:
 - [`docs/SKIM_MAPPING.md`](docs/SKIM_MAPPING.md) — Cube TPP → ActivitySim skim keys
 - [`docs/OUTPUT_MAPPING.md`](docs/OUTPUT_MAPPING.md) — output/skim mapping (incl. TNC scoping)
 - [`docs/aequilibrae_migration.md`](docs/aequilibrae_migration.md) — AequilibraE parity + divergence ledger
+- [`docs/aequilibrae_usage.md`](docs/aequilibrae_usage.md) — how to run/configure the aeq track, Cube→aeq translation guide
 - [`docs/assignment_primer.md`](docs/assignment_primer.md) — assignment concepts primer

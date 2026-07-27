@@ -14,7 +14,7 @@ roughly 10–15 percentage points depending on other person/household attributes
 The only model file overridden is `activitysim/work_from_home.csv`. Because
 ActivitySim's config directory chain uses **first-directory-wins** resolution,
 placing this file in the scenario's `activitysim/` folder means it takes
-priority over the base model version in `base-models/activity/configs/`.
+priority over the base model version in `default-configs/activity/configs/`.
 
 Everything else — coefficients, mode choice specs, scheduling, etc. — comes
 from the base model unchanged.
