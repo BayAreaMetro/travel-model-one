@@ -39,6 +39,9 @@ run pgm = matrix
    ; Daily Ix truck trips from IxTimeOfDay.job
    filei mati[2] = nonres\ixDailyx4_truck.tpp
 
+   ; Daily trips from SpecialGeneratorTruckTripDistribution
+   filei mati[3] = nonres\DailySGTruckTrips.tpp
+
    ; Time-of-day specific truck tables
    fileo mato[1] = nonres\TripsTrkEAx.tpp, mo=11-14, name = vstruck, struck, mtruck, ctruck DEC=4*S
    fileo mato[2] = nonres\TripsTrkAMx.tpp, mo=15-18, name = vstruck, struck, mtruck, ctruck DEC=4*S
@@ -49,8 +52,8 @@ run pgm = matrix
    ; convert the P/A matrices to O/D (and scale DailyTruckTrips by 100, as distribution outputs trips x 100)
    mw[1] = (0.5 * mi.1.1 + 0.5 * mi.1.1.T)/100.0 + (0.5 * mi.2.vsm_daily + 0.5*mi.2.vsm_daily.T)
    mw[2] = (0.5 * mi.1.2 + 0.5 * mi.1.2.T)/100.0 + (0.5 * mi.2.sml_daily + 0.5*mi.2.sml_daily.T)
-   mw[3] = (0.5 * mi.1.3 + 0.5 * mi.1.3.T)/100.0 + (0.5 * mi.2.med_daily + 0.5*mi.2.med_daily.T)
-   mw[4] = (0.5 * mi.1.4 + 0.5 * mi.1.4.T)/100.0 + (0.5 * mi.2.lrg_daily + 0.5*mi.2.lrg_daily.T)
+   mw[3] = (0.5 * mi.1.3 + 0.5 * mi.1.3.T)/100.0 + (0.5 * mi.2.med_daily + 0.5*mi.2.med_daily.T) + (0.5 * mi.3.medium + 0.5*mi.3.medium.T)
+   mw[4] = (0.5 * mi.1.4 + 0.5 * mi.1.4.T)/100.0 + (0.5 * mi.2.lrg_daily + 0.5*mi.2.lrg_daily.T) + (0.5 * mi.3.large + 0.5*mi.3.large.T)
    
    ; apply class-specific diurnal factors - very small truck factors adjusted during calibration
    
