@@ -8,6 +8,9 @@ dependencies = [
     "numpy>=1.26",
     "openmatrix>=0.3.5",
     "pandas>=2.0",
+    "plotly>=6.7.0",
+    "polars>=1.39.3",
+    "pydantic>=2.0",
     "python-dotenv>=1.0",
     "pyyaml>=6.0",
     "requests>=2.31",
@@ -31,7 +34,6 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "polars>=1.39.3",  # golden-fixture comparison in tests
     "pytest>=9.0.3",
     "pytest-coverage>=0.0",
     "ruff>=0.15.11",

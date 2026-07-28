@@ -48,6 +48,7 @@ from types import ModuleType
 import tm1.steps.assignment as assignment_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
+import tm1.steps.summaries.calibration as calibration_step
 from tm1 import add_run_logfile, remove_run_logfile, slack
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
@@ -73,6 +74,7 @@ STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,
+    "calibration": calibration_step.run,
 }
 
 DEFAULT_STEPS = list(STEPS.keys())
