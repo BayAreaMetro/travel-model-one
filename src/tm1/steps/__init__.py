@@ -30,6 +30,7 @@ import tm1.steps.external as external_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.staging as staging_step
+import tm1.steps.summaries.calibration as calibration_step
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +51,8 @@ STEPS: dict[str, Callable] = {
     "configure_ctramp": configure_ctramp_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,
+    # Reporting.
+    "calibration": calibration_step.run,
 }
 
 DEFAULT_STEPS = list(STEPS.keys())
