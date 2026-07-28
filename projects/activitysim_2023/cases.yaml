@@ -1,0 +1,9 @@
+# Runs this project defines.  Each case is one row in `tm1 cases activitysim_2023`
+# and one run directory; overrides address a value by where it sits in config.yaml.
+cases:
+  BASE-2023:
+    description: >
+      ActivitySim demand on a freshly synthesised 2023 population (PUMS 2019-2023,
+      2020-vintage PUMAs).  Deliberately does not reproduce the CT-RAMP reference
+      population, which was built from PUMS 2017-2021 -- use
+      activitysim_2023_frozen_popsim for a like-for-like comparison.

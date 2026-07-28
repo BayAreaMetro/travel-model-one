@@ -30,11 +30,16 @@ import tm1.steps.build.hsr_trips as build_hsr_trips_step
 import tm1.steps.build.nonmotorized_skims as build_nonmotorized_skims_step
 import tm1.steps.build.transit_lines as build_transit_lines_step
 import tm1.steps.configure_ctramp as configure_ctramp_step
+import tm1.steps.convert_skims as convert_skims_step
 import tm1.steps.external as external_step
 import tm1.steps.filter_popsyn as filter_popsyn_step
+import tm1.steps.populationsim as populationsim_step
+import tm1.steps.prepare_survey as prepare_survey_step
 import tm1.steps.setup as setup_step
+import tm1.steps.simulate_activitysim as simulate_activitysim_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.staging as staging_step
+import tm1.steps.summaries.core as core_step
 
 log = logging.getLogger(__name__)
 
@@ -58,8 +63,14 @@ STEPS: dict[str, Callable] = {
     "build_hsr_trips": build_hsr_trips_step.run,
     "filter_popsyn": filter_popsyn_step.run,
     "configure_ctramp": configure_ctramp_step.run,
+    "convert_skims": convert_skims_step.run,
+    "prepare_survey": prepare_survey_step.run,
+    "populationsim": populationsim_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
+    "simulate_activitysim": simulate_activitysim_step.run,
     "assignment": assignment_step.run,
+    # Reporting.
+    "core_summaries": core_step.run,
 }
 
 DEFAULT_STEPS = list(STEPS.keys())

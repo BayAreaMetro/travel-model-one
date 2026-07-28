@@ -1,0 +1,5 @@
+# The smallest project that runs: one case, no overrides.  Copy this directory to
+# start a new project, then add cases here as the questions arrive.
+cases:
+  EXAMPLE:
+    description: A minimal ActivitySim run, for checking an install end to end.
