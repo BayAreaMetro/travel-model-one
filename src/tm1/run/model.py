@@ -164,29 +164,67 @@ def _sample_str(sample_rate: object) -> str:
     return f"{sample_rate:.0%}"
 
 
+def _merged_asim_settings(sim_cfg: dict, base_model_dir: Path) -> dict:
+    """Merge ``settings.yaml`` down ActivitySim's config-inheritance chain.
+
+    ActivitySim reads its ``configs:`` list most-specific first, each file inheriting
+    from the ones after it -- so walking the list in reverse and updating gives the
+    effective settings without starting ActivitySim to ask.
+    """
+    asim_cfg = sim_cfg.get("activitysim", sim_cfg) if sim_cfg else {}
+    settings: dict = {}
+    for entry in reversed(asim_cfg.get("configs", [])):
+        path = Path(entry) if Path(entry).is_absolute() else base_model_dir / entry
+        settings_file = path / "settings.yaml"
+        if settings_file.exists():
+            with settings_file.open(encoding="utf-8") as fh:
+                settings.update(yaml.safe_load(fh) or {})
+    return settings
+
+
+def _demand_summary(
+    configs: dict[tuple[str, int], dict], kwargs: dict, base_model_dir: Path,
+) -> tuple[str, object, bool]:
+    """``(sample, threads, shadow pricing)`` in whichever demand model is running.
+
+    The two describe a run differently -- ActivitySim by household sample size and
+    process count, CT-RAMP by sample rate and thread count -- so each reports in its
+    own terms rather than one being bent into the other's.
+    """
+    by_name = {name: entry_cfg for (name, _), entry_cfg in configs.items()}
+    asim_cfg = by_name.get("simulate_activitysim") or {}
+    if asim_cfg:
+        asim = _merged_asim_settings(asim_cfg, base_model_dir)
+        sample = asim.get("households_sample_size", 0)
+        return (
+            "full" if sample == 0 else f"{sample:,} HH",
+            asim.get("num_processes", 1),
+            asim.get("use_shadow_pricing", False),
+        )
+    sim_cfg = by_name.get("simulate_ctramp") or {}
+    sample_rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
+    return (
+        _sample_str(sample_rate),
+        sim_cfg.get("threads", 1),
+        sim_cfg.get("shadow_pricing", False),
+    )
+
+
 def _notify_start(
     label: str, steps: list[str], configs: dict[tuple[str, int], dict],
-    n_iters: int, kwargs: dict,
+    n_iters: int, kwargs: dict, base_model_dir: Path,
 ) -> None:
     """Announce what is about to run.
 
     Reads the demand step's config off the plan entries: it sits inside
     ``iterate``, so a top-level lookup would silently report defaults.
     """
-    sim_cfg = next(
-        (
-            entry_cfg for (name, _), entry_cfg in configs.items()
-            if name in ("simulate_ctramp", "simulate_activitysim")
-        ),
-        {},
-    )
-    sample_rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
-    sample_str = _sample_str(sample_rate)
+    sample_str, threads, shadow = _demand_summary(configs, kwargs, base_model_dir)
     notify(
         f":rabbit2: Starting {label}\n"
         f"  • steps: {', '.join(steps)}\n"
-        f"  • sample: {sample_str} | threads: {sim_cfg.get('threads', 1)} | "
-        f"shadow pricing: {'on' if sim_cfg.get('shadow_pricing', False) else 'off'}\n"
+        f"  • sample: {sample_str} | threads: {threads} | "
+        f"shadow pricing: {'on' if shadow else 'off'}\n"
         f"  • iterations: {n_iters}"
     )
 
@@ -396,7 +434,10 @@ def run_model(
         plan = apply_until(plan, kwargs.get("until"))
         _report_resume(full_plan, plan, n_iters)
         prev_iter = None
-        _notify_start(label, steps or declared, configs, n_iters, kwargs)
+        base_model_dir = Path(str(kwargs.get("base_model_dir") or config_dir.parent))
+        _notify_start(
+            label, steps or declared, configs, n_iters, kwargs, base_model_dir
+        )
 
         for name, iteration in plan:
             step_cfg = configs[(name, iteration)]

@@ -1,0 +1,8 @@
+# Runs this project defines.  Each case is one row in
+# `tm1 cases activitysim_2023_frozen_popsim` and one run directory.
+cases:
+  CALIB-2023:
+    description: >
+      ActivitySim calibration against the 2023 BATS survey, holding the synthetic
+      population fixed so a change in results is a change in the demand models and
+      nothing else.

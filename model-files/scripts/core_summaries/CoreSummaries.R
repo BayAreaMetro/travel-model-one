@@ -148,12 +148,12 @@ input.ct.households  <- read.table(file = file.path(MAIN_DIR,paste0("householdDa
 
 # Rename/drop some columns and join them on household id. Also join with tazData to get the super district and county.
 
-# drop random number fields
-input.ct.households  <- select(input.ct.households, -ao_rn, -fp_rn, -cdap_rn,
-  -imtf_rn, -imtod_rn, -immc_rn, -jtf_rn, -jtl_rn, -jtod_rn, -jmc_rn, -inmtf_rn,
-  -inmtl_rn, -inmtod_rn, -inmmc_rn, -awf_rn, -awl_rn, -awtod_rn, -awmc_rn, -stf_rn, -stl_rn, 
-  -pct_of_poverty # drop this once since it's also in input.pop and we don't need it twice
-)
+# drop random number fields (use any_of() so missing columns are silently skipped)
+input.ct.households  <- select(input.ct.households, -any_of(c("ao_rn", "fp_rn", "cdap_rn",
+  "imtf_rn", "imtod_rn", "immc_rn", "jtf_rn", "jtl_rn", "jtod_rn", "jmc_rn", "inmtf_rn",
+  "inmtl_rn", "inmtod_rn", "inmmc_rn", "awf_rn", "awl_rn", "awtod_rn", "awmc_rn", "stf_rn", "stl_rn",
+  "pct_of_poverty"  # drop this once since it's also in input.pop and we don't need it twice
+)))
 
 # in case households aren't numeric - make the columns numeric
 for(i in names(input.pop.households)){

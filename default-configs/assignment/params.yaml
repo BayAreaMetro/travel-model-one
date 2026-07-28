@@ -1,0 +1,247 @@
+# AequilibraE assignment / skim model parameters for Travel Model One.
+#
+# Every value here is MODEL POLICY ported from the legacy Cube job files (provenance
+# noted per block) -- not engine code.  The engine (src/tm1/assignment/aeq) loads this
+# file at start via tm1.assignment.params.load_aeq_params(); a scenario may point
+# at an alternate copy with `assignment: params: <path>` (e.g. fare studies).
+#
+# Transit mode-code buckets used throughout (TM1 network convention):
+#   1-9 support (walk/drive access, egress, transfer, funnels), 10-79 local bus,
+#   80-99 express bus, 100-109 ferry, 110-119 light rail, 120-129 heavy rail,
+#   130-139 commuter rail.
+
+zones:
+  n_taz: 1475
+
+periods:
+  names: [EA, AM, MD, PM, EV]
+  # capacity factor = hours represented by each period (HwyAssign.job capfac)
+  capfac: {EA: 3.0, AM: 4.0, MD: 5.0, PM: 4.0, EV: 8.0}
+  # TRNBUILD line-file headway attribute per period (FREQ[1]..FREQ[5])
+  freq_field: {EA: freq1, AM: freq2, MD: freq3, PM: freq4, EV: freq5}
+
+transit_cost:
+  # perceived-cost factors: TransitAssign.job (assignment) / TransitSkims.job (skims)
+  assign_wait_perceive: 2.8        # iwaitfac / xwaitfac, assignment
+  skim_wait_perceive: 2.0          # iwaitfac / xwaitfac, skimming
+  walk_factor: 2.0                 # perceived factor on walk links
+  # escalating boarding penalties (perceived min; index = boardings so far)
+  assign_board_penalties: [0.0, 30.0, 45.0]            # TransitAssign.job
+  walk_board_penalties: [0.0, 20.0, 45.0, 50.0, 60.0]  # TransitSkims.job, walk access+egress
+  drive_board_penalties: [0.0, 30.0, 45.0, 50.0, 60.0] # TransitSkims.job, any drive leg
+  skim_max_perceived_min: 300.0    # TransitSkims.job maxpathtime (perceived)
+  skim_max_path_min: 180.0         # actual-time path prune
+  # S&F frequency inflation: shrinks the attractive set toward the lines Cube's COMBINE
+  # would pool.  Calibrated with the pooled wait reporting below (AM, trip-weighted:
+  # heavy-rail initial wait +0.01 min, transfer wait +0.20 min vs Cube).  Per-line-haul
+  # overrides allowed under `linehauls:`.
+  spread_window: 2.0
+  # IWAITMAX (transit_combined_headways.block): cap the wait COST to board long-headway
+  # Caltrain / ferry so sparse schedules stay in the choice set
+  iwaitmax:
+    max_min: 25.0
+    modes: [100, 101, 102, 103, 104, 130]
+  # ferry sub-band of the lrf key band, reported separately as FERRYIVT
+  ferry_band: [100, 109]
+  # per line-haul path: excluded mode ranges (token_skipmodes), perceived-IVT factors
+  # by mode range (token_modefac), and the premier "key" band (KEYIVT reporting +
+  # hierarchical premier filter; null = keep every reachable OD).
+  # 'trn' is Cube's generic all-modes skim-only path (feeds the accessibility
+  # composite); it has no key band and no exact fare pass.
+  # COMBINE (transit_combined_headways.block): Cube pools the lines waited for together
+  # at a stop into ONE service and charges half their COMBINED headway -- but
+  # `MAXDIFF = 130*20.0` with `MAXDIFF[130] = 10` means commuter-rail patterns do NOT
+  # pool ("don't combine baby bullets with slow lines if they're significantly slower"),
+  # while every other mode does.  wait_pool encodes exactly that: true -> report the
+  # combined headway of the boarded services; false -> the boarded line's own headway.
+  linehauls:
+    com:
+      skip: []
+      fac: [[10, 79, 1.5], [80, 99, 1.2], [100, 109, 1.1], [110, 119, 1.1],
+            [120, 129, 1.1], [130, 139, 1.0]]
+      key_band: [130, 139]
+      wait_pool: false          # MAXDIFF[130]=10: bullets do not pool with locals
+      spread_window: 1.5
+    hvy:
+      skip: [[130, 139]]
+      fac: [[10, 79, 1.5], [80, 99, 1.2], [100, 109, 1.1], [110, 119, 1.1],
+            [120, 129, 1.0]]
+      key_band: [120, 129]
+    exp:
+      skip: [[130, 139], [120, 129]]
+      fac: [[10, 79, 1.5], [80, 99, 1.0], [100, 109, 1.5], [110, 119, 1.5]]
+      key_band: [80, 99]
+    lrf:
+      skip: [[130, 139], [120, 129], [80, 99]]
+      fac: [[10, 79, 1.5], [100, 109, 1.0], [110, 119, 1.0]]
+      key_band: [100, 119]      # "light rail / ferry" combined (Cube ivtLRF)
+    loc:
+      skip: [[130, 139], [120, 129], [80, 99], [100, 119]]
+      fac: [[10, 79, 1.0]]
+      key_band: null
+    trn:
+      skip: []
+      fac: [[10, 139, 1.0]]
+      key_band: null
+
+skim_output:
+  # run types: (access token, egress token, access link mode, egress link mode)
+  access_egress: [[wlk, wlk, 1, 6], [drv, wlk, 2, 6], [wlk, drv, 1, 7]]
+  # line-hauls skimmed for level of service each iteration...
+  linehauls: [loc, lrf, exp, hvy, com, trn]
+  # ...and the subset with an exact operator-graph fare pass (trn excluded: the pooled
+  # path has no single rail fare structure, and no consumer reads TRN fare)
+  fare_linehauls: [loc, lrf, exp, hvy, com]
+  # ActivitySim OMX conventions: times/distances x100, fare cents, boardings a count
+  token_scale:
+    TOTIVT: 100.0
+    KEYIVT: 100.0
+    FERRYIVT: 100.0
+    IWAIT: 100.0
+    XWAIT: 100.0
+    WAUX: 100.0
+    WACC: 100.0
+    WEGR: 100.0
+    DTIM: 100.0
+    DDIST: 100.0
+    BOARDS: 1.0
+    FARE: 1.0
+  token_name: {FARE: FAR}        # matrix-name token differs from component key
+  # which components each line-haul publishes (trn: what accessibility reads)
+  linehaul_tokens:
+    loc: [TOTIVT, IWAIT, XWAIT, WAUX, BOARDS, FARE]
+    lrf: [TOTIVT, KEYIVT, FERRYIVT, IWAIT, XWAIT, WAUX, BOARDS, FARE]
+    exp: [TOTIVT, KEYIVT, IWAIT, XWAIT, WAUX, BOARDS, FARE]
+    hvy: [TOTIVT, KEYIVT, IWAIT, XWAIT, WAUX, BOARDS, FARE]
+    com: [TOTIVT, KEYIVT, IWAIT, XWAIT, WAUX, BOARDS, FARE]
+    trn: [TOTIVT, IWAIT, XWAIT, WACC, WAUX, WEGR, BOARDS]
+  drive_tokens: [DTIM, DDIST]    # added when access or egress is drive
+
+bus_time:
+  # PrepHwyNet.job BUS_TIME: bus in-vehicle delay (min/mile) by area type, applied
+  # off-freeway; freeways/expressways (FT 1,2,3,8) get no bus delay
+  delay_by_at: {0: 2.46, 1: 2.46, 2: 1.74, 3: 1.74, 4: 1.14, 5: 0.08}
+  min_speed: 3.0                 # congested-speed floors (mph)
+  min_speed_fwy: 6.0
+  brt3_speed_cap: 35.0           # BRT=3 lines: min(congested, 35 mph)
+  fallback_speed: 20.0           # links absent from highway export + reference
+  fallback_dist: 0.25            # ...and with no coded distance (miles)
+
+rail_fare:
+  # distance-curve fit sources per line-haul + the DISTANCE-priced fare mode band
+  # (lrf band = ferry only; light rail 110-119 is flat, priced by boarding XFARE)
+  hvy: {far_files: [BART.far], band: [120, 129]}
+  lrf: {far_files: [Ferry.far], band: [100, 109]}
+  com: {far_files: [Caltrain.far, Amtrak.far, ACE.far, SMART.far], band: [130, 139]}
+
+highway:
+  # generalized-cost constants (hwyParam.block / HwyAssign.job)
+  vot: 15.0                    # auto value of time, $2000/hr
+  truck_vot: 30.0              # truck value of time, $2000/hr
+  sr2_toll_share: 1.75         # shared-ride-2 toll cost share (toll split across occupants)
+  sr3_toll_share: 2.50         # shared-ride-3+ toll cost share
+  truck_pce: 2.0               # combination-truck passenger-car equivalent
+  first_value_tollclass: 31    # tollclass >= this is a value-toll (express-lane) facility
+  # person-trip -> vehicle-trip occupancy divisors (HwyAssign vol[] definitions)
+  occupancy: {sr2: 2.0, sr3: 3.25}
+  # ActivitySim OMX personal-trip table -> assignment class.  NOTE: write_trip_matrices
+  # already divides the shared-ride tables by occupancy, so these OMX tables are
+  # VEHICLE trips (DA is occ-1, undivided); assemble_demand does NOT divide them again.
+  asim_tables:
+    DRIVEALONEFREE: da
+    DRIVEALONEPAY: datoll
+    SHARED2FREE: sr2
+    SHARED2PAY: sr2toll
+    SHARED3FREE: sr3
+    SHARED3PAY: sr3toll
+  # Ride-hail (TNC/taxi) person-trip -> vehicle-trip folding, mirroring PrepAssign.job
+  # steps 3-5: split each ride-hail mode's person-trips across occupancy bins (da=occ1,
+  # s2=occ2, s3=occ3), convert to vehicles, add the zero-passenger (deadhead) empty
+  # vehicles, and route taxi into the toll classes / TNC into the AV classes.
+  # Shares and ZPV are the reference run's own values (2023_TM161_IPA_35_testrun:
+  # INPUT/params.properties Taxi.*/TNC.*.share + TNC_ZPV_fac, as emitted to its generated
+  # taxi_tnc_occ_factors.csv).  Every da share is 0.00, so the daav class carries only the
+  # deadhead empty vehicles -- matching Cube, whose da_tnc is essentially all ZPV.
+  ridehail:
+    zpv_factor: 0.70                          # TNC_ZPV_fac: deadhead (empty) vehicle factor
+    tables: {taxi: TAXI, single: TNC_SINGLE, shared: TNC_SHARED}
+    shares:                                   # occupancy-bin split of each mode's persons
+      taxi:   {da: 0.00, s2: 0.53, s3: 0.47}  # taxi -> toll SR2/SR3
+      single: {da: 0.00, s2: 0.53, s3: 0.47}  # TNC_SINGLE -> AV SR2/SR3
+      shared: {da: 0.00, s2: 0.18, s3: 0.82}  # TNC_SHARED  -> AV SR2/SR3
+  # highway level-of-service skim classes: (assignment class, OMX prefix, is_toll)
+  skim_classes: [[da, SOV, false], [sr2, HOV2, false], [sr3, HOV3, false],
+                 [datoll, SOVTOLL, true], [sr2toll, HOV2TOLL, true],
+                 [sr3toll, HOV3TOLL, true]]
+  # volume-delay functions (SpeedFlowCurve.block): freeways (FT 1,2,8,9) a BPR variant
+  # TC = T0*(1 + coef*((V/C)/vc_norm)^power); connectors (FT 6) fixed T0; all else the
+  # Akcelik curve with Ja from the critical speed by capacity class (FreeFlowSpeed.block)
+  vdf:
+    bpr: {coef: 0.20, vc_norm: 0.75, power: 6}
+    akcelik: {quarter: 0.25, j_scale: 16.0}
+    freeway_ft: [1, 2, 8, 9]
+    fixed_ft: [6]
+    max_capclass: 62             # capclass = areatype*10 + facilitytype, capped here
+    default_critspd: 47.087      # capacity classes absent from the table
+    critspd_by_capclass:         # critical speed (mph) by capclass (FreeFlowSpeed.block)
+      1: 18.835
+      2: 25.898
+      3: 11.772
+      4: 4.709
+      5: 11.772
+      6: 47.087
+      7: 7.063
+      8: 25.898
+      9: 25.898
+      10: 14.126
+      11: 18.835
+      12: 25.898
+      13: 11.772
+      14: 4.709
+      15: 11.772
+      16: 47.087
+      17: 9.417
+      18: 25.898
+      19: 28.252
+      20: 16.480
+      21: 21.189
+      22: 28.252
+      23: 14.126
+      24: 7.063
+      25: 14.126
+      26: 47.087
+      27: 11.772
+      28: 28.252
+      29: 30.607
+      30: 18.835
+      31: 21.189
+      32: 28.252
+      33: 14.126
+      34: 9.417
+      35: 14.126
+      36: 47.087
+      37: 11.772
+      38: 28.252
+      39: 23.543
+      40: 9.417
+      41: 23.543
+      42: 30.607
+      43: 16.480
+      44: 11.772
+      45: 16.480
+      46: 47.087
+      47: 14.126
+      48: 30.607
+      49: 21.189
+      50: 11.772
+      51: 23.543
+      52: 30.607
+      53: 16.480
+      54: 14.126
+      55: 16.480
+      56: 47.087
+      57: 16.480
+      58: 30.607
+      59: 23.543
+      60: 16.480
+      62: 37.962
