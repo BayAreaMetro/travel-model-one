@@ -1,0 +1,130 @@
+# Base 2023 CTRAMP Scenario — run the legacy Java model via Python orchestration
+#
+# Same model, same inputs, same results as the batch-file workflow; only the
+# orchestration changes (RunModel.bat -> `tm1 run --scenario base_2023_ctramp`).
+#
+# Runs one full global iteration: CT-RAMP demand -> Cube assignment -> feedback
+# -> skims.  Every Cube .job script is the stock one, run unmodified.
+#
+# Requires Cube Voyager + licence.  Set `reference_run` and `proj_dir` below;
+# setup.copy_inputs fetches everything else, so the run is self-contained and
+# does not write into the reference run.
+
+slack: "off"
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
+proj_dir: "E:/Tests/base_2023_ctramp"
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  DERIVED PATHS — generally no need to change                               │
+# └─────────────────────────────────────────────────────────────────────────────┘
+ctramp_output_dir: "{proj_dir}/main"
+
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+steps:
+  # --- 1. Setup: create project directory structure ---
+  setup:
+    copy_inputs:
+      land_use:
+        from: "{reference_run}/landuse/tazData.csv"
+        to: "{proj_dir}/landuse/tazData.csv"
+      walk_shares:
+        from: "{reference_run}/landuse/walkAccessBuffers.float.csv"
+        to: "{proj_dir}/landuse/walkAccessBuffers.float.csv"
+      households:
+        from: "{reference_run}/popsyn/hhFile.csv"
+        to: "{proj_dir}/popsyn/hhFile.csv"
+      persons:
+        from: "{reference_run}/popsyn/personFile.csv"
+        to: "{proj_dir}/popsyn/personFile.csv"
+      skims:
+        from: "{reference_run}/skims"
+        to: "{proj_dir}/skims"
+        glob: "*.tpp"
+      accessibility:
+        from: "{reference_run}/skims/accessibility.csv"
+        to: "{proj_dir}/skims/accessibility.csv"
+      ctramp_model:
+        from: "{reference_run}/CTRAMP/model"
+        to: "{proj_dir}/CTRAMP/model"
+      shadow_prices:
+        from: "{reference_run}/main/ShadowPricing_5.csv"
+        to: "{proj_dir}/main/ShadowPricing_5.csv"
+      ctramp_runtime:
+        from: "{reference_run}/CTRAMP/runtime"
+        to: "{proj_dir}/CTRAMP/runtime"
+      # --- Cube assignment inputs -------------------------------------------
+      ctramp_scripts:
+        from: "{reference_run}/CTRAMP/scripts"
+        to: "{proj_dir}/CTRAMP/scripts"
+      hwy:
+        from: "{reference_run}/hwy"
+        to: "{proj_dir}/hwy"
+      nonres:
+        from: "{reference_run}/nonres"
+        to: "{proj_dir}/nonres"
+
+  # --- 2. Simulate: run CTRAMP Java demand model ---
+  #
+  # Iteration modes:
+  #   iterations: 3        — full loop: iters 1→3 with sample ramp (0.15, 0.30, 0.50)
+  #   iteration: 3         — single run at iter 3 (e.g. for quick testing)
+  #
+  # If sample_rate is set, it overrides the default per-iteration ramp.
+  # Shadow pricing is auto-configured per iteration when enabled.
+  #
+  simulate_ctramp:
+    project_dir: "{proj_dir}"
+    runtime_dir: "{proj_dir}/CTRAMP/runtime"
+    host_ip: "localhost"
+    threads: 48 # It will reserve 2 threads for infrastructure to leave some headroom.
+    iterations: 1          # one global iteration (demand -> assign -> feedback -> skims)
+    # iteration: 3         # single iteration (uncomment to skip the loop) and just run one "iteration 3"
+    # sample_rate: 0.50    # uncomment to override the default per-iteration ramp
+    seed: 0
+    shadow_pricing: true   # set false to disable shadow pricing
+    # All components enabled for full model run.
+    # Set individual components to false to disable them.
+    components:
+      UsualWorkAndSchoolLocationChoice: true
+      AutoOwnership: true
+      FreeParking: true
+      CoordinatedDailyActivityPattern: true
+      IndividualMandatoryTourFrequency: true
+      MandatoryTourDepartureTimeAndDuration: true
+      MandatoryTourModeChoice: true
+      JointTourFrequency: true
+      JointTourLocationChoice: true
+      JointTourDepartureTimeAndDuration: true
+      JointTourModeChoice: true
+      IndividualNonMandatoryTourFrequency: true
+      IndividualNonMandatoryTourLocationChoice: true
+      IndividualNonMandatoryTourDepartureTimeAndDuration: true
+      IndividualNonMandatoryTourModeChoice: true
+      AtWorkSubTourFrequency: true
+      AtWorkSubTourLocationChoice: true
+      AtWorkSubTourDepartureTimeAndDuration: true
+      AtWorkSubTourModeChoice: true
+      StopFrequency: true
+      StopLocation: true
+
+  # --- 3. Assignment: Cube highway + transit, then feedback ---
+  #
+  # Runs RunIteration.bat's Cube half, in its order:
+  #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
+  # Leaves hwy/avgLOAD{PERIOD}.net and refreshed skims for the next iteration.
+  #
+  # Needs CTRAMP/scripts, hwy/ and nonres/ in the project dir (copied above).
+  #
+  assignment:
+    proj_dir: "{proj_dir}"
+    do_nonres: true        # internal/external, truck, air passenger, HSR models
+    do_transit: true       # transit assignment + skims (15-node cluster)
+    build_skims: true      # rebuild highway skims + accessibility afterwards
+    cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
