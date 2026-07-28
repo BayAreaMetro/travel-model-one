@@ -13,13 +13,13 @@ going live in production; phase 1 is the platform both eventually run on; phase 
 legacy cleanup that follows once track A has landed and CT-RAMP's remaining lifespan is
 clearer.
 
-| # | Phase | Status |
-|---|---|---|
-| 1 | Modernize the model runtime pipeline | **in progress — this PR** |
-| 2 | ActivitySim swap-in | not started — pending phase 1 + full PBA50 review |
-| 3 | Housekeeping: legacy triage | not started |
-| 4 | Assignment backend upgrade (Track B live) | prototype only (Bonus 3) — needs buy-in |
-| 5 | Beyond: network enhancements, etc. | not scoped |
+| # | Phase | Status | PR |
+|---|---|---|---|
+| 1 | Modernize the model runtime pipeline | **in progress** | not yet opened |
+| 2 | ActivitySim swap-in | started — pending phase 1 + full PBA50 review | — |
+| 3 | Housekeeping: legacy triage | not started | — |
+| 4 | Assignment backend upgrade (Track B live) | prototype only (Bonus 3) — needs buy-in | — |
+| 5 | Beyond: network enhancements, etc. | not scoped | — |
 
 ### 1. Modernize the model runtime pipeline
 
