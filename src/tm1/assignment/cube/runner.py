@@ -189,7 +189,7 @@ def _progress_mtime(cwd: Path, logfile: Path, commpath: Path | None = None) -> f
     return latest
 
 
-def _run_via_schtasks(
+def _run_via_schtasks(  # noqa: C901
     job: Path,
     cwd: Path,
     *,
@@ -197,15 +197,23 @@ def _run_via_schtasks(
     timeout: float,
     cluster_nodes: int | None = None,
     commpath: Path | None = None,
-) -> int:
-    """Run ``runtpp <job>`` in the interactive session via schtasks; block."""
+) -> tuple[int, Path]:
+    """Run ``runtpp <job>`` in the interactive session via schtasks; block.
+
+    Returns the engine exit code and the path of the log it wrote (unique per
+    run, so the caller never reads a previous run's output).
+    """
     sentinel = cwd / f"_cube_{job.stem}.sentinel"
-    logfile = cwd / f"_cube_{job.stem}.log"
+    # Unique per run.  A job killed mid-write (e.g. by license recovery) can leave
+    # a handle on its log that outlives the process, making the path unwritable;
+    # a fresh name sidesteps that instead of failing the next run.
+    logfile = cwd / f"_cube_{job.stem}_{os.getpid()}_{int(time.time())}.log"
     bat = _write_job_bat(
         job, cwd, sentinel, logfile, env_extra,
         cluster_nodes=cluster_nodes, commpath=commpath,
     )
     sentinel.unlink(missing_ok=True)
+
     task = f"tm1_cube_{job.stem}"
 
     subprocess.run(
@@ -277,7 +285,14 @@ def _run_via_schtasks(
     finally:
         subprocess.run(["schtasks", "/delete", "/tn", task, "/f"], capture_output=True, check=False)
 
-    return int(sentinel.read_text().strip() or "1")
+    if not logfile.exists():
+        msg = (
+            f"Cube job {job.name} wrote a sentinel but no log ({logfile.name}); "
+            f"the output redirect never landed."
+        )
+        raise CubeJobError(msg)
+
+    return int(sentinel.read_text().strip() or "1"), logfile
 
 
 def run_cube_job(
@@ -354,9 +369,8 @@ def run_cube_job(
             )
             rc, log_text = proc.returncode, proc.stdout or ""
     else:
-        logfile = cwd / f"_cube_{job.stem}.log"
         try:
-            rc = _run_via_schtasks(
+            rc, logfile = _run_via_schtasks(
                 job, cwd, env_extra=env_extra, timeout=timeout,
                 cluster_nodes=cluster_nodes, commpath=cpath,
             )
@@ -367,7 +381,7 @@ def run_cube_job(
             # here: killing them in a retry loop is what breaks the license.
             log.warning("Cube job %s failed (%s) — soft recover, retry once", job.name, exc)
             recover_license()
-            rc = _run_via_schtasks(
+            rc, logfile = _run_via_schtasks(
                 job, cwd, env_extra=env_extra, timeout=timeout,
                 cluster_nodes=cluster_nodes, commpath=cpath,
             )

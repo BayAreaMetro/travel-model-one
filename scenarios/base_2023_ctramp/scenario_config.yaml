@@ -31,12 +31,11 @@ steps:
   # --- 1. Setup: create project directory structure ---
   setup:
     copy_inputs:
-      land_use:
-        from: "{reference_run}/landuse/tazData.csv"
-        to: "{proj_dir}/landuse/tazData.csv"
-      walk_shares:
-        from: "{reference_run}/landuse/walkAccessBuffers.float.csv"
-        to: "{proj_dir}/landuse/walkAccessBuffers.float.csv"
+      # whole dir: CT-RAMP reads tazData.csv, but the Cube nonres jobs read the
+      # .dbf twin (TruckTripGeneration.job -> landuse	azdata.dbf)
+      landuse:
+        from: "{reference_run}/landuse"
+        to: "{proj_dir}/landuse"
       households:
         from: "{reference_run}/popsyn/hhFile.csv"
         to: "{proj_dir}/popsyn/hhFile.csv"
@@ -69,6 +68,18 @@ steps:
       nonres:
         from: "{reference_run}/nonres"
         to: "{proj_dir}/nonres"
+      # PrepAssign.job reads this by bare relative path, so it must sit at the
+      # project root rather than under a subdirectory
+      taxi_tnc_occ_factors:
+        from: "{reference_run}/taxi_tnc_occ_factors.csv"
+        to: "{proj_dir}/taxi_tnc_occ_factors.csv"
+      # Transit line files, fare tables and support links.  `glob: "*"` takes the
+      # top-level files only -- the reference run's TransitAssignment.iter* output
+      # directories are skipped, since each iteration rebuilds its own.
+      trn:
+        from: "{reference_run}/trn"
+        to: "{proj_dir}/trn"
+        glob: "*"
 
   # --- 2. Simulate: run CTRAMP Java demand model ---
   #
@@ -124,6 +135,8 @@ steps:
   #
   assignment:
     proj_dir: "{proj_dir}"
+    model_year: 2023       # IxForecasts_horizon.job branches on this
+    future: PBA50          # project IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/TRR -> PBA50
     do_nonres: true        # internal/external, truck, air passenger, HSR models
     do_transit: true       # transit assignment + skims (15-node cluster)
     build_skims: true      # rebuild highway skims + accessibility afterwards
