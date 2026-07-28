@@ -1,0 +1,34 @@
+coefficient_name,value,constrain
+coef_mode_logsum,0.6755,F
+# --- Escort (EscortKids = EscortNoKids in CTRAMP) ---
+coef_escort_dist_0_1,-1.1977655147571176,F
+coef_escort_dist_1_2,0.0,F
+coef_escort_dist_2_5,-0.6289927820320708,F
+coef_escort_dist_5_15,-0.23712002265753013,F
+coef_escort_dist_15_plus,-0.07343747740785922,F
+# --- Shopping (0-1 and 1-2 are zero in spec; 5-15 = 15+ in CTRAMP) ---
+coef_shopping_dist_2_5,-0.5655437053878303,F
+coef_shopping_dist_5_15,-0.18324871283782596,F
+coef_shopping_dist_15_plus,-0.18324871283782598,F
+# --- EatOut ---
+coef_eatout_dist_0_1,-1.2156003307335235,F
+coef_eatout_dist_1_2,-0.39270000000000005,F
+coef_eatout_dist_2_5,-0.4407112449207742,F
+coef_eatout_dist_5_15,-0.12400000000000012,F
+coef_eatout_dist_15_plus,-0.06187962348431153,F
+# --- OthMaint (0-1 and 1-2 are zero in spec; 5-15 = 15+ in CTRAMP) ---
+coef_othmaint_dist_2_5,-0.6054981727491361,F
+coef_othmaint_dist_5_15,-0.10927638842708687,F
+coef_othmaint_dist_15_plus,-0.10927638842708702,F
+# --- Social ---
+coef_social_dist_0_1,-1.2230579450344616,F
+coef_social_dist_1_2,-0.23649999999999993,F
+coef_social_dist_2_5,-0.40562825034337086,F
+coef_social_dist_5_15,-0.14837316395533712,F
+coef_social_dist_15_plus,-0.06593211093971174,F
+# --- OthDiscr ---
+coef_othdiscr_dist_0_1,-0.21637269418766936,F
+coef_othdiscr_dist_1_2,-0.022633217744460143,F
+coef_othdiscr_dist_2_5,-0.34421981398627466,F
+coef_othdiscr_dist_5_15,-0.1725501679165442,F
+coef_othdiscr_dist_15_plus,-0.17413892226443609,F
