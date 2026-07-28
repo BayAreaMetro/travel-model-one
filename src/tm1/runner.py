@@ -43,10 +43,17 @@ from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 
+import yaml
+
 import tm1.steps.assignment as assignment_step
+import tm1.steps.convert_skims as convert_skims_step
+import tm1.steps.populationsim as populationsim_step
+import tm1.steps.prepare_survey as prepare_survey_step
 import tm1.steps.setup as setup_step
+import tm1.steps.simulate_activitysim as simulate_activitysim_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.summaries.calibration as calibration_step
+import tm1.steps.summaries.core as core_step
 from tm1 import slack
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
@@ -71,8 +78,13 @@ def _fmt_elapsed(seconds: float) -> str:
 STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
     "walk_access_buffers": setup_step.run_walk_access_buffers,
+    "convert_skims": convert_skims_step.run,
+    "prepare_survey": prepare_survey_step.run,
+    "populationsim": populationsim_step.run,
+    "simulate_activitysim": simulate_activitysim_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,
+    "core_summaries": core_step.run,
     "calibration": calibration_step.run,
 }
 
@@ -186,6 +198,19 @@ def _load_step(step_name: str, steps_cfg: dict, scenario_dir: Path) -> Callable:
     return func
 
 
+def _merged_asim_settings(sim_cfg: dict, base_model_dir: object) -> dict:
+    """Merge ``settings.yaml`` down the ActivitySim config-inheritance chain."""
+    asim_cfg = sim_cfg.get("activitysim", sim_cfg) if sim_cfg else {}
+    settings: dict = {}
+    for c in reversed(asim_cfg.get("configs", [])):
+        p = Path(c) if Path(c).is_absolute() else Path(str(base_model_dir)) / c
+        sf = p / "settings.yaml"
+        if sf.exists():
+            with sf.open(encoding="utf-8") as f:
+                settings.update(yaml.safe_load(f) or {})
+    return settings
+
+
 def run_model(
     scenario_dir: Path,
     steps: list[str] | None = None,
@@ -223,13 +248,23 @@ def run_model(
         steps = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
 
     # Gather run parameters for the start notification
-    sim_cfg = steps_cfg.get("simulate_ctramp", {}) or {}
-    iterations = kwargs.get("iterations") or sim_cfg.get("iterations", 0)
-    threads = sim_cfg.get("threads", 1)
-    sample_rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
-    shadow = sim_cfg.get("shadow_pricing", False)
+    asim_step_cfg = steps_cfg.get("simulate_activitysim") or {}
+    if asim_step_cfg:
+        sim_cfg = asim_step_cfg
+        asim = _merged_asim_settings(
+            sim_cfg, kwargs.get("base_model_dir", scenario_dir.parent.parent))
+        sample = asim.get("households_sample_size", 0)
+        sample_str = "full" if sample == 0 else f"{sample:,} HH"
+        threads = asim.get("num_processes", 1)
+        shadow = asim.get("use_shadow_pricing", False)
+    else:
+        sim_cfg = steps_cfg.get("simulate_ctramp", {}) or {}
+        threads = sim_cfg.get("threads", 1)
+        rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
+        shadow = sim_cfg.get("shadow_pricing", False)
+        sample_str = "per-iteration ramp" if rate is None else f"{rate:.0%}"
 
-    sample_str = "per-iteration ramp" if sample_rate is None else f"{sample_rate:.0%}"
+    iterations = kwargs.get("iterations") or sim_cfg.get("iterations", 0)
     header = (
         f":rabbit2: Starting {label}\n"
         f"  • steps: {', '.join(steps)}\n"

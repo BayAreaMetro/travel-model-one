@@ -5,15 +5,18 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "numpy>=1.26",
+    "activitysim==1.5.1",
+    "numpy",  # floor governed by activitysim (pins <1.26)
     "openmatrix>=0.3.5",
     "pandas>=2.0",
     "plotly>=6.7.0",
     "polars>=1.39.3",
+    "populationsim==0.10.0",
     "pydantic>=2.0",
     "python-dotenv>=1.0",
     "pyyaml>=6.0",
     "requests>=2.31",
+    "travel-diary-survey-tools",
 ]
 
 [project.optional-dependencies]
@@ -24,6 +27,9 @@ transit = [
     "xlrd>=2.0",
     "pywin32>=304",
 ]
+
+[tool.uv.sources]
+travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }
 
 [project.scripts]
 tm1 = "tm1.cli:main"
