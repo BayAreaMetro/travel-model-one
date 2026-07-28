@@ -46,6 +46,7 @@ from types import ModuleType
 import tm1.steps.assignment as assignment_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
+import tm1.steps.summaries.calibration as calibration_step
 from tm1 import slack
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
@@ -72,6 +73,7 @@ STEPS: dict[str, Callable] = {
     "walk_access_buffers": setup_step.run_walk_access_buffers,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,
+    "calibration": calibration_step.run,
 }
 
 DEFAULT_STEPS = list(STEPS.keys())
