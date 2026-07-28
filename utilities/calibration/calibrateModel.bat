@@ -9,11 +9,11 @@
 :: dto (2012 02 15) gde (2009 04 22)
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-goto iter1
+:goto iter1
 
 :setup_model
 :: Setup:: copy over CTRAMP
-set GITHUB_DIR=\\tsclient\X\travel-model-one-calib1.5.2
+set GITHUB_DIR=X:\travel-model-one-tm1.7_calibration
 mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
@@ -26,7 +26,7 @@ copy /y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAM
 
 :setup_inputs
 :: copy over INPUTs from baseline
-set MODEL_SETUP_BASE_DIR=\\model2-d\Model2D-Share\Projects\2015_TM152_IPA_05
+set MODEL_SETUP_BASE_DIR=\\model3-b\Model3B-Share\Projects\2023_TM170_IPA_00_Cube6
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\landuse"        INPUT\landuse
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\nonres"         INPUT\nonres
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\popsyn"         INPUT\popsyn
@@ -39,7 +39,7 @@ mkdir main
 copy "%MODEL_SETUP_BASE_DIR%\main\ShadowPricing_7.csv"                            main
 
 :: source of skims to copy
-set SKIM_DIR=\\model2-d\Model2D-Share\Projects\2015_TM152_IPA_05
+set SKIM_DIR=\\model3-b\Model3B-Share\Projects\2023_TM170_IPA_00_Cube6
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -50,7 +50,7 @@ set SKIM_DIR=\\model2-d\Model2D-Share\Projects\2015_TM152_IPA_05
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
 
-set COMMPATH=E:\Model2D-Share\COMMPATH
+set COMMPATH=E:\Model3B-Share\COMMPATH
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
@@ -72,7 +72,7 @@ set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 :: get the base dir only
 for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
 :: the first four characters are model year
-set MODEL_YEAR=2015
+set MODEL_YEAR=2023
 
 
 :: --------TrnAssignment Setup
