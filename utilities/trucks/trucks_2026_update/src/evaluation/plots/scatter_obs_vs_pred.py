@@ -15,9 +15,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-import geopandas as gpd
 
-# from src.evaluation.run_evaluation import read_network
+from src.evaluation.vmt import read_network
 
 logger = logging.getLogger(__name__)
 
@@ -25,35 +24,11 @@ TRUCK_TYPES = ["HV", "SM"]
 TRUCK_LABELS = {"HV": "Heavy Trucks (HV)", "SM": "Very Small, Small & Medium Trucks (SM)"}
 
 
-def read_network(scenario_path: Path, iter) -> gpd.GeoDataFrame:
-    """
-    Read a scenario's loaded highway network and derive truck volumes.
-
-    Parameters
-    ----------
-    scenario_path : Path
-        Root of a scenario's output directory. The network is read from
-        ``hwy/iterTEST/avgload5period_links.shp``.
-
-    Returns
-    -------
-    gpd.GeoDataFrame
-        The network with at least ``link_id`` (``"A-B"``), ``vol_HV``,
-        ``vol_SM``, ``DISTANCE``, and ``geometry``. ``vol_HV`` sums the
-        non-tolled and tolled heavy-truck 24-hour volumes; ``vol_SM`` does the
-        same for small/medium trucks.
-    """
-    gdf = gpd.read_file(Path(scenario_path) / "hwy" / f"iter{iter}" / "avgload5period_links.shp")
-    gdf["link_id"] = gdf["A"].astype(str) + "-" + gdf["B"].astype(str)
-    gdf["vol_HV"] = gdf["VOL24HR_HV"] + gdf["VOL24HR_HVT"]
-    gdf["vol_SM"] = gdf["VOL24HR_SM"] + gdf["VOL24HR_SMT"]
-    return gdf
-
-
 def plot_scatter_all_scenarios(
     completed_scenarios: list[dict],
     observed: pd.DataFrame,
     scenario_color_map: dict[str, str],
+    iteration: str = 'TEST'
 ) -> dict[tuple[str, str], Figure]:
     """
     Build an observed-vs-predicted scatter plot for every scenario and truck type.
@@ -88,7 +63,7 @@ def plot_scatter_all_scenarios(
         name = scenario["name"]
         color = scenario_color_map.get(name, "#4E79A7")
         try:
-            gdf = read_network(Path(scenario["path"]), iter = "TEST")
+            gdf = read_network(Path(scenario["path"]), iteration = iteration)
         except Exception:
             logger.exception("Could not read network for scenario %s — skipping scatter", name)
             continue

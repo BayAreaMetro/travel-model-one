@@ -19,6 +19,7 @@ from openpyxl.utils import get_column_letter
 
 logger = logging.getLogger(__name__)
 
+OBSERVED_COLOR = "#AAAAAA"
 PALETTE = ["#4E79A7", "#F28E2B", "#59A14F", "#E15759", "#B07AA1", "#76B7B2"]
 
 TRUCK_TYPES = ["HV", "SM"]
@@ -39,13 +40,18 @@ def write_excel(
     cfg: dict,
     completed_scenarios: list[dict],
     scenario_color_map: dict[str, str],
-    trip_gen_table: pd.DataFrame,
+    output_dir: Path,
+    #Tables:
+    trip_ends_flows: pd.DataFrame,
+    trip_ends_tod: pd.DataFrame,
+    average_trip_length: pd.DataFrame,
+    coincidence_ratio: pd.DataFrame,
     vmt_table: pd.DataFrame,
-    trip_lengths: pd.DataFrmae, 
+    # Plots: 
     trip_distribution_figures: dict[tuple[str, str], Figure],
     scatter_figures: dict[tuple[str, str], Figure],
     vmt_figures: dict[str, Figure],
-    output_dir: Path,
+   
 ) -> None:
     """
     Write the comparison workbook with summary tables and embedded figures.
@@ -76,18 +82,55 @@ def write_excel(
     scenario_names = [s["name"] for s in completed_scenarios]
 
     _write_context_sheet(wb, cfg, completed_scenarios)
+    
+    # Tables: 
     _write_table_sheet(
-        wb, "Trip Generation", trip_gen_table, scenario_names, scenario_color_map,
-        totals_label="Total productions",
-    )
-    _write_table_sheet(
-        wb, "VMT by Type", vmt_table, scenario_names, scenario_color_map,
-        totals_label="Total",
+        wb,
+        "Trip Ends - IX flows",
+        trip_ends_flows,
+        scenario_names,
+        scenario_color_map,
+        totals_label="Total Truck Trips",
     )
 
     _write_table_sheet(
-         wb, "Average Trip Length", trip_lengths, scenario_names, scenario_color_map,
+        wb,
+        "Trip ends - Time of Day",
+        trip_ends_tod,
+        scenario_names,
+        scenario_color_map,
+        totals_label="Total Truck Trips",
+        )
+
+    _write_table_sheet(
+        wb,
+        "Trip Dist - Mean Travel Length",
+        average_trip_length,
+        scenario_names,
+        scenario_color_map,
+        observed_color=OBSERVED_COLOR,
+        number_format=DECIMAL_FORMAT,
+    )
+
+    _write_table_sheet(
+        wb,
+        "Trip Dist - Coincidence Ratio",
+        coincidence_ratio,
+        scenario_names,
+        scenario_color_map,
+        observed_color=OBSERVED_COLOR,
+        totals_label=None,
+        number_format=DECIMAL_FORMAT,
+    )
+
+    _write_table_sheet(
+        wb,
+        "Total Truck VMT",
+        vmt_table,
+        scenario_names,
+        scenario_color_map,
         totals_label="Total",
+        number_format=INT_FORMAT,
     )
 
     _write_plot_sheet(
@@ -208,76 +251,312 @@ def _write_context_sheet(wb: Workbook, cfg: dict, completed_scenarios: list[dict
     ws.freeze_panes = "A2"
     _autosize(ws)
 
-
 def _write_table_sheet(
     wb: Workbook,
     sheet_name: str,
     table: pd.DataFrame,
     scenario_names: list[str],
     scenario_color_map: dict[str, str],
-    totals_label: str,
+    totals_label: str | None = None,
+    observed_color: str | None = None,
+    number_format: str = INT_FORMAT,
 ) -> None:
-    """Write a summary table sheet (Trip Generation / VMT by Type)."""
+    """Write a summary table sheet.
+
+    Supports:
+        - Single-index or MultiIndex tables
+        - Scenario columns
+        - Optional Observed column
+        - Optional totals row
+        - Percent difference columns vs first scenario
+    """
+
     ws = wb.create_sheet(sheet_name)
     ws.sheet_view.showGridLines = False
 
+    # ------------------------------------------------------------------
+    # Determine index columns
+    # ------------------------------------------------------------------
+    if isinstance(table.index, pd.MultiIndex):
+        index_headers = [
+            name if name is not None else f"Level {i + 1}"
+            for i, name in enumerate(table.index.names)
+        ]
+    else:
+        index_headers = [table.index.name or "Category"]
+
+    n_index_cols = len(index_headers)
+
+    # ------------------------------------------------------------------
+    # Header row
+    # ------------------------------------------------------------------
+    for col_idx, header in enumerate(index_headers, start=1):
+        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell.font = Font(
+            name=FONT_NAME,
+            size=FONT_SIZE,
+            bold=True,
+        )
+
+    col = n_index_cols + 1
+
+    # Scenario columns present in the table
     present = [name for name in scenario_names if name in table.columns]
 
-    # --- Header row ---
-    ws.cell(row=1, column=1, value="Truck Type").font = Font(
-        name=FONT_NAME, size=FONT_SIZE, bold=True
-    )
-    col = 2
     scenario_cols: dict[str, int] = {}
+
     for name in present:
         cell = ws.cell(row=1, column=col, value=name)
         _style_header(cell, scenario_color_map.get(name, "#4E79A7"))
         scenario_cols[name] = col
         col += 1
 
-    # --- % diff columns vs the first scenario ---
+    # Observed columns
+    observed_cols = [
+        c for c in table.columns
+        if str(c).lower() == "observed"
+    ]
+
+    observed_col_map: dict[str, int] = {}
+
+    for name in observed_cols:
+        cell = ws.cell(row=1, column=col, value=name)
+
+        if observed_color:
+            _style_header(cell, observed_color)
+        else:
+            _style_header(cell, "#BDBDBD")
+
+        observed_col_map[name] = col
+        col += 1
+
+    # ------------------------------------------------------------------
+    # % Difference columns
+    # ------------------------------------------------------------------
     diff_cols: dict[str, int] = {}
+
     if len(present) >= 2:
         base = present[0]
+
         for name in present[1:]:
-            cell = ws.cell(row=1, column=col, value=f"% diff vs {base}")
-            _style_header(cell, _tint(scenario_color_map.get(name, "#4E79A7")), font_color="000000")
+            cell = ws.cell(
+                row=1,
+                column=col,
+                value=f"% diff vs {base}",
+            )
+
+            _style_header(
+                cell,
+                _tint(scenario_color_map.get(name, "#4E79A7")),
+                font_color="000000",
+            )
+
             diff_cols[name] = col
             col += 1
 
-    # --- Data rows ---
-    for r, truck_type in enumerate(table.index, start=2):
-        label_cell = ws.cell(row=r, column=1, value=str(truck_type))
-        label_cell.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True)
+    # ------------------------------------------------------------------
+    # Data rows
+    # ------------------------------------------------------------------
+    for r, idx in enumerate(table.index, start=2):
+
+        # Handle MultiIndex vs regular index
+        idx_values = idx if isinstance(idx, tuple) else (idx,)
+
+        for c, value in enumerate(idx_values, start=1):
+            label_cell = ws.cell(row=r, column=c, value=str(value))
+            label_cell.font = Font(
+                name=FONT_NAME,
+                size=FONT_SIZE,
+                bold=True,
+            )
+
+        # Scenario values
         for name in present:
-            value = table.loc[truck_type, name]
-            cell = ws.cell(row=r, column=scenario_cols[name], value=_num(value))
+            value = table.loc[idx, name]
+
+            cell = ws.cell(
+                row=r,
+                column=scenario_cols[name],
+                value=_num(value),
+            )
+
             cell.font = _data_font()
-            cell.number_format = INT_FORMAT if sheet_name != "Average Trip Length" else DECIMAL_FORMAT
+            cell.number_format = number_format
+
+        # Observed values
+        for name in observed_cols:
+            value = table.loc[idx, name]
+
+            cell = ws.cell(
+                row=r,
+                column=observed_col_map[name],
+                value=_num(value),
+            )
+
+            cell.font = _data_font()
+            cell.number_format = number_format
+
+        # Percent differences
         if len(present) >= 2:
+
             base = present[0]
-            base_val = table.loc[truck_type, base]
+            base_val = table.loc[idx, base]
+
             for name in present[1:]:
-                cell = ws.cell(row=r, column=diff_cols[name])
+
+                cell = ws.cell(
+                    row=r,
+                    column=diff_cols[name],
+                )
+
                 cell.font = _data_font()
-                cell.fill = _fill(_tint(scenario_color_map.get(name, "#4E79A7")))
+                cell.fill = _fill(
+                    _tint(
+                        scenario_color_map.get(name, "#4E79A7")
+                    )
+                )
+
                 cell.number_format = PCT_FORMAT
-                val = table.loc[truck_type, name]
-                if pd.notna(base_val) and base_val != 0 and pd.notna(val):
+
+                val = table.loc[idx, name]
+
+                if (
+                    pd.notna(base_val)
+                    and base_val != 0
+                    and pd.notna(val)
+                ):
                     cell.value = (val - base_val) / base_val
 
-    # --- Totals row ---
-    total_row = len(table.index) + 2
-    total_cell = ws.cell(row=total_row, column=1, value=totals_label)
-    total_cell.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True)
-    for name in present:
-        total = table[name].sum(skipna=True)
-        cell = ws.cell(row=total_row, column=scenario_cols[name], value=_num(total))
-        cell.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True)
-        cell.number_format = INT_FORMAT if sheet_name != "Average Trip Length" else DECIMAL_FORMAT
+    # ------------------------------------------------------------------
+    # Totals row
+    # ------------------------------------------------------------------
+    if totals_label:
+
+        total_row = len(table.index) + 2
+
+        total_cell = ws.cell(
+            row=total_row,
+            column=1,
+            value=totals_label,
+        )
+
+        total_cell.font = Font(
+            name=FONT_NAME,
+            size=FONT_SIZE,
+            bold=True,
+        )
+
+        # Scenario totals
+        for name in present:
+
+            total = table[name].sum(skipna=True)
+
+            cell = ws.cell(
+                row=total_row,
+                column=scenario_cols[name],
+                value=_num(total),
+            )
+
+            cell.font = Font(
+                name=FONT_NAME,
+                size=FONT_SIZE,
+                bold=True,
+            )
+
+            cell.number_format = number_format
+
+        # Observed totals (only if present)
+        for name in observed_cols:
+
+            total = table[name].sum(skipna=True)
+
+            cell = ws.cell(
+                row=total_row,
+                column=observed_col_map[name],
+                value=_num(total),
+            )
+
+            cell.font = Font(
+                name=FONT_NAME,
+                size=FONT_SIZE,
+                bold=True,
+            )
+
+            cell.number_format = number_format
 
     ws.freeze_panes = "A2"
     _autosize(ws)
+
+
+# def _write_table_sheet(
+#     wb: Workbook,
+#     sheet_name: str,
+#     table: pd.DataFrame,
+#     scenario_names: list[str],
+#     scenario_color_map: dict[str, str],
+#     totals_label: str,
+# ) -> None:
+#     """Write a summary table sheet (Trip Generation / VMT by Type)."""
+#     ws = wb.create_sheet(sheet_name)
+#     ws.sheet_view.showGridLines = False
+
+#     present = [name for name in scenario_names if name in table.columns]
+
+#     # --- Header row ---
+#     ws.cell(row=1, column=1, value="Truck Type").font = Font(
+#         name=FONT_NAME, size=FONT_SIZE, bold=True
+#     )
+#     col = 2
+#     scenario_cols: dict[str, int] = {}
+#     for name in present:
+#         cell = ws.cell(row=1, column=col, value=name)
+#         _style_header(cell, scenario_color_map.get(name, "#4E79A7"))
+#         scenario_cols[name] = col
+#         col += 1
+
+#     # --- % diff columns vs the first scenario ---
+#     diff_cols: dict[str, int] = {}
+#     if len(present) >= 2:
+#         base = present[0]
+#         for name in present[1:]:
+#             cell = ws.cell(row=1, column=col, value=f"% diff vs {base}")
+#             _style_header(cell, _tint(scenario_color_map.get(name, "#4E79A7")), font_color="000000")
+#             diff_cols[name] = col
+#             col += 1
+
+#     # --- Data rows ---
+#     for r, truck_type in enumerate(table.index, start=2):
+#         label_cell = ws.cell(row=r, column=1, value=str(truck_type))
+#         label_cell.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True)
+#         for name in present:
+#             value = table.loc[truck_type, name]
+#             cell = ws.cell(row=r, column=scenario_cols[name], value=_num(value))
+#             cell.font = _data_font()
+#             cell.number_format = INT_FORMAT if sheet_name != "Average Trip Length" else DECIMAL_FORMAT
+#         if len(present) >= 2:
+#             base = present[0]
+    #         base_val = table.loc[truck_type, base]
+    #         for name in present[1:]:
+    #             cell = ws.cell(row=r, column=diff_cols[name])
+    #             cell.font = _data_font()
+    #             cell.fill = _fill(_tint(scenario_color_map.get(name, "#4E79A7")))
+    #             cell.number_format = PCT_FORMAT
+    #             val = table.loc[truck_type, name]
+    #             if pd.notna(base_val) and base_val != 0 and pd.notna(val):
+    #                 cell.value = (val - base_val) / base_val
+
+    # # --- Totals row ---
+    # total_row = len(table.index) + 2
+    # total_cell = ws.cell(row=total_row, column=1, value=totals_label)
+    # total_cell.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True)
+    # for name in present:
+    #     total = table[name].sum(skipna=True)
+    #     cell = ws.cell(row=total_row, column=scenario_cols[name], value=_num(total))
+    #     cell.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True)
+    #     cell.number_format = INT_FORMAT if sheet_name != "Average Trip Length" else DECIMAL_FORMAT
+
+    # ws.freeze_panes = "A2"
+    # _autosize(ws)
 
 
 def _write_scatter_sheet(

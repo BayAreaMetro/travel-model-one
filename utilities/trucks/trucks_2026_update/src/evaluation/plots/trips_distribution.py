@@ -19,7 +19,7 @@ def plot_trip_distributions(completed_scenarios: list[dict]):
     "Very Small": {
         "distance": "distanceVSM", 
         "trips": "verySmall",
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_strucks.csv", #TODO: Change when I have the right verysmall trucks
+        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_vstrucks.csv", 
         }, 
     "Small": {
         "distance": "distanceSML", 

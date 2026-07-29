@@ -18,7 +18,23 @@ import yaml
 from src.models.travel_model.config import RunConfig
 from src.models.travel_model.pipeline import run_all
 from src.evaluation.run_evaluation import run_evaluation
+from pathlib import Path
+import yaml
 
+
+def save_yaml(data: dict, path: str | Path) -> None:
+    """Save a dictionary to a YAML file."""
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(
+            data,
+            f,
+            sort_keys=False,
+            default_flow_style=False,
+        )
 
 def main() -> None:
     """Parse ``--config``, validate the YAML into a ``RunConfig``, and run everything.
@@ -42,9 +58,12 @@ def main() -> None:
     args = parser.parse_args()
 
     raw_cfg = yaml.safe_load(args.config.read_text())
+    outpath = raw_cfg["evaluation_output"]
+    save_yaml(raw_cfg, Path(outpath, "configurations_used.yaml")) # For reproducibility
     config = RunConfig.model_validate(raw_cfg)
     completed_scenarios = run_all(config)
     run_evaluation(raw_cfg, completed_scenarios)
+
 
 
 if __name__ == "__main__":

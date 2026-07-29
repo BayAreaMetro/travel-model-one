@@ -35,9 +35,10 @@ import geopandas as gpd
 # from openpyxl.worksheet.worksheet import Worksheet
 # from openpyxl.utils import get_column_letter
 
+from src.evaluation.trip_ends import long_format_trips_by_scenario, build_trip_ends_flows_table, build_trip_ends_tod_table
+from src.evaluation.trip_distribution import build_trip_distribution, build_average_trip_distance_table, build_coincidence_ratio_table, plot_trip_distributions
+from src.evaluation.vmt import build_vmt_table, plot_vmt_comparison
 from src.evaluation.plots.scatter_obs_vs_pred import plot_scatter_all_scenarios, read_network
-from src.evaluation.plots.vmt_comparison import plot_vmt_comparison
-from src.evaluation.plots.trips_distribution import plot_trip_distributions
 from src.evaluation.excel import write_excel
 
 from src.utils import setup_logging, save
@@ -50,7 +51,6 @@ PALETTE = ["#4E79A7", "#F28E2B", "#59A14F", "#E15759", "#B07AA1", "#76B7B2"]
 
 TRUCK_TYPES = ["HV", "SM"]
 TRUCK_LABELS = {"HV": "Heavy Trucks (HV)", "SM": "Very Small, Small & Medium Trucks (SM)"}
-ITER = None
 
 
 def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
@@ -73,8 +73,7 @@ def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
     traceback and the remaining steps still run. Nothing here re-raises.
     """
     setup_logging(log_dir="data/logs", log_name="evaluation")
-    global ITER
-    ITER = cfg.get("iteration")
+    iteration = cfg.get("iteration")
 
     logger.info("=" * 60)
     logger.info("Starting truck model evaluation pipeline")
@@ -94,69 +93,93 @@ def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
     observed = read_observed(cfg)
     scenario_color_map = assign_colors(completed_scenarios)
 
-    # --- Tables ---
-    logger.info("Building trip generation table")
-    trip_gen_table = _safe(build_trip_gen_table, completed_scenarios, default=pd.DataFrame())
-    logger.info("Building VMT table (full network)")
-    vmt_table = _safe(build_vmt_table, completed_scenarios, default=pd.DataFrame())
+    # ----------------
+    #  Tables 
+    # -----------------
+    trips = _safe(long_format_trips_by_scenario, completed_scenarios, default = {})
+    logger.info("Building Table - Trip Ends by Truck Type and Internal/External Flows")
+    trip_ends_flows = _safe(build_trip_ends_flows_table, trips, default=pd.DataFrame())
 
-    # Observed-links-only VMT for an apples-to-apples chart comparison.
-    observed_link_ids = set(observed["link_id"].astype(str))
-    vmt_table_obs = _safe(
-        build_vmt_table_observed_links_only,
-        completed_scenarios,
-        observed_link_ids,
-        default=pd.DataFrame(),
-    )
+    logger.info("Building Table - Trip Ends by Truck Type and Time of Day")
+    trip_ends_tod = _safe(build_trip_ends_tod_table, trips, default=pd.DataFrame())
 
-    # DISTANCE lives on the network, not the observed CSV. Derive a
-    # link_id -> DISTANCE (miles) lookup from the first scenario's network — all
-    # scenarios share the same link geometry — for observed-VMT calculations.
-  
-    reference_network = read_network(
-        Path(completed_scenarios[0]["path"]), ITER
-        )
-    network_distance = reference_network.set_index("link_id")["DISTANCE"]
+    logger.info("Building Table - Average Trip Distance by Truck Type")
+    trip_distributions = _safe(build_trip_distribution, completed_scenarios, default={})
+    average_trip_length = _safe(build_average_trip_distance_table, trip_distributions, default=pd.DataFrame())
 
-    # --- Plots (one function per file in plots/) ---
+    logger.info("Building Table - Trip Distribution Coincidence Ratio by Truck Type")
+    coincidence_ratio = _safe(build_coincidence_ratio_table, trip_distributions, default=pd.DataFrame())
+
+    logger.info("Building Table - Total VMT (full network) by Truck Type")
+    vmt_table = _safe(build_vmt_table, completed_scenarios, iter = iteration, filters = None, default=pd.DataFrame())
     
+    # ----------------
+    #  Plots 
+    # -----------------
+
+    logger.info("Building Trip Distribution Plots")
+    trip_distribution_figures = _safe(
+        plot_trip_distributions,
+        trip_distributions,  
+        default={},
+        )
+
     logger.info("Building observed-vs-predicted scatter plots")
     scatter_figures = _safe(
         plot_scatter_all_scenarios,
         completed_scenarios,
         observed,
         scenario_color_map,
+        iteration,
         default={},
     )
+
     logger.info("Building VMT comparison plots")
-    vmt_figures = _safe(
-        plot_vmt_comparison,
-        vmt_table_obs,
-        observed,
-        network_distance,
-        scenario_color_map,
-        default={},
-    )
-
-    logger.info("Building Trip Distribution Plots")
-    trip_lengths = pd.DataFrame()
-    trip_distribution_figures, trip_lengths, coincidence_ratio  = plot_trip_distributions(
+    # Simulated VMT for links that have observed values. 
+    observed_link_ids = set(observed["link_id"].astype(str))
+    simulated_vmt = _safe(
+        build_vmt_table, 
         completed_scenarios, 
-    )
+        iter = iteration, 
+        filters = observed_link_ids, 
+        default=pd.DataFrame())
 
-    # --- Excel workbook (embeds the same figures, before the figures are closed) ---
+    # Link DISTANCE lives on the network. Derive a
+    # link_id -> DISTANCE (miles) lookup from the first scenario's network. All
+    # scenarios share the same link geometry. 
+    reference_network = read_network(
+        Path(completed_scenarios[0]["path"]), iteration
+        )
+    network_distance = reference_network.set_index("link_id")["DISTANCE"]
+
+    vmt_figures = _safe(
+            plot_vmt_comparison,
+            simulated_vmt,
+            observed,
+            network_distance,
+            scenario_color_map,
+            default={},
+        )
+
+    # ----------------
+    #  Excel 
+    # -----------------
     try:
         write_excel(
             cfg=cfg,
             completed_scenarios=completed_scenarios,
             scenario_color_map=scenario_color_map,
-            trip_gen_table=trip_gen_table,
+            output_dir=output_dir,
+            # Tables: 
+            trip_ends_flows=trip_ends_flows, 
+            trip_ends_tod=trip_ends_tod, 
+            average_trip_length=average_trip_length, 
+            coincidence_ratio=coincidence_ratio,
             vmt_table=vmt_table,
-            trip_lengths=trip_lengths,
+            # Plots: 
             trip_distribution_figures=trip_distribution_figures,
             scatter_figures=scatter_figures,
             vmt_figures=vmt_figures,
-            output_dir=output_dir,
         )
     except Exception:
         logger.exception("Failed to write Excel workbook")
@@ -176,10 +199,10 @@ def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
     logger.info("Evaluation pipeline finished. Outputs in %s", output_dir)
 
 
-def _safe(func, *args, default=None):
+def _safe(func, *args, default=None, **kwargs):
     """Call ``func(*args)`` returning ``default`` (logging a traceback) on error."""
     try:
-        return func(*args)
+        return func(*args, **kwargs)
     except Exception:
         logger.exception("Step %s failed", getattr(func, "__name__", func))
         return default
@@ -215,189 +238,6 @@ def read_observed(cfg: dict) -> pd.DataFrame:
     if "link_id" in df.columns:
         df["link_id"] = df["link_id"].astype(str)
     return df
-
-
-def read_truck_tg(scenario_path: Path) -> dict[str, int] | None:
-    """
-    Read total truck-production trips by truck type from ``nonres/TruckTG.dat``.
-
-    Parameters
-    ----------
-    scenario_path : Path
-        Root of a scenario's output directory.
-
-    Returns
-    -------
-    dict of str to int or None
-        Total production trips keyed by truck type
-        (``"Very Small"``, ``"Small"``, ``"Medium"``, ``"Large"``). Returns
-        ``None`` if the file does not exist.
-
-    Raises
-    ------
-    FileNotFoundError
-        Propagated by the caller's handling — see Notes.
-
-    Notes
-    -----
-    ``TruckTG.dat`` is a fixed-width file with no header and nine 12-character
-    columns: ``zone`` followed by production/attraction pairs for the four truck
-    sizes. Only productions are summed; the model balances attractions to
-    productions, so they would be redundant.
-    """
-    path = Path(scenario_path) / "nonres" / "TruckTG.dat"
-    if not path.exists():
-        raise FileNotFoundError(f"TruckTG.dat not found at {path}")
-
-    df = pd.read_fwf(
-        path,
-        widths=[12] * 9,
-        header=None,
-        names=[
-            "zone", "verySmallP", "verySmallA", "smallP", "smallA",
-            "mediumP", "mediumA", "largeP", "largeA",
-        ],
-    )
-
-    return {
-        "Very Small": int(df["verySmallP"].sum()),
-        "Small": int(df["smallP"].sum()),
-        "Medium": int(df["mediumP"].sum()),
-        "Large": int(df["largeP"].sum()),
-    }
-
-
-# def read_network(scenario_path: Path) -> gpd.GeoDataFrame:
-#     """
-#     Read a scenario's loaded highway network and derive truck volumes.
-
-#     Parameters
-#     ----------
-#     scenario_path : Path
-#         Root of a scenario's output directory. The network is read from
-#         ``hwy/iterTEST/avgload5period_links.shp``.
-
-#     Returns
-#     -------
-#     gpd.GeoDataFrame
-#         The network with at least ``link_id`` (``"A-B"``), ``vol_HV``,
-#         ``vol_SM``, ``DISTANCE``, and ``geometry``. ``vol_HV`` sums the
-#         non-tolled and tolled heavy-truck 24-hour volumes; ``vol_SM`` does the
-#         same for small/medium trucks.
-#     """
-#     gdf = gpd.read_file(Path(scenario_path) / "hwy" / f"iter{ITER}" / "avgload5period_links.shp")
-#     gdf["link_id"] = gdf["A"].astype(str) + "-" + gdf["B"].astype(str)
-#     gdf["vol_HV"] = gdf["VOL24HR_HV"] + gdf["VOL24HR_HVT"]
-#     gdf["vol_SM"] = gdf["VOL24HR_SM"] + gdf["VOL24HR_SMT"]
-#     return gdf
-
-
-def build_trip_gen_table(completed_scenarios: list[dict]) -> pd.DataFrame:
-    """
-    Build a trip generation summary table across all completed scenarios.
-
-    Reads ``nonres/TruckTG.dat`` from each scenario's output directory and
-    aggregates total production trips by truck type.
-
-    Parameters
-    ----------
-    completed_scenarios : list of dict
-        Scenario configuration dicts, each containing at least ``"name"`` and
-        ``"path"`` keys. Scenarios that failed are already excluded.
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with truck types as the index
-        (``["Very Small", "Small", "Medium", "Large"]``) and one column per
-        scenario name containing total production trips. Columns are NaN for any
-        scenario whose ``TruckTG.dat`` could not be read.
-
-    Notes
-    -----
-    Attractions are not included. The model balances attractions to productions,
-    so they are nearly identical and the table would be redundant.
-    """
-    index = ["Very Small", "Small", "Medium", "Large"]
-    data: dict[str, dict] = {}
-    for scenario in completed_scenarios:
-        name = scenario["name"]
-        try:
-            totals = read_truck_tg(Path(scenario["path"]))
-            data[name] = totals
-        except Exception:
-            logger.warning("Could not read TruckTG.dat for scenario %s — filling NaN", name)
-            data[name] = {k: np.nan for k in index}
-
-    return pd.DataFrame(data, index=index)
-
-
-def build_vmt_table(completed_scenarios: list[dict]) -> pd.DataFrame:
-    """
-    Build a vehicle-miles-travelled summary table over the full network.
-
-    Parameters
-    ----------
-    completed_scenarios : list of dict
-        Scenario configuration dicts with ``"name"`` and ``"path"`` keys.
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame indexed by truck type (``["HV", "SM"]``) with one column per
-        scenario name. Each cell is total VMT (``volume * DISTANCE`` summed over
-        all links). Columns are NaN for any scenario whose network could not be
-        read.
-    """
-    return _vmt_table(completed_scenarios, observed_link_ids=None)
-
-
-def build_vmt_table_observed_links_only(
-    completed_scenarios: list[dict], observed_link_ids: set[str]
-) -> pd.DataFrame:
-    """
-    Build a VMT table restricted to links that have an observed count.
-
-    Parameters
-    ----------
-    completed_scenarios : list of dict
-        Scenario configuration dicts with ``"name"`` and ``"path"`` keys.
-    observed_link_ids : set of str
-        The ``link_id`` values present in the observed dataset.
-
-    Returns
-    -------
-    pd.DataFrame
-        Same shape as :func:`build_vmt_table` (index ``["HV", "SM"]``, one column
-        per scenario), but VMT is summed only over links whose ``link_id`` is in
-        ``observed_link_ids``. Used for the apples-to-apples VMT comparison
-        chart, where the simulated side must cover the same links as the
-        observed side.
-    """
-    return _vmt_table(completed_scenarios, observed_link_ids=observed_link_ids)
-
-
-def _vmt_table(
-    completed_scenarios: list[dict], observed_link_ids: set[str] | None
-) -> pd.DataFrame:
-    """Shared VMT aggregation, optionally restricted to ``observed_link_ids``."""
-    index = ["HV", "SM"]
-    data: dict[str, dict] = {}
-    for scenario in completed_scenarios:
-        name = scenario["name"]
-        try:
-            gdf = read_network(Path(scenario["path"]), ITER)
-            if observed_link_ids is not None:
-                gdf = gdf[gdf["link_id"].isin(observed_link_ids)]
-            data[name] = {
-                "HV": float((gdf["vol_HV"] * gdf["DISTANCE"]).sum()),
-                "SM": float((gdf["vol_SM"] * gdf["DISTANCE"]).sum()),
-            }
-        except Exception:
-            logger.warning("Could not read network for scenario %s — filling NaN", name)
-            data[name] = {k: np.nan for k in index}
-
-    return pd.DataFrame(data, index=index)
 
 
 def clean_output(df, link_col="link_id"):
@@ -512,8 +352,8 @@ def summarize_predicted_counts(model_cfg: dict, cfg: dict) -> gpd.GeoDataFrame:
     scenario_name = model_cfg["name"]
     scenario_path = Path(model_cfg["path"])
 
-    # loaded_network = gpd.read_file(scenario_path / f"hwy/iter{ITER}/avgload5period_links.shp")
-    loaded_network = read_network(scenario_path, ITER)
+    iteration = cfg.get("iteration")
+    loaded_network = read_network(scenario_path, iteration)
 
     loaded_network["link_id"] = (
         loaded_network["A"].astype(str) + "-" + loaded_network["B"].astype(str)
@@ -582,8 +422,9 @@ def save_tableau_shapefile(
     # same link geometry, so the first one is sufficient.
     if "DISTANCE" not in obs.columns:
         try:
+            iteration = cfg.get("iteration")
             ref = read_network(
-                Path(completed_scenarios[0]["path"]), ITER
+                Path(completed_scenarios[0]["path"]), iteration
                 )
             obs = obs.merge(
                 ref.set_index("link_id")["DISTANCE"].rename("DISTANCE"),
@@ -596,7 +437,7 @@ def save_tableau_shapefile(
 
     summaries = [obs]
     for scenario in completed_scenarios:
-        logger.info("  → simulating counts for: %s", scenario["name"])
+        logger.info("  → Summary counts for: %s", scenario["name"])
         summaries.append(summarize_predicted_counts(scenario, cfg))
 
     out = pd.concat(summaries, axis=0)
