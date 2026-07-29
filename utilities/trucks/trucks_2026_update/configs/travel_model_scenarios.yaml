@@ -3,7 +3,7 @@ output_root: "C:/temp/mtc_cube_runs"
 
 observed_data: "data/interim/observed_data/observed_dataset_merged.csv"
 network_crs: "EPSG:26910"
-evaluation_output: "data/processed/evaluation/round_7"
+evaluation_output: "models/evaluation/best_TM17_20260728"
 iteration: "TEST"
 
 scenarios:
@@ -12,69 +12,83 @@ scenarios:
     replacements:
       - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration.bat"
         destination: "CTRAMP/RunIteration.bat"
+      #   # Trip Distribution runs with time-based friction factors, but computes blended distance for scenario comparison
+      # - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_time_distance.job"
+      #   destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
 
-  - name: TM-1.6_FIX_ROUNDING_ISSUE
-    skip_if_exists: True
-    replacements:
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_nonres_ixforecast.bat"
-        destination: "CTRAMP/RunIteration.bat"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
-        destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+  # - name: TM-1.6_FIX_ROUNDING_ISSUE
+  #   skip_if_exists: True
+  #   replacements:
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_nonres_ixforecast.bat"
+  #       destination: "CTRAMP/RunIteration.bat"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+
+  # - name: TM-1.6_FIXES
+  #   skip_if_exists: True
+  #   replacements:
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_nonres_ixforecast.bat"
+  #       destination: "CTRAMP/RunIteration.bat"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_FIX_LRG_SKIMS.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
       
-  - name: TM-1.6_TRK_SW
-    skip_if_exists: True
-    replacements:
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_truck_toll_choice.bat"
-        destination: "CTRAMP/RunIteration.bat"
-      - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkAMx.tpp"
-        destination: "nonres/TripsTrkAMx.tpp"
-      - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkEAx.tpp"
-        destination: "nonres/TripsTrkEAx.tpp"
-      - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkEVx.tpp"
-        destination: "nonres/TripsTrkEVx.tpp"
-      - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkMDx.tpp"
-        destination: "nonres/TripsTrkMDx.tpp"
-      - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkPMx.tpp"
-        destination: "nonres/TripsTrkPMx.tpp"
+  # - name: TM-1.6_TRK_SW
+  #   skip_if_exists: True
+  #   replacements:
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_truck_toll_choice.bat"
+  #       destination: "CTRAMP/RunIteration.bat"
+  #     - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkAMx.tpp"
+  #       destination: "nonres/TripsTrkAMx.tpp"
+  #     - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkEAx.tpp"
+  #       destination: "nonres/TripsTrkEAx.tpp"
+  #     - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkEVx.tpp"
+  #       destination: "nonres/TripsTrkEVx.tpp"
+  #     - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkMDx.tpp"
+  #       destination: "nonres/TripsTrkMDx.tpp"
+  #     - source: "data/interim/matrix_projection/sw_od_trips_with_mtc_format/TripsTrkPMx.tpp"
+  #       destination: "nonres/TripsTrkPMx.tpp"
+      
   
-  - name: TM-1.7_GEN_REEST
-    skip_if_exists: False
-    replacements:
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration.bat"
-        destination: "CTRAMP/RunIteration.bat"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
-        destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job"
-        destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_REEST.job"
-        destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
-        # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
-        # This file is build from the estimated gamma function
-        # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
-        # in CUBE gravity model. 
-      - source: "models/trip_distribution/truckFF_distance_based.dat"
-        destination: "nonres/truckFF_distance_based.dat"
+  # - name: TM-1.7_GEN_REEST
+  #   skip_if_exists: True
+  #   replacements:
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration.bat"
+  #       destination: "CTRAMP/RunIteration.bat"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_REEST.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
+  #       # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
+  #       # This file is build from the estimated gamma function
+  #       # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
+  #       # in CUBE gravity model. 
+  #     - source: "models/trip_distribution/truckFF_distance_based.dat"
+  #       destination: "nonres/truckFF_distance_based.dat"
 
-  - name: TM-1.7_GEN_NEWSPEC
-    skip_if_exists: False
-    replacements:
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration.bat"
-        destination: "CTRAMP/RunIteration.bat"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
-        destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job"
-        destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC.job"
-        destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
-        # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
-        # This file is build from the estimated gamma function
-        # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
-        # in CUBE gravity model. 
-      - source: "models/trip_distribution/truckFF_distance_based.dat"
-        destination: "nonres/truckFF_distance_based.dat"
+  # - name: TM-1.7_GEN_NEWSPEC
+  #   skip_if_exists: True
+  #   replacements:
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration.bat"
+  #       destination: "CTRAMP/RunIteration.bat"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
+  #       # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
+  #       # This file is build from the estimated gamma function
+  #       # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
+  #       # in CUBE gravity model. 
+  #     - source: "models/trip_distribution/truckFF_distance_based.dat"
+  #       destination: "nonres/truckFF_distance_based.dat"
 
   - name: TM-1.7_GEN_IX
-    skip_if_exists: False
+    skip_if_exists: True
     replacements:
       - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_nonres_ixforecast.bat"
         destination: "CTRAMP/RunIteration.bat"
@@ -93,23 +107,23 @@ scenarios:
       - source: "src/models/travel_model/TruckTripGeneration_scripts/IxTimeOfDay_IX.job"
         destination: "CTRAMP/scripts/nonres/IxTimeOfDay.job"
 
-  - name: TM-1.7_GEN_IX_NVF
-    skip_if_exists: False
-    replacements:
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_nonres_ixforecast.bat"
-        destination: "CTRAMP/RunIteration.bat"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
-        destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job"
-        destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC_NO_ADJ_VST.job"
-        destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
-        # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
-        # This file is build from the estimated gamma function
-        # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
-        # in CUBE gravity model. 
-      - source: "models/trip_distribution/truckFF_distance_based.dat"
-        destination: "nonres/truckFF_distance_based.dat"
-      - source: "src/models/travel_model/TruckTripGeneration_scripts/IxTimeOfDay_IX.job"
-        destination: "CTRAMP/scripts/nonres/IxTimeOfDay.job"
+  # - name: TM-1.7_GEN_IX_NVF
+  #   skip_if_exists: True
+  #   replacements:
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/RunIteration_from_nonres_ixforecast.bat"
+  #       destination: "CTRAMP/RunIteration.bat"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTimeOfDay.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripDistribution_DISTANCE.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/TruckTripGeneration_GEN_NEWSPEC_NO_ADJ_VST.job"
+  #       destination: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
+  #       # TODO: Upload data to BOX & document this function in Trip Distribution pipeline.
+  #       # This file is build from the estimated gamma function
+  #       # and multiplied by a arbitrary number to (e.g. 1_000) to avoid underflow error
+  #       # in CUBE gravity model. 
+  #     - source: "models/trip_distribution/truckFF_distance_based.dat"
+  #       destination: "nonres/truckFF_distance_based.dat"
+  #     - source: "src/models/travel_model/TruckTripGeneration_scripts/IxTimeOfDay_IX.job"
+  #       destination: "CTRAMP/scripts/nonres/IxTimeOfDay.job"
 
