@@ -45,24 +45,25 @@ Notes on the ordering:
 
 ## Port the intent, not the mechanism
 
-A large share of the legacy pipeline is not model logic. It is workarounds for things the
-`.bat` + Cube + R toolchain could not do directly — above all, that nothing outside Cube
-could read a `.tpp` matrix. Re-implementing those faithfully would carry the workarounds
-into Python and inherit their cost.
+Parts of the legacy pipeline exist to bridge its toolchain rather than to model anything.
+The clearest case: `.tpp` matrices could only be read by Cube, so data was exported to CSV
+and passed between Cube, R and batch. Given the tools available, that was a sound design.
+Re-implementing it in Python would carry the cost forward without the constraint that
+motivated it.
 
 Measured on the 2023 reference run (~53 GB), roughly **10 GB per run is derived or
 duplicated data**:
 
 | Artifact | Size | Why it exists |
 |---|---|---|
-| `database/*SkimsDatabase{period}.csv` | 4.4 GB | `SkimsDatabase.job` re-encodes `.tpp` skims as CSV **because R and Python could not read `.tpp`** |
+| `database/*SkimsDatabase{period}.csv` | 4.4 GB | `SkimsDatabase.job` exports the `.tpp` skims to CSV so R and Python can read them |
 | `main/indivTripDataIncome_3.csv` | 1.6 GB | `joinTripsWithIncome.R` rewrites the 1.5 GB trip table to attach one income column |
-| `extractor/` | 2.2 GB | a subset materialised as a folder purely so the next line can `Robocopy` it to `M:` |
+| `extractor/` | 2.2 GB | a subset materialised as a folder so the next line can `Robocopy` it to `M:` |
 | `updated_output/*.rdata` | 1.0 GB | R re-serialisation of data already written as CSV |
 | `INPUT/` copied into working dirs | 0.6 GB | preserves pristine inputs by duplicating them |
 | `CTRAMP/` model code | 0.2 GB | the model source, copied into every run directory |
 
-Plus smaller copies that exist only to satisfy a hardcoded filename downstream --
+Plus smaller copies that align a file with a name a downstream script expects --
 `popsyn/hhFile.*.csv` → `hhFile.csv`, `main/ShadowPricing_7.csv` →
 `logsums/shadowPricing_7.csv`, `INPUT/metrics/BC_config.csv` → `metrics/`.
 
@@ -75,14 +76,14 @@ The principles that follow, and which the port should hold to:
   1.6 GB artifact.
 - **Select with a list, not a folder.** Ship a manifest, or write straight to the
   destination — do not stage a copy in order to copy it again.
-- **Resolve paths in config; do not copy files to match hardcoded names.**
-- **Machine differences belong in `.env`,** not in `if %computername%==MODEL2-A` tables
-  (`RunLogsums.bat` carries eleven of them; `CopyFilesToM.bat`'s destination still points at
-  an RTP2017 path).
+- **Resolve paths in config** rather than copying a file to match an expected name.
+- **Machine differences belong in configuration.** `RunLogsums.bat` selects its host IP
+  from eleven `if %computername%==...` lines, and `CopyFilesToM.bat`'s destination still
+  points at an RTP2017 path -- both are easier to keep current in a `.env`.
 
-So phase 4 is *parity of results*, not parity of file layout. Where a legacy step exists only
-to move data between tools, the Python port should delete it rather than reproduce it — and
-say so, with the before/after, so reviewers can check the reasoning rather than the diff.
+So phase 4 targets *parity of results*, not of file layout. Where a step exists to move data
+between tools, the port should reproduce the result rather than the step — and say so, with
+the before and after, so reviewers can check the reasoning rather than the diff.
 
 `scenarios/base_2023_ctramp/hooks.py` is the small worked example of the target shape: it
 reads an output the pipeline already writes and aggregates it to a few rows, rather than
