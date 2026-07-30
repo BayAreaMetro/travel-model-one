@@ -477,8 +477,7 @@ def run_model(
     t0_total = time.time()
 
     try:
-        # `--iterations N` overrides iterate.count.  It previously appeared in the
-        # run header and was then ignored by the CT-RAMP path entirely.
+        # `--iterations N` overrides iterate.count for this run.
         full_plan = _iteration_plan(steps_cfg, steps, override=kwargs.get("iterations"))
         n_iters = max((i for _, i in full_plan), default=1)
         plan = _apply_resume(full_plan, kwargs.get("resume_at"), cfg.get("proj_dir"))

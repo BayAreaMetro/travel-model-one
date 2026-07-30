@@ -270,10 +270,9 @@ Stated here so later phases extend it rather than inventing alternatives.
 ### Steps are a flat, ordered mapping
 
 Every step is a key under `steps:` and runs in the order written. Reading top to bottom
-tells you what runs and when. There is no grouping: an earlier version nested
-`setup.copy_inputs`, where the group meant nothing and — worse — sub-steps ran in
-*registry* order while top-level steps ran in *config* order. Two ordering rules for one
-concept, the nested one silently ignoring the config.
+tells you what runs and when. Deliberately no grouping: a category that only collects
+steps adds a second place to look without saying anything the order does not, and invites
+sub-steps whose ordering rule differs from the top level's.
 
 ### One nesting construct: `iterate`
 

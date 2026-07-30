@@ -858,8 +858,8 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
 
     if not interactive:
         # schtasks path — works from any session and survives RDP disconnect.
-        # Previously this refused to run a multi-iteration plan at all; with the
-        # loop in the runner every call is single-iteration, so it now can.
+        # Every call is single-iteration -- the runner owns the loop -- so this
+        # path handles multi-iteration runs one round at a time.
         try:
             _run_via_schtasks(
                 project_dir, runtime_dir, host_ip,

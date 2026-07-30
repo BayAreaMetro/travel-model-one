@@ -61,10 +61,9 @@ def _resolve_iteration(cfg: dict, step_cfg: dict, kwargs: dict) -> int:  # noqa:
     """Iteration to assign: the runner's, unless this step overrides it.
 
     The runner drives the global feedback loop and passes the current iteration,
-    so there is nothing to infer.  An earlier version read
-    ``simulate_ctramp.iterations`` -- a *count* -- as an iteration *number*, which
-    silently assigned iteration 3 of a 3-iteration plan while the demand model had
-    looped internally without any assignment between rounds.
+    so there is nothing to infer here.  Note that a demand step's iteration *count*
+    is not its iteration *number*: reading one as the other would assign the last
+    round's number to every round.
     """
     if step_cfg.get("iteration") is not None:
         return int(step_cfg["iteration"])
