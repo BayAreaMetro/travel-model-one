@@ -7,6 +7,11 @@ Usage::
     tm1 run --scenario base_2023_ctramp --iterations 3
     tm1 run --scenario base_2023_ctramp --force --slack verbose
 
+Restart a failed run at the step that died, rather than from the beginning::
+
+    tm1 run --scenario base_2023_ctramp --resume-at assignment
+    tm1 run --scenario base_2023_ctramp --resume-at 2:assignment
+
 ``--scenario`` also takes a path, so a scenario can live outside the repo::
 
     tm1 run --scenario E:/runs/my_scenario
@@ -80,6 +85,7 @@ def cmd_run(args: argparse.Namespace) -> None:
         base_model_dir=repo_root,
         force=args.force,
         iterations=args.iterations,
+        resume_at=args.resume_at,
     )
 
 
@@ -110,6 +116,17 @@ def main() -> None:
         type=int,
         default=None,
         help="Override simulate iteration count (0 = static skims, no assignment)",
+    )
+    run_parser.add_argument(
+        "--resume-at",
+        metavar="[N:]STEP",
+        default=None,
+        help=(
+            "Restart a previous run at STEP, which itself runs; everything "
+            "before it is skipped. Prefix with an iteration (e.g. 2:assignment) "
+            "when the step runs in more than one. The step re-runs from the "
+            "start, never continues part-way"
+        ),
     )
     run_parser.add_argument(
         "--force",

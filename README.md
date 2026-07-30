@@ -94,6 +94,45 @@ tm1 run --scenario base_2023_ctramp --steps simulate_ctramp
 tm1 run --scenario E:/runs/my_scenario
 ```
 
+### Restarting a Failed Run
+
+A full run is hours of Cube, so `--resume-at` restarts at the step that died
+instead of from the beginning. **The named step runs** — everything before it is
+skipped:
+
+```bash
+tm1 run --scenario base_2023_ctramp --resume-at assignment
+tm1 run --scenario base_2023_ctramp --resume-at 2:assignment   # iteration 2's
+```
+
+The `N:` prefix is needed only when a step runs more than once — that is, inside
+`iterate` with `count > 1`. A bare name matching several rounds is an error
+listing the candidates, not a guess, since picking the wrong one costs hours.
+
+You rarely type it: a failure prints the exact command.
+
+```
+--- Step: assignment ---
+ERROR  Cube job HwyAssign.job failed (exit=2, engine ReturnCode=2)
+       Full Cube log: E:/Tests/base_2023_ctramp/_cube_HwyAssign_18004_1785277879.log
+       Resume with: tm1 run --scenario base_2023_ctramp --resume-at 2:assignment
+```
+
+And the resumed run states what it is doing before doing any of it:
+
+```
+Resuming at assignment, iteration 2 of 3
+  skipping 4 already-completed step(s): copy_inputs@1, simulate_ctramp@1, assignment@1, simulate_ctramp@2
+  running 4: assignment@2, simulate_ctramp@3, assignment@3, vmt_vht_metrics@3
+```
+
+Two things it deliberately does not do. The named step **re-runs from the start**
+rather than continuing part-way — Cube jobs are not transactional, so a killed
+`HwyAssign` leaves partial `.net` files that only a fresh run overwrites. And it
+refuses to resume into an empty project directory, since "resume" presupposes a
+previous run; without that check it would skip staging and demand, then assign
+whatever stale matrices happened to be lying around.
+
 ### Creating a New Scenario
 
 1. Copy `scenarios/base_2023_ctramp/scenario_config.yaml` to `scenarios/<name>/`

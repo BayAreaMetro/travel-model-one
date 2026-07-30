@@ -21,7 +21,8 @@ production until its own phase lands and passes its own gate.
 | 5 | ActivitySim swap-in | config corpus + scenarios + ActivitySim/PopulationSim steps + Cube harness and the ActivitySim↔Cube demand bridge | ~200 | pending full PBA50 review |
 | 6 | Assignment backend | AequilibraE engine, params, parity validation | ~25 | prototype — needs buy-in |
 | 7 | Housekeeping | legacy triage of `core/`, `model-files/`, `utilities/` (see [Diffs from legacy → target](#diffs-from-legacy--target)) | — | not started |
-| 8 | Beyond | network enhancements, etc. | — | not scoped |
+| 8 | Documentation | published docs for the Python stack -- CLI, scenario config, step contract, migration status; replaces the wiki pages that describe the `.bat` workflow | — | not started |
+| 9 | Beyond | network enhancements, etc. | — | not scoped |
 
 Phase 4 comes *before* the ActivitySim swap-in deliberately. Until preprocess is ported, a
 run inherits its period networks from a completed reference run instead of building them
@@ -236,7 +237,26 @@ Target" mapping below actually gets executed, not just documented. Deliberately 
 *after* phase 5, not alongside phase 1 — moving legacy CT-RAMP/Cube paths while they're still
 production-critical risks breaking scheduled runs for no functional gain.
 
-### 8. Beyond
+### 8. Documentation
+
+The [User's Guide](https://github.com/BayAreaMetro/modeling-website/wiki/UsersGuide) and
+[Setup and Configuration](https://github.com/BayAreaMetro/modeling-website/wiki/SetupConfiguration)
+pages describe the `.bat` workflow: edit a properties file, name the project folder so
+`RunModel.bat` can slice a year out of it, run the batch chain.  None of that is how the
+Python stack works, and the README cannot carry the whole story.
+
+What needs writing: the CLI, the scenario config format (steps, `iterate`, custom steps
+via `script:`/`module:`), the step contract for people adding their own, how to read a run
+log, and where the migration has got to.  Plus a decision on where it lives -- a generated
+site (mkdocs, published from this repo so it versions with the code) or the existing wiki,
+which is easier to edit but drifts from the code and cannot be reviewed alongside it.
+
+Sequenced late because documenting a convention that is still moving wastes the effort;
+phase 1 fixes the config shape, and phases 4-6 settle what the pipeline actually contains.
+Until then the README and
+[Pipeline configuration conventions](#pipeline-configuration-conventions) are the record.
+
+### 9. Beyond
 
 Network enhancements and whatever else follows once the core migration is done. Not scoped.
 

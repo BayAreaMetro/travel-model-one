@@ -193,6 +193,121 @@ def _iteration_plan(
     return plan
 
 
+def _fmt_plan(plan: list[tuple[str, int]], n_iters: int) -> str:
+    """Render plan entries, showing the iteration only when there is more than one."""
+    if n_iters <= 1:
+        return ", ".join(s for s, _ in plan)
+    return ", ".join(f"{s}@{i}" for s, i in plan)
+
+
+def resume_token(plan: list[tuple[str, int]], step: str, iteration: int) -> str:
+    """The ``--resume-at`` argument that would restart at this point.
+
+    Includes the iteration prefix only when the step appears more than once, so
+    the hint printed on failure is the shortest unambiguous form.
+    """
+    return f"{iteration}:{step}" if sum(s == step for s, _ in plan) > 1 else step
+
+
+def _apply_resume(
+    plan: list[tuple[str, int]],
+    resume_at: str | None,
+    proj_dir: str | Path | None = None,
+) -> list[tuple[str, int]]:
+    """Drop everything before *resume_at*, which itself **runs**.
+
+    Takes ``step`` or ``iteration:step``; the prefix is needed only when a step
+    appears more than once, which happens only inside ``iterate`` with
+    ``count > 1``.  A bare name matching several entries is an error rather than
+    a guess -- picking the wrong round costs hours of Cube.
+
+    The named step re-runs from the start; it is never continued part-way.  Cube
+    jobs are not transactional, so a killed ``HwyAssign`` leaves partial ``.net``
+    and ``.tpp`` files that only a fresh run overwrites cleanly.
+    """
+    if not resume_at:
+        return plan
+
+    # "Resume" presupposes a previous run.  Without this, pointing it at an empty
+    # project directory would skip staging and demand, then assign whatever stale
+    # matrices happened to be lying around.
+    if proj_dir is not None:
+        p = Path(proj_dir)
+        if not p.is_dir() or not any(p.iterdir()):
+            msg = (
+                f"--resume-at needs a project directory a previous run populated; "
+                f"{p} is {'missing' if not p.is_dir() else 'empty'}. Run without "
+                f"--resume-at to start from the beginning."
+            )
+            raise ValueError(msg)
+
+    prefix, _, name = resume_at.rpartition(":")
+    name = name.strip()
+    want = int(prefix.strip()) if prefix.strip() else None
+
+    matches = [
+        i for i, (step, it) in enumerate(plan)
+        if step == name and (want is None or it == want)
+    ]
+    n_iters = max((i for _, i in plan), default=1)
+
+    if not matches:
+        msg = (
+            f"--resume-at {resume_at!r} matches nothing in this run.\n"
+            f"Planned: {_fmt_plan(plan, n_iters)}\n"
+            f"Give a step name, or iteration:step to pick a round."
+        )
+        raise ValueError(msg)
+
+    if want is None and len(matches) > 1:
+        rounds = ", ".join(f"{plan[i][1]}:{name}" for i in matches)
+        msg = (
+            f"--resume-at {name!r} is ambiguous -- it runs in {len(matches)} "
+            f"iterations. Say which: {rounds}"
+        )
+        raise ValueError(msg)
+
+    return plan[matches[0] :]
+
+
+def _resolve_slack_level(cfg: dict, slack_level: str | bool | None) -> None:
+    """CLI flag wins, then the scenario's `slack:` key, then "minimal"."""
+    if slack_level is not None:
+        slack.level = "verbose" if slack_level is True else slack_level
+        return
+    cfg_slack = cfg.get("slack", "minimal")
+    slack.level = cfg_slack if isinstance(cfg_slack, str) else "off"
+
+
+def _report_step(label: str, name: str, result: object, elapsed: float) -> None:
+    """Record a finished step, distinguishing a real run from a self-skip."""
+    if result == "skipped":
+        notify(f"[{label}] {name} already done, skipped")
+        log.info("--- Skipped: %s ---", name)
+        return
+    elapsed_str = _fmt_elapsed(elapsed)
+    notify(f"[{label}] {name} done ({elapsed_str})")
+    log.info("--- Done: %s (%s) ---", name, elapsed_str)
+
+
+def _report_resume(
+    full_plan: list[tuple[str, int]], plan: list[tuple[str, int]], n_iters: int
+) -> None:
+    """State what a resumed run will skip and run, before it does any of it.
+
+    Printed up front so a mistyped iteration is caught by reading the skipped
+    list -- resuming at ``3:assignment`` would show ``simulate_ctramp@3`` as
+    skipped, i.e. about to assign demand that was never generated.
+    """
+    if len(plan) >= len(full_plan):
+        return
+    skipped = full_plan[: len(full_plan) - len(plan)]
+    log.info("Resuming at %s, iteration %d of %d", plan[0][0], plan[0][1], n_iters)
+    log.info("  skipping %d already-completed step(s): %s",
+             len(skipped), _fmt_plan(skipped, n_iters))
+    log.info("  running %d: %s", len(plan), _fmt_plan(plan, n_iters))
+
+
 def _notify_start(
     label: str, steps: list[str], flat_steps_cfg: dict, n_iters: int, kwargs: dict
 ) -> None:
@@ -348,12 +463,7 @@ def run_model(
 
     cfg = resolve_templates(load_config(scenario_dir))
 
-    # Slack level: CLI flag wins, then yaml key, then default "minimal"
-    if slack_level is not None:
-        slack.level = "verbose" if slack_level is True else slack_level
-    else:
-        cfg_slack = cfg.get("slack", "minimal")
-        slack.level = cfg_slack if isinstance(cfg_slack, str) else "off"
+    _resolve_slack_level(cfg, slack_level)
 
     steps_cfg = cfg.get("steps", {})  # pyright: ignore[reportAttributeAccessIssue]
     if steps is None:
@@ -369,8 +479,10 @@ def run_model(
     try:
         # `--iterations N` overrides iterate.count.  It previously appeared in the
         # run header and was then ignored by the CT-RAMP path entirely.
-        plan = _iteration_plan(steps_cfg, steps, override=kwargs.get("iterations"))
-        n_iters = max((i for _, i in plan), default=1)
+        full_plan = _iteration_plan(steps_cfg, steps, override=kwargs.get("iterations"))
+        n_iters = max((i for _, i in full_plan), default=1)
+        plan = _apply_resume(full_plan, kwargs.get("resume_at"), cfg.get("proj_dir"))
+        _report_resume(full_plan, plan, n_iters)
         prev_iter = None
         _notify_start(label, steps, flat_steps_cfg, n_iters, kwargs)
 
@@ -394,17 +506,15 @@ def run_model(
             except Exception as e:
                 # exc_info so the run log keeps the traceback, not just the message
                 log.exception("Step %s failed: %s", name, e)  # noqa: TRY401
+                # The failed step did not finish, so resuming includes it.
+                log.error(  # noqa: TRY400 -- traceback already logged above
+                    "Resume with: tm1 run --scenario %s --resume-at %s",
+                    scenario_dir.name,
+                    resume_token(full_plan, name, iteration),
+                )
                 notify(f":exclamation: {label} failed at {name}: {e}")
                 raise
-            elapsed = time.time() - t0_step
-
-            if result == "skipped":
-                notify(f"[{label}] {name} already done, skipped")
-                log.info("--- Skipped: %s ---", name)
-            else:
-                elapsed_str = _fmt_elapsed(elapsed)
-                notify(f"[{label}] {name} done ({elapsed_str})")
-                log.info("--- Done: %s (%s) ---", name, elapsed_str)
+            _report_step(label, name, result, time.time() - t0_step)
 
         total = time.time() - t0_total
         notify(f"Finished {label} in {_fmt_elapsed(total)} :white_check_mark:")
