@@ -226,6 +226,96 @@ Network enhancements and whatever else follows once the core migration is done. 
 
 ---
 
+## Pipeline configuration conventions
+
+The scenario YAML is the interface most people will touch, and phase 1 fixes its shape.
+Stated here so later phases extend it rather than inventing alternatives.
+
+### Steps are a flat, ordered mapping
+
+Every step is a key under `steps:` and runs in the order written. Reading top to bottom
+tells you what runs and when. There is no grouping: an earlier version nested
+`setup.copy_inputs`, where the group meant nothing and — worse — sub-steps ran in
+*registry* order while top-level steps ran in *config* order. Two ordering rules for one
+concept, the nested one silently ignoring the config.
+
+### One nesting construct: `iterate`
+
+```yaml
+steps:
+  copy_inputs: {}
+  iterate:
+    count: 3
+    steps:
+      simulate_ctramp: {}
+      assignment: {}
+  vmt_vht_metrics: {}
+```
+
+A global iteration is demand **plus** assignment — demand responds to the congested skims
+the previous assignment produced, which is what `RunModel.bat` expresses by calling
+`RunIteration.bat` N times. The body is nested rather than listed by name elsewhere, so
+contiguity is structural instead of validated and each step is named once. Steps before
+the loop run at iteration 1; steps after it run once at the final iteration, since they
+summarise a finished run.
+
+This is not a return to the `setup.copy_inputs` grouping: that was an arbitrary category,
+whereas a loop body is a real construct with real semantics.
+
+### Scenario-supplied steps
+
+```yaml
+  vmt_vht_metrics:
+    script: "hooks.py:vmt_vht_metrics"     # path, relative to the scenario directory
+  trip_length_report:
+    module: "mtc_local.reports:trip_lengths"   # importable dotted path
+```
+
+Either may name the function after a colon; without one, `run` is called, matching the
+built-in steps. There is no separate hook concept — a step written before
+`simulate_ctramp` is pre-processing, one written after `assignment` is post-processing.
+Position is the whole mechanism.
+
+### `backend:` value, or a separate step name?
+
+> Use a **`backend:` value** where choosing between implementations is a permanent knob.
+> Use **separate step names** where one implementation is a migration state with a
+> defined end.
+
+So `assignment` takes `backend: cube|aeq|…` while the demand models stay
+`simulate_ctramp` and `simulate_activitysim`.
+
+The distinction is *not* how similar the implementations are. ActivitySim is a
+reimplementation of CT-RAMP's design — same tour-based microsimulation, same submodel
+sequence — so on similarity grounds demand could be generic too. What differs is
+permanence:
+
+- **Assignment backends are a knob.** Cube, AequilibraE and anything after them will be
+  switched between routinely and indefinitely; the whole engine-parity workflow depends on
+  running two of them over identical demand.
+- **Demand models are a transition.** CT-RAMP is being retired. Encoding that as a
+  permanent switch builds an abstraction whose second implementation is scheduled for
+  deletion, and makes retiring it a refactor instead of deleting a step.
+
+This is not a one-way door: adding a generic `simulate:` step later is additive, so the
+choice defers rather than forecloses.
+
+### What is additive, and what would break
+
+Later phases can add freely: **new keys** in any step config, **new top-level blocks**,
+**new built-in step names**, **new `backend:` entries**.
+
+Avoid, because scenarios would have to be rewritten: renaming `assignment` to
+per-engine steps, changing `iterate`'s shape, or moving a step's config somewhere other
+than under its own name — for instance nesting assignment under a demand step, which the
+ActivitySim path did before phase 1 unified the two.
+
+See also [Port the intent, not the mechanism](#port-the-intent-not-the-mechanism): the
+adapters that bridge Cube's formats are scaffolding, and the configuration should not make
+them load-bearing.
+
+---
+
 ## Goal
 
 Two independent moving pieces:
