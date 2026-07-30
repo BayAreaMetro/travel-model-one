@@ -118,6 +118,105 @@ def _load_script(path: Path, scenario_dir: Path) -> ModuleType:
     return mod
 
 
+#: Step name reserved for the global feedback loop.
+_ITERATE = "iterate"
+
+
+def _flatten_steps(steps_cfg: dict) -> dict:
+    """Step configs with the loop body lifted alongside the top-level steps.
+
+    Lets step lookup stay uniform: a step inside ``iterate`` resolves exactly as
+    one outside it.
+    """
+    flat: dict = {}
+    for name, step_cfg in steps_cfg.items():
+        if name == _ITERATE:
+            flat.update((step_cfg or {}).get("steps") or {})
+        else:
+            flat[name] = step_cfg
+    return flat
+
+
+def _iteration_plan(
+    steps_cfg: dict, steps: list[str], override: int | None = None
+) -> list[tuple[str, int]]:
+    """Expand the step list into an ordered ``[(step, iteration)]`` execution plan.
+
+    A *global iteration* is demand plus assignment: demand responds to the
+    congested skims the previous assignment produced.  ``RunModel.bat`` expresses
+    that by calling ``RunIteration.bat`` N times; here the loop body is nested::
+
+        steps:
+          copy_inputs: {}
+          iterate:
+            count: 3
+            steps:
+              simulate_ctramp: {}
+              assignment: {}
+          calibration: {}
+
+    Nesting makes the body contiguous by construction, and names each step once.
+    Steps before the loop run at iteration 1; steps after it run once at the final
+    iteration, since they summarise the finished run.
+    """
+    plan: list[tuple[str, int]] = []
+    current = 1
+
+    for name in steps:
+        if name != _ITERATE:
+            plan.append((name, current))
+            continue
+
+        it_cfg = steps_cfg.get(_ITERATE)
+        if not isinstance(it_cfg, dict):
+            msg = (
+                f"`{_ITERATE}` must be a block with `count` and `steps`:\n\n"
+                f"    {_ITERATE}:\n      count: 3\n      steps:\n"
+                f"        simulate_ctramp: {{}}\n        assignment: {{}}"
+            )
+            raise TypeError(msg)
+
+        count = int(override if override is not None else it_cfg.get("count", 1))
+        if count < 1:
+            msg = f"{_ITERATE}.count must be >= 1, got {count}"
+            raise ValueError(msg)
+
+        body = list((it_cfg.get("steps") or {}).keys())
+        if not body:
+            msg = f"`{_ITERATE}` declares no steps; the loop body cannot be empty."
+            raise ValueError(msg)
+
+        for i in range(1, count + 1):
+            plan += [(s, i) for s in body]
+        current = count
+
+    return plan
+
+
+def _notify_start(
+    label: str, steps: list[str], flat_steps_cfg: dict, n_iters: int, kwargs: dict
+) -> None:
+    """Announce what is about to run.
+
+    Reads the demand step from the *flattened* configs: it normally sits inside
+    ``iterate``, so a top-level lookup would silently report defaults.
+    """
+    sim_cfg = (
+        flat_steps_cfg.get("simulate_ctramp")
+        or flat_steps_cfg.get("simulate_activitysim")
+        or {}
+    )
+    sample_rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
+    sample_str = "per-iteration ramp" if sample_rate is None else f"{sample_rate:.0%}"
+    notify(
+        f":rabbit2: Starting {label}\n"
+        f"  • steps: {', '.join(steps)}\n"
+        f"  • sample: {sample_str} | threads: {sim_cfg.get('threads', 1)} | "
+        f"shadow pricing: {'on' if sim_cfg.get('shadow_pricing', False) else 'off'}\n"
+        f"  • iterations: {n_iters}"
+    )
+
+
 def _start_run_log(cfg: dict, label: str, steps: list[str]) -> logging.Handler | None:
     """Open a per-run log file under ``{proj_dir}/logs`` and record what is starting.
 
@@ -260,35 +359,34 @@ def run_model(
     if steps is None:
         steps = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
 
+    # Step lookup sees the loop body as ordinary steps, so `--steps assignment`
+    # works whether or not assignment sits inside `iterate`.
+    flat_steps_cfg = _flatten_steps(steps_cfg)
+
     log_handler = _start_run_log(cfg, label, steps)
-
-    # Gather run parameters for the start notification
-    sim_cfg = steps_cfg.get("simulate_ctramp", {}) or {}
-    iterations = kwargs.get("iterations") or sim_cfg.get("iterations", 0)
-    threads = sim_cfg.get("threads", 1)
-    sample_rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
-    shadow = sim_cfg.get("shadow_pricing", False)
-
-    sample_str = "per-iteration ramp" if sample_rate is None else f"{sample_rate:.0%}"
-    header = (
-        f":rabbit2: Starting {label}\n"
-        f"  • steps: {', '.join(steps)}\n"
-        f"  • sample: {sample_str} | threads: {threads} | "
-        f"shadow pricing: {'on' if shadow else 'off'}\n"
-        f"  • iterations: {iterations}"
-    )
-    notify(header)
-
     t0_total = time.time()
 
     try:
-        for name in steps:
-            run_step = _load_step(name, steps_cfg, scenario_dir)
+        # `--iterations N` overrides iterate.count.  It previously appeared in the
+        # run header and was then ignored by the CT-RAMP path entirely.
+        plan = _iteration_plan(steps_cfg, steps, override=kwargs.get("iterations"))
+        n_iters = max((i for _, i in plan), default=1)
+        prev_iter = None
+        _notify_start(label, steps, flat_steps_cfg, n_iters, kwargs)
+
+        for name, iteration in plan:
+            run_step = _load_step(name, flat_steps_cfg, scenario_dir)
+
+            if n_iters > 1 and iteration != prev_iter:
+                log.info("=== Iteration %d of %d ===", iteration, n_iters)
+                prev_iter = iteration
 
             log.info("--- Step: %s ---", name)
             t0_step = time.time()
             try:
-                result = run_step(scenario_dir, cfg, **kwargs)
+                # Merged rather than passed positionally: an explicit caller-supplied
+                # `iteration` would otherwise be a duplicate-keyword TypeError.
+                result = run_step(scenario_dir, cfg, **{**kwargs, "iteration": iteration})
             except KeyboardInterrupt:
                 log.warning("Cancelled during %s", name)
                 notify(f":no_entry_sign: {label} cancelled during {name}")

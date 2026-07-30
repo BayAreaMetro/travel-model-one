@@ -34,8 +34,8 @@ ctramp_output_dir: "{proj_dir}/main"
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  PIPELINE STEPS                                                            │
 # └─────────────────────────────────────────────────────────────────────────────┘
-# Steps run in the order written.  Each key is a step; there is no nesting, so
-# reading top to bottom tells you what runs and when.  A step with a `script:` or
+# Steps run in the order written.  Each key is a step; the only nesting is
+# `iterate:`, whose body is the feedback loop.  A step with a `script:` or
 # `module:` key runs your own code -- see `vmt_vht_metrics` at the end.
 steps:
   # --- 1. Stage every input the model reads into the project directory ---
@@ -90,66 +90,73 @@ steps:
       to: "{proj_dir}/trn"
       glob: "*"
 
-  # --- 2. Simulate: run CTRAMP Java demand model ---
+  # --- 2. The global feedback loop -------------------------------------
   #
-  # Iteration modes:
-  #   iterations: 3        — full loop: iters 1→3 with sample ramp (0.15, 0.30, 0.50)
-  #   iteration: 3         — single run at iter 3 (e.g. for quick testing)
+  # One iteration = demand + assignment, the body of RunIteration.bat: demand
+  # responds to the congested skims the previous assignment produced.  Nesting
+  # them here is what makes them a loop; steps outside `iterate` run once.
+  # `--iterations N` overrides count.
   #
-  # If sample_rate is set, it overrides the default per-iteration ramp.
-  # Shadow pricing is auto-configured per iteration when enabled.
-  #
-  simulate_ctramp:
-    project_dir: "{proj_dir}"
-    runtime_dir: "{proj_dir}/CTRAMP/runtime"
-    host_ip: "localhost"
-    threads: 48 # It will reserve 2 threads for infrastructure to leave some headroom.
-    iterations: 1          # one global iteration (demand -> assign -> feedback -> skims)
-    # iteration: 3         # single iteration (uncomment to skip the loop) and just run one "iteration 3"
-    # sample_rate: 0.50    # uncomment to override the default per-iteration ramp
-    seed: 0
-    shadow_pricing: true   # set false to disable shadow pricing
-    # All components enabled for full model run.
-    # Set individual components to false to disable them.
-    components:
-      UsualWorkAndSchoolLocationChoice: true
-      AutoOwnership: true
-      FreeParking: true
-      CoordinatedDailyActivityPattern: true
-      IndividualMandatoryTourFrequency: true
-      MandatoryTourDepartureTimeAndDuration: true
-      MandatoryTourModeChoice: true
-      JointTourFrequency: true
-      JointTourLocationChoice: true
-      JointTourDepartureTimeAndDuration: true
-      JointTourModeChoice: true
-      IndividualNonMandatoryTourFrequency: true
-      IndividualNonMandatoryTourLocationChoice: true
-      IndividualNonMandatoryTourDepartureTimeAndDuration: true
-      IndividualNonMandatoryTourModeChoice: true
-      AtWorkSubTourFrequency: true
-      AtWorkSubTourLocationChoice: true
-      AtWorkSubTourDepartureTimeAndDuration: true
-      AtWorkSubTourModeChoice: true
-      StopFrequency: true
-      StopLocation: true
+  iterate:
+    count: 1
+    steps:
+      # --- 2. Simulate: run CTRAMP Java demand model ---
+      #
+      # Runs one iteration per call; the enclosing `iterate:` block drives the loop.
+      # Sample rate follows RunModel.bat's ramp (0.15, 0.30, 0.50 by iteration)
+      # unless sample_rate is set.  Shadow pricing is configured per iteration.
+      #
+      simulate_ctramp:
+        project_dir: "{proj_dir}"
+        runtime_dir: "{proj_dir}/CTRAMP/runtime"
+        host_ip: "localhost"
+        threads: 48 # It will reserve 2 threads for infrastructure to leave some headroom.
+        # iteration: 3         # pin this step to a specific iteration number; normally
+        #                      # the runner supplies it from the enclosing `iterate:` block
+        # sample_rate: 0.50    # uncomment to override the default per-iteration ramp
+        seed: 0
+        shadow_pricing: true   # set false to disable shadow pricing
+        # All components enabled for full model run.
+        # Set individual components to false to disable them.
+        components:
+          UsualWorkAndSchoolLocationChoice: true
+          AutoOwnership: true
+          FreeParking: true
+          CoordinatedDailyActivityPattern: true
+          IndividualMandatoryTourFrequency: true
+          MandatoryTourDepartureTimeAndDuration: true
+          MandatoryTourModeChoice: true
+          JointTourFrequency: true
+          JointTourLocationChoice: true
+          JointTourDepartureTimeAndDuration: true
+          JointTourModeChoice: true
+          IndividualNonMandatoryTourFrequency: true
+          IndividualNonMandatoryTourLocationChoice: true
+          IndividualNonMandatoryTourDepartureTimeAndDuration: true
+          IndividualNonMandatoryTourModeChoice: true
+          AtWorkSubTourFrequency: true
+          AtWorkSubTourLocationChoice: true
+          AtWorkSubTourDepartureTimeAndDuration: true
+          AtWorkSubTourModeChoice: true
+          StopFrequency: true
+          StopLocation: true
 
-  # --- 3. Assignment: Cube highway + transit, then feedback ---
-  #
-  # Runs RunIteration.bat's Cube half, in its order:
-  #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
-  # Leaves hwy/avgLOAD{PERIOD}.net and refreshed skims for the next iteration.
-  #
-  # Needs CTRAMP/scripts, hwy/ and nonres/ in the project dir (copied above).
-  #
-  assignment:
-    proj_dir: "{proj_dir}"
-    model_year: 2023       # IxForecasts_horizon.job branches on this
-    future: PBA50          # project IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/TRR -> PBA50
-    do_nonres: true        # internal/external, truck, air passenger, HSR models
-    do_transit: true       # transit assignment + skims (15-node cluster)
-    build_skims: true      # rebuild highway skims + accessibility afterwards
-    cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
+      # --- 3. Assignment: Cube highway + transit, then feedback ---
+      #
+      # Runs RunIteration.bat's Cube half, in its order:
+      #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
+      # Leaves hwy/avgLOAD{PERIOD}.net and refreshed skims for the next iteration.
+      #
+      # Needs CTRAMP/scripts, hwy/ and nonres/ in the project dir (copied above).
+      #
+      assignment:
+        proj_dir: "{proj_dir}"
+        model_year: 2023       # IxForecasts_horizon.job branches on this
+        future: PBA50          # project IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/TRR -> PBA50
+        do_nonres: true        # internal/external, truck, air passenger, HSR models
+        do_transit: true       # transit assignment + skims (15-node cluster)
+        build_skims: true      # rebuild highway skims + accessibility afterwards
+        cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
 
   # --- 4. Your own code: any step with `script:` or `module:` ---
   #

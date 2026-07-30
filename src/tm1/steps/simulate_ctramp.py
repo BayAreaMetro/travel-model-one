@@ -783,12 +783,23 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     seed = step_cfg.get("seed", 0)
     do_shadow_pricing = step_cfg.get("shadow_pricing", True)
 
-    # Determine iteration plan: loop vs single.
+    # One call runs one iteration.  The global feedback loop belongs to the
+    # runner (`iterations:` in the scenario config), because an iteration is
+    # demand *plus* assignment -- exactly what RunIteration.bat runs, and what
+    # this step alone cannot express.
     if "iterations" in step_cfg:
-        n_iters = int(step_cfg["iterations"])
-        iter_plan = list(range(1, n_iters + 1))
-    else:
-        iter_plan = [int(step_cfg.get("iteration", 3))]
+        msg = (
+            "steps.simulate_ctramp.iterations has moved to a top-level block, so "
+            "the loop can include assignment:\n\n"
+            "    iterations:\n"
+            "      count: 3\n"
+            "      steps: [simulate_ctramp, assignment]\n\n"
+            "Looping demand here only re-ran the demand model against unchanged "
+            "skims, which is not feedback."
+        )
+        raise ValueError(msg)
+
+    iteration = int(kwargs.get("iteration") or step_cfg.get("iteration") or 1)
 
     # Per-iteration sample rate: explicit value overrides the default ramp.
     explicit_rate = step_cfg.get("sample_rate")
@@ -824,7 +835,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
 
     enabled = sum(1 for v in components.values() if v)
     log.info("Components enabled: %d/%d", enabled, len(COMPONENTS))
-    log.info("Iteration plan: %s  shadow_pricing=%s", iter_plan, do_shadow_pricing)
+    log.info("Iteration %d  shadow_pricing=%s", iteration, do_shadow_pricing)
 
     # Kill any orphaned java from a previous aborted run
     kill_infrastructure([])
@@ -840,15 +851,15 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     # which require the looping infrastructure.
     interactive = _preflight_license()
 
-    if not interactive or len(iter_plan) == 1:
+    sample_rate = explicit_rate or DEFAULT_SAMPLE_RATES.get(iteration, 0.50)
+    sp_flags = shadow_pricing_flags(iteration, shadow_pricing=do_shadow_pricing)
+    patch_properties(props_path, sp_flags)
+    log.info("CT-RAMP iteration %d  sample_rate=%.2f", iteration, sample_rate)
+
+    if not interactive:
         # schtasks path — works from any session and survives RDP disconnect.
-        if len(iter_plan) > 1:
-            msg = "Multi-iteration loop is not yet supported via schtasks (SSH session)"
-            raise NotImplementedError(msg)
-        iteration = iter_plan[0]
-        sample_rate = explicit_rate or DEFAULT_SAMPLE_RATES.get(iteration, 0.50)
-        sp_flags = shadow_pricing_flags(iteration, shadow_pricing=do_shadow_pricing)
-        patch_properties(props_path, sp_flags)
+        # Previously this refused to run a multi-iteration plan at all; with the
+        # loop in the runner every call is single-iteration, so it now can.
         try:
             _run_via_schtasks(
                 project_dir, runtime_dir, host_ip,
@@ -857,23 +868,14 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
         finally:
             _recover_license()
     else:
-        # Interactive session: direct subprocess execution.
-        # Start infrastructure once, run all iterations.
+        # Interactive session: direct subprocess execution.  The JPPF cluster and
+        # matrix server are started and torn down per iteration, matching
+        # RunIteration.bat, which calls javaOnly_runMain/runNode0 inside each one.
         procs = start_infrastructure(runtime_dir, project_dir, host_ip)
         try:
-            for iteration in iter_plan:
-                sample_rate = explicit_rate or DEFAULT_SAMPLE_RATES.get(iteration, 0.50)
-                log.info(
-                    "--- Iteration %d/%d  sample_rate=%.2f ---",
-                    iteration, iter_plan[-1], sample_rate,
-                )
-                sp_flags = shadow_pricing_flags(
-                    iteration, shadow_pricing=do_shadow_pricing,
-                )
-                patch_properties(props_path, sp_flags)
-                run_model(
-                    project_dir, runtime_dir,
-                    iteration=iteration, sample_rate=sample_rate, seed=seed,
-                )
+            run_model(
+                project_dir, runtime_dir,
+                iteration=iteration, sample_rate=sample_rate, seed=seed,
+            )
         finally:
             kill_infrastructure(procs)

@@ -32,23 +32,28 @@ from tm1.assignment.cube.ctramp import run_iteration
 log = logging.getLogger(__name__)
 
 
-def _resolve_iteration(cfg: dict, step_cfg: dict, kwargs: dict) -> int:
-    """Iteration to assign: explicit setting, else the demand model's last one."""
+def _resolve_iteration(cfg: dict, step_cfg: dict, kwargs: dict) -> int:  # noqa: ARG001
+    """Iteration to assign: the runner's, unless this step overrides it.
+
+    The runner drives the global feedback loop and passes the current iteration,
+    so there is nothing to infer.  An earlier version read
+    ``simulate_ctramp.iterations`` -- a *count* -- as an iteration *number*, which
+    silently assigned iteration 3 of a 3-iteration plan while the demand model had
+    looped internally without any assignment between rounds.
+    """
     if step_cfg.get("iteration") is not None:
         return int(step_cfg["iteration"])
     if kwargs.get("iteration") is not None:
         return int(kwargs["iteration"])
-
-    sim = cfg.get("steps", {}).get("simulate_ctramp", {}) or {}
-    if sim.get("iteration") is not None:
-        return int(sim["iteration"])
-    if sim.get("iterations") is not None:
-        return int(sim["iterations"])
     return 1
 
 
-def _resolve_sampleshare(cfg: dict, step_cfg: dict) -> float:
-    """Sample rate the demand model ran at, so PrepAssign can expand the trips."""
+def _resolve_sampleshare(cfg: dict, step_cfg: dict, iteration: int) -> float:
+    """Sample rate the demand model ran at, so PrepAssign can expand the trips.
+
+    Must match what ``simulate_ctramp`` used for *this* iteration, or PrepAssign
+    expands the trip lists by the wrong factor.
+    """
     if step_cfg.get("sampleshare") is not None:
         return float(step_cfg["sampleshare"])
 
@@ -57,7 +62,6 @@ def _resolve_sampleshare(cfg: dict, step_cfg: dict) -> float:
         return float(sim["sample_rate"])
 
     # No explicit rate: CT-RAMP's per-iteration ramp (RunModel.bat).
-    iteration = _resolve_iteration(cfg, {}, {})
     return {1: 0.15, 2: 0.30}.get(iteration, 0.50)
 
 
@@ -92,7 +96,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa:
         raise ValueError(msg)
 
     iteration = _resolve_iteration(cfg, step_cfg, kwargs)
-    sampleshare = _resolve_sampleshare(cfg, step_cfg)
+    sampleshare = _resolve_sampleshare(cfg, step_cfg, iteration)
 
     run_iteration(
         proj_dir,
