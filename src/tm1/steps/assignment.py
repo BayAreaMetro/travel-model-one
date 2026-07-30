@@ -5,21 +5,45 @@ Sequences the stock Cube ``.job`` scripts in ``RunIteration.bat`` order:
 ``hwy/avgLOAD{PERIOD}.net`` and refreshed skims ready for the next iteration's
 demand model.
 
-Configured under ``steps.assignment`` in ``scenario_config.yaml``::
+Normally declared inside the feedback loop, since an iteration is demand plus
+assignment::
 
-    assignment:
-      proj_dir: "{proj_dir}"
-      model_year: 2023      # IxForecasts_horizon.job branches on this
-      future: PBA50         # ditto -- PBA50 for IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/TRR
-      iteration: 1          # defaults to steps.simulate_ctramp's iteration
-      sampleshare: 0.15     # defaults to simulate_ctramp's sample_rate
-      do_nonres: true       # internal/external, truck, air, HSR models
-      do_transit: true
-      build_skims: true     # rebuild highway skims + accessibility afterwards
+    steps:
+      iterate:
+        count: 3
+        steps:
+          simulate_ctramp: {...}
+          assignment:
+            proj_dir: "{proj_dir}"
+            model_year: 2023     # see below -- both are legacy names
+            future: PBA50
+            do_nonres: true      # internal/external, truck, air, HSR models
+            do_transit: true
+            build_skims: true    # rebuild highway skims + accessibility after
+            iteration: 1         # optional; the runner supplies the current one
+            sampleshare: 0.15    # optional; defaults to simulate_ctramp's rate,
+                                 # else RunModel.bat's ramp for this iteration
 
-`model_year` and `future` are explicit here.  ``RunModel.bat`` slices them out of
-the project *folder name* (``2023_TM161_IPA_35`` -> 2023 / IPA -> PBA50), which
-makes a run depend on how its output directory is spelled; this does not.
+``model_year`` and ``future`` keep their legacy names because the Cube jobs read
+them as ``%MODEL_YEAR%`` / ``%FUTURE%``.  ``RunModel.bat`` derives both by slicing
+the project *folder name*: ``2023_TM161_IPA_35`` yields ``2023`` from characters
+1-4 and the project code ``IPA`` from 12-14, which a lookup maps to a future.
+Setting them explicitly here means a run's results no longer depend on how its
+output directory happens to be spelled.
+
+``model_year``
+    The forecast year.  ``IxForecasts_horizon.job`` uses it to choose the
+    internal-external trip forecast: 2005 and 2015 are fixed tables, 2021 is the
+    base year, and later years extrapolate linearly from it
+    (``year_delta = model_year - 2021``).  Years before 2021 other than 2015 are
+    unsupported.
+
+``future``
+    Not a year.  The name of a planning-scenario family, selecting which growth
+    assumptions the forecast applies.  ``IPA``/``DBP``/``FBP``/``EIR``/``SEN``/
+    ``STP``/``NGF``/``TIP``/``TRR`` all map to ``PBA50``, the only one
+    implemented; ``PPA`` runs instead use ``RisingTidesFallingFortunes``,
+    ``CleanAndGreen`` or ``BackToTheFuture``.
 
 Demand must already be in ``main/`` -- this runs *after* ``simulate_ctramp``.
 """

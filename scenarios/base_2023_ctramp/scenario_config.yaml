@@ -151,8 +151,28 @@ steps:
       #
       assignment:
         proj_dir: "{proj_dir}"
-        model_year: 2023       # IxForecasts_horizon.job branches on this
-        future: PBA50          # project IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/TRR -> PBA50
+        # `model_year` and `future` are legacy names, kept verbatim because the
+        # Cube jobs read them as %MODEL_YEAR% / %FUTURE%.  RunModel.bat derives
+        # both by slicing the *project folder name* -- "2023_TM161_IPA_35" gives
+        # chars 1-4 as the year and chars 12-14 ("IPA") as a project code, which
+        # a lookup maps to a FUTURE.  Setting them here instead means a run's
+        # results no longer depend on how its output directory is spelled.
+        #
+        #   model_year  the forecast year, used by IxForecasts_horizon.job to
+        #               pick the internal-external trip forecast: 2005 and 2015
+        #               are fixed tables, 2021 is the base, and later years are
+        #               extrapolated linearly from it (year_delta = year - 2021).
+        #               Years before 2021 other than 2015 are not supported.
+        #
+        #   future      *not* a year -- the name of a planning-scenario family,
+        #               selecting which growth assumptions the forecast uses.
+        #               IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/TRR all map to PBA50,
+        #               which is the only one implemented.  (PPA runs instead
+        #               use RisingTidesFallingFortunes / CleanAndGreen /
+        #               BackToTheFuture, chosen by a further two characters of
+        #               the folder name.)
+        model_year: 2023
+        future: PBA50
         do_nonres: true        # internal/external, truck, air passenger, HSR models
         do_transit: true       # transit assignment + skims (15-node cluster)
         build_skims: true      # rebuild highway skims + accessibility afterwards
