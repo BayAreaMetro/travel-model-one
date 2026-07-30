@@ -122,8 +122,8 @@ steps:
   simulate_ctramp: {...}
   assignment: {...}
 
-  extract_key_files:                     # runs after
-    script: "hooks.py:extract_key_files"
+  vmt_vht_metrics:                       # runs after
+    script: "hooks.py:vmt_vht_metrics"
 ```
 
 Naming the function after a colon lets one file hold several steps. Without it,
@@ -143,5 +143,9 @@ def clean_inputs(scenario_dir, cfg, **kwargs):
 - Custom steps work with `--steps <name>` like any other
 - Built-in step names cannot be redefined; pick a different name
 
-`scenarios/base_2023_ctramp/hooks.py` is a worked example — a Python port of the
-subset of `utilities/RTP/ExtractKeyFiles.bat` this pipeline can currently produce.
+`scenarios/base_2023_ctramp/hooks.py` is a worked example: `vmt_vht_metrics` reads
+the loaded network the feedback block writes and summarises VMT, VHT and implied
+congested speed by facility type — a reduced form of
+`utilities/RTP/metrics/hwynet.py`. It aggregates rather than copies, which is the
+pattern the migration is trying to establish; see
+[`MIGRATION_NOTES.md`](MIGRATION_NOTES.md) on porting intent rather than mechanism.

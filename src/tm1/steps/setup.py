@@ -64,7 +64,7 @@ def run(
     cfg: dict,
     **kwargs: object,
 ) -> str | None:
-    """Copy input files as specified in setup.copy_inputs."""
+    """Copy input files as specified in the copy_inputs step."""
     force = kwargs.get("force", False)
 
     copy_inputs = cfg.get("steps", {}).get("copy_inputs", {})

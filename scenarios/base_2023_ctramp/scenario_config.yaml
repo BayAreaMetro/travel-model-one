@@ -7,7 +7,7 @@
 # -> skims.  Every Cube .job script is the stock one, run unmodified.
 #
 # Requires Cube Voyager + licence.  Set `reference_run` and `proj_dir` below;
-# setup.copy_inputs fetches everything else, so the run is self-contained and
+# copy_inputs fetches everything else, so the run is self-contained and
 # does not write into the reference run.
 
 slack: "off"
@@ -29,7 +29,7 @@ ctramp_output_dir: "{proj_dir}/main"
 # └─────────────────────────────────────────────────────────────────────────────┘
 # Steps run in the order written.  Each key is a step; there is no nesting, so
 # reading top to bottom tells you what runs and when.  A step with a `script:` or
-# `module:` key runs your own code -- see `extract_key_files` at the end.
+# `module:` key runs your own code -- see `vmt_vht_metrics` at the end.
 steps:
   # --- 1. Stage every input the model reads into the project directory ---
   copy_inputs:
@@ -150,8 +150,8 @@ steps:
   # `simulate_ctramp` and the same mechanism makes it pre-processing -- position
   # in this list is the only thing that decides.
   #
-  # `hooks.py:extract_key_files` names the function; without the `:name` suffix
+  # `hooks.py:vmt_vht_metrics` names the function; without the `:name` suffix
   # the step calls `run()`, so one file can hold several steps.
   #
-  extract_key_files:
-    script: "hooks.py:extract_key_files"
+  vmt_vht_metrics:
+    script: "hooks.py:vmt_vht_metrics"

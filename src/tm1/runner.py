@@ -12,8 +12,8 @@ pointing at Python code::
       copy_inputs: {...}
       simulate_ctramp: {...}
       assignment: {...}
-      extract_key_files:
-        script: "hooks.py:extract_key_files"   # path, relative to the scenario dir
+      vmt_vht_metrics:
+        script: "hooks.py:vmt_vht_metrics"     # path, relative to the scenario dir
       trip_length_report:
         module: "mtc_local.reports:trip_lengths"   # importable dotted path
 
@@ -84,7 +84,7 @@ _DEFAULT_ENTRYPOINT = "run"
 
 
 def _split_entrypoint(target: str) -> tuple[str, str]:
-    """Split ``"hooks.py:extract_key_files"`` into target and function name.
+    """Split ``"hooks.py:vmt_vht_metrics"`` into target and function name.
 
     Only splits when the trailing segment is a Python identifier, so Windows
     drive letters survive: ``E:/runs/prep.py`` keeps its colon, because

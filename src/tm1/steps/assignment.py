@@ -76,7 +76,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa:
         msg = (
             f"Cube job scripts not found at {scripts}. The assignment step needs "
             f"CTRAMP/scripts, hwy/ and nonres/ copied into the project directory -- "
-            f"see setup.copy_inputs in the scenario config."
+            f"see copy_inputs in the scenario config."
         )
         raise FileNotFoundError(msg)
 

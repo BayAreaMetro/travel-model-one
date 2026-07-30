@@ -17,7 +17,7 @@ production until its own phase lands and passes its own gate.
 | 1 | Runtime harness | `tm1` CLI, runner, scenario config chain; flat steps + scenario-supplied steps; `copy_inputs` / `simulate_ctramp` / `assignment`; `base_2023_ctramp`; target-layout scaffold | ~40 | **in progress** |
 | 2 | Cube matrix I/O | `cubeio` — pure-Python TPP ↔ OMX, no Cube install; bit-exact golden tests | ~30 | ready |
 | 3 | Calibration reporting | HTML calibration/validation report system (needs #2 to read `.tpp` skims) | ~37 | ready |
-| 4 | Model parity | the rest of `RunModel.bat`: preprocess (`SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py`), source inputs from the reference run's pristine `INPUT/`, then post-processing (`SkimsDatabase`, `net2csv`, EMFAC, logsums, core summaries, metrics, `ExtractKeyFiles`) | — | not started |
+| 4 | Model parity | the rest of `RunModel.bat`, ported for *equivalent results* rather than in kind (see [Port the intent, not the mechanism](#port-the-intent-not-the-mechanism)): preprocess (`SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py`), inputs from the reference run's pristine `INPUT/`, then post-processing (EMFAC, logsums, core summaries, metrics) — dropping the steps that exist only to move data between Cube, R and batch | — | not started |
 | 5 | ActivitySim swap-in | config corpus + scenarios + ActivitySim/PopulationSim steps + Cube harness and the ActivitySim↔Cube demand bridge | ~200 | pending full PBA50 review |
 | 6 | Assignment backend | AequilibraE engine, params, parity validation | ~25 | prototype — needs buy-in |
 | 7 | Housekeeping | legacy triage of `core/`, `model-files/`, `utilities/` (see [Diffs from legacy → target](#diffs-from-legacy--target)) | — | not started |
@@ -41,6 +41,52 @@ Notes on the ordering:
   validated by output comparison rather than by reading. It is a data drop, not a code review.
 - **Phases 2 and 3 are separable from 1** only because nothing in a CT-RAMP-only pipeline
   reads Cube matrices from Python; the calibration report is the first thing that does.
+
+
+## Port the intent, not the mechanism
+
+A large share of the legacy pipeline is not model logic. It is workarounds for things the
+`.bat` + Cube + R toolchain could not do directly — above all, that nothing outside Cube
+could read a `.tpp` matrix. Re-implementing those faithfully would carry the workarounds
+into Python and inherit their cost.
+
+Measured on the 2023 reference run (~53 GB), roughly **10 GB per run is derived or
+duplicated data**:
+
+| Artifact | Size | Why it exists |
+|---|---|---|
+| `database/*SkimsDatabase{period}.csv` | 4.4 GB | `SkimsDatabase.job` re-encodes `.tpp` skims as CSV **because R and Python could not read `.tpp`** |
+| `main/indivTripDataIncome_3.csv` | 1.6 GB | `joinTripsWithIncome.R` rewrites the 1.5 GB trip table to attach one income column |
+| `extractor/` | 2.2 GB | a subset materialised as a folder purely so the next line can `Robocopy` it to `M:` |
+| `updated_output/*.rdata` | 1.0 GB | R re-serialisation of data already written as CSV |
+| `INPUT/` copied into working dirs | 0.6 GB | preserves pristine inputs by duplicating them |
+| `CTRAMP/` model code | 0.2 GB | the model source, copied into every run directory |
+
+Plus smaller copies that exist only to satisfy a hardcoded filename downstream --
+`popsyn/hhFile.*.csv` → `hhFile.csv`, `main/ShadowPricing_7.csv` →
+`logsums/shadowPricing_7.csv`, `INPUT/metrics/BC_config.csv` → `metrics/`.
+
+The principles that follow, and which the port should hold to:
+
+- **Read the native format.** `cubeio` (phase 2) reads `.tpp` directly, so `database/` has
+  no reason to exist. That single capability removes 4.4 GB per run *and* the `.job` script,
+  the R reader and the Cube/R/batch handoff around it.
+- **Join at read time; do not materialise.** Attaching income to trips is a merge, not a
+  1.6 GB artifact.
+- **Select with a list, not a folder.** Ship a manifest, or write straight to the
+  destination — do not stage a copy in order to copy it again.
+- **Resolve paths in config; do not copy files to match hardcoded names.**
+- **Machine differences belong in `.env`,** not in `if %computername%==MODEL2-A` tables
+  (`RunLogsums.bat` carries eleven of them; `CopyFilesToM.bat`'s destination still points at
+  an RTP2017 path).
+
+So phase 4 is *parity of results*, not parity of file layout. Where a legacy step exists only
+to move data between tools, the Python port should delete it rather than reproduce it — and
+say so, with the before/after, so reviewers can check the reasoning rather than the diff.
+
+`scenarios/base_2023_ctramp/hooks.py` is the small worked example of the target shape: it
+reads an output the pipeline already writes and aggregates it to a few rows, rather than
+copying anything.
 
 
 ## Repo layout

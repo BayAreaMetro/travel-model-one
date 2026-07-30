@@ -3,8 +3,8 @@
 Anything in here is ordinary Python, wired in from ``scenario_config.yaml``::
 
     steps:
-      extract_key_files:
-        script: "hooks.py:extract_key_files"
+      vmt_vht_metrics:
+        script: "hooks.py:vmt_vht_metrics"
 
 A step is any function taking ``(scenario_dir, cfg, **kwargs)`` -- the same
 contract the built-in steps use.  Where it appears under ``steps:`` decides when
@@ -13,71 +13,84 @@ makes it post-processing.  Return ``"skipped"`` to record a no-op.
 """
 
 import logging
-import shutil
 from pathlib import Path
+
+import pandas as pd
 
 log = logging.getLogger(__name__)
 
-#: Files ExtractKeyFiles.bat pulls that this pipeline can produce today, as
-#: (source relative to proj_dir, destination relative to extractor/).  ``{iter}``
-#: expands to the assignment iteration, standing in for the batch file's %ITER%.
-_EXTRACT = (
-    ("hwy/iter{iter}/avgload5period.net", "avgload5period.net"),
-    ("hwy/iter{iter}/avgload5period.csv", "avgload5period.csv"),
-    ("main/tripsEA.tpp", "main/tripsEA.tpp"),
-    ("main/tripsAM.tpp", "main/tripsAM.tpp"),
-    ("main/tripsMD.tpp", "main/tripsMD.tpp"),
-    ("main/tripsPM.tpp", "main/tripsPM.tpp"),
-    ("main/tripsEV.tpp", "main/tripsEV.tpp"),
-    ("logs/feedback.rpt", "feedback.rpt"),
-    ("logs/HwySkims.debug", "HwySkims.debug"),
-)
+PERIODS = ("EA", "AM", "MD", "PM", "EV")
 
-#: Directories ExtractKeyFiles.bat also collects, which need the post-processing
-#: phase this pipeline does not yet run.  Reported so the gap stays visible
-#: rather than looking like the extract simply found nothing.
-_NEEDS_POSTPROCESSING = (
-    "logsums", "core_summaries", "updated_output", "metrics", "emfac",
-    "offmodel", "shapefile",
-)
+#: Facility types counted as freeway, per ``utilities/RTP/metrics/hwynet.py``:
+#: freeway-to-freeway connectors (1), freeways (2) and managed freeways (8).
+_FREEWAY_FT = (1, 2, 8)
+
+#: Dummy links carry no real traffic; hwynet.py drops them the same way.
+_DUMMY_FT = 6
 
 
-def extract_key_files(
+def vmt_vht_metrics(
     scenario_dir: Path,  # noqa: ARG001
     cfg: dict,
     **kwargs: object,  # noqa: ARG001
 ) -> str | None:
-    """Collect key model outputs into ``extractor/`` for export and summarising.
+    """Summarise the loaded network into VMT and VHT by facility type.
 
-    The Python counterpart of ``utilities/RTP/ExtractKeyFiles.bat``, covering the
-    subset this pipeline currently produces.  The rest of that batch file reads
-    directories built by the post-processing phase (logsums, core summaries,
-    metrics, EMFAC), which is not yet ported -- those are logged as skipped.
+    Reads ``hwy/iter{N}/avgload5period.csv`` -- written by the feedback block --
+    and writes ``metrics/vmt_vht_metrics.csv``.
+
+    A reduced form of ``utilities/RTP/metrics/hwynet.py``, which additionally
+    splits by vehicle class and joins collision, delay and emissions lookups.
+    Those need ``avgload5period_vehclasses.csv`` from ``net2csv_avgload5period.job``,
+    part of the post-processing phase this pipeline does not yet run.
+
+    Deliberately aggregates rather than copies: the input is ~10 MB and the
+    output is a handful of rows, so nothing is duplicated on disk.
     """
     proj_dir = Path(cfg["proj_dir"])
     iteration = cfg.get("steps", {}).get("assignment", {}).get("iteration") or 1
 
-    extractor = proj_dir / "extractor"
-    extractor.mkdir(parents=True, exist_ok=True)
+    loaded = proj_dir / "hwy" / f"iter{iteration}" / "avgload5period.csv"
+    if not loaded.is_file():
+        log.warning("vmt_vht_metrics: %s not found; did the feedback block run?", loaded)
+        return "skipped"
 
-    copied, missing = 0, []
-    for src_tmpl, dest_rel in _EXTRACT:
-        src = proj_dir / src_tmpl.format(iter=iteration)
-        if not src.is_file():
-            missing.append(src_tmpl.format(iter=iteration))
-            continue
-        dest = extractor / dest_rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dest)
-        copied += 1
+    links = pd.read_csv(loaded, skipinitialspace=True)
+    links.columns = [c.strip() for c in links.columns]
+    links = links[links["ft"] != _DUMMY_FT]
 
-    if missing:
-        log.warning("extract_key_files: %d file(s) not found: %s",
-                    len(missing), ", ".join(missing))
+    rows = []
+    for period in PERIODS:
+        vol = links[f"vol{period}_tot"]
+        rows.append(pd.DataFrame({
+            "period": period,
+            "ft": links["ft"],
+            "road_type": links["ft"].isin(_FREEWAY_FT).map(
+                {True: "freeway", False: "non-freeway"}
+            ),
+            "vmt": vol * links["distance"],
+            "vht": vol * links[f"ctim{period}"] / 60.0,
+            "lane_miles": links["distance"] * links["lanes"],
+        }))
 
-    log.info(
-        "extract_key_files: %d file(s) -> %s. Not collected (needs the "
-        "post-processing phase): %s",
-        copied, extractor, ", ".join(_NEEDS_POSTPROCESSING),
+    by_link = pd.concat(rows, ignore_index=True)
+    summary = (
+        by_link.groupby(["period", "road_type", "ft"], as_index=False)
+        [["vmt", "vht", "lane_miles"]].sum()
     )
-    return None if copied else "skipped"
+    # Congested speed implied by the assignment, the headline check on a run.
+    summary["avg_speed_mph"] = (summary["vmt"] / summary["vht"]).round(1)
+
+    out_dir = proj_dir / "metrics"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "vmt_vht_metrics.csv"
+    summary.to_csv(out_path, index=False)
+
+    vmt, vht = summary["vmt"].sum(), summary["vht"].sum()
+    log.info(
+        "vmt_vht_metrics: iter %d -- daily VMT %s, VHT %s, "
+        "implied average speed %.1f mph -> %s",
+        iteration, f"{vmt:,.0f}", f"{vht:,.0f}",
+        vmt / vht if vht else 0.0, out_path,
+    )
+    return None
