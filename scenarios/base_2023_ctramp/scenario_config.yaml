@@ -171,6 +171,13 @@ steps:
         #               use RisingTidesFallingFortunes / CleanAndGreen /
         #               BackToTheFuture, chosen by a further two characters of
         #               the folder name.)
+        # Which engine solves the assignment.  Cube and AequilibraE solve the
+        # same problem -- multi-class user equilibrium over the same network
+        # from the same demand -- so switching is a value here, not a different
+        # step.  `aeq` arrives with the ActivitySim swap-in, which brings the
+        # engine and the OMX demand path it reads.
+        backend: cube
+
         model_year: 2023
         future: PBA50
         do_nonres: true        # internal/external, truck, air passenger, HSR models

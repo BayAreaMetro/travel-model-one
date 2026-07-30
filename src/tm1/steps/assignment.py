@@ -49,6 +49,7 @@ Demand must already be in ``main/`` -- this runs *after* ``simulate_ctramp``.
 """
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 
 from tm1.assignment.cube.ctramp import run_iteration
@@ -89,16 +90,8 @@ def _resolve_sampleshare(cfg: dict, step_cfg: dict, iteration: int) -> float:
     return {1: 0.15, 2: 0.30}.get(iteration, 0.50)
 
 
-def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
-    """Run one Cube assignment + feedback pass for the current iteration."""
-    step_cfg = cfg.get("steps", {}).get("assignment", {}) or {}
-
-    proj_dir = step_cfg.get("proj_dir") or cfg.get("proj_dir")
-    if not proj_dir:
-        msg = "assignment step needs `proj_dir` (or a top-level proj_dir)"
-        raise ValueError(msg)
-    proj_dir = Path(proj_dir)
-
+def _run_cube(proj_dir: Path, iteration: int, sampleshare: float, step_cfg: dict) -> None:
+    """Cube Voyager: ``RunIteration.bat``'s sequence, every ``.job`` unmodified."""
     scripts = proj_dir / "CTRAMP" / "scripts"
     if not scripts.is_dir():
         msg = (
@@ -119,9 +112,6 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa:
         )
         raise ValueError(msg)
 
-    iteration = _resolve_iteration(cfg, step_cfg, kwargs)
-    sampleshare = _resolve_sampleshare(cfg, step_cfg, iteration)
-
     run_iteration(
         proj_dir,
         iteration,
@@ -134,4 +124,45 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa:
         cluster_nodes=step_cfg.get("cluster_nodes", 48),
         transit_nodes=step_cfg.get("transit_nodes", 15),
     )
+
+
+#: Assignment engines, keyed by the ``backend:`` value that selects them.
+#:
+#: Cube and AequilibraE solve the same problem -- multi-class user equilibrium
+#: over the same network from the same demand -- so they belong behind one step
+#: rather than under separate names.  ``aeq`` is not registered here: the
+#: AequilibraE runner and its OMX demand path arrive with the ActivitySim
+#: swap-in.  Adding it is an entry in this table, not a new step.
+_BACKENDS: dict[str, Callable[[Path, int, float, dict], None]] = {
+    "cube": _run_cube,
+}
+
+
+def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+    """Run one assignment + feedback pass for the current iteration."""
+    step_cfg = cfg.get("steps", {}).get("assignment", {}) or {}
+
+    proj_dir = step_cfg.get("proj_dir") or cfg.get("proj_dir")
+    if not proj_dir:
+        msg = "assignment step needs `proj_dir` (or a top-level proj_dir)"
+        raise ValueError(msg)
+    proj_dir = Path(proj_dir)
+
+    backend = str(step_cfg.get("backend", "cube")).lower()
+    if backend not in _BACKENDS:
+        available = ", ".join(sorted(_BACKENDS))
+        extra = (
+            " AequilibraE arrives with the ActivitySim swap-in, which brings the "
+            "engine and the OMX demand path it reads."
+            if backend == "aeq"
+            else ""
+        )
+        msg = f"Unknown assignment backend {backend!r}; available: {available}.{extra}"
+        raise ValueError(msg)
+
+    iteration = _resolve_iteration(cfg, step_cfg, kwargs)
+    sampleshare = _resolve_sampleshare(cfg, step_cfg, iteration)
+
+    log.info("Assignment iteration %d via backend %r", iteration, backend)
+    _BACKENDS[backend](proj_dir, iteration, sampleshare, step_cfg)
     return None
