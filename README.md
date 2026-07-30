@@ -41,19 +41,31 @@ full phase plan and current status of each piece.
 
 ### Scope
 
-Runs a full global iteration: CT-RAMP demand, then Cube assignment, feedback and skims —
-`RunModel.bat` and `RunIteration.bat` replaced end to end. Every Cube `.job` script is the
-stock one, run unmodified; only the orchestration around them is new.
+Runs a full global iteration: input staging, CT-RAMP demand, then Cube assignment, feedback
+and skims. Every Cube `.job` script is the stock one, run unmodified; only the orchestration
+around them is new.
+
+That covers `SetUpModel.bat`'s staging and **all of `RunIteration.bat`**. It does *not* yet
+cover two phases of `RunModel.bat`:
+
+| Not yet ported | What it does |
+|----------------|--------------|
+| Preprocess | `SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py` |
+| Post-processing | `SkimsDatabase`, `net2csv`, EMFAC, logsums, core summaries, metrics, `ExtractKeyFiles` |
+
+Because preprocess is absent, a scenario currently seeds `hwy/` from a completed reference
+run rather than building the period networks from `freeflow.net`. Closing both gaps — and
+sourcing from the reference run's pristine `INPUT/` — is phase 4; see
+[`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
 
 Requires Cube Voyager and a licence, as before.
 
 ### Repository Layout
 
 ```
-scenarios/{name}/     # Scenario config (base_2023_ctramp)
+scenarios/{name}/     # Scenario config + any scenario-specific step code
 src/tm1/              # Python package: CLI, step orchestrator, model steps
-scripts/              # Launch/utility entrypoints
-default-configs/      # Shared model configs — scaffolded, populated in phase 4
+default-configs/      # Shared model configs — scaffolded, populated in phase 5
 model-files/, core/   # Legacy CT-RAMP/Cube assets, unchanged, still in production
 ```
 
@@ -76,7 +88,10 @@ tm1 --help
 tm1 run --scenario base_2023_ctramp
 
 # a single step
-tm1 run --scenario base_2023_ctramp --step simulate_ctramp
+tm1 run --scenario base_2023_ctramp --steps simulate_ctramp
+
+# a scenario kept outside the repo
+tm1 run --scenario E:/runs/my_scenario
 ```
 
 ### Creating a New Scenario
@@ -85,3 +100,48 @@ tm1 run --scenario base_2023_ctramp --step simulate_ctramp
 2. Update `reference_run` and `proj_dir` for your environment
 3. Adjust the `steps:` block — iterations, sample rate, threads, model components
 4. Run with `tm1 run --scenario <name>`
+
+### Adding Your Own Pre- or Post-Processing
+
+Steps are flat — every step is a top-level key under `steps:`, and they run in the
+order written. So a step placed *before* `simulate_ctramp` is pre-processing, and
+one placed *after* `assignment` is post-processing. There is no separate "hook"
+concept; position is the whole mechanism.
+
+Point a step at your own code with `script:` (a path, relative to the scenario
+directory) or `module:` (an importable dotted path):
+
+```yaml
+steps:
+  copy_inputs: {...}
+
+  clean_inputs:                          # runs before the model
+    script: "hooks.py:clean_inputs"
+    drop_zero_hh: true                   # anything else is yours
+
+  simulate_ctramp: {...}
+  assignment: {...}
+
+  extract_key_files:                     # runs after
+    script: "hooks.py:extract_key_files"
+```
+
+Naming the function after a colon lets one file hold several steps. Without it,
+`run` is called — the same name the built-in steps use.
+
+A step is any function with this signature:
+
+```python
+def clean_inputs(scenario_dir, cfg, **kwargs):
+    """Return "skipped" to record a no-op, or None."""
+    settings = cfg["steps"]["clean_inputs"]    # your own keys
+    proj_dir = cfg["proj_dir"]                 # {templates} already expanded
+```
+
+- `cfg` is the fully resolved config — `{proj_dir}` and friends already expanded
+- `cfg` is shared, so a step may modify it to pass values to later steps
+- Custom steps work with `--steps <name>` like any other
+- Built-in step names cannot be redefined; pick a different name
+
+`scenarios/base_2023_ctramp/hooks.py` is a worked example — a Python port of the
+subset of `utilities/RTP/ExtractKeyFiles.bat` this pipeline can currently produce.

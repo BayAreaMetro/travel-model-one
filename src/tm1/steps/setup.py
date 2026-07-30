@@ -1,15 +1,16 @@
-"""Setup step: create directories and copy input files.
+"""Input staging steps.
 
-Reads ``cfg["steps"]["setup"]["copy_inputs"]`` — a dict of named entries,
+``copy_inputs`` reads ``cfg["steps"]["copy_inputs"]`` — a dict of named entries,
 each with ``from`` and ``to`` paths.  If ``from`` is a directory, the entire
 tree is copied (or filtered by ``glob`` pattern).  Idempotent: skips
 files/dirs that already exist unless ``force=True``.
 
-An optional ``walk_access_buffers`` entry (``from`` = walkAccessBuffers.float.csv,
-``into`` = the copied land_use.csv) merges CT-RAMP's per-TAZ walk-to-transit
-subzone shares into the land_use table after copying.  The mode-choice
-preprocessors sample each tour end's walk segment (short/long/none) from these
-shares to replicate CT-RAMP's transit availability gates and access walk times.
+``walk_access_buffers`` (``from`` = walkAccessBuffers.float.csv, ``into`` = the
+copied land_use.csv) merges CT-RAMP's per-TAZ walk-to-transit subzone shares into
+the land_use table.  The mode-choice preprocessors sample each tour end's walk
+segment (short/long/none) from these shares to replicate CT-RAMP's transit
+availability gates and access walk times.  Declare it after ``copy_inputs``,
+since it edits a file that step puts in place.
 """
 
 import logging
@@ -66,8 +67,7 @@ def run(
     """Copy input files as specified in setup.copy_inputs."""
     force = kwargs.get("force", False)
 
-    setup_cfg = cfg.get("steps", {}).get("setup", {})
-    copy_inputs = setup_cfg.get("copy_inputs", {})
+    copy_inputs = cfg.get("steps", {}).get("copy_inputs", {})
 
     copied = 0
     for name, entry in copy_inputs.items():
@@ -107,11 +107,20 @@ def run(
             _strip_ctrl_z(dest)
             copied += 1
 
-    buffers_cfg = setup_cfg.get("walk_access_buffers")
-    if buffers_cfg:
-        merge_walk_access_shares(Path(buffers_cfg["from"]), Path(buffers_cfg["into"]))
-
     log.info("Setup complete: %d item(s) configured, files copied", len(copy_inputs))
-    if copied == 0 and not buffers_cfg:
+    if copied == 0:
         return "skipped"
+    return None
+
+
+def run_walk_access_buffers(
+    scenario_dir: Path,  # noqa: ARG001
+    cfg: dict,
+    **kwargs: object,  # noqa: ARG001
+) -> str | None:
+    """Merge walk-to-transit subzone shares into the copied land_use table."""
+    buffers_cfg = cfg.get("steps", {}).get("walk_access_buffers") or {}
+    if not buffers_cfg:
+        return "skipped"
+    merge_walk_access_shares(Path(buffers_cfg["from"]), Path(buffers_cfg["into"]))
     return None

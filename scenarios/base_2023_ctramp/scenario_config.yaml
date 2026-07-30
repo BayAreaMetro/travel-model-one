@@ -27,59 +27,61 @@ ctramp_output_dir: "{proj_dir}/main"
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  PIPELINE STEPS                                                            │
 # └─────────────────────────────────────────────────────────────────────────────┘
+# Steps run in the order written.  Each key is a step; there is no nesting, so
+# reading top to bottom tells you what runs and when.  A step with a `script:` or
+# `module:` key runs your own code -- see `extract_key_files` at the end.
 steps:
-  # --- 1. Setup: create project directory structure ---
-  setup:
-    copy_inputs:
-      # whole dir: CT-RAMP reads tazData.csv, but the Cube nonres jobs read the
-      # .dbf twin (TruckTripGeneration.job -> landuse	azdata.dbf)
-      landuse:
-        from: "{reference_run}/landuse"
-        to: "{proj_dir}/landuse"
-      households:
-        from: "{reference_run}/popsyn/hhFile.csv"
-        to: "{proj_dir}/popsyn/hhFile.csv"
-      persons:
-        from: "{reference_run}/popsyn/personFile.csv"
-        to: "{proj_dir}/popsyn/personFile.csv"
-      skims:
-        from: "{reference_run}/skims"
-        to: "{proj_dir}/skims"
-        glob: "*.tpp"
-      accessibility:
-        from: "{reference_run}/skims/accessibility.csv"
-        to: "{proj_dir}/skims/accessibility.csv"
-      ctramp_model:
-        from: "{reference_run}/CTRAMP/model"
-        to: "{proj_dir}/CTRAMP/model"
-      shadow_prices:
-        from: "{reference_run}/main/ShadowPricing_5.csv"
-        to: "{proj_dir}/main/ShadowPricing_5.csv"
-      ctramp_runtime:
-        from: "{reference_run}/CTRAMP/runtime"
-        to: "{proj_dir}/CTRAMP/runtime"
-      # --- Cube assignment inputs -------------------------------------------
-      ctramp_scripts:
-        from: "{reference_run}/CTRAMP/scripts"
-        to: "{proj_dir}/CTRAMP/scripts"
-      hwy:
-        from: "{reference_run}/hwy"
-        to: "{proj_dir}/hwy"
-      nonres:
-        from: "{reference_run}/nonres"
-        to: "{proj_dir}/nonres"
-      # PrepAssign.job reads this by bare relative path, so it must sit at the
-      # project root rather than under a subdirectory
-      taxi_tnc_occ_factors:
-        from: "{reference_run}/taxi_tnc_occ_factors.csv"
-        to: "{proj_dir}/taxi_tnc_occ_factors.csv"
-      # Transit line files, fare tables and support links.  `glob: "*"` takes the
-      # top-level files only -- the reference run's TransitAssignment.iter* output
-      # directories are skipped, since each iteration rebuilds its own.
-      trn:
-        from: "{reference_run}/trn"
-        to: "{proj_dir}/trn"
-        glob: "*"
+  # --- 1. Stage every input the model reads into the project directory ---
+  copy_inputs:
+    # whole dir: CT-RAMP reads tazData.csv, but the Cube nonres jobs read the
+    # .dbf twin (TruckTripGeneration.job -> landuse	azdata.dbf)
+    landuse:
+      from: "{reference_run}/landuse"
+      to: "{proj_dir}/landuse"
+    households:
+      from: "{reference_run}/popsyn/hhFile.csv"
+      to: "{proj_dir}/popsyn/hhFile.csv"
+    persons:
+      from: "{reference_run}/popsyn/personFile.csv"
+      to: "{proj_dir}/popsyn/personFile.csv"
+    skims:
+      from: "{reference_run}/skims"
+      to: "{proj_dir}/skims"
+      glob: "*.tpp"
+    accessibility:
+      from: "{reference_run}/skims/accessibility.csv"
+      to: "{proj_dir}/skims/accessibility.csv"
+    ctramp_model:
+      from: "{reference_run}/CTRAMP/model"
+      to: "{proj_dir}/CTRAMP/model"
+    shadow_prices:
+      from: "{reference_run}/main/ShadowPricing_5.csv"
+      to: "{proj_dir}/main/ShadowPricing_5.csv"
+    ctramp_runtime:
+      from: "{reference_run}/CTRAMP/runtime"
+      to: "{proj_dir}/CTRAMP/runtime"
+    # --- Cube assignment inputs -------------------------------------------
+    ctramp_scripts:
+      from: "{reference_run}/CTRAMP/scripts"
+      to: "{proj_dir}/CTRAMP/scripts"
+    hwy:
+      from: "{reference_run}/hwy"
+      to: "{proj_dir}/hwy"
+    nonres:
+      from: "{reference_run}/nonres"
+      to: "{proj_dir}/nonres"
+    # PrepAssign.job reads this by bare relative path, so it must sit at the
+    # project root rather than under a subdirectory
+    taxi_tnc_occ_factors:
+      from: "{reference_run}/taxi_tnc_occ_factors.csv"
+      to: "{proj_dir}/taxi_tnc_occ_factors.csv"
+    # Transit line files, fare tables and support links.  `glob: "*"` takes the
+    # top-level files only -- the reference run's TransitAssignment.iter* output
+    # directories are skipped, since each iteration rebuilds its own.
+    trn:
+      from: "{reference_run}/trn"
+      to: "{proj_dir}/trn"
+      glob: "*"
 
   # --- 2. Simulate: run CTRAMP Java demand model ---
   #
@@ -141,3 +143,15 @@ steps:
     do_transit: true       # transit assignment + skims (15-node cluster)
     build_skims: true      # rebuild highway skims + accessibility afterwards
     cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
+
+  # --- 4. Your own code: any step with `script:` or `module:` ---
+  #
+  # This one runs last, so it is post-processing.  Move it above
+  # `simulate_ctramp` and the same mechanism makes it pre-processing -- position
+  # in this list is the only thing that decides.
+  #
+  # `hooks.py:extract_key_files` names the function; without the `:name` suffix
+  # the step calls `run()`, so one file can hold several steps.
+  #
+  extract_key_files:
+    script: "hooks.py:extract_key_files"

@@ -1,11 +1,47 @@
 """Step orchestrator — runs steps declared in scenario_config.yaml.
 
-Each step is a module with a ``run(scenario_dir, cfg, **kwargs)`` function.
+Each step is a module (or any object) exposing ``run(scenario_dir, cfg, **kwargs)``.
+Steps are flat: every step is a top-level key under ``steps:``, and they run in the
+order written.  There is no grouping and no nesting, so "what runs, and when" is
+answerable by reading the config top to bottom.
+
+A scenario may add its own steps -- typically pre- or post-processing -- by
+pointing at Python code::
+
+    steps:
+      copy_inputs: {...}
+      simulate_ctramp: {...}
+      assignment: {...}
+      extract_key_files:
+        script: "hooks.py:extract_key_files"   # path, relative to the scenario dir
+      trip_length_report:
+        module: "mtc_local.reports:trip_lengths"   # importable dotted path
+
+There is no separate "hook" concept: a pre-processing step is one written before
+the step it prepares for, a post-processing step one written after.  Custom steps
+get the same contract as built-in ones -- the same resolved ``cfg``, the same
+``**kwargs``, the same ``"skipped"`` return sentinel -- and can be targeted
+individually with ``tm1 run --steps <name>``.
+
+``script``/``module`` may name the function after a colon; without one, ``run`` is
+used, matching the built-in steps.  Naming it lets one file hold several steps.
+
+Built-in step names always win: a scenario can add steps but never redefine one.
+
+``cfg`` is shared across steps, so a step *may* modify it to pass computed values
+downstream (a pre-processing step that resolves a path for the step after it, for
+example).  This is supported; it also means an ill-behaved step can affect later
+ones.
 """
 
+import importlib
+import importlib.util
 import logging
+import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
 
 import tm1.steps.assignment as assignment_step
 import tm1.steps.setup as setup_step
@@ -28,15 +64,124 @@ def _fmt_elapsed(seconds: float) -> str:
     return f"{h}h{m:02d}m"
 
 
-STEPS = {
-    "setup": {
-        "copy_inputs": setup_step,
-    },
-    "simulate_ctramp": simulate_ctramp_step,
-    "assignment": assignment_step,
+#: Built-in steps, mapped to the callable that runs each one.  Values are plain
+#: callables so a single module can supply several steps, and so built-in and
+#: scenario-supplied steps resolve to exactly the same kind of thing.
+STEPS: dict[str, Callable] = {
+    "copy_inputs": setup_step.run,
+    "walk_access_buffers": setup_step.run_walk_access_buffers,
+    "simulate_ctramp": simulate_ctramp_step.run,
+    "assignment": assignment_step.run,
 }
 
 DEFAULT_STEPS = list(STEPS.keys())
+
+#: Keys a scenario uses to point a step at its own code.
+_CUSTOM_KEYS = ("script", "module")
+
+#: Function called on a custom step's module when none is named after a colon.
+_DEFAULT_ENTRYPOINT = "run"
+
+
+def _split_entrypoint(target: str) -> tuple[str, str]:
+    """Split ``"hooks.py:extract_key_files"`` into target and function name.
+
+    Only splits when the trailing segment is a Python identifier, so Windows
+    drive letters survive: ``E:/runs/prep.py`` keeps its colon, because
+    ``/runs/prep.py`` is not an identifier.
+    """
+    head, sep, tail = target.rpartition(":")
+    if sep and tail.isidentifier():
+        return head, tail
+    return target, _DEFAULT_ENTRYPOINT
+
+
+def _load_script(path: Path, scenario_dir: Path) -> ModuleType:
+    """Import a ``.py`` file as a module, without putting its directory on sys.path.
+
+    The module is registered under a name qualified by the scenario, so two
+    scenarios that both ship a ``preprocess.py`` do not collide in
+    ``sys.modules``.
+    """
+    spec = importlib.util.spec_from_file_location(
+        f"tm1_scenario_{scenario_dir.name}_{path.stem}", path
+    )
+    if spec is None or spec.loader is None:
+        msg = f"Could not load step script as a Python module: {path}"
+        raise ImportError(msg)
+    mod = importlib.util.module_from_spec(spec)
+    # Registered before exec so the module can import itself / pickle cleanly.
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _load_step(step_name: str, steps_cfg: dict, scenario_dir: Path) -> Callable:
+    """Resolve a step name to the callable that runs it.
+
+    Built-in steps take precedence.  Anything else must declare ``script:`` (a
+    path, relative to the scenario directory unless absolute) or ``module:`` (an
+    importable dotted path), either optionally naming a function after a colon.
+    """
+    step_cfg = steps_cfg.get(step_name)
+    declared = (
+        [k for k in _CUSTOM_KEYS if k in step_cfg] if isinstance(step_cfg, dict) else []
+    )
+
+    if step_name in STEPS:
+        if declared:
+            msg = (
+                f"Step {step_name!r} is built in and cannot be redefined by "
+                f"{declared[0]!r}. Rename the custom step, or drop the "
+                f"{declared[0]!r} key to use the built-in."
+            )
+            raise ValueError(msg)
+        return STEPS[step_name]
+
+    if len(declared) > 1:
+        msg = f"Step {step_name!r} declares both 'script' and 'module'; use one."
+        raise ValueError(msg)
+
+    if not declared:
+        msg = (
+            f"Unknown step: {step_name!r}. Built-in steps are "
+            f"{', '.join(STEPS)}. To run your own code, give the step a "
+            f"'script:' (path relative to the scenario directory) or a "
+            f"'module:' (importable dotted path)."
+        )
+        raise ValueError(msg)
+
+    target, func_name = _split_entrypoint(step_cfg[declared[0]])
+
+    if declared[0] == "module":
+        mod = importlib.import_module(target)
+    else:
+        path = Path(target).expanduser()
+        if not path.is_absolute():
+            path = scenario_dir / path
+        if not path.is_file():
+            msg = f"Step {step_name!r}: script not found: {path}"
+            raise FileNotFoundError(msg)
+        mod = _load_script(path, scenario_dir)
+        target = str(path)
+
+    source = f"{target}:{func_name}"
+    if not hasattr(mod, func_name):
+        named = "" if func_name == _DEFAULT_ENTRYPOINT else f" (named by {step_name!r})"
+        msg = (
+            f"Step {step_name!r}: {target} defines no {func_name}(){named}. Steps "
+            f"need 'def {func_name}(scenario_dir, cfg, **kwargs)', the same "
+            f"contract as the built-in steps."
+        )
+        raise AttributeError(msg)
+
+    func = getattr(mod, func_name)
+    if not callable(func):
+        msg = f"Step {step_name!r} ({source}): {func_name!r} is not callable."
+        raise TypeError(msg)
+
+    log.info("Step %s -> custom code at %s", step_name, source)
+    return func
 
 
 def run_model(
@@ -94,46 +239,28 @@ def run_model(
 
     t0_total = time.time()
 
-    for step_name in steps:
-        entry = STEPS.get(step_name)
-        if entry is None:
-            msg = f"Unknown step: {step_name!r}"
-            raise ValueError(msg)
+    for name in steps:
+        run_step = _load_step(name, steps_cfg, scenario_dir)
 
-        # Build list of (display_name, module) — compound steps expand to sub-steps
-        if isinstance(entry, dict):
-            sub_cfg = steps_cfg.get(step_name, {}) or {}
-            run_list = [
-                (f"{step_name}.{sub}", mod)
-                for sub, mod in entry.items()
-                if sub in sub_cfg
-            ]
-            skipped = [s for s in entry if s not in sub_cfg]
-            for s in skipped:
-                log.info("Skipping %s.%s (not in config)", step_name, s)
+        log.info("--- Step: %s ---", name)
+        t0_step = time.time()
+        try:
+            result = run_step(scenario_dir, cfg, **kwargs)
+        except KeyboardInterrupt:
+            notify(f":no_entry_sign: {label} cancelled during {name}")
+            raise
+        except Exception as e:
+            notify(f":exclamation: {label} failed at {name}: {e}")
+            raise
+        elapsed = time.time() - t0_step
+
+        if result == "skipped":
+            notify(f"[{label}] {name} already done, skipped")
+            log.info("--- Skipped: %s ---", name)
         else:
-            run_list = [(step_name, entry)]
-
-        for name, mod in run_list:
-            log.info("--- Step: %s ---", name)
-            t0_step = time.time()
-            try:
-                result = mod.run(scenario_dir, cfg, **kwargs)
-            except KeyboardInterrupt:
-                notify(f":no_entry_sign: {label} cancelled during {name}")
-                raise
-            except Exception as e:
-                notify(f":exclamation: {label} failed at {name}: {e}")
-                raise
-            elapsed = time.time() - t0_step
-
-            if result == "skipped":
-                notify(f"[{label}] {name} already done, skipped")
-                log.info("--- Skipped: %s ---", name)
-            else:
-                elapsed_str = _fmt_elapsed(elapsed)
-                notify(f"[{label}] {name} done ({elapsed_str})")
-                log.info("--- Done: %s (%s) ---", name, elapsed_str)
+            elapsed_str = _fmt_elapsed(elapsed)
+            notify(f"[{label}] {name} done ({elapsed_str})")
+            log.info("--- Done: %s (%s) ---", name, elapsed_str)
 
     total = time.time() - t0_total
     notify(f"Finished {label} in {_fmt_elapsed(total)} :white_check_mark:")

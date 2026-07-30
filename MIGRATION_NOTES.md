@@ -14,22 +14,30 @@ production until its own phase lands and passes its own gate.
 
 | # | Phase | Scope | ~files | Status |
 |---|---|---|---|---|
-| 1 | Runtime harness | `tm1` CLI, runner, scenario config chain; `setup` / `prepare_survey` / `simulate_ctramp` steps; `base_2023_ctramp`; target-layout scaffold | ~29 | **in progress** |
+| 1 | Runtime harness | `tm1` CLI, runner, scenario config chain; flat steps + scenario-supplied steps; `copy_inputs` / `simulate_ctramp` / `assignment`; `base_2023_ctramp`; target-layout scaffold | ~40 | **in progress** |
 | 2 | Cube matrix I/O | `cubeio` — pure-Python TPP ↔ OMX, no Cube install; bit-exact golden tests | ~30 | ready |
 | 3 | Calibration reporting | HTML calibration/validation report system (needs #2 to read `.tpp` skims) | ~37 | ready |
-| 4 | ActivitySim swap-in | config corpus + scenarios + ActivitySim/PopulationSim steps + Cube harness and the ActivitySim↔Cube demand bridge | ~200 | pending full PBA50 review |
-| 5 | Assignment backend | AequilibraE engine, params, parity validation | ~25 | prototype — needs buy-in |
-| 6 | Housekeeping | legacy triage of `core/`, `model-files/`, `utilities/` (see [Diffs from legacy → target](#diffs-from-legacy--target)) | — | not started |
-| 7 | Beyond | network enhancements, etc. | — | not scoped |
+| 4 | Model parity | the rest of `RunModel.bat`: preprocess (`SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py`), source inputs from the reference run's pristine `INPUT/`, then post-processing (`SkimsDatabase`, `net2csv`, EMFAC, logsums, core summaries, metrics, `ExtractKeyFiles`) | — | not started |
+| 5 | ActivitySim swap-in | config corpus + scenarios + ActivitySim/PopulationSim steps + Cube harness and the ActivitySim↔Cube demand bridge | ~200 | pending full PBA50 review |
+| 6 | Assignment backend | AequilibraE engine, params, parity validation | ~25 | prototype — needs buy-in |
+| 7 | Housekeeping | legacy triage of `core/`, `model-files/`, `utilities/` (see [Diffs from legacy → target](#diffs-from-legacy--target)) | — | not started |
+| 8 | Beyond | network enhancements, etc. | — | not scoped |
+
+Phase 4 comes *before* the ActivitySim swap-in deliberately. Until preprocess is ported, a
+run inherits its period networks from a completed reference run instead of building them
+from `freeflow.net` — so an ActivitySim-vs-CT-RAMP comparison made through this harness
+cannot separate "the demand model differs" from "the harness is not reproducing the
+baseline". Establish parity, then swap components.
 
 Notes on the ordering:
 
-- **Phase 1 replaces `RunModel.bat` end to end** -- CT-RAMP demand plus Cube assignment,
-  feedback and skims, every `.job` script run unmodified. It needs no `cubeio`: CT-RAMP's
-  demand reaches Cube through `PrepAssign.job`, a Cube job, so no Python code touches
-  matrix content. ActivitySim is the case that needs a Python bridge (phase 4), because it
-  emits OMX.
-- **Phase 4 is irreducibly large** — ~164 of its files are the ported UEC specs, which are
+- **Phase 1 replaces `SetUpModel.bat`'s staging and all of `RunIteration.bat`** -- CT-RAMP
+  demand plus Cube assignment, feedback and skims, every `.job` script run unmodified. It
+  does *not* replace `RunModel.bat` end to end: that script's preprocess and post-processing
+  phases are phase 4. It needs no `cubeio`: CT-RAMP's demand reaches Cube through
+  `PrepAssign.job`, a Cube job, so no Python code touches matrix content. ActivitySim is the
+  case that needs a Python bridge (phase 5), because it emits OMX.
+- **Phase 5 is irreducibly large** — ~164 of its files are the ported UEC specs, which are
   validated by output comparison rather than by reading. It is a data drop, not a code review.
 - **Phases 2 and 3 are separable from 1** only because nothing in a CT-RAMP-only pipeline
   reads Cube matrices from Python; the calibration report is the first thing that does.
@@ -82,7 +90,9 @@ That keeps the repo reasonable to reason about and makes eventual deletions obvi
 
 ## CLI
 
-Installed via `pyproject.toml` → `tm1` command; `run_model.py` at repo root is a thin alias.
+Installed via `pyproject.toml` → `tm1` command. This is the only entry point; there is
+no launcher script to keep in sync. `--scenario` takes a name under `scenarios/` or a
+path, so a scenario can live outside the repo.
 
 ```
 tm1 run --scenario scenarios/base_2023_activitysim
@@ -119,9 +129,12 @@ scripts `RunIteration.bat` calls, in the same order.
 Also lays down the target directory structure as empty, README-only placeholders, so the
 layout can be argued over while it is still free to change.
 
-Open question: how scenario-specific pre/post-processing scripts (currently scattered across
-`utilities/` and `model-files/scripts/`) get carried forward — cherry-pick the maintained
-ones into `scripts/` now, or leave them in place until phase 6's triage.
+Scenario-specific pre/post-processing scripts (currently scattered across `utilities/` and
+`model-files/scripts/`) now have a home: any step can point at Python via `script:` or
+`module:`, and where it sits under `steps:` decides whether it runs before or after the
+model. `scenarios/base_2023_ctramp/hooks.py` ports the runnable subset of
+`utilities/RTP/ExtractKeyFiles.bat` as a worked example. Which of the remaining legacy
+scripts are worth carrying forward is phase 7's triage.
 
 ### 2. Cube matrix I/O
 
@@ -157,7 +170,7 @@ Go through `core/`, `model-files/`, `utilities/` file by file: decide what's wor
 (and where it moves — `scripts/`, `src/`, `default-configs/`) vs what gets deleted (retained
 in git history, never truly gone). This is where the [Repo layout](#repo-layout) "Existing →
 Target" mapping below actually gets executed, not just documented. Deliberately sequenced
-*after* phase 4, not alongside phase 1 — moving legacy CT-RAMP/Cube paths while they're still
+*after* phase 5, not alongside phase 1 — moving legacy CT-RAMP/Cube paths while they're still
 production-critical risks breaking scheduled runs for no functional gain.
 
 ### 7. Beyond
@@ -195,7 +208,7 @@ Both tracks share two hard requirements:
 
 Progress to date, with current status. Steps 1–4 are the core sequence; the two bonus tracks
 extend past the original scope. Engineering detail, not a second phase numbering — it cuts
-across phases 1–4, with Bonus 3 (AequilibraE) being phase 5 prototyping done ahead of
+across phases 1–3 and 5, with Bonus 3 (AequilibraE) being phase 6 prototyping done ahead of
 schedule.
 
 ### 1. Port the skims — cubeless TPP ↔ OMX converter — **DONE**

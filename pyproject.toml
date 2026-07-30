@@ -64,3 +64,4 @@ exclude = ["*.html", "uv.lock", "renv", "utilities", "core", "model-files"]
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = ["T201", "INP001", "D103", "PLR0915"]  # print(), not packages, no docstrings, long mains OK in standalone scripts
 "tests/**" = ["T201", "S101", "INP001"]  # Allow print(), assert; not packages
+"scenarios/**" = ["T201", "INP001"]  # Scenario step scripts: print() OK, loaded by path not imported as packages

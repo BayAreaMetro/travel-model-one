@@ -2,10 +2,14 @@
 
 Usage::
 
-    tm1 run --scenario base_2023_activitysim
-    tm1 run --scenario base_2023_activitysim --steps setup
-    tm1 run --scenario base_2023_activitysim --iterations 3
-    tm1 run --scenario base_2023_activitysim --force --slack verbose
+    tm1 run --scenario base_2023_ctramp
+    tm1 run --scenario base_2023_ctramp --steps setup
+    tm1 run --scenario base_2023_ctramp --iterations 3
+    tm1 run --scenario base_2023_ctramp --force --slack verbose
+
+``--scenario`` also takes a path, so a scenario can live outside the repo::
+
+    tm1 run --scenario E:/runs/my_scenario
 """
 
 import argparse
@@ -17,19 +21,58 @@ from tm1.runner import run_model
 
 
 def _find_repo_root() -> Path:
-    """Walk up from cwd to find the repo root (contains pyproject.toml)."""
+    """Locate the repo root (the directory holding pyproject.toml).
+
+    Walks up from cwd first, then falls back to the installed package's own
+    location, so ``tm1 run`` works from outside the repo -- e.g. when pointing
+    ``--scenario`` at a scenario directory kept elsewhere.
+    """
     p = Path.cwd().resolve()
     for parent in [p, *p.parents]:
         if (parent / "pyproject.toml").exists():
             return parent
-    msg = "Could not find repo root (no pyproject.toml above cwd)"
+
+    pkg_root = Path(__file__).resolve().parents[2]
+    if (pkg_root / "pyproject.toml").exists():
+        return pkg_root
+
+    msg = (
+        "Could not find the repo root (no pyproject.toml above the working "
+        "directory or the installed package). Run from inside the repo, or pass "
+        "--scenario as a full path to a scenario directory."
+    )
     raise FileNotFoundError(msg)
+
+
+def _resolve_scenario_dir(scenario: str, repo_root: Path) -> Path:
+    """Resolve ``--scenario`` as either a path or a name under ``scenarios/``.
+
+    A path lets scenarios live outside the repo (private configs, scratch runs)
+    without needing a bespoke launcher script.
+    """
+    as_path = Path(scenario).expanduser()
+    if (as_path / "scenario_config.yaml").is_file():
+        return as_path.resolve()
+
+    named = repo_root / "scenarios" / scenario
+    if (named / "scenario_config.yaml").is_file():
+        return named
+
+    available = sorted(
+        d.name for d in (repo_root / "scenarios").glob("*")
+        if (d / "scenario_config.yaml").is_file()
+    )
+    msg = (
+        f"No scenario_config.yaml for {scenario!r} (looked in {as_path} and "
+        f"{named}).\nAvailable in this repo: {', '.join(available) or '(none)'}"
+    )
+    sys.exit(msg)
 
 
 def cmd_run(args: argparse.Namespace) -> None:
     """Execute the 'run' subcommand."""
     repo_root = _find_repo_root()
-    scenario_dir = repo_root / "scenarios" / args.scenario
+    scenario_dir = _resolve_scenario_dir(args.scenario, repo_root)
     run_model(
         scenario_dir=scenario_dir,
         steps=args.steps or None,
@@ -51,7 +94,10 @@ def main() -> None:
     run_parser.add_argument(
         "--scenario",
         required=True,
-        help="Scenario name (folder under scenarios/, e.g. base_2023_activitysim)",
+        help=(
+            "Scenario name (folder under scenarios/, e.g. base_2023_ctramp) "
+            "or a path to any directory containing a scenario_config.yaml"
+        ),
     )
     run_parser.add_argument(
         "--steps",
