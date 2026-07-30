@@ -101,6 +101,32 @@ tm1 run --scenario E:/runs/my_scenario
 3. Adjust the `steps:` block — iterations, sample rate, threads, model components
 4. Run with `tm1 run --scenario <name>`
 
+### Run Logs
+
+Every run writes a timestamped log to `{proj_dir}/logs/`:
+
+```
+logs/tm1_20260728_161042_18004.log
+```
+
+It captures more than the console does — each step boundary and how long it took,
+every Cube job's engine `ReturnCode` and the path to that job's own log, and the
+full traceback if a step fails. The console stays at INFO; the file records DEBUG.
+
+The name carries a timestamp and pid, so concurrent runs and repeat attempts never
+write into each other's log — a failed run's log survives the next attempt.
+
+Optional, in `scenario_config.yaml`:
+
+```yaml
+logging:
+  level: DEBUG            # what reaches the file; console stays at INFO
+  dir: "{proj_dir}/logs"  # override the location
+```
+
+This replaces `RunModel.bat`'s `echo ... >> logs\feedback.rpt`, which recorded
+only start and finish milestones.
+
 ### Adding Your Own Pre- or Post-Processing
 
 Steps are flat — every step is a top-level key under `steps:`, and they run in the

@@ -11,6 +11,13 @@
 # does not write into the reference run.
 
 slack: "off"
+
+# Every run writes a timestamped log to {proj_dir}/logs/tm1_<stamp>_<pid>.log,
+# capturing step boundaries, each Cube job's result and any traceback.  The
+# console stays terser than the file.  Both keys are optional.
+logging:
+  level: DEBUG           # what reaches the file; the console stays at INFO
+  # dir: "{proj_dir}/logs"   # uncomment to write run logs somewhere else
 #
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │

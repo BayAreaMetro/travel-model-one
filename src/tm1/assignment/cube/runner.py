@@ -407,10 +407,13 @@ def run_cube_job(
     engine_rc = _engine_returncode(log_text)
     ok = engine_rc < _RC_FATAL if engine_rc is not None else rc == 0
     if not ok:
+        # Name the log file: the tail below is usually not enough to diagnose a
+        # Cube failure, and the full log is the first thing anyone will want.
         msg = (
             f"Cube job {job.name} failed (exit={rc}, engine ReturnCode={engine_rc}, "
-            f"cwd={cwd})\n{log_text[-1500:]}"
+            f"cwd={cwd})\nFull Cube log: {logfile}\n...tail...\n{log_text[-1500:]}"
         )
         raise CubeJobError(msg)
     log.info("Cube job %s OK (engine ReturnCode=%s, exit=%s)", job.name, engine_rc, rc)
+    log.debug("Cube job %s log: %s", job.name, logfile)
     return 0

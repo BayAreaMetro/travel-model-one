@@ -37,16 +37,18 @@ ones.
 import importlib
 import importlib.util
 import logging
+import os
 import sys
 import time
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from types import ModuleType
 
 import tm1.steps.assignment as assignment_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
-from tm1 import slack
+from tm1 import add_run_logfile, remove_run_logfile, slack
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
 
@@ -114,6 +116,44 @@ def _load_script(path: Path, scenario_dir: Path) -> ModuleType:
     sys.modules[spec.name] = mod
     spec.loader.exec_module(mod)
     return mod
+
+
+def _start_run_log(cfg: dict, label: str, steps: list[str]) -> logging.Handler | None:
+    """Open a per-run log file under ``{proj_dir}/logs`` and record what is starting.
+
+    ``RunModel.bat`` appended a line to ``logs/feedback.rpt`` per milestone; this
+    keeps the whole run instead -- every step boundary, every Cube job result and
+    any traceback -- at DEBUG, while the console stays at INFO.
+
+    The filename carries a timestamp so concurrent or repeated runs never write
+    into each other's log, and so a failed run's log survives the next attempt.
+    Returns None when no ``proj_dir`` is configured, leaving console-only logging.
+    """
+    proj_dir = cfg.get("proj_dir")
+    if not proj_dir:
+        return None
+
+    log_cfg = cfg.get("logging", {}) or {}
+    log_dir = Path(log_cfg.get("dir") or Path(proj_dir) / "logs")
+    stamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
+
+    # pid separates concurrent runs on one machine; the counter separates runs
+    # started within the same second.  FileHandler appends, so a name collision
+    # would silently merge two runs into one log.
+    log_dir.mkdir(parents=True, exist_ok=True)
+    path = log_dir / f"tm1_{stamp}_{os.getpid()}.log"
+    attempt = 1
+    while path.exists():
+        path = log_dir / f"tm1_{stamp}_{os.getpid()}_{attempt}.log"
+        attempt += 1
+
+    level = getattr(logging, str(log_cfg.get("level", "DEBUG")).upper(), logging.DEBUG)
+    handler = add_run_logfile(path, level=level)
+
+    log.info("Run log: %s", path)
+    log.debug("scenario=%s  steps=%s", label, ", ".join(steps))
+    log.debug("proj_dir=%s", proj_dir)
+    return handler
 
 
 def _load_step(step_name: str, steps_cfg: dict, scenario_dir: Path) -> Callable:
@@ -220,6 +260,8 @@ def run_model(
     if steps is None:
         steps = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
 
+    log_handler = _start_run_log(cfg, label, steps)
+
     # Gather run parameters for the start notification
     sim_cfg = steps_cfg.get("simulate_ctramp", {}) or {}
     iterations = kwargs.get("iterations") or sim_cfg.get("iterations", 0)
@@ -239,28 +281,36 @@ def run_model(
 
     t0_total = time.time()
 
-    for name in steps:
-        run_step = _load_step(name, steps_cfg, scenario_dir)
+    try:
+        for name in steps:
+            run_step = _load_step(name, steps_cfg, scenario_dir)
 
-        log.info("--- Step: %s ---", name)
-        t0_step = time.time()
-        try:
-            result = run_step(scenario_dir, cfg, **kwargs)
-        except KeyboardInterrupt:
-            notify(f":no_entry_sign: {label} cancelled during {name}")
-            raise
-        except Exception as e:
-            notify(f":exclamation: {label} failed at {name}: {e}")
-            raise
-        elapsed = time.time() - t0_step
+            log.info("--- Step: %s ---", name)
+            t0_step = time.time()
+            try:
+                result = run_step(scenario_dir, cfg, **kwargs)
+            except KeyboardInterrupt:
+                log.warning("Cancelled during %s", name)
+                notify(f":no_entry_sign: {label} cancelled during {name}")
+                raise
+            except Exception as e:
+                # exc_info so the run log keeps the traceback, not just the message
+                log.exception("Step %s failed: %s", name, e)  # noqa: TRY401
+                notify(f":exclamation: {label} failed at {name}: {e}")
+                raise
+            elapsed = time.time() - t0_step
 
-        if result == "skipped":
-            notify(f"[{label}] {name} already done, skipped")
-            log.info("--- Skipped: %s ---", name)
-        else:
-            elapsed_str = _fmt_elapsed(elapsed)
-            notify(f"[{label}] {name} done ({elapsed_str})")
-            log.info("--- Done: %s (%s) ---", name, elapsed_str)
+            if result == "skipped":
+                notify(f"[{label}] {name} already done, skipped")
+                log.info("--- Skipped: %s ---", name)
+            else:
+                elapsed_str = _fmt_elapsed(elapsed)
+                notify(f"[{label}] {name} done ({elapsed_str})")
+                log.info("--- Done: %s (%s) ---", name, elapsed_str)
 
-    total = time.time() - t0_total
-    notify(f"Finished {label} in {_fmt_elapsed(total)} :white_check_mark:")
+        total = time.time() - t0_total
+        notify(f"Finished {label} in {_fmt_elapsed(total)} :white_check_mark:")
+    finally:
+        # Detached even on failure, so the log is flushed and a second run in the
+        # same process does not append to it.
+        remove_run_logfile(log_handler)
