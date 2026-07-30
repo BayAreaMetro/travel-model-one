@@ -142,12 +142,17 @@ no launcher script to keep in sync. `--scenario` takes a name under `scenarios/`
 path, so a scenario can live outside the repo.
 
 ```
-tm1 run --scenario scenarios/base_2023_activitysim
-tm1 run --scenario scenarios/base_2023_activitysim --max-iterations 1 --sample-rate 0.1
-tm1 batch scenarios/scenario_batches.yaml
+tm1 run --scenario base_2023_ctramp                        # the whole pipeline
+tm1 run --scenario base_2023_ctramp --steps assignment     # one step
+tm1 run --scenario base_2023_ctramp --iterations 3         # override iterate.count
+tm1 run --scenario E:/runs/one_off                         # a scenario outside the repo
+tm1 run --scenario base_2023_ctramp --force --slack verbose
 ```
 
-Batch manifest:
+Flags: `--steps`, `--iterations`, `--force`, `--slack {off,minimal,verbose}`.
+
+**Not implemented** — a batch runner over several scenarios, sketched here as intent
+rather than documentation:
 
 ```yaml
 # scenarios/scenario_batches.yaml
@@ -156,7 +161,7 @@ scenarios:
   - scenarios/foo_2025
   - scenarios/bar_2050
 common_overrides:
-  max_iterations: 3
+  iterations: 3
 ```
 
 ---
@@ -195,7 +200,18 @@ The HTML calibration/validation report system (`src/tm1/steps/summaries/calibrat
 survey vs model comparison per submodel. Engine-agnostic: CT-RAMP exercises it today, and it
 is the first consumer of phase 2, since it reads distance skims straight from `.tpp`.
 
-### 4. ActivitySim swap-in
+### 4. Model parity
+
+The rest of `RunModel.bat`: the preprocess phase that builds the period networks from
+`freeflow.net`, inputs sourced from the reference run's pristine `INPUT/` rather than its
+post-run working directories, and then post-processing. Ported for *equivalent results*
+rather than in kind — see [Port the intent, not the mechanism](#port-the-intent-not-the-mechanism).
+
+Sequenced before the ActivitySim swap-in deliberately: until a run derives its own networks
+instead of inheriting a completed Cube run's, an ActivitySim-vs-CT-RAMP comparison made
+through this harness cannot separate a demand-model difference from a harness difference.
+
+### 5. ActivitySim swap-in
 
 Enable ActivitySim as the production demand model, after a thorough review against **PBA50**
 CT-RAMP runs — broader than the 2023 reference run validated against so far (see
@@ -205,13 +221,13 @@ Also carries the Python Cube harness (`src/tm1/assignment/cube/`) and the Activi
 demand bridge, because ActivitySim is what first drives them: its trip output is OMX, and
 Cube assignment wants `trips{PERIOD}.tpp`.
 
-### 5. Assignment backend upgrade
+### 6. Assignment backend upgrade
 
 Currently runs on Cube. AequilibraE is viable (Bonus 3 below) but replacing Cube in
 production requires buy-in beyond engine-level parity — this phase doesn't start until that
 buy-in exists.
 
-### 6. Housekeeping
+### 7. Housekeeping
 
 Go through `core/`, `model-files/`, `utilities/` file by file: decide what's worth keeping
 (and where it moves — `scripts/`, `src/`, `default-configs/`) vs what gets deleted (retained
@@ -220,7 +236,7 @@ Target" mapping below actually gets executed, not just documented. Deliberately 
 *after* phase 5, not alongside phase 1 — moving legacy CT-RAMP/Cube paths while they're still
 production-critical risks breaking scheduled runs for no functional gain.
 
-### 7. Beyond
+### 8. Beyond
 
 Network enhancements and whatever else follows once the core migration is done. Not scoped.
 
