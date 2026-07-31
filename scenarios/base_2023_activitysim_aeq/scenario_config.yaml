@@ -9,9 +9,10 @@
 # base_2023_activitysim's directories, so there is one definition of the demand
 # model and no chance of the two drifting apart.
 #
-# Needs no Cube licence.  It does still need a completed Cube run for the network
-# link table and the frozen non-residential demand -- see `network_csv` and
-# `nonres_dir` below.  Phase 4 removes that dependency.
+# The *assignment* needs no Cube licence.  It does still need a completed Cube run
+# for the network link table and the frozen non-residential demand -- see
+# `network_csv` and `nonres_dir` below.  Phase 4 stops those being inherited from a
+# previous run, but they are still produced by Cube jobs; see the README.
 #
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
@@ -89,8 +90,9 @@ steps:
 
       # The link table AequilibraE assigns over, and the frozen non-residential
       # demand (internal/external, trucks, air passengers, HSR) it adds to the
-      # ActivitySim person trips.  Both still come from a completed Cube run;
-      # phase 4 ports those models to Python and removes the dependency.
+      # ActivitySim person trips.  Both still come from a completed Cube run.
+      # Phase 4 makes them in-run outputs rather than inherited ones; making them
+      # Cube-free is separate, later work.
       network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
       nonres_dir: "{reference_run}/nonres"
 
