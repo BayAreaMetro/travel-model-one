@@ -32,8 +32,17 @@ No Cube *licence*, but two artifacts from a completed Cube run:
 - `nonres_dir` — the frozen non-residential demand (internal/external, trucks, air
   passengers, HSR), which ActivitySim does not model
 
-Phase 4 ports those four models to Python and removes the dependency. Until then
-this is a Cube-licence-free loop, not a Cube-free one.
+Phase 4 removes the dependency on a *previously completed* run: the non-residential
+models get generated in-run rather than inherited. It does **not** remove the
+dependency on Cube itself — those nine jobs still execute as stock `.job` scripts.
+
+Unwinding that is separate, later work, and cheaper than it sounds: seven of the nine
+non-residential jobs use Cube's `MATRIX` program only and never touch a `.net` file, so
+once `cubeio` can read and write `.tpp` they become numpy over matrices. Only
+`TruckTripGeneration` (`TRIPGEN`) and `TruckTripDistribution` (`TRIPDIST`) need actual
+model replacements.
+
+So: a Cube-licence-free *assignment*, inside a pipeline that still needs Cube elsewhere.
 
 Transit level of service *is* Cube-free: set `transit_inputs_dir` to the output of
 `scripts/build_aeq_inputs.py`, and transit skims are rebuilt each iteration from the
