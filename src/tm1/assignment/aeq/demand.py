@@ -29,6 +29,7 @@ import numpy as np
 import openmatrix as omx
 
 from cubeio import read_tpp
+from tm1.assignment import expand_period
 from tm1.assignment.aeq.classes import CLASS_ORDER
 from tm1.assignment.params import Highway
 
@@ -82,7 +83,7 @@ def _read_nonres(nonres_dir: Path, period: str, n_zones: int) -> dict[str, dict]
 
 
 def assemble_demand(
-    asim_output_dir: str | Path,
+    demand: str,
     nonres_dir: str | Path,
     period: str,
     n_zones: int,
@@ -90,13 +91,16 @@ def assemble_demand(
 ) -> dict[str, np.ndarray]:
     """Assemble the 13 vehicle-trip tables (keys :data:`CLASS_ORDER`) for a period.
 
+    *demand* is the per-period path pattern declared by the assignment step's
+    ``demand:`` key (``{period}`` -> ``ea``/``am``/...), read rather than
+    reconstructed so the seam stays the single statement of where demand lives.
+
     Occupancy divisors, the ActivitySim table mapping, and the ride-hail folding
     constants come from ``hw`` (params.yaml ``highway:`` section).
     """
-    asim_output_dir = Path(asim_output_dir)
     nonres_dir = Path(nonres_dir)
     sr2_occ, sr3_occ = hw.occupancy["sr2"], hw.occupancy["sr3"]
-    omx_path = asim_output_dir / f"trips_{period.lower()}.omx"
+    omx_path = Path(expand_period(demand, period))
 
     # auto tables are already vehicle trips (write_trip_matrices divided SR by occupancy);
     # ride-hail tables are person trips, folded to vehicles below.

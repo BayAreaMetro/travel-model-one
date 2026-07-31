@@ -171,7 +171,7 @@ def _transit_skims(
 
 
 def run_assignment_iteration(
-    asim_output_dir: str | Path,
+    demand: str,
     network_csv: str | Path,
     nonres_dir: str | Path,
     skims_omx_path: str | Path,
@@ -187,6 +187,9 @@ def run_assignment_iteration(
     params_path: str | Path | None = None,
 ) -> dict[str, float]:
     """Run one AequilibraE highway assignment + skim iteration for all periods.
+
+    *demand* is the per-period path pattern from the assignment step's ``demand:``
+    key (``{period}`` -> ``ea``/``am``/...), the same seam the Cube backend reads.
 
     Model policy (periods/capfac, zones, transit cost, bus times, fares) comes from
     ``params.yaml``; ``params_path`` selects an alternate copy.  Returns a
@@ -209,8 +212,8 @@ def run_assignment_iteration(
     for period in periods:
         g, attrs = build_cube_graph(links, n_zones, capfac=p.periods.capfac[period],
                                     vdf=p.highway.vdf)
-        demand = assemble_demand(asim_output_dir, nonres_dir, period, n_zones, p.highway)
-        classes = build_vehicle_classes(demand, links, period, p.highway, av_pce=av_pce)
+        trips = assemble_demand(demand, nonres_dir, period, n_zones, p.highway)
+        classes = build_vehicle_classes(trips, links, period, p.highway, av_pce=av_pce)
 
         res = equilibrium_assignment(
             g, attrs, classes, n_zones, p.highway.vdf, max_iter=max_iter,

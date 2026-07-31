@@ -1,0 +1,127 @@
+# Base 2023 ActivitySim + AequilibraE — the Cube-free closed loop
+#
+# Same demand model, same inputs and the same ActivitySim/PopulationSim configs as
+# `base_2023_activitysim`; the only difference is the assignment engine.  That
+# scenario runs ActivitySim through Cube Voyager, this one through AequilibraE, so
+# the two can be run side by side and compared without editing either file.
+#
+# It deliberately does NOT copy the config corpus: `configs:` below points at
+# base_2023_activitysim's directories, so there is one definition of the demand
+# model and no chance of the two drifting apart.
+#
+# Needs no Cube licence.  It does still need a completed Cube run for the network
+# link table and the frozen non-residential demand -- see `network_csv` and
+# `nonres_dir` below.  Phase 4 removes that dependency.
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
+proj_dir: "E:/Tests/base_2023_activitysim_aeq"
+
+# Cube-free transit LOS inputs, built once by scripts/build_aeq_inputs.py.
+aeq_inputs: "E:/aeq_inputs"
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  DERIVED PATHS — generally no need to change                               │
+# └─────────────────────────────────────────────────────────────────────────────┘
+survey_output_dir: "{proj_dir}/survey"
+asim_output_dir: "{proj_dir}/output"
+
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+steps:
+  # --- 1. Setup: copy inputs + seed the skims the first ActivitySim run reads ---
+  copy_inputs:
+    land_use:
+      from: "{reference_run}/landuse/tazData.csv"
+      to: "{proj_dir}/data/land_use.csv"
+
+  convert_skims:
+    skim_tpp_dir: "{reference_run}/skims"
+    output: "{proj_dir}/data/skims.omx"
+
+  walk_access_buffers:
+    from: "{reference_run}/INPUT/landuse/walkAccessBuffers.float.csv"
+    into: "{proj_dir}/data/land_use.csv"
+
+  # --- 2. PopulationSim: synthesize from PUMS 2019-2023 (5-year ACS) ---
+  populationsim:
+    pums:
+      household: "M:/Data/Census/PUMS_2023_5Year_Crosswalked/bay_area_households_2019_2023_crosswalked.csv"
+      person: "M:/Data/Census/PUMS_2023_5Year_Crosswalked/bay_area_persons_2019_2023_crosswalked.csv"
+    controls:
+      taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
+      county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
+      region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
+    working_dir: "{proj_dir}/popsim"
+    output_dir: "{proj_dir}/data"
+    # Shared with base_2023_activitysim -- one definition, no drift.
+    configs:
+      - "scenarios/base_2023_activitysim/populationsim"
+      - "default-configs/population/configs_mp"
+      - "default-configs/population/configs"
+
+  # --- 3. Simulate: ActivitySim demand, then the AequilibraE feedback loop ---
+  simulate_activitysim:
+    iterations: 3  # >0 enables the assignment feedback loop below
+    activitysim:
+      # Shared with base_2023_activitysim -- one definition of the demand model.
+      configs:
+        - "scenarios/base_2023_activitysim/activitysim"
+        - "default-configs/activity/configs_mp"
+        - "default-configs/activity/configs"
+      data_dir: "{proj_dir}/data"
+      output_dir: "{proj_dir}/output"
+
+    # The only block that differs from base_2023_activitysim.  Same step, same
+    # keys, same `backend:` -- assignment has one contract whichever engine solves
+    # it, so switching engines is a value here rather than a different code path.
+    assignment:
+      backend: aeq
+
+      # The demand this assignment consumes: this round's ActivitySim trip
+      # matrices.  `{period}` expands to ea/am/md/pm/ev (`{PERIOD}` gives EA/AM/...).
+      # Optional -- defaults to trips_{period}.omx in the ActivitySim output_dir.
+      demand: "{proj_dir}/output/trips_{period}.omx"
+
+      # The link table AequilibraE assigns over, and the frozen non-residential
+      # demand (internal/external, trucks, air passengers, HSR) it adds to the
+      # ActivitySim person trips.  Both still come from a completed Cube run;
+      # phase 4 ports those models to Python and removes the dependency.
+      network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
+      nonres_dir: "{reference_run}/nonres"
+
+      # Cube-free transit LOS skims, built from the source network with this
+      # iteration's congested bus times.  Omit to preserve existing transit
+      # matrices instead.
+      transit_inputs_dir: "{aeq_inputs}"
+
+      # Where the refreshed skims are written back for the next ActivitySim run.
+      skims_omx: "{proj_dir}/data/skims.omx"
+      # per-iteration provenance copies under {skims dir}/skim_archive/:
+      # skims_iter{N}.omx + trips_{p}_iter{N}.omx (archive: false to disable)
+      archive: true
+
+      cores: 48
+      max_iter: 100
+      gap_target: 0.001
+
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  CALIBRATION / VALIDATION                                                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+calibration:
+  submodels:
+    - auto_ownership
+    - work_from_home
+    - free_parking
+    - cdap
+    - mandatory_tour_frequency
+    - joint_tour_frequency
+    - non_mandatory_tour_frequency
+    - atwork_subtour
+    - tour_mode_choice
+    - trip_mode_choice
