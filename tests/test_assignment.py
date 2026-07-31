@@ -45,7 +45,8 @@ def test_build_trip_matrices_maps_and_zero_fills(tmp_path: Path) -> None:
     asim_dir.mkdir()
     _make_trip_omx(asim_dir / "trips_am.omx", "AM", zones, fill)
 
-    out = build_trip_matrices(asim_dir, tmp_path / "main", periods=("AM",))
+    demand = str(asim_dir / "trips_{period}.omx")
+    out = build_trip_matrices(demand, tmp_path / "main", periods=("AM",))
     assert [p.name for p in out] == ["tripsAM.tpp"]
 
     t = read_tpp(out[0])
@@ -70,4 +71,5 @@ def test_build_trip_matrices_maps_and_zero_fills(tmp_path: Path) -> None:
 def test_build_trip_matrices_missing_omx_raises(tmp_path: Path) -> None:
     """A missing trip OMX raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
-        build_trip_matrices(tmp_path, tmp_path / "main", periods=("AM",))
+        demand = str(tmp_path / "trips_{period}.omx")
+        build_trip_matrices(demand, tmp_path / "main", periods=("AM",))

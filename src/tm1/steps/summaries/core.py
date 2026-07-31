@@ -47,7 +47,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: C901,
     # --- Paths stuffs ---
     output_dir = Path(asim_cfg.get("output_dir", scenario_dir / "output"))
     data_dir = Path(asim_cfg.get("data_dir", scenario_dir / "data"))
-    reference_run = cfg.get("reference_run", "")
+    ctramp_run = cfg.get("ctramp_run", "")
     work_dir = Path(step_cfg.get("work_dir", output_dir.parent / "summarize"))
     r_script = base_model_dir / "model-files" / "scripts" / "core_summaries" / "CoreSummaries.R"
 
@@ -82,8 +82,8 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: C901,
 
     # --- Copy skim database CSVs from reference run ---
     # TODO: This could eventually be deprecated when we move away from R and can just read directly
-    if reference_run:
-        ref_db = Path(reference_run) / "database"
+    if ctramp_run:
+        ref_db = Path(ctramp_run) / "database"
         dest_db = work_dir / "database"
         for prefix in _SKIM_DB_PREFIXES:
             for period in _PERIODS:
@@ -99,7 +99,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: C901,
                     log.info("  Skim DB already exists: %s", dest.name)
 
         # --- Copy param blocks from reference run ---
-        ref_block = Path(reference_run) / "ctramp" / "scripts" / "block"
+        ref_block = Path(ctramp_run) / "ctramp" / "scripts" / "block"
         dest_block = work_dir / "ctramp" / "scripts" / "block"
         for name in ("hwyParam.block", "trnParam.block"):
             src = ref_block / name

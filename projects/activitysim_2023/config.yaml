@@ -70,31 +70,31 @@ steps:
         - "default-configs/activity/configs"
       data_dir: "{run_dir}/data"
       output_dir: "{run_dir}/output"
-    # Highway assignment feedback (used only when iterations > 0).
-    # backend "aeq" = open-source AequilibraE (no Cube license); "cube" = legacy loop.
+    # Highway assignment feedback (used only when iterations > 0, so inert here).
+    # Same keys and same `backend:` as the CT-RAMP path -- one assignment step, one
+    # backend table, whichever demand model is driving.
     assignment:
-      backend: aeq
-      network_csv: "{ctramp_run}/hwy/iter3/avgload5period_vehclasses.csv"
-      nonres_dir: "{ctramp_run}/nonres"
+      backend: cube
+
+      # The Cube project scaffold: hwy nets, CTRAMP/scripts, frozen nonres/ demand.
+      # Note this is NOT the run's own run_dir -- the Cube tree is the finished CT-RAMP
+      # run, while ActivitySim writes into its own.
+      run_dir: "{ctramp_run}"
+
+      # The demand this assignment consumes: this round's ActivitySim trip
+      # matrices.  `{period}` expands to ea/am/md/pm/ev (`{PERIOD}` gives EA/AM/...).
+      # Optional -- defaults to trips_{period}.omx in the ActivitySim output_dir.
+      demand: "{run_dir}/output/trips_{period}.omx"
+
+      # Where the refreshed skims are written back for the next ActivitySim run.
       skims_omx: "{run_dir}/data/skims.omx"
-      # Cube-free transit LOS skims from the source network (omit to preserve
-      # existing transit matrices); built once by scripts/build_aeq_inputs.py
-      transit_inputs_dir: "E:/aeq_inputs"
       # per-iteration provenance copies under {skims dir}/skim_archive/:
       # skims_iter{N}.omx + trips_{p}_iter{N}.omx (archive: false to disable)
       archive: true
-      cores: 48
-      max_iter: 100
-      gap_target: 0.001
-      # --- To use the legacy Cube Voyager loop instead (requires a local Cube
-      # install + license): delete/comment the aeq keys above except skims_omx
-      # and archive, then uncomment:
-      # backend: cube
-      # cube_run_dir: "{ctramp_run}"
-      # cluster_nodes: 12
-      # assign_job: "HwyAssign.job"
-      # transit: true
-      # transit_nodes: 15
+      cluster_nodes: 12
+      assign_job: "HwyAssign.job"
+      do_transit: true
+      transit_nodes: 15
 
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  CALIBRATION / VALIDATION                                                  │

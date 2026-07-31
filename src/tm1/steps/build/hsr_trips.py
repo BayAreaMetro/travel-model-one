@@ -24,7 +24,7 @@ cannot disagree.
 Config::
 
     build_hsr_trips:
-      from: "{reference_run}/INPUT/nonres"
+      from: "{ctramp_run}/INPUT/nonres"
       to: "{run_dir}/nonres"
       trn_param: "{run_dir}/CTRAMP/scripts/block/trnParam.block"
 
