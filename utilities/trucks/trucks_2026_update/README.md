@@ -1,28 +1,142 @@
-# Truck Model Updates (TM-1.7)
+# TM-1.7 Freight Model Update
 
-This directory contains the end-to-end pipeline for updating the truck generation equations for the TM-1.7.
+## Overview
 
----
+This folder contains the workflows, documentation, and model estimation pipelines developed to support the TM-1.7 Freight Model Updates.
 
-## Project Structure
+The primary objective of this effort is to evaluate whether freight truck trip patterns from the California Statewide Freight Forecasting and Travel Demand Model, version 2 (CSF2TDM) can be replicated within the TM-1.6 4-step modeling framework and whether model validation performance can be improved. 
+
+Because comprehensive observed freight demand datasets are limited, the project uses CSF2TDM 2020 results as the primary reference dataset for model estimation. 
+
+Validation is performed using observed truck traffic counts from Caltrans (2018) and the Bay Area Toll Authority (BATA, 2023), comparing modeled truck volumes against observed conditions across available count locations.
+
+### Project Structure
 
 - `config/`  : YAML model specifications and pipeline settings.
-- `data/`    : Local data storage. **Note:** This folder is git-ignored; all project data is hosted on **Box**: https://mtcdrive.box.com/s/7p99h020p361bzzmltwp5q2sa8oaxah1
-- `notebooks/` : Jupyter notebooks for exploration, validation, and final reporting (the "Source of Truth" for model selection).
-- `src/`     : Core source code for data cleaning and the OLS estimation engine.
+- `data/`    : Local data storage. **Note:** This folder is git-ignored; all project data is hosted in [Box](https://mtcdrive.box.com/s/udd1rxpqffzfckf9iyi5kfcagma80nyf)
+- `notebooks/` : Jupyter notebooks for exploration and simple analysis. 
+- `src/`     : Core source code for data pipelines, modeling tasks and evaluation. 
+- `reports/`     : Simple Reports
 
 ---
+
+## Reference Demand Data
+
+The principal source of freight demand data is the 2020 CSF2TDM. While statewide model outputs are not ideal as an observed data source, they represent the most comprehensive freight demand information currently available for this project. As a result, CSF2TDM outputs are treated as the reference dataset used to estimate freight model components within the TM framework. 
+
+The following datasets from the CSF2TDM were utilized as primary inputs to the freight model development process:
+
+
+| Dataset | Description | Box Location | File Within Archive |
+|----------|-------------|--------------|--------------------|
+| CSF2TDM Freight OD Demand | Statewide freight OD matrix (7,000 × 7,000) containing truck trips by vehicle class across TAZs, gateways, special generators, and Transportation Logistics Nodes (TLNs). | [Year2020.zip](https://mtcdrive.box.com/s/5bttqe153n2xf3z1mnmklqjlvshfvv6e) | `Year2020/FFM/Trips/TRIPS_FFM_2020.mat`
+| CSF2TDM TAZ | Shapefile containing the 5528 Traffic Analysis Zones (TAZs) in CSF2TDM. | [CSF2TDM_TAZs.zip](https://mtcdrive.box.com/s/dik32cuwbjvkpu7e8zuu70ki6m4uzg1f)  |  | 
+| CSF2TDM Traffic Network | Highway network used to identify the location of gateways, special generators, TLNs, and other network nodes not represented by standard TAZs. | [Year2020.zip](https://mtcdrive.box.com/s/5bttqe153n2xf3z1mnmklqjlvshfvv6e) |`Year2020/HwyNetwork_Loaded_ADT_2020_Daily.NET`|
+|CSF2TDM TAZ Equivalences| Lookup table linking CSF2TDM TAZ IDs to OD matrix indices and providing associated geographic attributes, including county, district, and MPO. |  [Year2020.zip](https://mtcdrive.box.com/s/5bttqe153n2xf3z1mnmklqjlvshfvv6e)| `Year2020/taz_MPO_region.csv`|
+
+**Note:** The datasets summarized above represent the primary CSF2TDM inputs used in this project. Additional information on the statewide model's structure, assumptions, and methodologies can be found in [DR1_CSF2TDM_ModelDocumentation_12-10-2025.pdf](https://mtcdrive.box.com/s/wr9p4tgxtlridkz589txguno6q84wrw3).
+
+---
+
+## Validation Data
+
+Model validation relies on observed truck traffic counts from the following available sources.
+
+| Dataset | Year | Description | Count Locations in MTC Region | Box Location |
+|----------|------|-------------|----------------|--------------|
+| Caltrans Truck Counts | 2018 | Hourly truck counts by FHWA vehicle classification throughout 2018 | 28 | [counts](https://mtcdrive.box.com/s/5f6jwgthq39fajdble2f5b1vjm4ydoog) | 
+|  Bay Area Toll Authority (BATA) | 2023 | • Hourly truck volumes by axle classification at seven Bay Area toll bridges, based on Tuesday-Thursday observations collected during March-May and September-November (excluding holidays)<br>• Each toll plaza observation was manually matched to the corresponding MTC highway network link at the toll collection location for validation purposes.| 7 | [BATA_counts_by_plaza_hour_axles.xlsx](https://mtcdrive.box.com/s/5mjgq6iwjlzxidap533rr9zd6xb6ukbi) [BATA_TM_network_link_matching.csv](https://mtcdrive.box.com/s/re5hrvsc5601hh905u46hanr70rxh4ca)|
+
+Other datasources evaluated: 
+- PEMS: #TODO: Why not used
+- 2023 Caltrans census data.  #TODO: Why not used
+
+---
+
+## Data Pipelines
+
+Several data preparation and analysis pipelines were developed to support model estimation, calibration, and validation. These pipelines transform source datasets into analysis-ready inputs and provide quality control checks used throughout the project.
+
+| Pipeline | Description | Key Outputs | Results | Details |
+|-----------|-------------|---------|---------|---------|
+| CSF2TDM to TM Zone Translation & Truck OD Projection| Projects statewide freight demand from the CSF2TDM zone system to the MTC travel model zone system. |#TODO|#TODO|[src/data/od_projection/readme.md](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/data/od_projection/readme.md) |
+| Observed Truck Counts Data Processing | Processes Caltrans and BATA truck count datasets for model validation and time-of-day estimation. | #TODO|#TODO|[src/data/observed](https://github.com/BayAreaMetro/travel-model-one/tree/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/data/observed) |
+| CSF2TDM vs TM Comparison | Exploratory analysis comparing translated CSF2TDM demand to TM freight demand patterns. | #TODO|#TODO|[src/data/EDA](https://github.com/BayAreaMetro/travel-model-one/tree/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/data/EDA) |
+| CSF2TDM vs Bi-County Comparison | Comparative analysis of freight demand patterns between statewide and Bi-County model outputs. |#TODO|#TODO| [notebooks/Bicounty Model special generator comparison.ipynb](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/notebooks/Bicounty%20Model%20special%20generator%20comparison.ipynb)|
+
+---
+
+## Truck Model Updates
+
+Outputs from the data pipelines are used to support the re-estimation and testing of freight model components.
+
+
+| Model Component | Description | Key Outputs | Results | Details |
+|-----------------|-------------|-------------|---------|---------|
+| Trip Generation | Re-estimation of truck trip generation models using CSF2TDM freight demand as the calibration target for small, medium, and large truck classes. The existing TM1.6 very small truck generation model was retained. As documented in GitHub Issue [#95](https://github.com/BayAreaMetro/travel-model-one/issues/95), the truck market segmentation was updated from the TM1.6 garage/non-garage to freight/non-freight| Updated truck generation equations, model coefficients, and diagnostics. | #TODO | #TODO |
+| Trip Distribution | Re-estimation of freight trip distribution models using distance-based friction factors. As documented in GitHub Issue [#99](https://github.com/BayAreaMetro/travel-model-one/issues/99), the project transitioned from the existing TM1.6 time-based distribution approach to a distance-based approach. Calibration targets were derived from CSF2TDM OD demand matrices for small, medium, and large truck classes, while TM1.6 OD patterns were used for very small trucks due to the absence of an equivalent vehicle class in CSF2TDM. | Calibrated gamma distribution coefficients for each truck class and corresponding friction factors curves compatible with the CUBE `gravity` function. | [Estimated Gamma Coefficients](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/trip_distribution/plots/friction_curves.png) <br> [Friction Factors](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/trip_distribution/truckFF_distance_based.dat) | [src/models/trip_distribution](https://github.com/BayAreaMetro/travel-model-one/tree/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/src/models/trip_distribution) <br> [Friction Factors](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/notebooks/friction_factors.ipynb)|
+| Time of Day | Estimation of truck time-of-day factors using observed counts from Caltrans (2018) and BATA (2023) | Time-of-day truck factors by vehicle class | [TOD Report](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/reports/tod/truck_tod_report.pdf) | [notebooks/tod.ipynb](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/notebooks/tod.ipynb) |
+| IX/XI/XX Truck Demand Adjustment | Adjustment of truck shares for internal-external (IX), external-internal (XI), and external-external (XX) travel markets to ensure consistency with truck demand patterns observed in the CSF2TDM.  | Updated truck share percentages for IX, XI, and XX travel markets consistent with CSF2TDM truck demand totals | #TODO | #TODO |
+
+---
+
+## Validation Results
+
+Validation focused on comparing modeled truck volumes against observed truck counts and evaluating the performance of the proposed TM1.7 freight model relative to the existing TM1.6 implementation.
+
+### Traffic Count Validation
+
+Comparison of modeled versus observed truck counts using available Caltrans and BATA count data.
+
+| Truck Class | TM1.6 | TM1.7 |
+|------------|:-----:|:-----:|
+| Heavy Trucks | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.6_HV.png?raw=true)| ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.7_GEN_IX_HV.png?raw=true)|
+| Very Small, Small, and Medium Trucks | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.6_SM.png?raw=true)| ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.7_GEN_IX_SM.png?raw=true)|
+
+
+
+### Trip Distribution Validation
+
+Comparison of modeled and reference trip length frequency distributions (TLFDs) by truck class.
+
+| Truck Class | TM1.6 | TM1.7 |
+|------------|:-----:|:-----:|
+| Very Small | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Very%20Small.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Very%20Small.png?raw=true)|
+| Small | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Small.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Small.png?raw=true)|
+| Medium | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Medium.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Medium.png?raw=true)|
+| Large | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Large.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Large.png?raw=true)|
+---
+
 
 ## Quick Start
 
-### 1. Installation
+The analyses and results documented in this repository can be reproduced by cloning the repository, setting up the project environment, downloading the required datasets, and running the individual pipelines documented below.
+
+### 1. Clone the Repository
+
 ```bash
-pip install pandas numpy pyyaml statsmodels pyarrow
+git clone https://github.com/BayAreaMetro/travel-model-one.git
+cd travel-model-one/utilities/trucks/trucks_2026_update
 ```
 
-### 2. Run Estimation
-Execute the OLS suite as a module from this directory:
+### 2. Create the Environment
+
+This project uses **UV** for dependency management. Installation instructions are available in the UV documentation:
+
+https://docs.astral.sh/uv/
+
+From the project root directory:
+
 ```bash
-python -m src.models.estimate --specs config/model_specs.yaml --data data/processed/cleaned_data.csv --output output/run_name
+uv venv
+source .venv/bin/activate
+uv sync
 ```
 
+### 3. Download Project Data
+
+All project datasets are stored in Box and are not tracked by GitHub:
+
+https://mtcdrive.box.com/s/udd1rxpqffzfckf9iyi5kfcagma80nyf
+
+Download the required datasets and place them in the local `data/` directory following the instructions provided in the corresponding pipeline documentation.
