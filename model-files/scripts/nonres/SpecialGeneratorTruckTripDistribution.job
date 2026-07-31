@@ -86,8 +86,8 @@ run pgm = tripdist
           
    ; apply the gravity models
    ; TODO: expand if ffactors vary by special generator
-   gravity purpose = 1, los = mi.1.timeMED, ffactors = truckff
-   gravity purpose = 2, los = mi.1.timeLRG, ffactors = truckff 
+   gravity purpose = 1, los = mi.1.distanceMED, ffactors = truckff
+   gravity purpose = 2, los = mi.1.distanceLRG, ffactors = truckff 
    
    ; scale the trips by 100 and bucket round (to be consistent with Chuck's application)
    ; TODO: expand if ffactors vary by special generator OR sum cores by vehicle type
