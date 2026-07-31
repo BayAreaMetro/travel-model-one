@@ -151,6 +151,14 @@ steps:
       #
       assignment:
         proj_dir: "{proj_dir}"
+
+        # The demand this assignment consumes.  The step names the *artifact*, not
+        # the step that produced it, so the demand model and the assignment engine
+        # meet at a file rather than at each other's internals.  `{PERIOD}` expands
+        # to EA/AM/MD/PM/EV.  This is the default and can be omitted; it is written
+        # out here because it is the seam the whole pipeline is built around.
+        demand: "{proj_dir}/main/trips{PERIOD}.tpp"
+
         # `model_year` and `future` are legacy names, kept verbatim because the
         # Cube jobs read them as %MODEL_YEAR% / %FUTURE%.  RunModel.bat derives
         # both by slicing the *project folder name* -- "2023_TM161_IPA_35" gives

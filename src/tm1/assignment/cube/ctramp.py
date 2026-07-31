@@ -29,6 +29,7 @@ from pathlib import Path
 from tm1.assignment.cube.highway import (
     _NODES_ASSIGN,
     _NODES_PERIOD,
+    PERIODS,
     _job,
     run_highway_assignment,
     run_highway_feedback,
@@ -101,7 +102,31 @@ def run_nonres(
         )
 
 
-def run_prep_assign(proj_dir: str | Path, iteration: int, sampleshare: float) -> None:
+def _verify_demand(demand: str) -> None:
+    """Fail loudly if ``PrepAssign.job`` did not produce the demand assignment reads.
+
+    PrepAssign exits 0 even when the CT-RAMP trip lists it expects are absent, so
+    without this check a missing or empty ``trips{PERIOD}.tpp`` surfaces much later
+    as an obscure ``HwyAssign.job`` failure, several minutes into the run.
+    """
+    missing = [
+        path
+        for path in (Path(demand.replace("{PERIOD}", period)) for period in PERIODS)
+        if not path.exists() or path.stat().st_size == 0
+    ]
+    if missing:
+        names = ", ".join(str(p) for p in missing)
+        msg = (
+            f"PrepAssign.job returned cleanly but produced no demand at: {names}. "
+            f"Check that this iteration's CT-RAMP trip lists (indivTripData_*.csv, "
+            f"jointTripData_*.csv) are in main/."
+        )
+        raise FileNotFoundError(msg)
+
+
+def run_prep_assign(
+    proj_dir: str | Path, iteration: int, sampleshare: float, demand: str,
+) -> None:
     """Fold the CT-RAMP trip lists into ``main/trips{PERIOD}.tpp``.
 
     The CT-RAMP counterpart of
@@ -125,6 +150,7 @@ def run_prep_assign(proj_dir: str | Path, iteration: int, sampleshare: float) ->
         env_extra={"ITER": iteration, "SAMPLESHARE": sampleshare},
         cluster_nodes=_NODES_PERIOD,
     )
+    _verify_demand(demand)
 
 
 def run_iteration(  # noqa: PLR0913
@@ -134,6 +160,7 @@ def run_iteration(  # noqa: PLR0913
     model_year: int,
     future: str,
     sampleshare: float,
+    demand: str,
     build_skims: bool = True,
     do_nonres: bool = True,
     do_transit: bool = True,
@@ -155,6 +182,10 @@ def run_iteration(  # noqa: PLR0913
     sampleshare
         Household sample rate the demand model ran at, so ``PrepAssign.job`` can
         expand the trip lists back to full population.
+    demand
+        Per-period path pattern for the demand matrices this assignment consumes
+        (``{PERIOD}`` -> ``EA``/``AM``/...).  PrepAssign writes them; checking them
+        here turns a silent PrepAssign no-op into an immediate, named failure.
     build_skims
         Rebuild highway skims (and accessibility) after feedback, ready for the
         next iteration's demand model.  Set False on the final iteration.
@@ -181,7 +212,7 @@ def run_iteration(  # noqa: PLR0913
     if do_nonres:
         run_nonres(proj_dir, model_year=model_year, future=future)
 
-    run_prep_assign(proj_dir, iteration, sampleshare)
+    run_prep_assign(proj_dir, iteration, sampleshare, demand)
     run_highway_assignment(proj_dir, cluster_nodes=cluster_nodes)
 
     if do_transit:

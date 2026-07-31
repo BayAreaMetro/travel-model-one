@@ -24,6 +24,23 @@ production until its own phase lands and passes its own gate.
 | 8 | Documentation | published docs for the Python stack -- CLI, scenario config, step contract, migration status; replaces the wiki pages that describe the `.bat` workflow | — | not started |
 | 9 | Beyond | network enhancements, etc. | — | not scoped |
 
+### One variable at a time
+
+Each phase changes exactly one of the two moving pieces, so every phase can be validated
+against the one before it:
+
+| Phase | Demand | Assignment | What actually changes |
+|---|---|---|---|
+| 1–3 | CT-RAMP | Cube | orchestration, matrix I/O, reporting — no model change |
+| 4 | CT-RAMP | Cube | the non-residential models move to Python |
+| 5 | **ActivitySim** | Cube | the demand engine, and nothing else |
+| 6 | ActivitySim | **AequilibraE** | the assignment engine, and nothing else |
+
+The combination deliberately never built is CT-RAMP + AequilibraE. AequilibraE exists to
+serve ActivitySim; CT-RAMP and Cube retire together. That is what keeps this a diagonal
+rather than a grid, and it is why the demand→assignment seam needs one modern format plus
+one legacy adapter rather than every engine speaking to every other.
+
 Phase 4 comes *before* the ActivitySim swap-in deliberately. Until preprocess is ported, a
 run inherits its period networks from a completed reference run instead of building them
 from `freeflow.net` — so an ActivitySim-vs-CT-RAMP comparison made through this harness
@@ -311,26 +328,59 @@ built-in steps. There is no separate hook concept — a step written before
 `simulate_ctramp` is pre-processing, one written after `assignment` is post-processing.
 Position is the whole mechanism.
 
+### Steps meet at artifacts
+
+A step declares the artifact it consumes, never the step that produced it:
+
+```yaml
+  assignment:
+    demand: "{proj_dir}/main/trips{PERIOD}.tpp"
+```
+
+`PrepAssign.job` writes that file today, but nothing in the assignment step knows so.
+Pointing a different demand model at the same seam is a config change rather than a code
+change. Declaring it also gives the failure a name: a demand model that returns cleanly and
+produces nothing fails here, at the seam, instead of several minutes later inside the
+engine with an unrelated error.
+
+`{PERIOD}` expands to `EA`/`AM`/`MD`/`PM`/`EV`. `resolve_templates` substitutes with
+`str.replace`, so placeholders it has no value for pass through untouched — which is why
+`{proj_dir}` resolves at config load while `{PERIOD}` survives to the backend.
+
 ### `backend:` value, or a separate step name?
 
-> Use a **`backend:` value** where choosing between implementations is a permanent knob.
-> Use **separate step names** where one implementation is a migration state with a
-> defined end.
+> Use a **`backend:` value** where the implementations share a contract.
+> Use **separate step names** where they do not.
 
 So `assignment` takes `backend: cube|aeq|…` while the demand models stay
 `simulate_ctramp` and `simulate_activitysim`.
 
-The distinction is *not* how similar the implementations are. ActivitySim is a
-reimplementation of CT-RAMP's design — same tour-based microsimulation, same submodel
-sequence — so on similarity grounds demand could be generic too. What differs is
-permanence:
+Assignment has one contract, whatever solves it:
 
-- **Assignment backends are a knob.** Cube, AequilibraE and anything after them will be
-  switched between routinely and indefinitely; the whole engine-parity workflow depends on
-  running two of them over identical demand.
-- **Demand models are a transition.** CT-RAMP is being retired. Encoding that as a
-  permanent switch builds an abstraction whose second implementation is scheduled for
-  deletion, and makes retiring it a refactor instead of deleting a step.
+| | |
+|---|---|
+| **in** | demand — one matrix per class × period (the `demand:` key) |
+| | network — capacity, free-flow speed, tolls, class permissions |
+| | parameters — value of time by class, periods, convergence target |
+| **out** | a loaded network — volumes by class per link |
+| | skims — time, distance, toll, cost by class × period |
+
+Cube, AequilibraE and anything after them differ in *how* they solve that, not in what goes
+in or comes out. Demand models differ in what they **model**: swapping CT-RAMP for
+ActivitySim changes the inputs, the outputs, the calibration targets and the skim format.
+
+The distinction is not how similar the implementations are — ActivitySim is a
+reimplementation of CT-RAMP's design, so on similarity grounds demand could be generic too.
+Nor is it permanence: an engine that wins a bake-off eventually deletes its rivals, exactly
+as CT-RAMP is being deleted. What holds is *where the choice is made*:
+
+- **Assignment is chosen within a scenario.** Same demand, same network, same inputs,
+  different solver — which is precisely the comparison that decides which engine to adopt.
+  One step name means the two runs being compared differ only in the solver, and not in the
+  shape of the pipeline or its `--resume-at` points.
+- **Demand is chosen between scenarios.** There is no useful run in which the demand engine
+  changes and everything else holds; `base_2023_ctramp` and `base_2023_activitysim` are
+  separate directories for that reason.
 
 This is not a one-way door: adding a generic `simulate:` step later is additive, so the
 choice defers rather than forecloses.
