@@ -6,10 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "activitysim==1.5.1",
-    # develop pin for the Windows transit-kernel qsort fix (upstream PR 806, merged
-    # 2026-07-10); the Spiess-Florian transit skimming our skims use (PR 620) is in
-    # 1.6.2+. Move to the plain PyPI release once 1.7.0 ships.
-    "aequilibrae @ git+https://github.com/AequilibraE/aequilibrae.git@8b80c3f2e9b54cccdd3802bfef88fb65b1a8a75d",
+    "aequilibrae",  # git-pinned in [tool.uv.sources] below
     "numpy",  # floor governed by activitysim (pins <1.26)
     "openmatrix>=0.3.5",
     "pandas>=2.0",
@@ -42,6 +39,16 @@ legacy = [
 
 [tool.uv.sources]
 travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }
+# develop pin for the Windows transit-kernel qsort fix (upstream PR 806, merged
+# 2026-07-10); the Spiess-Florian transit skimming our skims use (PR 620) is in
+# 1.6.2+. Move to the plain PyPI release once 1.7.0 ships.
+#
+# Declared here rather than as a `pkg @ git+...` direct reference in
+# project.dependencies: hatchling rejects direct references unless
+# tool.hatch.metadata.allow-direct-references is set, so the package would not
+# build at all -- and keeping the URL out of project.dependencies leaves the wheel
+# metadata clean.
+aequilibrae = { git = "https://github.com/AequilibraE/aequilibrae.git", rev = "8b80c3f2e9b54cccdd3802bfef88fb65b1a8a75d" }
 
 [project.scripts]
 tm1 = "tm1.cli:main"
