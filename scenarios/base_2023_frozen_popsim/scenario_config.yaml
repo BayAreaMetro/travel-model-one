@@ -82,25 +82,17 @@ steps:
 
     # Highway assignment feedback (used only when iterations > 0). This scenario
     # calibrates against static skims, so assignment is off by default — bump
-    # iterations above and uncomment one backend below to enable it.
-    # backend "aeq" = open-source AequilibraE (no Cube license); "cube" = legacy loop.
+    # iterations above and uncomment the block below to enable it.
     # assignment:
-    #   backend: aeq
-    #   network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
-    #   nonres_dir: "{reference_run}/nonres"
+    #   backend: cube
+    #   proj_dir: "{reference_run}"        # Cube scaffold, not the run's proj_dir
+    #   demand: "{proj_dir}/output/trips_{period}.omx"
     #   skims_omx: "{proj_dir}/data/skims.omx"
-    #   transit_inputs_dir: "E:/aeq_inputs"
     #   archive: true
-    #   cores: 48
-    #   max_iter: 100
-    #   gap_target: 0.001
-    #   # --- or use the legacy Cube Voyager loop instead: ---
-    #   # backend: cube
-    #   # cube_proj_dir: "{reference_run}"
-    #   # cluster_nodes: 12
-    #   # assign_job: "HwyAssign.job"
-    #   # transit: true
-    #   # transit_nodes: 15
+    #   cluster_nodes: 12
+    #   assign_job: "HwyAssign.job"
+    #   do_transit: true
+    #   transit_nodes: 15
 
   # --- 5. Summaries: generate calibration report ---
 

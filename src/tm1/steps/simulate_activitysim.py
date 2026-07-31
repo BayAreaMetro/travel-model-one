@@ -1,8 +1,31 @@
 """Simulate step: demand model (ActivitySim) + assignment loop.
 
-For ``iterations: 0`` (default), runs ActivitySim once with static skims.
-For ``iterations: N``, runs N rounds of ActivitySim → assignment → skim update.
-Assignment is not yet implemented.
+For ``iterations: 0`` (default), runs ActivitySim once against static skims.
+For ``iterations: N``, runs N further rounds of assignment → ActivitySim.  The
+engine is chosen and configured through :mod:`tm1.steps.assignment`, the same
+backend table the CT-RAMP path uses.
+
+.. warning::
+
+   **THIS LOOP'S SHAPE DIFFERS FROM THE CT-RAMP ONE AND MUST BE RECONCILED BEFORE
+   PARITY IS CLAIMED.**  This step drives its own loop and runs demand first::
+
+       iterations: 2  ->  D  A  D  A  D      (3 demand runs, 2 assignments)
+
+   The CT-RAMP path is driven by the runner's ``iterate:`` block, which pairs the
+   two::
+
+       count: 2       ->  D  A  D  A         (2 demand runs, 2 assignments)
+
+   So an ActivitySim run currently ends on a demand model whose trips were never
+   assigned, while a CT-RAMP run ends on an assignment.  Aligning them changes
+   which trip set is final, and therefore the results.
+
+   Left alone deliberately: it is the same class of change as the transit/feedback
+   ordering in :func:`tm1.assignment.cube.asim_bridge.run_assignment_iteration`,
+   and the AequilibraE parity work is calibrated against the current behaviour.
+   Resolve both together and re-validate together, rather than as a side effect of
+   a refactor.
 """
 
 import logging
@@ -15,12 +38,14 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from tm1.assignment import expand_period
+
 log = logging.getLogger(__name__)
 
 _PERIODS = ("ea", "am", "md", "pm", "ev")
 
 
-def _archive_pre_assignment(arch_dir: Path, skims_omx: Path, asim_output_dir: Path,
+def _archive_pre_assignment(arch_dir: Path, skims_omx: Path, demand: str,
                             iteration: int) -> None:
     """Archive loop provenance BEFORE assignment runs.
 
@@ -28,13 +53,16 @@ def _archive_pre_assignment(arch_dir: Path, skims_omx: Path, asim_output_dir: Pa
     once); ``trips_{p}_iter{N}.omx`` = the demand matrices ActivitySim run N produced
     (the demand assignment iteration N is about to load). Copies are cheap (~1 GB
     skims, ~25 MB demand) and make every iteration's inputs reconstructible.
+
+    Reads the same ``demand`` pattern the assignment does, so a scenario that points
+    the seam somewhere non-default still archives the file that was actually used.
     """
     arch_dir.mkdir(parents=True, exist_ok=True)
     seed = arch_dir / "skims_iter0.omx"
     if iteration == 1 and skims_omx.exists() and not seed.exists():
         shutil.copy2(skims_omx, seed)
     for period in _PERIODS:
-        src = asim_output_dir / f"trips_{period}.omx"
+        src = Path(expand_period(demand, period))
         if src.exists():
             shutil.copy2(src, arch_dir / f"trips_{period}_iter{iteration}.omx")
 
@@ -151,33 +179,26 @@ def _run_assignment(
     cfg: dict,
     iteration: int,
 ) -> None:
-    """Run one faithful Cube highway assignment + feedback iteration.
+    """Run one assignment + feedback pass for this iteration of the loop.
 
-    Reads ``steps.simulate_activitysim.assignment``:
+    The engine choice, its config keys and its backend table all live in
+    :mod:`tm1.steps.assignment`, shared with the CT-RAMP path -- there is one
+    ``backend:`` and one set of key names regardless of which demand model is
+    driving.  Reads ``steps.simulate_activitysim.assignment``.
 
-    * ``cube_proj_dir`` — Cube project scaffold (hwy nets, CTRAMP/scripts, frozen
-      ``nonres/`` demand). Required to run assignment; if absent, assignment is
-      skipped (ActivitySim then just re-runs against the same static skims).
-    * ``cluster_nodes`` — local Cube Cluster size (must match ``HwyIntraStep.block``;
-      default 12).
-    * ``assign_job`` — assignment job script (default ``HwyAssign.job``).
+    Two things stay here because they belong to the loop rather than to the engine:
 
-    The bridged demand comes from this iteration's ActivitySim ``trips_{period}.omx``
-    (in the ActivitySim ``output_dir``); the refreshed skims are written back to the
-    ActivitySim ``data_dir``'s ``skims.omx`` for the next ActivitySim run.
-
-    Two backends are selected by ``assignment.backend``:
-
-    * ``"cube"`` (default) — the faithful legacy Cube Voyager loop (needs
-      ``cube_proj_dir`` + a local Cube install).
-    * ``"aeq"`` — the open-source AequilibraE highway assignment + skims (needs
-      ``network_csv`` and frozen ``nonres_dir``); no Cube license required.
-
-    ``archive`` (default true) keeps per-iteration provenance copies under
-    ``archive_dir`` (default ``{skims dir}/skim_archive``): ``skims_iter{N}.omx``
-    (produced by assignment N, consumed by ActivitySim run N+1; ``iter0`` = the seed)
-    and ``trips_{p}_iter{N}.omx`` (demand from ActivitySim run N).
+    * **Defaults drawn from the ActivitySim block.** ``demand`` defaults to this
+      round's ``trips_{period}.omx`` in the ActivitySim ``output_dir``, and
+      ``skims_omx`` to ``skims.omx`` in its ``data_dir`` -- the file the next
+      ActivitySim run reads.
+    * **Provenance.** ``archive`` (default true) snapshots each round under
+      ``archive_dir`` (default ``{skims dir}/skim_archive``): ``skims_iter{N}.omx``
+      (produced by assignment N, consumed by ActivitySim run N+1; ``iter0`` is the
+      seed) and ``trips_{p}_iter{N}.omx`` (demand from ActivitySim run N).
     """
+    from tm1.steps.assignment import run_backend  # noqa: PLC0415
+
     sim_cfg = cfg["steps"].get("simulate_activitysim", cfg["steps"].get("simulate", {}))
     asim_cfg = sim_cfg.get("activitysim", sim_cfg)
     asn = sim_cfg.get("assignment")
@@ -188,62 +209,21 @@ def _run_assignment(
         )
         return
 
-    backend = asn.get("backend", "cube")
-    asim_output_dir = Path(asim_cfg["output_dir"])
-    skims_omx = Path(asn.get("skims_omx", Path(asim_cfg["data_dir"]) / "skims.omx"))
+    # Copied so the defaults below never mutate the loaded scenario config.
+    asn = dict(asn)
+    asn.setdefault("demand", str(Path(asim_cfg["output_dir"]) / "trips_{period}.omx"))
+    skims_omx = Path(asn.get("skims_omx") or Path(asim_cfg["data_dir"]) / "skims.omx")
+    asn["skims_omx"] = str(skims_omx)
+
     # per-iteration provenance snapshots (skims_iter{N}.omx + demand); the canonical
     # skims.omx name never changes -- ActivitySim always reads the same path
     archive = asn.get("archive", True)
     arch_dir = Path(asn.get("archive_dir", skims_omx.parent / "skim_archive"))
     if archive:
-        _archive_pre_assignment(arch_dir, skims_omx, asim_output_dir, iteration)
+        _archive_pre_assignment(arch_dir, skims_omx, asn["demand"], iteration)
 
-    if backend == "aeq":
-        from tm1.assignment.aeq.runner import run_assignment_iteration  # noqa: PLC0415
+    run_backend(asn, cfg, iteration)
 
-        if not asn.get("network_csv"):
-            log.warning(
-                "backend=aeq but no assignment.network_csv configured — skipping "
-                "assignment for iteration %d", iteration,
-            )
-            return
-        run_assignment_iteration(
-            asim_output_dir,
-            asn["network_csv"],
-            asn.get("nonres_dir", ""),
-            skims_omx,
-            iteration=iteration,
-            max_iter=asn.get("max_iter", 100),
-            gap_target=asn.get("gap_target", 1e-4),
-            cores=asn.get("cores"),
-            transit_inputs_dir=asn.get("transit_inputs_dir"),
-            params_path=asn.get("params"),
-        )
-        if archive:
-            _archive_post_assignment(arch_dir, skims_omx, iteration)
-        return
-
-    from tm1.assignment.cube.asim_bridge import run_assignment_iteration  # noqa: PLC0415
-
-    if not asn.get("cube_proj_dir"):
-        log.warning(
-            "No assignment.cube_proj_dir configured — skipping highway assignment "
-            "for iteration %d (ActivitySim will re-run against static skims)",
-            iteration,
-        )
-        return
-
-    proj_dir = Path(asn["cube_proj_dir"])
-    run_assignment_iteration(
-        proj_dir,
-        asim_output_dir,
-        iteration,
-        skims_omx_path=skims_omx,
-        cluster_nodes=asn.get("cluster_nodes", 12),
-        assign_job=asn.get("assign_job", "HwyAssign.job"),
-        do_transit=asn.get("transit", True),
-        transit_nodes=asn.get("transit_nodes", 15),
-    )
     if archive:
         _archive_post_assignment(arch_dir, skims_omx, iteration)
 

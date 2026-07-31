@@ -53,26 +53,26 @@ steps:
         - "default-configs/activity/configs_mp"
         - "default-configs/activity/configs"
 
-    # Highway assignment feedback (used only when iterations > 0).
-    # backend "aeq" = open-source AequilibraE (no Cube license); "cube" = legacy loop.
+    # Highway assignment feedback (used only when iterations > 0).  Same keys and
+    # same `backend:` as the CT-RAMP path -- one assignment step, one backend table,
+    # whichever demand model is driving.
     assignment:
-      backend: aeq
-      network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
-      nonres_dir: "{reference_run}/nonres"
+      backend: cube
+
+      # The Cube project scaffold: hwy nets, CTRAMP/scripts, frozen nonres/ demand.
+      # Note this is NOT the run's own proj_dir -- the Cube tree is the reference
+      # run, while ActivitySim writes into proj_dir.
+      proj_dir: "{reference_run}"
+
+      # The demand this assignment consumes: this round's ActivitySim trip
+      # matrices.  `{period}` expands to ea/am/md/pm/ev (`{PERIOD}` gives EA/AM/...).
+      # Optional -- defaults to trips_{period}.omx in the ActivitySim output_dir.
+      demand: "{proj_dir}/output/trips_{period}.omx"
+
+      # Where the refreshed skims are written back for the next ActivitySim run.
       skims_omx: "{proj_dir}/data/skims.omx"
-      # Cube-free transit LOS skims from the source network (omit to preserve
-      # existing transit matrices); built once by scripts/build_aeq_inputs.py
-      transit_inputs_dir: "E:/aeq_inputs"
       archive: true
-      cores: 48
-      max_iter: 100
-      gap_target: 0.001
-      # --- To use the legacy Cube Voyager loop instead (requires a local Cube
-      # install + license): delete/comment the aeq keys above except skims_omx
-      # and archive, then uncomment:
-      # backend: cube
-      # cube_proj_dir: "{reference_run}"
-      # cluster_nodes: 12
-      # assign_job: "HwyAssign.job"
-      # transit: true
-      # transit_nodes: 15
+      cluster_nodes: 12
+      assign_job: "HwyAssign.job"
+      do_transit: true
+      transit_nodes: 15

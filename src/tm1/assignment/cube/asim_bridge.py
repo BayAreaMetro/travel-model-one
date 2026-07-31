@@ -32,6 +32,7 @@ import numpy as np
 import openmatrix as omx
 
 from cubeio import write_tpp
+from tm1.assignment import expand_period
 from tm1.assignment.cube.highway import (
     _NODES_ASSIGN,
     PERIODS,
@@ -82,7 +83,7 @@ _TABLE_ORDER: tuple[str, ...] = (
 
 
 def build_trip_matrices(
-    asim_output_dir: str | Path,
+    demand: str,
     main_dir: str | Path,
     *,
     periods: tuple[str, ...] = PERIODS,
@@ -91,8 +92,11 @@ def build_trip_matrices(
 
     Parameters
     ----------
-    asim_output_dir
-        ActivitySim output dir containing ``trips_{period}.omx``.
+    demand
+        Per-period path pattern for the ActivitySim trip matrices, as declared by
+        the assignment step's ``demand:`` key (e.g.
+        ``".../output/trips_{period}.omx"``).  Read rather than reconstructed, so
+        the seam stays the single statement of where demand lives.
     main_dir
         Destination ``main/`` dir; ``trips{PERIOD}.tpp`` are written here.
     periods
@@ -101,7 +105,6 @@ def build_trip_matrices(
     Returns:
         The written ``trips{PERIOD}.tpp`` paths.
     """
-    asim_output_dir = Path(asim_output_dir)
     main_dir = Path(main_dir)
     main_dir.mkdir(parents=True, exist_ok=True)
 
@@ -115,7 +118,7 @@ def build_trip_matrices(
 
     written: list[Path] = []
     for period in periods:
-        omx_path = asim_output_dir / f"trips_{period.lower()}.omx"
+        omx_path = Path(expand_period(demand, period))
         if not omx_path.exists():
             msg = f"ActivitySim trip matrix not found: {omx_path}"
             raise FileNotFoundError(msg)
@@ -216,7 +219,7 @@ def refresh_skims_omx(proj_dir: str | Path, skims_omx_path: str | Path) -> Path:
 
 def run_assignment_iteration(  # noqa: PLR0913
     proj_dir: str | Path,
-    asim_output_dir: str | Path,
+    demand: str,
     iteration: int,
     *,
     skims_omx_path: str | Path | None = None,
@@ -231,22 +234,44 @@ def run_assignment_iteration(  # noqa: PLR0913
 ) -> None:
     """One full global feedback iteration of the faithful Cube assignment loop.
 
-    bridge ActivitySim trips -> ``main/trips{P}.tpp`` -> HwyAssign -> feedback
-    (-> ``hwy/avgLOAD{P}.net``) -> HwySkims -> refresh ``skims.omx`` for the next
-    ActivitySim run.  Transit assignment is not yet wired; transit/non-motorized
-    skims are taken as frozen in ``skims/``.
+    Bridge ActivitySim trips -> ``main/trips{P}.tpp`` -> HwyAssign -> feedback
+    (-> ``hwy/avgLOAD{P}.net``) -> HwySkims -> transit -> refresh ``skims.omx`` for
+    the next ActivitySim run.
+
+    .. warning::
+
+       **THIS SEQUENCE DIVERGES FROM THE CT-RAMP ONE AND MUST BE RECONCILED BEFORE
+       PARITY IS CLAIMED.**  ``RunIteration.bat`` -- and therefore
+       :func:`tm1.assignment.cube.ctramp.run_iteration` -- runs *transit before
+       feedback* (transit is step 4, feedback step 5), so transit reads the
+       *previous* round's ``hwy/avgload{period}.net``.  This function runs transit
+       *after* feedback, so it reads *this* round's recomputed congested speeds.
+
+       ``PrepHwyNet.job`` line 96 reads that network to derive bus speeds, so the
+       two orders give different transit level of service and different boardings,
+       diverging most at iteration 1 where the alternative is a warm-start network.
+
+       The order here is an artifact of when transit was added, not a modelling
+       decision: ``refresh_skims_omx`` has to run last, and transit was inserted
+       beside the other skim-producing step.  Nothing forces it --
+       ``HwyAssign -> transit -> feedback -> HwySkims -> refresh`` satisfies both
+       constraints.  It is left alone deliberately: correcting it moves ActivitySim
+       transit results, and the AequilibraE parity work is calibrated against the
+       current numbers.  Fix it and re-validate as one deliberate change, not as a
+       side effect of a refactor.
 
     Parameters
     ----------
-    asim_output_dir
-        ActivitySim output dir holding this round's ``trips_{period}.omx``.
+    demand
+        Per-period path pattern for this round's ActivitySim trip matrices, from
+        the assignment step's ``demand:`` key.
     skims_omx_path
         Where to (re)write the ActivitySim skims OMX (required when
         ``build_skims``).
     """
     proj_dir = Path(proj_dir)
     log.info("=== Assignment iteration %d ===", iteration)
-    build_trip_matrices(asim_output_dir, proj_dir / "main")
+    build_trip_matrices(demand, proj_dir / "main")
     run_highway_assignment(proj_dir, cluster_nodes=cluster_nodes, assign_job=assign_job)
     run_highway_feedback(
         proj_dir, iteration,
