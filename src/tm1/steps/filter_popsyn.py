@@ -25,9 +25,9 @@ the version tag where it belongs, on the ``INPUT/`` side.
 Config::
 
     filter_popsyn:
-      from: "{reference_run}/INPUT/popsyn"   # dir holding hhFile.* + personFile.*
-      to: "{proj_dir}/popsyn"
-      skim: "{proj_dir}/skims/HWYSKMAM.tpp"
+      from: "{ctramp_run}/INPUT/popsyn"   # dir holding hhFile.* + personFile.*
+      to: "{run_dir}/popsyn"
+      skim: "{run_dir}/skims/HWYSKMAM.tpp"
       max_internal_zone: 1454                # zones above this are externals
 """
 
