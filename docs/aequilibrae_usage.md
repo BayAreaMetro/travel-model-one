@@ -68,6 +68,7 @@ simulate_activitysim:
   iterations: 3                 # feedback iterations (0 = static skims, no assignment)
   assignment:
     backend: aeq                # "aeq" (open-source) or "cube" (legacy Voyager loop)
+    demand: "{proj_dir}/output/trips_{period}.omx"   # optional; this is the default
     network_csv: "{reference_run}/hwy/iter3/avgload5period_vehclasses.csv"
     nonres_dir:  "{reference_run}/nonres"
     skims_omx:   "{proj_dir}/data/skims.omx"
@@ -78,8 +79,17 @@ simulate_activitysim:
     archive: true
 ```
 
-The dispatch is in [simulate_activitysim.py](../src/tm1/steps/simulate_activitysim.py#L191)
-(`backend` defaults to `cube`); the aeq entry point is
+Or start from [`scenarios/base_2023_activitysim_aeq/`](../scenarios/base_2023_activitysim_aeq/),
+which is `base_2023_activitysim` with this block swapped in and everything else shared, so
+the two can be run side by side as an engine comparison.
+
+`demand` is the artifact the engine consumes — the same key the Cube backend reads, so the
+two engines are pointed at demand identically. `{period}` expands to `ea/am/md/pm/ev`
+(`{PERIOD}` gives `EA/AM/...`).
+
+The dispatch is [`run_backend`](../src/tm1/steps/assignment.py) and its `_BACKENDS` table,
+shared with the CT-RAMP path so there is one backend selection for the whole pipeline
+(`backend` defaults to `cube`). The aeq entry point is
 [`run_assignment_iteration`](../src/tm1/assignment/aeq/runner.py#L173). Each iteration, for
 all five periods, it: assembles demand (ActivitySim personal trips + nonres) → assigns
 (equilibrium) → skims highway + transit → writes `skims.omx` for the next ActivitySim pass.
@@ -105,7 +115,8 @@ knob.
 ### Policy (the common case) — `default-configs/assignment/aeq_params.yaml`
 
 Every model knob lives here, with per-block provenance noting the Cube job it came from.
-Load via `tm1.assignment.aeq.params.load_aeq_params()`. Highlights:
+Load via `tm1.assignment.params.load_aeq_params()` — shared with the Cube demand bridge,
+so both engines fold ride-hail and occupancy the same way. Highlights:
 
 - `periods.capfac` — hours per period (Cube `HwyAssign.job capfac`).
 - `transit_cost.assign_wait_perceive` / `skim_wait_perceive` — `iwaitfac`/`xwaitfac`.
