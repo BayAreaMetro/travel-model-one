@@ -154,7 +154,7 @@ steps:
         to: "{run_dir}/CTRAMP/scripts/metrics"
 
       # 3. INPUT/ -> the working directories (RunModel.bat 172-178).  popsyn is absent
-      #    on purpose: filterUnconnectedHouseholds.py writes it.
+      #    on purpose: the filter_popsyn step writes it.
       hwy:
         from: "{run_dir}/INPUT/hwy"
         to: "{run_dir}/hwy"
@@ -289,20 +289,22 @@ steps:
           job: "CTRAMP/scripts/skims/Accessibility.job"
 
       # RunIteration.bat 49-57 parks these under `if %ITER%==1`; with the skims built above
-      # they are ordinary warm-start steps.  Once the households are filtered they stay
+      # they are an ordinary warm-start step.  Once the households are filtered they stay
       # filtered -- refiltering against a later round's skims would change the population
       # mid-run.
-      - find_no_access_zones:         # zones with no tolled-DA path -> unconnected_zones.csv
-          job: "CTRAMP/scripts/skims/FindNoAccessZones.job"
-          verify: ["skims/unconnected_zones.csv", "skims/unconnected_zones.dbf"]
-          # The dbf, not the csv: the job *echo*s the csv header before the MATRIX step
-          # that does the work, so a failed run leaves a csv behind.  Only MATRIX creates
-          # the dbf.
-          skip_if_exists: "skims/unconnected_zones.dbf"
-      - filter_unconnected_households:  # INPUT/popsyn -> popsyn/, dropping unreachable homes
-          command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
-          args: ["popsyn"]
-          skip_if_exists: "popsyn/hhFile.2023_v12.csv"   # the versioned name INPUT ships
+      #
+      # Native replacement for FindNoAccessZones.job + filterUnconnectedHouseholds.py:
+      # scans the AM highway skim for zones with no drivable path (Cube writes 500000
+      # where none exists), drops households home-based there, and writes
+      # popsyn/hhFile.csv + personFile.csv -- the canonical names CT-RAMP's properties
+      # point at.  With zero unconnected zones (the healthy, expected case) the INPUT
+      # files are byte-copied through unchanged.
+      - filter_popsyn:
+          from: "{run_dir}/INPUT/popsyn"
+          to: "{run_dir}/popsyn"
+          skim: "{run_dir}/skims/HWYSKMAM.tpp"
+          max_internal_zone: 1454   # zones 1455+ are externals -- flagged but never filtered
+          verify: ["popsyn/hhFile.csv", "popsyn/personFile.csv"]
 
   # ── The feedback loop · three identical rounds (RunIteration.bat) ─────────────────────
   # One round = demand + assignment; demand responds to the skims the previous round
