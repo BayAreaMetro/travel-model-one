@@ -46,6 +46,7 @@ from pathlib import Path
 from types import ModuleType
 
 import tm1.steps.assignment as assignment_step
+import tm1.steps.filter_popsyn as filter_popsyn_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.summaries.calibration as calibration_step
@@ -72,6 +73,7 @@ def _fmt_elapsed(seconds: float) -> str:
 #: scenario-supplied steps resolve to exactly the same kind of thing.
 STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
+    "filter_popsyn": filter_popsyn_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,
     "calibration": calibration_step.run,

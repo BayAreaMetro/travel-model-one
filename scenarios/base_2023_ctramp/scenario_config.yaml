@@ -45,12 +45,6 @@ steps:
     landuse:
       from: "{reference_run}/landuse"
       to: "{proj_dir}/landuse"
-    households:
-      from: "{reference_run}/popsyn/hhFile.csv"
-      to: "{proj_dir}/popsyn/hhFile.csv"
-    persons:
-      from: "{reference_run}/popsyn/personFile.csv"
-      to: "{proj_dir}/popsyn/personFile.csv"
     skims:
       from: "{reference_run}/skims"
       to: "{proj_dir}/skims"
@@ -90,7 +84,22 @@ steps:
       to: "{proj_dir}/trn"
       glob: "*"
 
-  # --- 2. The global feedback loop -------------------------------------
+  # --- 2. Stage the synthetic population, filtered for connectivity ----
+  #
+  # Native replacement for FindNoAccessZones.job + filterUnconnectedHouseholds.py
+  # (popsyn mode): scans the AM highway skim for zones with no drivable path
+  # (Cube writes 500000 where none exists), drops households home-based there,
+  # and writes popsyn/hhFile.csv + personFile.csv -- the canonical names
+  # CT-RAMP's properties point at.  With zero unconnected zones (the healthy,
+  # expected case) the INPUT files are byte-copied through unchanged.
+  #
+  filter_popsyn:
+    from: "{reference_run}/INPUT/popsyn"
+    to: "{proj_dir}/popsyn"
+    skim: "{proj_dir}/skims/HWYSKMAM.tpp"
+    max_internal_zone: 1454   # zones 1455+ are externals -- flagged but never filtered
+
+  # --- 3. The global feedback loop -------------------------------------
   #
   # One iteration = demand + assignment, the body of RunIteration.bat: demand
   # responds to the congested skims the previous assignment produced.  Nesting
@@ -100,7 +109,7 @@ steps:
   iterate:
     count: 1
     steps:
-      # --- 2. Simulate: run CTRAMP Java demand model ---
+      # --- 3. Simulate: run CTRAMP Java demand model ---
       #
       # Runs one iteration per call; the enclosing `iterate:` block drives the loop.
       # Sample rate follows RunModel.bat's ramp (0.15, 0.30, 0.50 by iteration)
@@ -141,7 +150,7 @@ steps:
           StopFrequency: true
           StopLocation: true
 
-      # --- 3. Assignment: Cube highway + transit, then feedback ---
+      # --- 4. Assignment: Cube highway + transit, then feedback ---
       #
       # Runs RunIteration.bat's Cube half, in its order:
       #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
@@ -193,7 +202,7 @@ steps:
         build_skims: true      # rebuild highway skims + accessibility afterwards
         cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
 
-  # --- 4. Calibration: HTML report comparing survey vs CTRAMP ---
+  # --- 5. Calibration: HTML report comparing survey vs CTRAMP ---
   calibration:
     output_dir: "{proj_dir}/calibration_output"
     write_csv: false
@@ -246,7 +255,7 @@ steps:
       - tour_mode_choice
       - trip_mode_choice
 
-  # --- 5. Your own code: any step with `script:` or `module:` ---
+  # --- 6. Your own code: any step with `script:` or `module:` ---
   #
   # This one runs last, so it is post-processing.  Move it above
   # `simulate_ctramp` and the same mechanism makes it pre-processing -- position
