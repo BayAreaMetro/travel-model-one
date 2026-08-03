@@ -94,11 +94,13 @@ steps:
       to: "{proj_dir}/nonres"
     # (taxi_tnc_occ_factors.csv is no longer copied -- configure_ctramp derives it
     # from params.properties, which is where the legacy script wrote it from too.)
-    # Transit line files, fare tables and support links.  `glob: "*"` takes the
-    # top-level files only -- the reference run's TransitAssignment.iter* output
-    # directories are skipped, since each iteration rebuilds its own.
+    # Transit line files, fare tables and support links, from pristine INPUT/.
+    # `glob: "*"` takes the top-level files only -- the reference run's
+    # TransitAssignment.iter* output directories are skipped, since each
+    # iteration rebuilds its own.  transitOriginal{P}.lin is *built* by
+    # build_transit_lines below, not inherited.
     trn:
-      from: "{reference_run}/trn"
+      from: "{reference_run}/INPUT/trn"
       to: "{proj_dir}/trn"
       glob: "*"
 
@@ -150,7 +152,32 @@ steps:
     params: "{reference_run}/INPUT/params.properties"
     model_year: 2023
 
-  # --- 6. The global feedback loop -------------------------------------
+  # --- 6. Stage the per-period transit line files ----------------------
+  #
+  # RunModel.bat step 4.5's transitDwellAccess.py Simple mode, native -- and
+  # without NetworkWrangler.  With COMPLEXMODES_DWELL/ACCESS empty (as
+  # RunModel.bat ships them) that pass leaves the line data untouched, so the
+  # five transitOriginal{P}.lin are copies of transitLines.lin and of each
+  # other.  See the module docstring before enabling the complex dwell modes.
+  #
+  build_transit_lines:
+    from: "{proj_dir}/trn/transitLines.lin"
+    to: "{proj_dir}/trn"
+
+  # --- 7. Interpolate high-speed-rail trips to the model year ----------
+  #
+  # Replaces HsrTripGeneration.job with cubeio: reads the California HSR
+  # model's 2040 and 2050 tables and interpolates.  All zero before the 2040
+  # opening year (so, zero for 2023) or when HSR_Interregional_Disable is set
+  # in trnParam.block, which configure_ctramp writes.
+  #
+  build_hsr_trips:
+    from: "{reference_run}/INPUT/nonres"
+    to: "{proj_dir}/nonres"
+    model_year: 2023
+    trn_param: "{proj_dir}/CTRAMP/scripts/block/trnParam.block"
+
+  # --- 8. The global feedback loop -------------------------------------
   #
   # One iteration = demand + assignment, the body of RunIteration.bat: demand
   # responds to the congested skims the previous assignment produced.  Nesting
@@ -160,7 +187,7 @@ steps:
   iterate:
     count: 1
     steps:
-      # --- 6. Simulate: run CTRAMP Java demand model ---
+      # --- 8. Simulate: run CTRAMP Java demand model ---
       #
       # Runs one iteration per call; the enclosing `iterate:` block drives the loop.
       # Sample rate follows RunModel.bat's ramp (0.15, 0.30, 0.50 by iteration)
@@ -201,7 +228,7 @@ steps:
           StopFrequency: true
           StopLocation: true
 
-      # --- 7. Assignment: Cube highway + transit, then feedback ---
+      # --- 9. Assignment: Cube highway + transit, then feedback ---
       #
       # Runs RunIteration.bat's Cube half, in its order:
       #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
@@ -253,7 +280,7 @@ steps:
         build_skims: true      # rebuild highway skims + accessibility afterwards
         cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
 
-  # --- 8. Calibration: HTML report comparing survey vs CTRAMP ---
+  # --- 10. Calibration: HTML report comparing survey vs CTRAMP ---
   calibration:
     output_dir: "{proj_dir}/calibration_output"
     write_csv: false
@@ -306,7 +333,7 @@ steps:
       - tour_mode_choice
       - trip_mode_choice
 
-  # --- 9. Your own code: any step with `script:` or `module:` ---
+  # --- 11. Your own code: any step with `script:` or `module:` ---
   #
   # This one runs last, so it is post-processing.  Move it above
   # `simulate_ctramp` and the same mechanism makes it pre-processing -- position

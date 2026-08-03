@@ -47,7 +47,9 @@ from types import ModuleType
 
 import tm1.steps.assignment as assignment_step
 import tm1.steps.build.highway_networks as build_highway_networks_step
+import tm1.steps.build.hsr_trips as build_hsr_trips_step
 import tm1.steps.build.nonmotorized_skims as build_nonmotorized_skims_step
+import tm1.steps.build.transit_lines as build_transit_lines_step
 import tm1.steps.configure_ctramp as configure_ctramp_step
 import tm1.steps.filter_popsyn as filter_popsyn_step
 import tm1.steps.setup as setup_step
@@ -78,6 +80,8 @@ STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
     "build_highway_networks": build_highway_networks_step.run,
     "build_nonmotorized_skims": build_nonmotorized_skims_step.run,
+    "build_transit_lines": build_transit_lines_step.run,
+    "build_hsr_trips": build_hsr_trips_step.run,
     "filter_popsyn": filter_popsyn_step.run,
     "configure_ctramp": configure_ctramp_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
