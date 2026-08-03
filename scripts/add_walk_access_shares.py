@@ -12,7 +12,7 @@ Usage:
 import sys
 from pathlib import Path
 
-from tm1.steps.setup import merge_walk_access_shares
+from tm1.steps.walk_access_buffers import merge_walk_access_shares
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
