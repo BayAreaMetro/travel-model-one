@@ -24,6 +24,15 @@ transit = [
     "xlrd>=2.0",
     "pywin32>=304",
 ]
+# Editing CT-RAMP's UEC workbooks (configure_ctramp).  xlutils.copy round-trips a
+# BIFF .xls through xlwt, the only way to patch one in place without Excel.
+# xlrd 2.x dropped .xlsx but still reads .xls with formatting_info, so this shares
+# the `transit` extra's floor rather than pinning back to 1.2.  Dies with CT-RAMP.
+ctramp = [
+    "xlrd>=2.0",
+    "xlutils>=2.0",
+    "xlwt>=1.3",
+]
 
 [project.scripts]
 tm1 = "tm1.cli:main"

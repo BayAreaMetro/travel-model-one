@@ -92,11 +92,8 @@ steps:
     nonres:
       from: "{reference_run}/nonres"
       to: "{proj_dir}/nonres"
-    # PrepAssign.job reads this by bare relative path, so it must sit at the
-    # project root rather than under a subdirectory
-    taxi_tnc_occ_factors:
-      from: "{reference_run}/taxi_tnc_occ_factors.csv"
-      to: "{proj_dir}/taxi_tnc_occ_factors.csv"
+    # (taxi_tnc_occ_factors.csv is no longer copied -- configure_ctramp derives it
+    # from params.properties, which is where the legacy script wrote it from too.)
     # Transit line files, fare tables and support links.  `glob: "*"` takes the
     # top-level files only -- the reference run's TransitAssignment.iter* output
     # directories are skipped, since each iteration rebuilds its own.
@@ -140,7 +137,20 @@ steps:
     skim: "{proj_dir}/skims/HWYSKMAM.tpp"
     max_internal_zone: 1454   # zones 1455+ are externals -- flagged but never filtered
 
-  # --- 5. The global feedback loop -------------------------------------
+  # --- 5. Stamp params.properties into CT-RAMP's config -----------------
+  #
+  # RunModel.bat step 190's RuntimeConfiguration.py, native.  The shipped
+  # properties/blocks/UECs carry `xx.xx` placeholders; this fills them from
+  # INPUT/params.properties and writes taxi_tnc_occ_factors.csv.  Patches a
+  # key set disjoint from simulate_ctramp's (which owns project dir, popsyn
+  # paths, host IP, JPPF and shadow pricing).
+  #
+  configure_ctramp:
+    proj_dir: "{proj_dir}"
+    params: "{reference_run}/INPUT/params.properties"
+    model_year: 2023
+
+  # --- 6. The global feedback loop -------------------------------------
   #
   # One iteration = demand + assignment, the body of RunIteration.bat: demand
   # responds to the congested skims the previous assignment produced.  Nesting
@@ -150,7 +160,7 @@ steps:
   iterate:
     count: 1
     steps:
-      # --- 5. Simulate: run CTRAMP Java demand model ---
+      # --- 6. Simulate: run CTRAMP Java demand model ---
       #
       # Runs one iteration per call; the enclosing `iterate:` block drives the loop.
       # Sample rate follows RunModel.bat's ramp (0.15, 0.30, 0.50 by iteration)
@@ -191,7 +201,7 @@ steps:
           StopFrequency: true
           StopLocation: true
 
-      # --- 6. Assignment: Cube highway + transit, then feedback ---
+      # --- 7. Assignment: Cube highway + transit, then feedback ---
       #
       # Runs RunIteration.bat's Cube half, in its order:
       #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
@@ -243,7 +253,7 @@ steps:
         build_skims: true      # rebuild highway skims + accessibility afterwards
         cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
 
-  # --- 7. Calibration: HTML report comparing survey vs CTRAMP ---
+  # --- 8. Calibration: HTML report comparing survey vs CTRAMP ---
   calibration:
     output_dir: "{proj_dir}/calibration_output"
     write_csv: false
@@ -296,7 +306,7 @@ steps:
       - tour_mode_choice
       - trip_mode_choice
 
-  # --- 8. Your own code: any step with `script:` or `module:` ---
+  # --- 9. Your own code: any step with `script:` or `module:` ---
   #
   # This one runs last, so it is post-processing.  Move it above
   # `simulate_ctramp` and the same mechanism makes it pre-processing -- position
