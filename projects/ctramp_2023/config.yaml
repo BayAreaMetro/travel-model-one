@@ -188,24 +188,21 @@ steps:
       # period.  Must not exceed hwy_assign's cluster_nodes, or it addresses processes
       # that were never started.
       intrastep_processes: 48
-  - csv_to_dbf:
-      command: "CTRAMP/scripts/preprocess/csvToDbf.py"
-      args: ["hwy/tolls.csv", "hwy/tolls.dbf"]
-  - set_tolls:
-      job: "CTRAMP/scripts/preprocess/SetTolls.job"
-  - set_hov_xfer_penalties:
-      job: "CTRAMP/scripts/preprocess/SetHovXferPenalties.job"
-  - create_five_highway_networks:
-      job: "CTRAMP/scripts/preprocess/CreateFiveHighwayNetworks.job"
+  # RunModel.bat step 3, at the engine boundary: tolls.csv -> tolls.dbf is native
+  # (replacing csvToDbf.py, and with it the dbfpy3 dependency), then the stock Cube
+  # jobs run as-is -- SetTolls -> SetHovXferPenalties -> CreateFiveHighwayNetworks,
+  # taking hwy/freeflow.net to hwy/withTolls.net and hwy/avgload{EA..EV}.net.
+  - build_highway_networks:
+      run_dir: "{run_dir}"
   - hsr_trip_generation:
       job: "CTRAMP/scripts/preprocess/HsrTripGeneration.job"
 
   # Non-motorized level of service (RunModel.bat step 4).  Free-flow only, so unlike
-  # every other skim these need no assignment first.
-  - create_nonmotorized_network:
-      job: "CTRAMP/scripts/skims/CreateNonMotorizedNetwork.job"
-  - nonmotorized_skims:
-      job: "CTRAMP/scripts/skims/NonMotorizedSkims.job"
+  # every other skim these need no assignment first, and the feedback loop never
+  # touches them.  Stock Cube jobs as-is: CreateNonMotorizedNetwork ->
+  # NonMotorizedSkims, producing skims/nonmotskm.tpp (DISTWALK/DISTBIKE/DIST).
+  - build_nonmotorized_skims:
+      run_dir: "{run_dir}"
   - transit_dwell_access:
       command: "CTRAMP/scripts/skims/transitDwellAccess.py"
       # The argv the script receives, not a transliteration: RunModel.bat 146-147 set the

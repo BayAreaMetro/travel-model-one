@@ -28,6 +28,8 @@ import tm1.steps.assignment as assignment_step
 import tm1.steps.configure_ctramp as configure_ctramp_step
 import tm1.steps.external as external_step
 import tm1.steps.setup as setup_step
+import tm1.steps.build.highway_networks as build_highway_networks_step
+import tm1.steps.build.nonmotorized_skims as build_nonmotorized_skims_step
 import tm1.steps.filter_popsyn as filter_popsyn_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.staging as staging_step
@@ -48,6 +50,8 @@ STEPS: dict[str, Callable] = {
     "publish_networks": staging_step.publish_networks,
     # The model itself.
     "copy_inputs": setup_step.run,
+    "build_highway_networks": build_highway_networks_step.run,
+    "build_nonmotorized_skims": build_nonmotorized_skims_step.run,
     "filter_popsyn": filter_popsyn_step.run,
     "configure_ctramp": configure_ctramp_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
