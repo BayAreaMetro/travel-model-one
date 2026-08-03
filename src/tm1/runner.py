@@ -71,7 +71,6 @@ def _fmt_elapsed(seconds: float) -> str:
 #: scenario-supplied steps resolve to exactly the same kind of thing.
 STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
-    "walk_access_buffers": setup_step.run_walk_access_buffers,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,
 }
