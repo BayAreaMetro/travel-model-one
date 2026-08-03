@@ -51,6 +51,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+# ... but the build-steps package is source, not a packaging artifact
+!src/tm1/steps/build/
 develop-eggs/
 dist/
 downloads/
