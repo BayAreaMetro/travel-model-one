@@ -194,8 +194,15 @@ steps:
   # taking hwy/freeflow.net to hwy/withTolls.net and hwy/avgload{EA..EV}.net.
   - build_highway_networks:
       run_dir: "{run_dir}"
-  - hsr_trip_generation:
-      job: "CTRAMP/scripts/preprocess/HsrTripGeneration.job"
+  # Replaces HsrTripGeneration.job with cubeio: reads the California HSR model's 2040
+  # and 2050 tables and interpolates.  All zero before the 2040 opening year (so, zero
+  # for 2023) or when HSR_Interregional_Disable is set in trnParam.block, which
+  # configure_ctramp writes.
+  - build_hsr_trips:
+      from: "{run_dir}/INPUT/nonres"
+      to: "{run_dir}/nonres"
+      model_year: "{env:MODEL_YEAR}"
+      trn_param: "{run_dir}/CTRAMP/scripts/block/trnParam.block"
 
   # Non-motorized level of service (RunModel.bat step 4).  Free-flow only, so unlike
   # every other skim these need no assignment first, and the feedback loop never
@@ -203,12 +210,14 @@ steps:
   # NonMotorizedSkims, producing skims/nonmotskm.tpp (DISTWALK/DISTBIKE/DIST).
   - build_nonmotorized_skims:
       run_dir: "{run_dir}"
-  - transit_dwell_access:
-      command: "CTRAMP/scripts/skims/transitDwellAccess.py"
-      # The argv the script receives, not a transliteration: RunModel.bat 146-147 set the
-      # complex-mode variables to a single space and cmd collapses those, so passing "" here
-      # would add arguments the script never saw and crash it on int("").
-      args: ["NORMAL", "NoExtraDelay", "Simple", "complexDwell", "complexAccess"]
+  # RunModel.bat step 4.5's transitDwellAccess.py Simple mode, native -- and without
+  # NetworkWrangler.  With COMPLEXMODES_DWELL/ACCESS empty (as RunModel.bat ships them)
+  # that pass leaves the line data untouched, so the five transitOriginal{PERIOD}.lin are
+  # copies of transitLines.lin and of each other.  See the module docstring before
+  # enabling the complex dwell modes.
+  - build_transit_lines:
+      from: "{run_dir}/trn/transitLines.lin"
+      to: "{run_dir}/trn"
 
   # ── Warm start · iteration 0 ──────────────────────────────────────────────────────────
   # RunModel.bat's `set ITER=0` pass: assign the staged demand once, so round 1 has
