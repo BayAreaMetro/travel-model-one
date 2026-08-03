@@ -45,10 +45,22 @@ steps:
     landuse:
       from: "{reference_run}/landuse"
       to: "{proj_dir}/landuse"
-    skims:
+    # Warm-start skims for iteration 1's demand models, copied by family so the
+    # files the build steps below now produce (nonmotskm.tpp) are not shadowed
+    # by stale copies.  The per-class HwySkims intermediates (DA_*, S2_*, ...)
+    # are not copied: nothing reads them, each skim pass rewrites them.
+    hwy_skims:
       from: "{reference_run}/skims"
       to: "{proj_dir}/skims"
-      glob: "*.tpp"
+      glob: "HWYSKM*.tpp"
+    com_hwy_skims:
+      from: "{reference_run}/skims"
+      to: "{proj_dir}/skims"
+      glob: "COM_HWYSKIM*.tpp"
+    transit_skims:
+      from: "{reference_run}/skims"
+      to: "{proj_dir}/skims"
+      glob: "trnskm*.tpp"
     accessibility:
       from: "{reference_run}/skims/accessibility.csv"
       to: "{proj_dir}/skims/accessibility.csv"
@@ -65,9 +77,18 @@ steps:
     ctramp_scripts:
       from: "{reference_run}/CTRAMP/scripts"
       to: "{proj_dir}/CTRAMP/scripts"
-    hwy:
-      from: "{reference_run}/hwy"
+    # Pristine network inputs; withTolls/avgload{P}.net are *built* by
+    # build_highway_networks below, no longer inherited from the reference run.
+    hwy_network:
+      from: "{reference_run}/INPUT/hwy/freeflow.net"
+      to: "{proj_dir}/hwy/freeflow.net"
+    hwy_tolls:
+      from: "{reference_run}/INPUT/hwy/tolls.csv"
+      to: "{proj_dir}/hwy/tolls.csv"
+    hwy_turn_penalties:
+      from: "{reference_run}/INPUT/hwy"
       to: "{proj_dir}/hwy"
+      glob: "turns*.pen"
     nonres:
       from: "{reference_run}/nonres"
       to: "{proj_dir}/nonres"
@@ -84,7 +105,27 @@ steps:
       to: "{proj_dir}/trn"
       glob: "*"
 
-  # --- 2. Stage the synthetic population, filtered for connectivity ----
+  # --- 2. Build the tolled + time-of-day highway networks --------------
+  #
+  # RunModel.bat step 3, at the engine boundary: tolls.csv -> tolls.dbf is
+  # native (replacing csvToDbf.py), then the stock Cube jobs run as-is:
+  # SetTolls -> SetHovXferPenalties -> CreateFiveHighwayNetworks, taking
+  # hwy/freeflow.net to hwy/withTolls.net and hwy/avgload{EA..EV}.net.
+  #
+  build_highway_networks:
+    proj_dir: "{proj_dir}"
+
+  # --- 3. Build the non-motorized network + walk/bike skims ------------
+  #
+  # RunModel.bat step 4, stock Cube jobs as-is: CreateNonMotorizedNetwork ->
+  # NonMotorizedSkims, producing skims/nonmotskm.tpp (DISTWALK/DISTBIKE/DIST).
+  # Built once -- walking and biking do not congest, so the feedback loop
+  # never touches it.
+  #
+  build_nonmotorized_skims:
+    proj_dir: "{proj_dir}"
+
+  # --- 4. Stage the synthetic population, filtered for connectivity ----
   #
   # Native replacement for FindNoAccessZones.job + filterUnconnectedHouseholds.py
   # (popsyn mode): scans the AM highway skim for zones with no drivable path
@@ -99,7 +140,7 @@ steps:
     skim: "{proj_dir}/skims/HWYSKMAM.tpp"
     max_internal_zone: 1454   # zones 1455+ are externals -- flagged but never filtered
 
-  # --- 3. The global feedback loop -------------------------------------
+  # --- 5. The global feedback loop -------------------------------------
   #
   # One iteration = demand + assignment, the body of RunIteration.bat: demand
   # responds to the congested skims the previous assignment produced.  Nesting
@@ -109,7 +150,7 @@ steps:
   iterate:
     count: 1
     steps:
-      # --- 3. Simulate: run CTRAMP Java demand model ---
+      # --- 5. Simulate: run CTRAMP Java demand model ---
       #
       # Runs one iteration per call; the enclosing `iterate:` block drives the loop.
       # Sample rate follows RunModel.bat's ramp (0.15, 0.30, 0.50 by iteration)
@@ -150,7 +191,7 @@ steps:
           StopFrequency: true
           StopLocation: true
 
-      # --- 4. Assignment: Cube highway + transit, then feedback ---
+      # --- 6. Assignment: Cube highway + transit, then feedback ---
       #
       # Runs RunIteration.bat's Cube half, in its order:
       #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
@@ -202,7 +243,7 @@ steps:
         build_skims: true      # rebuild highway skims + accessibility afterwards
         cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
 
-  # --- 5. Calibration: HTML report comparing survey vs CTRAMP ---
+  # --- 7. Calibration: HTML report comparing survey vs CTRAMP ---
   calibration:
     output_dir: "{proj_dir}/calibration_output"
     write_csv: false
@@ -255,7 +296,7 @@ steps:
       - tour_mode_choice
       - trip_mode_choice
 
-  # --- 6. Your own code: any step with `script:` or `module:` ---
+  # --- 8. Your own code: any step with `script:` or `module:` ---
   #
   # This one runs last, so it is post-processing.  Move it above
   # `simulate_ctramp` and the same mechanism makes it pre-processing -- position
