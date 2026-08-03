@@ -60,6 +60,7 @@ import tm1.steps.prepare_survey as prepare_survey_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_activitysim as simulate_activitysim_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
+import tm1.steps.walk_access_buffers as walk_access_buffers_step
 import tm1.steps.summaries.calibration as calibration_step
 import tm1.steps.summaries.core as core_step
 import tm1.steps.warmstart as warmstart_step
@@ -86,6 +87,7 @@ def _fmt_elapsed(seconds: float) -> str:
 #: scenario-supplied steps resolve to exactly the same kind of thing.
 STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
+    "walk_access_buffers": walk_access_buffers_step.run,
     "build_highway_networks": build_highway_networks_step.run,
     "build_nonmotorized_skims": build_nonmotorized_skims_step.run,
     "build_transit_lines": build_transit_lines_step.run,
