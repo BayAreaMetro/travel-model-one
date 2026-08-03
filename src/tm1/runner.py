@@ -55,6 +55,7 @@ import tm1.steps.filter_popsyn as filter_popsyn_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.summaries.calibration as calibration_step
+import tm1.steps.warmstart as warmstart_step
 from tm1 import add_run_logfile, remove_run_logfile, slack
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
@@ -82,6 +83,7 @@ STEPS: dict[str, Callable] = {
     "build_nonmotorized_skims": build_nonmotorized_skims_step.run,
     "build_transit_lines": build_transit_lines_step.run,
     "build_hsr_trips": build_hsr_trips_step.run,
+    "warmstart": warmstart_step.run,
     "filter_popsyn": filter_popsyn_step.run,
     "configure_ctramp": configure_ctramp_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,

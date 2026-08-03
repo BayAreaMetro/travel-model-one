@@ -45,25 +45,11 @@ steps:
     landuse:
       from: "{reference_run}/landuse"
       to: "{proj_dir}/landuse"
-    # Warm-start skims for iteration 1's demand models, copied by family so the
-    # files the build steps below now produce (nonmotskm.tpp) are not shadowed
-    # by stale copies.  The per-class HwySkims intermediates (DA_*, S2_*, ...)
-    # are not copied: nothing reads them, each skim pass rewrites them.
-    hwy_skims:
-      from: "{reference_run}/skims"
-      to: "{proj_dir}/skims"
-      glob: "HWYSKM*.tpp"
-    com_hwy_skims:
-      from: "{reference_run}/skims"
-      to: "{proj_dir}/skims"
-      glob: "COM_HWYSKIM*.tpp"
-    transit_skims:
-      from: "{reference_run}/skims"
-      to: "{proj_dir}/skims"
-      glob: "trnskm*.tpp"
-    accessibility:
-      from: "{reference_run}/skims/accessibility.csv"
-      to: "{proj_dir}/skims/accessibility.csv"
+    # NOTE: no skims are copied.  This run builds its own -- nonmotskm.tpp in
+    # build_nonmotorized_skims, and the highway/transit/accessibility skims in
+    # the `warmstart` step below.  Copying another run's skims here would
+    # silently shadow them; if you ever need that shortcut, delete `warmstart`
+    # at the same time so the source of the skims stays unambiguous.
     ctramp_model:
       from: "{reference_run}/CTRAMP/model"
       to: "{proj_dir}/CTRAMP/model"
@@ -124,22 +110,7 @@ steps:
   build_nonmotorized_skims:
     proj_dir: "{proj_dir}"
 
-  # --- 4. Stage the synthetic population, filtered for connectivity ----
-  #
-  # Native replacement for FindNoAccessZones.job + filterUnconnectedHouseholds.py
-  # (popsyn mode): scans the AM highway skim for zones with no drivable path
-  # (Cube writes 500000 where none exists), drops households home-based there,
-  # and writes popsyn/hhFile.csv + personFile.csv -- the canonical names
-  # CT-RAMP's properties point at.  With zero unconnected zones (the healthy,
-  # expected case) the INPUT files are byte-copied through unchanged.
-  #
-  filter_popsyn:
-    from: "{reference_run}/INPUT/popsyn"
-    to: "{proj_dir}/popsyn"
-    skim: "{proj_dir}/skims/HWYSKMAM.tpp"
-    max_internal_zone: 1454   # zones 1455+ are externals -- flagged but never filtered
-
-  # --- 5. Stamp params.properties into CT-RAMP's config -----------------
+  # --- 4. Stamp params.properties into CT-RAMP's config -----------------
   #
   # RunModel.bat step 190's RuntimeConfiguration.py, native.  The shipped
   # properties/blocks/UECs carry `xx.xx` placeholders; this fills them from
@@ -152,7 +123,7 @@ steps:
     params: "{reference_run}/INPUT/params.properties"
     model_year: 2023
 
-  # --- 6. Stage the per-period transit line files ----------------------
+  # --- 5. Stage the per-period transit line files ----------------------
   #
   # RunModel.bat step 4.5's transitDwellAccess.py Simple mode, native -- and
   # without NetworkWrangler.  With COMPLEXMODES_DWELL/ACCESS empty (as
@@ -164,7 +135,7 @@ steps:
     from: "{proj_dir}/trn/transitLines.lin"
     to: "{proj_dir}/trn"
 
-  # --- 7. Interpolate high-speed-rail trips to the model year ----------
+  # --- 6. Interpolate high-speed-rail trips to the model year ----------
   #
   # Replaces HsrTripGeneration.job with cubeio: reads the California HSR
   # model's 2040 and 2050 tables and interpolates.  All zero before the 2040
@@ -177,7 +148,37 @@ steps:
     model_year: 2023
     trn_param: "{proj_dir}/CTRAMP/scripts/block/trnParam.block"
 
-  # --- 8. The global feedback loop -------------------------------------
+  # --- 7. Warm start: RunModel.bat's iteration 0 -----------------------
+  #
+  # Assigns a previous run's trip tables once; those skims are what iteration 1
+  # reads.  `from` is that run's INPUT/warmstart (main/ + nonres/), or the
+  # literal `coldstart` for zero demand -- which converges, but is NOT parity
+  # with a warm-started run.  Any other non-existent path is an error, so a typo
+  # never becomes a silent cold start.
+  #
+  # Only the source is set here; the trips land wherever `assignment`'s
+  # `demand:` points, so that path is stated once.
+  #
+  warmstart:
+    from: "{reference_run}/INPUT/warmstart"
+    # from: coldstart
+
+  # --- 8. Stage the synthetic population, filtered for connectivity ----
+  #
+  # FindNoAccessZones.job + filterUnconnectedHouseholds.py, native: drops
+  # households whose home TAZ has no drivable path, writing the hhFile.csv /
+  # personFile.csv names CT-RAMP's properties point at.  Zero unconnected zones
+  # (the healthy case) copies the INPUT files through unchanged.
+  #
+  # After warmstart: it reads skims/HWYSKMAM.tpp, which iteration 0 produces.
+  #
+  filter_popsyn:
+    from: "{reference_run}/INPUT/popsyn"
+    to: "{proj_dir}/popsyn"
+    skim: "{proj_dir}/skims/HWYSKMAM.tpp"
+    max_internal_zone: 1454   # zones 1455+ are externals -- flagged but never filtered
+
+  # --- 9. The global feedback loop ------------------------------------
   #
   # One iteration = demand + assignment, the body of RunIteration.bat: demand
   # responds to the congested skims the previous assignment produced.  Nesting
@@ -187,7 +188,7 @@ steps:
   iterate:
     count: 1
     steps:
-      # --- 8. Simulate: run CTRAMP Java demand model ---
+      # --- 9. Simulate: run CTRAMP Java demand model ---
       #
       # Runs one iteration per call; the enclosing `iterate:` block drives the loop.
       # Sample rate follows RunModel.bat's ramp (0.15, 0.30, 0.50 by iteration)
@@ -228,7 +229,7 @@ steps:
           StopFrequency: true
           StopLocation: true
 
-      # --- 9. Assignment: Cube highway + transit, then feedback ---
+      # --- 10. Assignment: Cube highway + transit, then feedback ---
       #
       # Runs RunIteration.bat's Cube half, in its order:
       #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
@@ -280,7 +281,7 @@ steps:
         build_skims: true      # rebuild highway skims + accessibility afterwards
         cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
 
-  # --- 10. Calibration: HTML report comparing survey vs CTRAMP ---
+  # --- 11. Calibration: HTML report comparing survey vs CTRAMP ---
   calibration:
     output_dir: "{proj_dir}/calibration_output"
     write_csv: false
@@ -333,7 +334,7 @@ steps:
       - tour_mode_choice
       - trip_mode_choice
 
-  # --- 11. Your own code: any step with `script:` or `module:` ---
+  # --- 12. Your own code: any step with `script:` or `module:` ---
   #
   # This one runs last, so it is post-processing.  Move it above
   # `simulate_ctramp` and the same mechanism makes it pre-processing -- position
