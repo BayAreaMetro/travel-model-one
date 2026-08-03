@@ -40,6 +40,7 @@ import tm1.steps.simulate_activitysim as simulate_activitysim_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.staging as staging_step
 import tm1.steps.summaries.core as core_step
+import tm1.steps.walk_access_buffers as walk_access_buffers_step
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ STEPS: dict[str, Callable] = {
     "filter_popsyn": filter_popsyn_step.run,
     "configure_ctramp": configure_ctramp_step.run,
     "convert_skims": convert_skims_step.run,
+    "walk_access_buffers": walk_access_buffers_step.run,
     "prepare_survey": prepare_survey_step.run,
     "populationsim": populationsim_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
