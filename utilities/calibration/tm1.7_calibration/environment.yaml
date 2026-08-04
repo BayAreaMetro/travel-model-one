@@ -1,0 +1,17 @@
+name: tm1_calibration_doc
+channels: 
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - pandas>=1.5.0
+  - jupyter
+  - matplotlib
+  - seaborn
+  - geopandas
+  - numpy
+  - tabulate
+  - python-dotenv
+  - pip
+  - pip:
+      - "-e ./calib_report"

@@ -1,0 +1,30 @@
+[//2]: # (### Automobile Ownership)
+
+A previous update to the Travel Mode, _Travel Model 1.5.2_, extended the auto ownership model to consider number of autonomous vehicles versus human-driven vehicles, providing the capability to test different private AV Ownership levels on downstream choices such as mode choice and track AV trips in separate trip tables. As part of the _Travel Mode 1.7_ calibration, the coefficients added to the auto ownership model to capture AV ownership was not adjusted; however, the calibration focused on matching the number of observed households by automobile ownership level and by county. Calibration targets were derived from the 2023 ACS 1-Year Estimate, Table B08201.
+
+```{python}
+from calib_report import tables, figures
+from calib_report.data import auto_ownership
+```
+
+```{python}
+acs = auto_ownership.fetch_acs_ownership()
+county_ownership = auto_ownership.build_county_ownership(acs)
+county_ownership_share = auto_ownership.build_ownership_share(county_ownership)
+```
+
+```{python}
+#| label: tbl-auto-ownership
+#| tbl-cap: "Observed Households by Number of Owned Automobiles"
+observed_ownership = auto_ownership.format_auto_table(county_ownership)
+tables.to_quarto(observed_ownership)
+```
+
+```{python}
+#| label: tbl-auto-ownership-share
+#| tbl-cap: "Observed Household Share by Number of Owned Automobile "
+observed_share = auto_ownership.format_auto_table(county_ownership_share, ".1%")
+tables.to_quarto(observed_share)
+```
+
+<> (Include modeled data information here)

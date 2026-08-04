@@ -1,0 +1,85 @@
+[//1]: # (### Usual Work and School Choice Location)
+
+The usual work and school location choice model assigns a usual location for the primary mandatory activity of each employed person, school-aged child, and university student in the synethetic population. For _TM1.7_, calibration was focused primarily on the distance correction factors and the county-to-county constants. 
+
+The COVID-19 pandemic brought about changes in travel patterns and commuting. The previous travel model update, _TM1.6_, updated the work from home submodel to reflect the widespread adoption of remote and hybrid work. As part of the _TM1.7_ effort, staff explored the magnitude of different worker personas, specifically those who live outside the region and work remotely within the region. Using a multitude of datasets such as ACS, BATS 2023, SWAA, staff created the following table with different workers personas and estimated magnitude, noting that each dataset has its own constraints. However,  it was decided since there is not enough concrete data to support the magntitude of remote workers, no change was made to the model as part of calibration. 
+
+<Add persona table here - do we re-calculate it in python or just format the persona table?>
+
+Calibration of the usual work school location submodel focused on matching the observed origin-destination distance frequency distribution from the BATS 2023 household study. The submodel data was matched to the observed data by adjusting the piece-wise linear distance constants in the utility function. 
+
+For the work location, calibration also included matching the PUMS county-to-county flows for employees. 
+
+   - Utilized PUMS County to County Flow
+   - Tried to account for out of state workers and vice versus, but information is limited and there is not enough solid data to implement on this
+      - https://app.asana.com/1/11860278793487/project/13098083395690/task/1213196115898409?focus=true
+      - Pull in asana task information into this section
+
+   - OD Distance was based on BATS 2023 Data; previous calibration was using California Household Travel Survey (CHTS) 2012-2013. 
+   - Include comparison between previous targets and current targets with BATS
+
+```{python}
+## Data Config - File Structure
+from calib_report.data import uwsl
+from calib_report import figures, config
+```
+
+#### Work Location
+ACS 2023 PUMS data was used established targets for the county-to-county commuter flow. The PUMS county-to-county flow were scaled up slightly to match the modeled 2023 employed residents. 
+
+```{python}
+#| label: tbl-worker-flow
+#| tbl-cap: County-to-County Worker Flows
+
+# Make this a subtable with observed, modeled, modeled - observed
+
+```
+
+Calibration of the mandatory location choice model focused on matching the observed 
+
+```{python}
+#| label: fig-work-tlfd
+#| fig-cap: "Work Location Origin-Destination Distance Frequency Distributions"
+
+# TODO: Config with BATS directory? For all the BATS observed processing?
+observed_work_file = config.BATS_DIR / "workTLFD.csv"
+
+uwsl.plot_tlfd(
+   observed_work_file,
+   "Percent of Workers"
+   )
+
+```
+
+County to County Flows
+
+
+Distance Frequency Distributions
+
+#### School Location
+
+```{python}
+#| label: fig-univ-tlfd
+#| fig-cap: "University Location Origin-Destination Distance Frequency Distributions"
+
+observed_univ_file = config.BATS_DIR / "univTLFD.csv"
+
+uwsl.plot_tlfd(
+   observed_univ_file,
+   "Percent of University Students"
+   )
+
+```
+
+```{python}
+#| label: fig-school-tlfd
+#| fig-cap: "School Location Origin-Destination Distance Frequency Distributions"
+
+observed_school_file = config.BATS_DIR / "schoolTLFD.csv"
+
+uwsl.plot_tlfd(
+   observed_univ_file,
+   "Percent of School Students"
+   )
+
+```

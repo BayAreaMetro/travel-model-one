@@ -1,0 +1,59 @@
+[// Household]: # (### Household-type segmentation)
+
+Household-type segmennts are useful for pre-defining certain data items (i.e., destination choice size terms) so that the data items can be pre-calculated for each segment. Pre-calculation of these data items reduces model complexity and runtime. As shown in @tbl-household, segmentation is based on household income and includes four different segments. 
+
+::: {#tbl-household}
+```{=html}
+
+<table>
+    <thead>
+        <tr>
+            <th rowspan="2" colspan="2">Description</th>
+            <th rowspan="2">Household Income (1999 dollars)</th>
+            <th colspan="2">Lognormal Value of Time Parameters</th>
+            <th rowspan="2">Mean Value of Time</th>
+        </tr>
+        <tr>
+            <th>SD</th>
+            <th>Median</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>Low income</td>
+            <td>$0-30k</td>
+            <td>0.87</td>
+            <td>1.41</td>
+            <td>$6.01</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>Medium income</td>
+            <td {text-align: left}>$30-60k</td>
+            <td>0.87</td>
+            <td>1.80</td>
+            <td>$8.81</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>High income</td>
+            <td>$60-100k</td>
+            <td>0.87</td>
+            <td>1.96</td>
+            <td>$10.44</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>Very high income</td>
+            <td>$100k+</td>
+            <td>0.87</td>
+            <td>2.18</td>
+            <td>$12.86</td>
+        </tr>
+    </tbody>
+</table>
+```
+
+Household Types and Value of Time Distributions
+:::

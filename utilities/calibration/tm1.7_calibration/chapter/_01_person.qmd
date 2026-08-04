@@ -1,0 +1,18 @@
+[// Person]: # (### Person Type Segmentation)
+
+_Travel Model One_ is implemennted in a micro-simulation framework. As such, this allows for no computational constraints on the number of explanatory variables that can be included in a model specificationo. However, the model system still includes some segmentation of decision-makers as it is a useful tool to both structure the model and characterize person roles within a household.
+
+There are eight segments of person-types, as shown in @tbl-person-type used in the MTC model. The person-types are mutually exclusives wwith respect to age, work status, and school status. 
+
+| Number | Person Type | Age | Work Status | School Status |
+|:-|:--|:--|:--|:--|
+| 1 | Full-time worker| 18+ | Full-time | None |
+| 2 | Part-time worker| 18+ | Part-time | None |
+| 3 | Non-working adult | 18 - 64 | Unemployed | None |
+| 4 | Retired person | 65+ | Unemployed | None |
+| 5 | College student | 18+ | Any | College+|
+| 6 | Driving age student | 16 - 17| Any | Pre-college |
+| 7 | Non-driving student | 6-16 | None | Pre-college |
+| 8 | Pre-school child | 0 - 5 | None | None |
+
+: Person Types {#tbl-person-type}

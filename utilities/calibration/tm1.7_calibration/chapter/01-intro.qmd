@@ -1,0 +1,32 @@
+# Introduction
+
+## General Model Design
+
+
+### Treatment of Space
+{{< include _01_space.qmd >}}
+
+### Decision-making Units
+{{< include _01_dmu.qmd >}}
+
+### Person-type Segmentation
+{{< include _01_person.qmd >}} 
+
+### Household Type Segmentation
+{{< include _01_household.qmd >}}
+
+### Activity Type Segmentation
+
+### Treatment of Time
+
+### Trip Modes
+
+### Basic Design
+-- Include diagram here of the flow process
+
+## Model Inputs and Calibration Target Data
+
+
+### Inputs
+
+### Calibration Targets

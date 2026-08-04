@@ -1,0 +1,17 @@
+[//]: # (### Treatment of Space)
+
+_Travel Model One_ uses an existing 1454-zone system to cover the entire nine-county region. Since the zones are fairly large, representation of transit access in the mode choice may be distort. To address this problem, the zones have been further sub-divided into three categories of transit access, as shown in @tbl-subzones. 
+
+All destination choice models operate at the sub-zone level; some zones contain only one sub-zone so the actual number of subzone is less than 1454 times 3. The sub-zone shares are created by buffering around all transit stops according to the walk distances and computing the percent of zonal area within the urban footprint within each buffer. These percentages are then used by assuming an even distribution of activites across the sub-zone for the purpose of zonal attractiveness. Additionally, the walk access and egress time for the transit alteratives in the mode choice model are based on the distance defining the sub-zones while walking to transit is unavailable in the mode choice model for sub-zones where transit is not within walking distance. 
+
+[//]: # (Note here: this methodology does seem a bit outdated.. are we updating the subzone when we update the base year? I didn't include this but the 1454 zones is also originally from our trip-based model - once we update the TAZs to be more detailed, we can update this section to reflect that)
+
+| Category | Description | Distance to Transit |
+| :--|:--|:--|
+| Short walk | Within approximately 7 minutes walk to the nearest transit stop | Less than 1/3 miles |
+| Long walk | Within approximately 13 minutes walk to the nearest transit stop | Between 1/3 and 2/3 mile |
+| No transit | Not within walking distane to transit | More than 2/3 mile | 
+
+: Transit Accessibility Sub-Zone Categories {#tbl-subzones tbl-colwidths="[15,60,30]"}
+
+TODO: Include map of the TAZ system here. 

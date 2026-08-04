@@ -1,0 +1,73 @@
+[//4]: # (### Non-Mandatory Destination Choice)
+
+The non-mandatory tour destination models operate similar to the Usual Work and School Location choice model. The main procedural difference between the models is the usual work and school location choice model selects the usual locationn of the mandatory activity regardless if the activity is undertaken during the travel day, while the non-mandatory tour destination choice model selects the location for an actiivity that has already been generated. 
+
+Calibration for the Non-Mandatoryy Destination Choice model focused on matching the observed tour length frequency distributions from the household survey. The match required adjusting the piecewise linear distance term in the untiltiy function. Tour length frequency distributions were grouped by tour primary purpose. 
+
+A tour's "primary purpose" and in turn primary destination is the purpose and location of the activity that is assumed to provide the greatest impetus for engaging in the travel tour. In the household survey, the primary destination was not asked and instead inferred from the pattern of stops in a closed loop in the respondents' travel diaries. The inference is made by weighting multiple criteria including a defined hierarchy of purposes and the duration of activites. 
+
+(TODO: Add more detailed about this tour purpose)
+
+#### Frequency Distribution
+- Escort
+
+```{python}
+#| label: fig-escort-tlfd
+#| fig-cap: Non-Mandatory Tour Length Frequency Distributions
+#| fig-subcap:
+#|  - "Escort"
+#|  - "Shop"
+#|  - "Maintenance"
+#|  - "Eat Out"
+#|  - "Visit"
+#|  - "Discretionary"
+#|  - "At Work"
+#| layout-nrow: 7
+#| 
+from calib_report import config
+from calib_report.data import nonwork_dest
+
+bats_file = config.BATS_DIR / "BATS2023_TLFD.csv" 
+nonwork_dest.plot_tlfd(
+    bats_file,
+    "escort",
+    "Percent of Tours"
+)
+
+nonwork_dest.plot_tlfd(
+    bats_file,
+    "shop",
+    "Percent of Tours"
+)
+
+nonwork_dest.plot_tlfd(
+    bats_file,
+    "maintenance",
+    "Percent of Tours"
+)
+
+nonwork_dest.plot_tlfd(
+    bats_file,
+    "eatout",
+    "Percent of Tours"
+)
+
+nonwork_dest.plot_tlfd(
+    bats_file,
+    "visit",
+    "Percent of Tours"
+)
+
+nonwork_dest.plot_tlfd(
+    bats_file,
+    "discretionary",
+    "Percent of Tours"
+)
+
+nonwork_dest.plot_tlfd(
+    bats_file,
+    "atwork",
+    "Percent of Tours"
+)
+
+```

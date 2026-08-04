@@ -1,0 +1,11 @@
+## File Directories
+bats_dir: 'M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_mt_20260623_NoMon_rmo/ctramp_2023/BATS_Summaries'
+chts_dir: 'E:/Box/Modeling and Surveys/Development/Travel Model Two Development/Observed Data/RSG_CHTS/CHTS_Summaries'
+#model_dir: 
+
+files:
+  observed_work: workTLFD.csv
+  observed_univ: univTLFD.csv
+  observed_school: schoolTLFD.csv
+  chts_dap: dapSummary.csv
+  bats_dap: dap_summaries.csv

@@ -1,0 +1,42 @@
+project:
+  type: book
+
+book:
+  title: "TM1.7 Calibration Report"
+  date: last-modified
+  chapters:
+    - index.qmd
+    - chapter/01-intro.qmd
+    - chapter/02-calibration.qmd
+    - chapter/03-validation.qmd
+    - chapter/04-summary.qmd
+    - chapter/references.qmd
+  page-navigation: true
+
+bibliography: references.bib
+
+crossref:
+  chapters: false
+
+number-sections: true
+
+execute:
+  echo: false
+  warning: false
+  message: false
+
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    lof: true
+    lot: true
+    theme:
+      - cosmo
+      - brand
+  docx:
+    toc: true
+    lot: true
+
+jupyter: tm1_calibration_doc    
+

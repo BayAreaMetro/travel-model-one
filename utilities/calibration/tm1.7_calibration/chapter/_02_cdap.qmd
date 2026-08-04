@@ -1,0 +1,57 @@
+[//3]: # (### Coordinated Daily Activity Pattern)
+
+The coordinated daily activity pattern model predicts the choice of daily activity pattern (DAP) for each member in the household. The DAP is categorized into three types:
+
+- Mandatory: the person engages in at least one out-of-home mandatory activity, work, university, or school. The mandatory pattern may also include non-mandatory activities
+- Non-mandatory: the person engages in only maintenance and discretionary tours, which do not contain any mandatory activities
+- Home: the person does not travel outside the home
+
+Calibration of the coordinate daily activity pattern model focused on matching the observed frequency distribution of DAP for each person type. The calibration targets were developed using BATS 2023 data. 
+
+BATS 2023 data was underreporting tours for people under 18 due to proxy reporting so targets from the previous calibration were used for those person types. 
+
+<Include table of BATS 2023 and previous targets>
+
+```{python}
+from calib_report import tables, figures, config
+from calib_report.data import cdap
+
+chts_file = config.CHTS_DIR / "dapSummary.csv"
+
+chts_cdap, chts_summary = cdap.load_cdap_summary(
+    chts_file, index_col="PERTYPE", columns_col="DAP", values_col="freq"
+)
+
+chts_table = cdap.format_cdap_table(chts_summary, as_share=True)
+```
+
+```{python}
+bats_file = config.BATS_DIR / "dap_summaries.csv"
+
+bats_cdap, bats_summary = cdap.load_cdap_summary(
+    bats_file, index_col="person_type", columns_col="activity_pattern", values_col="num_pers"
+)
+
+bats_table = cdap.format_cdap_table(bats_summary, as_share=True)
+```
+
+```{python}
+#| label: tbl-cdap-chts-share
+#| tbl-cap: "Observed Daily Activity Pattern Share by Person Type (CHTS)"
+tables.to_quarto(chts_table)
+```
+
+```{python}
+#| label: tbl-cdap-bats-share
+#| tbl-cap: "Observed Daily Activity Pattern Share by Person Type (BATS 2023)"
+
+tables.to_quarto(bats_table)
+```
+
+```{python}
+#| label: tbl-cdap-bats-share-adjusted
+#| tbl-cap: "Adjusted Observed Daily Activity Pattern Share by Person Type (BATS 2023)"
+adjusted_summary = cdap.blend_summaries(bats_summary, chts_summary)
+adjusted_table = cdap.format_cdap_table(adjusted_summary, as_share=True)
+tables.to_quarto(adjusted_table)
+```

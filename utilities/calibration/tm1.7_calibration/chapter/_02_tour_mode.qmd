@@ -1,0 +1,174 @@
+[//5]: # (### Tour Mode Choice)
+
+- Include something about using BATS data to re-calibrate the wait times for taxi and tnc modes
+- Something about calibration targets - updated from both BATS 
+
+
+```{dot}
+//| label: fig-tour-mode
+//| fig-cap: "Tour Mode Alternative"
+
+digraph TourModeChoice {
+    rankdir=LR
+    node [shape=box, style=filled, fillcolor=white]
+
+    Choice [fillcolor=white]
+// Auto subgroup (blue)
+    Auto      [fillcolor="#cfe2f3"]
+    DA        [label="Drive Alone",      fillcolor="#cfe2f3"]
+    SR2       [label="Shared Ride 2",    fillcolor="#cfe2f3"]
+    SR3       [label="Shared Ride 3+",   fillcolor="#cfe2f3"]
+    DA_Free   [label="Drive Alone Free", fillcolor="#cfe2f3"]
+    DA_Pay    [label="Drive Alone Pay",  fillcolor="#cfe2f3"]
+    SR2_Free  [label="Shared Ride 2 Free", fillcolor="#cfe2f3"]
+    SR2_Pay   [label="Shared Ride 2 Pay",  fillcolor="#cfe2f3"]
+    SR3_Free  [label="Shared Ride 3 Free", fillcolor="#cfe2f3"]
+    SR3_Pay   [label="Shared Ride 3 Pay",  fillcolor="#cfe2f3"]
+
+    // Non-Motorized subgroup (green)
+    NonMotorized [label="Non-Motorized", fillcolor="#d9ead3"]
+    Walk         [fillcolor="#d9ead3"]
+    Bike         [fillcolor="#d9ead3"]
+
+    // Transit subgroup (orange)
+    Transit      [fillcolor="#fce5cd"]
+    WalkTransit  [label="Walk-Transit",   fillcolor="#fce5cd"]
+    WalkLocal    [label="Walk-Local",      fillcolor="#fce5cd"]
+    WalkLRT      [label="Walk-LRT&Ferry",  fillcolor="#fce5cd"]
+    WalkExpress  [label="Walk-Express",    fillcolor="#fce5cd"]
+    WalkHeavy    [label="Walk-Heavy Rail", fillcolor="#fce5cd"]
+    WalkComm     [label="Walk-Comm Rail",  fillcolor="#fce5cd"]
+    DriveTransit [label="Drive-Transit",   fillcolor="#fce5cd"]
+    DriveLocal   [label="Drive-Local",     fillcolor="#fce5cd"]
+    DriveLRT     [label="Drive-LRT&Ferry", fillcolor="#fce5cd"]
+    DriveExpress [label="Drive-Express",   fillcolor="#fce5cd"]
+    DriveHeavy   [label="Drive-Heavy Rail",fillcolor="#fce5cd"]
+    DriveComm    [label="Drive-Comm Rail", fillcolor="#fce5cd"]
+
+    // Ride-Hail subgroup (purple)
+    RideHail  [label="Ride-Hail", fillcolor="#d9d2e9"]
+    Taxi      [fillcolor="#d9d2e9"]
+    TNC       [label="TNC",        fillcolor="#d9d2e9"]
+    TNCShared [label="TNC Shared", fillcolor="#d9d2e9"]
+
+    Choice -> Auto
+    Choice -> NonMotorized
+    Choice -> Transit
+    Choice -> RideHail
+    Auto->DA
+    Auto->SR2
+    Auto->SR3
+    DA->DA_Free
+    DA->DA_Pay
+    SR2->SR2_Free
+    SR2->SR2_Pay
+    SR3->SR3_Free
+    SR3->SR3_Pay
+    NonMotorized->Walk
+    NonMotorized->Bike
+    Transit->WalkTransit
+    WalkTransit->WalkLocal
+    WalkTransit->WalkLRT
+    WalkTransit->WalkExpress
+    WalkTransit->WalkHeavy
+    WalkTransit->WalkComm
+    Transit->DriveTransit
+    DriveTransit->DriveLocal
+    DriveTransit->DriveLRT
+    DriveTransit->DriveExpress
+    DriveTransit->DriveHeavy
+    DriveTransit->DriveComm
+    RideHail->Taxi
+    RideHail->TNC
+    RideHail->TNCShared
+}
+```
+
+```{dot}
+//| label: fig-tour-mode
+//| fig-cap: "Tour Mode Choice Alternatives and Nesting Coefficients"
+
+digraph TourModeChoice {
+    node [shape=box, style="filled,rounded", fontname="Helvetica", fontsize=10, color="#00000000"]
+    edge [fontname="Helvetica", fontsize=9, fontcolor="#555555", arrowsize=0.6]
+
+    // ---- Root ----
+    Choice [label="Choice", fillcolor="#7f7f7f", fontcolor=white]
+
+    // ---- Nests ----
+    Auto         [label="Auto",           fillcolor="#ed7d31", fontcolor=white]
+    NonMotorized [label="Non-Motorized",  fillcolor="#ed7d31", fontcolor=white]
+    Transit      [label="Transit",        fillcolor="#ed7d31", fontcolor=white]
+    RideHail     [label="Ride-Hail",      fillcolor="#4472c4", fontcolor=white]
+
+    // ---- Auto subgroup ----
+    DA  [label="Drive\nAlone",     fillcolor="#f4b183"]
+    SR2 [label="Shared\nRide 2",   fillcolor="#f4b183"]
+    SR3 [label="Shared\nRide 3+",  fillcolor="#f4b183"]
+    DA_Free  [label="Drive\nAlone Free",   fillcolor="#f4b183"]
+    DA_Pay   [label="Drive\nAlone Pay",    fillcolor="#f4b183"]
+    SR2_Free [label="Shared\nRide 2 Free", fillcolor="#f4b183"]
+    SR2_Pay  [label="Shared\nRide 2 Pay",  fillcolor="#f4b183"]
+    SR3_Free [label="Shared\nRide 3+ Free",fillcolor="#f4b183"]
+    SR3_Pay  [label="Shared\nRide 3+ Pay", fillcolor="#f4b183"]
+
+    // ---- Non-Motorized subgroup ----
+    Walk [label="Walk", fillcolor="#ffc000"]
+    Bike [label="Bike", fillcolor="#ffc000"]
+
+    // ---- Transit subgroup ----
+    WalkTransit  [label="Walk-\nTransit",  fillcolor="#ed7d31", fontcolor=white]
+    DriveTransit [label="Drive-\nTransit", fillcolor="#ed7d31", fontcolor=white]
+    WalkLocal    [label="Walk-\nLocal",       fillcolor="#70ad47", fontcolor=white]
+    WalkLRT      [label="Walk-LRT\n& Ferry",  fillcolor="#70ad47", fontcolor=white]
+    WalkExpress  [label="Walk-\nExpress",     fillcolor="#70ad47", fontcolor=white]
+    WalkHeavy    [label="Walk-\nHeavy Rail",  fillcolor="#70ad47", fontcolor=white]
+    WalkComm     [label="Walk-\nComm. Rail",  fillcolor="#70ad47", fontcolor=white]
+    DriveLocal   [label="Drive-\nLocal",      fillcolor="#70ad47", fontcolor=white]
+    DriveLRT     [label="Drive-LRT\n& Ferry", fillcolor="#70ad47", fontcolor=white]
+    DriveExpress [label="Drive-\nExpress",    fillcolor="#70ad47", fontcolor=white]
+    DriveHeavy   [label="Drive-\nHeavy Rail", fillcolor="#70ad47", fontcolor=white]
+    DriveComm    [label="Drive-\nComm. Rail", fillcolor="#70ad47", fontcolor=white]
+
+    // ---- Ride-Hail subgroup ----
+    Taxi      [label="Taxi",       fillcolor="#5b9bd5", fontcolor=white]
+    TNCSingle [label="TNC\nSingle", fillcolor="#5b9bd5", fontcolor=white]
+    TNCShared [label="TNC\nShared", fillcolor="#5b9bd5", fontcolor=white]
+
+    // ---- Edges with nest coefficients ----
+    Choice -> Auto         [label="0.72"]
+    Choice -> NonMotorized [label="0.72"]
+    Choice -> Transit      [label="0.72"]
+    Choice -> RideHail     [label="0.36"]
+
+    Auto -> DA  [label="0.35"]
+    Auto -> SR2 [label="0.35"]
+    Auto -> SR3 [label="0.35"]
+    DA  -> DA_Free
+    DA  -> DA_Pay
+    SR2 -> SR2_Free
+    SR2 -> SR2_Pay
+    SR3 -> SR3_Free
+    SR3 -> SR3_Pay
+
+    NonMotorized -> Walk
+    NonMotorized -> Bike
+
+    Transit -> WalkTransit  [label="0.50"]
+    Transit -> DriveTransit [label="0.50"]
+    WalkTransit  -> WalkLocal
+    WalkTransit  -> WalkLRT
+    WalkTransit  -> WalkExpress
+    WalkTransit  -> WalkHeavy
+    WalkTransit  -> WalkComm
+    DriveTransit -> DriveLocal
+    DriveTransit -> DriveLRT
+    DriveTransit -> DriveExpress
+    DriveTransit -> DriveHeavy
+    DriveTransit -> DriveComm
+
+    RideHail -> Taxi
+    RideHail -> TNCSingle
+    RideHail -> TNCShared
+}
+```
