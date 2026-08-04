@@ -294,15 +294,17 @@ def _resolve_slack_level(cfg: dict, slack_level: str | bool | None) -> None:
     slack.level = cfg_slack if isinstance(cfg_slack, str) else "off"
 
 
-def _report_step(label: str, name: str, result: object, elapsed: float) -> None:
-    """Record a finished step, distinguishing a real run from a self-skip."""
+def _report_step(name: str, result: object, elapsed: float) -> None:
+    """Record a finished step, distinguishing a real run from a self-skip.
+
+    Log only.  Per-step Slack messages were the bulk of a run's notifications
+    and none of its signal -- a reader wants to hear about starting, finishing
+    and failing, not about each of a dozen steps.
+    """
     if result == "skipped":
-        notify(f"[{label}] {name} already done, skipped")
         log.info("--- Skipped: %s ---", name)
         return
-    elapsed_str = _fmt_elapsed(elapsed)
-    notify(f"[{label}] {name} done ({elapsed_str})")
-    log.info("--- Done: %s (%s) ---", name, elapsed_str)
+    log.info("--- Done: %s (%s) ---", name, _fmt_elapsed(elapsed))
 
 
 def _report_resume(
@@ -324,12 +326,19 @@ def _report_resume(
 
 
 def _notify_start(
-    label: str, steps: list[str], flat_steps_cfg: dict, n_iters: int, kwargs: dict
+    label: str,
+    steps: list[str],
+    flat_steps_cfg: dict,
+    n_iters: int,
+    kwargs: dict,
+    log_path: Path | None = None,
 ) -> None:
     """Announce what is about to run.
 
     Reads the demand step from the *flattened* configs: it normally sits inside
-    ``iterate``, so a top-level lookup would silently report defaults.
+    ``iterate``, so a top-level lookup would silently report defaults.  The log
+    path is included so a reader can follow the run without first finding the
+    machine.
     """
     sim_cfg = (
         flat_steps_cfg.get("simulate_ctramp")
@@ -344,6 +353,57 @@ def _notify_start(
         f"  • sample: {sample_str} | threads: {sim_cfg.get('threads', 1)} | "
         f"shadow pricing: {'on' if sim_cfg.get('shadow_pricing', False) else 'off'}\n"
         f"  • iterations: {n_iters}"
+        + (f"\n  • log: {log_path}" if log_path else "")
+    )
+
+
+def _prepare_plan(
+    steps_cfg: dict, steps: list[str], cfg: dict, kwargs: dict
+) -> tuple[list[tuple[str, int]], list[tuple[str, int]], int]:
+    """Build the execution plan, apply ``--resume-at``, and report what is skipped.
+
+    Returns ``(full_plan, plan, n_iters)`` -- the full plan is kept because
+    ``resume_token`` needs it to tell an ambiguous step name from a unique one.
+    """
+    full_plan = _iteration_plan(steps_cfg, steps, override=kwargs.get("iterations"))
+    n_iters = max((i for _, i in full_plan), default=1)
+    plan = _apply_resume(full_plan, kwargs.get("resume_at"), cfg.get("proj_dir"))
+    _report_resume(full_plan, plan, n_iters)
+    return full_plan, plan, n_iters
+
+
+def _notify_crash(label: str, elapsed: float, log_path: str | None) -> None:
+    """Report a run that ended without either succeeding or raising.
+
+    Reached when the process is torn down under us -- killed, rebooted, the
+    interpreter exiting -- so that the last word is not "starting".
+    """
+    notify(
+        f":skull: {label} stopped without finishing after {_fmt_elapsed(elapsed)}"
+        + (f"\n  • log: {log_path}" if log_path else "")
+    )
+
+
+def _notify_failure(
+    label: str,
+    scenario: str,
+    step: str,
+    error: BaseException,
+    resume: str,
+    elapsed: float,
+    log_path: Path | None,
+) -> None:
+    """Report a failure with everything needed to act on it.
+
+    The message carries the resume command and the log path deliberately: the
+    point of a failure notification is to save a trip to the machine, and the
+    error text alone rarely does.
+    """
+    notify(
+        f":exclamation: {label} failed at *{step}* after {_fmt_elapsed(elapsed)}\n"
+        f"  • {type(error).__name__}: {error}\n"
+        f"  • resume: `tm1 run --scenario {scenario} --resume-at {resume}`"
+        + (f"\n  • log: {log_path}" if log_path else "")
     )
 
 
@@ -489,22 +549,25 @@ def run_model(
     flat_steps_cfg = _flatten_steps(steps_cfg)
 
     log_handler = _start_run_log(cfg, label, steps)
+    log_path = getattr(log_handler, "baseFilename", None)
     t0_total = time.time()
+    # Cleared once the run reaches a definite end.  Anything else -- a kill, a
+    # reboot, an interpreter teardown -- leaves it set, and the finally block
+    # reports that rather than going silent.
+    unfinished = True
 
     try:
         # `--iterations N` overrides iterate.count for this run.
-        full_plan = _iteration_plan(steps_cfg, steps, override=kwargs.get("iterations"))
-        n_iters = max((i for _, i in full_plan), default=1)
-        plan = _apply_resume(full_plan, kwargs.get("resume_at"), cfg.get("proj_dir"))
-        _report_resume(full_plan, plan, n_iters)
+        full_plan, plan, n_iters = _prepare_plan(steps_cfg, steps, cfg, kwargs)
         prev_iter = None
-        _notify_start(label, steps, flat_steps_cfg, n_iters, kwargs)
+        _notify_start(label, steps, flat_steps_cfg, n_iters, kwargs, log_path)
 
         for name, iteration in plan:
             run_step = _load_step(name, flat_steps_cfg, scenario_dir)
 
             if n_iters > 1 and iteration != prev_iter:
                 log.info("=== Iteration %d of %d ===", iteration, n_iters)
+                notify(f"[{label}] iteration {iteration} of {n_iters}", verbose_only=True)
                 prev_iter = iteration
 
             log.info("--- Step: %s ---", name)
@@ -520,19 +583,31 @@ def run_model(
             except Exception as e:
                 # exc_info so the run log keeps the traceback, not just the message
                 log.exception("Step %s failed: %s", name, e)  # noqa: TRY401
+                resume = resume_token(full_plan, name, iteration)
                 # The failed step did not finish, so resuming includes it.
                 log.error(  # noqa: TRY400 -- traceback already logged above
                     "Resume with: tm1 run --scenario %s --resume-at %s",
-                    scenario_dir.name,
-                    resume_token(full_plan, name, iteration),
+                    scenario_dir.name, resume,
                 )
-                notify(f":exclamation: {label} failed at {name}: {e}")
+                _notify_failure(
+                    label, scenario_dir.name, name, e, resume,
+                    time.time() - t0_total, log_path,
+                )
                 raise
-            _report_step(label, name, result, time.time() - t0_step)
+            _report_step(name, result, time.time() - t0_step)
 
         total = time.time() - t0_total
+        unfinished = False
         notify(f"Finished {label} in {_fmt_elapsed(total)} :white_check_mark:")
+    except BaseException:
+        # Anything raising has already reported itself, or failed before the run
+        # began (a bad --resume-at, a malformed `iterate:`) with the caller
+        # watching.  Either way it is not a silent teardown.
+        unfinished = False
+        raise
     finally:
+        if unfinished:
+            _notify_crash(label, time.time() - t0_total, log_path)
         # Detached even on failure, so the log is flushed and a second run in the
         # same process does not append to it.
         remove_run_logfile(log_handler)

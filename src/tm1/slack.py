@@ -49,18 +49,22 @@ def _get_prefix() -> str:
 def notify(message: str, *, verbose_only: bool = False) -> None:
     """Post a message to Slack. Falls back to logging if no webhook.
 
+    Nothing is logged when the message is not going to be sent: the runner
+    already logs every step boundary, so echoing a Slack-shaped copy only
+    duplicates the console.
+
     Parameters
     ----------
     verbose_only : bool
         If True, only send when level is "verbose".
     """
-    full = f"{_get_prefix()}: {message}"
-    log.info(full)
-
     if level in ("off", "false"):
         return
     if verbose_only and level != "verbose":
         return
+
+    full = f"{_get_prefix()}: {message}"
+    log.info(full)
 
     url = _get_webhook_url()
     if not url:
