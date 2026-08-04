@@ -172,15 +172,6 @@ echo FINISHED HIGHWAY ASGN  %DATE% %TIME% >> logs\feedback.rpt
 
 set ITER=0
 set MAXITERATIONS=3
-:: --------TrnAssignment Setup -- Fast Configuration
-:: NOTE the blank ones should have a space
-set TRNCONFIG=FAST
-set COMPLEXMODES_DWELL= 
-set COMPLEXMODES_ACCESS= 
-
-:: Step 4.5: Build initial transit files
-python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-if ERRORLEVEL 2 goto done
 
 :: copy a local version for easier restarting
 copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
