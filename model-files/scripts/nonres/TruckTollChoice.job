@@ -84,7 +84,7 @@ loop period = 1,5
    endif
 
    ; do each time of day as a separate process
-   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = '%COMMPATH%'
+   DistributeMultistep Alias = 'ctramp@period@'
 
    ; loop through each vehicle class
    loop class = 1,4
@@ -263,8 +263,8 @@ loop period = 1,5
 
 endloop ; period loop
 
-Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
-           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+BARRIER IDLIST = CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5,
+           printfiles = merge, CheckReturnCode = t
 
 * copy @token_debug_filename@.VSM.EA.debug+@token_debug_filename@.SML.EA.debug+@token_debug_filename@.MED.EA.debug+@token_debug_filename@.LRG.EA.debug @token_debug_filename@.EA.debug
 * copy @token_debug_filename@.VSM.AM.debug+@token_debug_filename@.SML.AM.debug+@token_debug_filename@.MED.AM.debug+@token_debug_filename@.LRG.AM.debug @token_debug_filename@.AM.debug
