@@ -59,14 +59,25 @@ _COLD_START_ZONES = 1454
 _WARM_START_ITERATION = 0
 
 
+def _assignment_cfg(cfg: dict) -> dict:
+    """The ``assignment`` step's config, whether or not it sits inside ``iterate``.
+
+    It normally lives in the loop body, so a top-level lookup finds nothing.
+    """
+    steps = cfg.get("steps", {}) or {}
+    if "assignment" in steps:
+        return steps["assignment"] or {}
+    return ((steps.get("iterate") or {}).get("steps") or {}).get("assignment") or {}
+
+
 def _demand_pattern(cfg: dict) -> str:
     """Where warm demand goes: the ``assignment`` step's declared artifact."""
-    assign_cfg = cfg.get("steps", {}).get("assignment", {}) or {}
-    pattern = assign_cfg.get("demand")
+    pattern = _assignment_cfg(cfg).get("demand")
     if not pattern:
         msg = (
             "warmstart needs the assignment step's `demand:` key to know where to "
-            "put the seed trip tables. Declare it on `assignment` in the scenario."
+            "put the seed trip tables. Declare it on `assignment` in the scenario "
+            "(it normally sits inside `iterate:`)."
         )
         raise ValueError(msg)
     return str(pattern)
@@ -156,8 +167,10 @@ def run(
     # otherwise run the warm start at the wrong number.  `build_skims` is forced
     # on because skims are this pass's entire product.
     steps = dict(cfg.get("steps", {}))
-    assign_cfg = dict(steps.get("assignment", {}) or {})
+    assign_cfg = dict(_assignment_cfg(cfg))
     assign_cfg["iteration"] = _WARM_START_ITERATION
     assign_cfg["build_skims"] = True
+    # Injected at the top level so `assignment.run` finds it there rather than in
+    # the loop body it normally lives in.
     steps["assignment"] = assign_cfg
     return assignment_step.run(scenario_dir, {**cfg, "steps": steps}, **kwargs)

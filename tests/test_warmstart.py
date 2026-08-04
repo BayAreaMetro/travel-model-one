@@ -33,20 +33,43 @@ def _seed_dir(tmp_path: Path, *, nonres: bool = True) -> Path:
 
 
 def _cfg(tmp_path: Path, **step: object) -> dict:
+    """A scenario shaped like the real one: assignment lives inside `iterate`."""
     return {
         "proj_dir": str(tmp_path / "proj"),
         "steps": {
             "warmstart": step,
-            "assignment": {"demand": str(tmp_path / "proj" / "main" / "trips{PERIOD}.tpp")},
+            "iterate": {
+                "count": 1,
+                "steps": {
+                    "simulate_ctramp": {},
+                    "assignment": {
+                        "demand": str(tmp_path / "proj" / "main" / "trips{PERIOD}.tpp")
+                    },
+                },
+            },
         },
     }
+
+
+def test_finds_assignment_demand_inside_iterate(tmp_path: Path) -> None:
+    """The assignment step normally sits in the loop body, not at the top level."""
+    expected = str(tmp_path / "proj" / "main" / "trips{PERIOD}.tpp")
+    assert warmstart._demand_pattern(_cfg(tmp_path)) == expected  # noqa: SLF001
+
+
+def test_finds_assignment_demand_at_top_level(tmp_path: Path) -> None:
+    """A scenario without a loop still resolves."""
+    cfg = {
+        "proj_dir": str(tmp_path / "proj"),
+        "steps": {"warmstart": {}, "assignment": {"demand": "x/trips{PERIOD}.tpp"}},
+    }
+    assert warmstart._demand_pattern(cfg) == "x/trips{PERIOD}.tpp"  # noqa: SLF001
 
 
 def test_seed_lands_where_demand_points(tmp_path: Path) -> None:
     """Trip tables go to the assignment step's declared demand artifact."""
     src = _seed_dir(tmp_path)
-    cfg = _cfg(tmp_path, **{"from": str(src)})
-    demand = cfg["steps"]["assignment"]["demand"]
+    demand = warmstart._demand_pattern(_cfg(tmp_path, **{"from": str(src)}))  # noqa: SLF001
 
     warmstart.seed_from_previous_run(src, demand, tmp_path / "proj" / "nonres")
 
@@ -136,7 +159,10 @@ def test_requires_assignment_demand_key(tmp_path: Path) -> None:
     """Without the demand seam there is nowhere to put the seed."""
     cfg = {
         "proj_dir": str(tmp_path / "proj"),
-        "steps": {"warmstart": {"from": warmstart.COLD_START}, "assignment": {}},
+        "steps": {
+            "warmstart": {"from": warmstart.COLD_START},
+            "iterate": {"steps": {"assignment": {}}},
+        },
     }
     with pytest.raises(ValueError, match="demand"):
         warmstart.run(tmp_path, cfg)
