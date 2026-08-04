@@ -15,6 +15,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+import seaborn as sns
+from matplotlib.ticker import StrMethodFormatter
+
 
 from src.evaluation.vmt import read_network
 
@@ -22,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 TRUCK_TYPES = ["HV", "SM"]
 TRUCK_LABELS = {"HV": "Heavy Trucks (HV)", "SM": "Very Small, Small & Medium Trucks (SM)"}
+
 
 
 def plot_scatter_all_scenarios(
@@ -85,13 +89,13 @@ def _prepare_scatter_data(
 
     obs = observed[observed["truck_type_norm"] == truck_type]
     obs = (
-        obs.groupby("link_id", as_index=False)["volume"]
-        .sum()
-        .rename(columns={"volume": "obs_volume"})
+        obs.groupby("link_id", as_index=False)
+        .agg(obs_volume=("volume", "sum"),
+             source=("source", "first"),
+             )
     )
 
     return pred.merge(obs, on="link_id", how="inner")
-
 
 def _plot_single_scatter(
     scenario_name: str, truck_type: str, merged: pd.DataFrame, color: str
@@ -101,46 +105,114 @@ def _plot_single_scatter(
     pred = merged["pred_volume"].to_numpy(dtype=float)
     n = len(merged)
 
+    source_labels = {
+        "bata_2023": "BATA(2023)",
+        "caltrans_2018": "Caltrans(2018)",
+        }
+    merged["source_label"] = merged["source"].replace(source_labels)
+
     fig, ax = plt.subplots(figsize=(7, 6))
-    ax.scatter(obs, pred, color=color, alpha=0.6, s=40, label="Count locations")
+
+
+    # Points, with marker shape determined by source
+    sns.scatterplot(
+        data=merged,
+        x="obs_volume",
+        y="pred_volume",
+        hue="source_label",
+        color=color,
+        s=60,
+        alpha=0.6,
+        ax=ax,
+    )
 
     max_val = float(max(obs.max(), pred.max())) if n else 1.0
 
     # 45-degree perfect-fit reference line.
     ax.plot(
-        [0, max_val], [0, max_val],
-        color="black", linestyle="--", linewidth=1, label="Perfect fit (slope=1)",
+        [0, max_val],
+        [0, max_val],
+        color="black",
+        linestyle="--",
+        linewidth=1,
+        label="Perfect fit (slope=1)",
     )
 
     slope = intercept = r2 = float("nan")
+
     if n >= 2:
         slope, intercept = np.polyfit(obs, pred, 1)
+
         xs = np.array([0.0, max_val])
-        ax.plot(xs, slope * xs + intercept, color=color, linewidth=1.5, label="Trend (OLS)")
+
+        ax.plot(
+            xs,
+            slope * xs + intercept,
+            color="black",
+            linewidth=1.5,
+            label="Trend (OLS)",
+        )
 
         pred_fit = slope * obs + intercept
+
         ss_res = float(((pred - pred_fit) ** 2).sum())
         ss_tot = float(((pred - pred.mean()) ** 2).sum())
+
         r2 = 1 - ss_res / ss_tot if ss_tot > 0 else float("nan")
 
         ax.text(
-            0.05, 0.95,
+            0.05,
+            0.95,
             f"y = {slope:.2f}x + {intercept:.0f}\nR² = {r2:.2f}",
-            transform=ax.transAxes, va="top", ha="left", fontsize=9,
+            transform=ax.transAxes,
+            va="top",
+            ha="left",
+            fontsize=9,
         )
 
     ax.set_xlabel("Observed Volume (vehicles/day)")
     ax.set_ylabel("Predicted Volume (vehicles/day)")
-    ax.set_title(f"Obs vs. Pred — {scenario_name} — {TRUCK_LABELS[truck_type]}")
-    ax.legend(loc="lower right", fontsize=8)
+    ax.set_title(
+        f"Obs vs. Pred — {scenario_name} — {TRUCK_LABELS[truck_type]}"
+    )
+    ax.xaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}"))
+    ax.yaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}"))
+
+    # Keep a single combined legend:
+    #   source markers
+    #   perfect-fit line
+    #   trend line
+    ax.legend(loc="upper right", fontsize=8)
+
     fig.tight_layout()
 
-    fig.scenario_stats = {"slope": slope, "intercept": intercept, "r2": r2, "n": n}
+    fig.scenario_stats = {
+        "slope": slope,
+        "intercept": intercept,
+        "r2": r2,
+        "n": n,
+    }
 
     # Attach the underlying link-level data so write_excel can render a QA table
-    # on the sheet without recomputing (parallels scenario_stats).
-    scatter_data = merged[["link_id", "obs_volume", "pred_volume"]].copy()
-    scatter_data.columns = ["link_id", "observed", "predicted"]
-    scatter_data["diff"] = scatter_data["predicted"] - scatter_data["observed"]
-    fig.scatter_data = scatter_data.sort_values("observed", ascending=False)
+    scatter_data = merged[
+        ["link_id", "source", "obs_volume", "pred_volume"]
+    ].copy()
+
+    scatter_data.columns = [
+        "link_id",
+        "source",
+        "observed",
+        "predicted",
+    ]
+
+    scatter_data["diff"] = (
+        scatter_data["predicted"] - scatter_data["observed"]
+    )
+
+    fig.scatter_data = scatter_data.sort_values(
+        "observed",
+        ascending=False,
+    )
+
     return fig
+

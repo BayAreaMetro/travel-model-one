@@ -195,7 +195,7 @@ def plot_trip_distributions(results) -> dict[tuple[str, str], Figure]:
 
             fig = _plot_tlfd(
                 tlfd,
-                title=f"{truck_type} Trip Distribution",
+                truck_type=truck_type,
                 observed_col="share_observed",
                 simulated_col="share_simulated",
                 x_label="Travel Distance (miles)",
@@ -209,13 +209,20 @@ def plot_trip_distributions(results) -> dict[tuple[str, str], Figure]:
 
 def _plot_tlfd(
     tlfd_table: pd.DataFrame,
-    title: str,
+    truck_type: str,
     observed_col: str = "share_observed",
     simulated_col: str = "share_simulated",
-    x_label: str = "Travel Distance (miles)",
+    x_label: str = "Blended Travel Distance (miles)\nDistance = Non-Toll Distance × (1 - Toll Share) + Toll Distance × Toll Share",
     y_label: str = "Share",
 ) -> Figure:
     """Create a TLFD comparison figure."""
+
+    y_limits = {
+        "Large": (0, 0.18), 
+        "Medium": (0, 0.38), 
+        "Small": (0, 0.32), 
+        "Very Small": (0, 0.45), 
+    }
 
     starts = tlfd_table["bin_start"].to_numpy()
     ends = tlfd_table["bin_end"].to_numpy()
@@ -245,7 +252,7 @@ def _plot_tlfd(
         align="edge",
         color=_BLUE,
         alpha=0.60,
-        label="Observed",
+        label="Reference Model: CSF2TDM",
     )
 
     ax.plot(
@@ -263,7 +270,7 @@ def _plot_tlfd(
         color=_BLUE,
         linestyle="--",
         linewidth=1.2,
-        label=f"Observed Avg Distance {obs_mean:.1f} mi",
+        label=f"CSF2TDM Avg Distance {obs_mean:.1f} mi",
     )
 
     ax.axvline(
@@ -275,7 +282,7 @@ def _plot_tlfd(
     )
 
     ax.set_title(
-        f"{title}\nCoincidence Ratio = {coincidence_ratio:.1%}"
+        f"{truck_type} Trip Distribution\nCoincidence Ratio = {coincidence_ratio:.1%}"
     )
 
     ax.set_xlabel(x_label)
@@ -290,13 +297,14 @@ def _plot_tlfd(
         rotation=45,
         ha="right",
     )
+    ax.set_ylim(y_limits[truck_type])
 
     handles, labels = ax.get_legend_handles_labels()
 
     desired_order = [
-        "Observed",
+        "Reference Model: CSF2TDM",
         "Simulated",
-        f"Observed Avg Distance {obs_mean:.1f} mi",
+        f"CSF2TDM Avg Distance {obs_mean:.1f} mi",
         f"Simulated Avg Distance {sim_mean:.1f} mi",
     ]
 

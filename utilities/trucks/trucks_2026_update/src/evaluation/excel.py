@@ -151,10 +151,10 @@ def write_excel(
         scenario_color_map=scenario_color_map,
         )
     
-    _write_vmt_comparison_sheet(
-        wb,
-        vmt_figures,
-    )
+    # _write_vmt_comparison_sheet(
+    #     wb,
+    #     vmt_figures,
+    # )
 
 
     out_path = Path(output_dir) / "truck_model_evaluation.xlsx"
