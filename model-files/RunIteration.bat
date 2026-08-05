@@ -73,7 +73,7 @@ if %ITER%==1 (
 @REM :resume_iter
 
 ::  Call the MtcTourBasedModel class
-java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
+java -showversion -Xmx24000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
 if ERRORLEVEL 2 (echo FAILED: Iteration %ITER% - Step 2 MtcTourBasedModel CT-RAMP & goto done)
 
 :: save the mtcTourBased.properties that was used for this iteration
