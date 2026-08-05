@@ -1,0 +1,22 @@
+[// Activity]: # (### Activity Type Segmentation)
+
+Activity types are grouped into 10 general activity type to simplify model complexity. The activity types are used in most model system components, from developing daily activity patterns to predicting tour and trip destinations and modes by purpose. 
+
+The set of activity types is shown in @tbl-activity-type. The activity types are also grouped according to whether the activity is mandatory or non-mandatory, and eligibility requirements are assigned to determine which person-types can be used for generating each activity type. The classification scheme of each activity type reflects the relative importance or natural hierarchy of the activity, where work and school activites are typically the most inflexible in terms of generation, scheduling, and location. Discretionary activites, on the other hand, are typically the most fleixble on each of these dimensions. Each out-of-home location that a person travels to in the simulation is assigned one of these activity types. 
+
+[// Activity Note]: # (We should ensure this is still true - is this natural hierarchy still relevent? )
+
+|Type | Purpose | Description | Classification | Eligibility |
+| -- | -- | ------ | ---- | ------|
+| 1 | Work | Working at regular workplace or work-related activities outside the home | Mandatory | Workers and students |
+| 2 | Univeristy | College or University | Mandatory | Age 18+ |
+| 3 | High School | Grades 9-12 | Mandatory | Age 14-17 |
+| 4 | Grade School | Grades K-8 | Mandatory | Age 5 -13 |
+| 5 | Escorting | Pick-up/drop-off passengers (auto trips only) | Non-Mandatory (Maintenace) | Age 16+ |
+| 6 | Shopping | Shopping away from home | Non-Mandatory (Maintenance) | Age 5+ (if joint travel, all persons) |
+| 7 | Other Maintenance | Personal business/services and medical appointments | Non-Mandatory (Maintenance) | Age 5+ (if joint travel, all persons) |
+| 8 | Social/Recreational | Recreation, visiting friends/family | Non-Mandatory (Discretionary) | Age 5+ (if joint travel, all persons) |
+| 9 | Eat Out | Eating outside of home | Non-Mandatory (Discretionary) | Age 5+ (if joint travel, all persons) |
+| 10 | Other Discretionary | Volunteer Work, Religious Activites | Non-Mandatory (Discretionary) | Age 5+ (if joint travel, all persons) |
+
+: Activity Types {#tbl-activity-type}

@@ -4,12 +4,11 @@ Household-type segmennts are useful for pre-defining certain data items (i.e., d
 
 ::: {#tbl-household}
 ```{=html}
-
 <table>
     <thead>
         <tr>
             <th rowspan="2" colspan="2">Description</th>
-            <th rowspan="2">Household Income (1999 dollars)</th>
+            <th rowspan="2">Household Income (2000 dollars)</th>
             <th colspan="2">Lognormal Value of Time Parameters</th>
             <th rowspan="2">Mean Value of Time</th>
         </tr>
@@ -54,6 +53,35 @@ Household-type segmennts are useful for pre-defining certain data items (i.e., d
     </tbody>
 </table>
 ```
-
 Household Types and Value of Time Distributions
 :::
+
+In the model, the persons in each household are assigned a simulated field but fixed "value of time" that modulates the relative weight the decision-maker places on time and cost. The probability distrubtion from which the value of time is sampled is derived from a toll choice model estimated using data from a stated preference survey performed for the San Francisco County Transportation Authority's Mobility, Access, and Pricing Study, and is a lognormal distribution with a median that varies by income segment as shown in @tbl-household. The distribtion is truncated so the maximum value of time is $50 per hour, illustrated by the modeled value of time distribution in @fig-vot. The value of time of children in the household is assumed to be two-thirds the value for the adults in the household. 
+
+```{python}
+#| label: fig-vot
+#| fig-cap: Value of time distribution by household income category
+from scipy import stats
+import numpy as np
+import matplotlib.pyplot as plt
+
+INCOME_LABELS = ["$0-30k","$30-60k","$60-100k","100k+"]
+
+MEAN_VOT = np.array([6.01, 8.81, 10.44, 12.86]
+)
+SIGMA = 0.87
+
+# Note: In MtcHouseholdDataManager, mu is calculated by log(mean_vot *0.684)
+MU = np.log(MEAN_VOT) - SIGMA**2 / 2  
+
+x = np.linspace(0.01, 25, 250)
+fig, ax = plt.subplots()
+for label, vot, m in zip(INCOME_LABELS, MEAN_VOT, MU):
+    dist = stats.lognorm(s=SIGMA, scale=np.exp(m))
+    ax.plot(x, dist.pdf(x), label=f"{label} (Mean: ${vot:.2f}/hr")
+ax.set_xlabel("Value of Time ($/hr)")
+ax.set_ylabel("Probability")
+ax.legend(title="Income")
+plt.show()
+
+```

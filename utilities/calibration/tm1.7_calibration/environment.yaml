@@ -11,6 +11,7 @@ dependencies:
   - geopandas
   - numpy
   - tabulate
+  - scipy
   - python-dotenv
   - pip
   - pip:

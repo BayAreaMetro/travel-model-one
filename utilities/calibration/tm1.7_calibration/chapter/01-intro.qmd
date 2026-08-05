@@ -16,6 +16,7 @@
 {{< include _01_household.qmd >}}
 
 ### Activity Type Segmentation
+{{< include _01_activity_type.qmd >}}
 
 ### Treatment of Time
 
