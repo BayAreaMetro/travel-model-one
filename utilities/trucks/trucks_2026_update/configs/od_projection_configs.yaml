@@ -8,15 +8,15 @@ input:
   tm_land_use:         "data/external/mtc/2023_TM161_IPA_35/INPUT/landuse/tazData.csv"  
   
 output:
-  truck_trip_gen_tm16: data/interim/matrix_projection/truck_trip_generation_tm16.csv  
-  zone_classification: data/interim/matrix_projection/zone_classification.csv
+  # truck_trip_gen_tm16: data/interim/matrix_projection/truck_trip_generation_tm16.csv  
+  # zone_classification: data/interim/matrix_projection/zone_classification.csv
   crosswalk:           data/interim/matrix_projection/crosswalk.csv
-  omx_zone_and_gates:  data/interim/matrix_projection/SwTazTln_to_TMTaz_TRIPS_FFM_2020.omx
-  omx_only_zones:      data/interim/matrix_projection/SwTAZ_to_TMTaz_TRIPS_FFM_2020.omx
-  omx_only_gates:      data/interim/matrix_projection/SwTLN_to_TMTaz_TRIPS_FFM_2020.omx
-  tln_generation:      data/processed/truck_trip_generation_tln.csv
-  zones_generation:     data/processed/truck_trip_generation_zone.csv
-  gateways_generation:  data/processed/truck_trip_generation_gateways.csv
+  omx_zone_and_gates:  data/interim/matrix_projection/projected_matrices/SwTazTln_to_TMTaz_TRIPS_FFM_2020.omx
+  omx_only_zones:      data/interim/matrix_projection/projected_matrices/SwTAZ_to_TMTaz_TRIPS_FFM_2020.omx
+  omx_only_gates:      data/interim/matrix_projection/projected_matrices/SwTLN_to_TMTaz_TRIPS_FFM_2020.omx
+  tln_generation:      data/interim/matrix_projection/production_attraction_summaries/truck_trip_generation_special_generators.csv
+  zones_generation:    data/interim/matrix_projection/production_attraction_summaries/truck_trip_generation_zone.csv
+  gateways_generation: data/interim/matrix_projection/production_attraction_summaries/truck_trip_generation_gateways.csv
 
 zones:
   from_zone_id: TAZ12            # zone ID field in the FROM shapefile
