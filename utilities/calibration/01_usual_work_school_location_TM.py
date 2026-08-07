@@ -31,7 +31,7 @@ import sys
 
 # Import the calibration framework
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from calibration_framework import CalibrationBase, create_histogram_tlfd, add_county_info
+from calibration_framework import CalibrationBase, SheetTarget, create_histogram_tlfd, add_county_info
 from calibration_data_models import (
     CountyTripSummary,
     TourLengthFrequency,
@@ -175,28 +175,26 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             person_data = pd.read_csv(self.submodel_config['bats_person_data'])
             wsloc_results = wsloc_results.merge(person_data[['hh_id', 'person_id', 'person_weight', 'sampleRate']], left_on = ['HHID', 'PersonID'], right_on = ['hh_id', "person_id"])
             wsloc_results.fillna({'person_weight':0}, inplace = True)
-
             wsloc_with_dist_file = f"{self.target_dir}/MandatoryLocation_with_Distance.csv"
-            
-            # Process county summary using person weights
-            wsloc_county = wsloc_results.groupby(['HomeCOUNTY', 'HomeCounty_name', 'WorkCOUNTY', 'WorkCounty_name'])['person_weight'].sum().reset_index(name='num_pers')
         else:
             wsloc_with_dist_file = f"{self.output_dir}/wsloc_results_with_distances.csv"
-            
-            # Process county summary using sampleshare
-            
+
+        wsloc_results.to_csv(wsloc_with_dist_file, index=False)
+        self.logger.info(f"Saved wsloc results with distances to {wsloc_with_dist_file}")
+
+        # Process county summary
+        if self.bats_data:
+            wsloc_county = wsloc_results.groupby(['HomeCOUNTY', 'HomeCounty_name', 'WorkCOUNTY', 'WorkCounty_name'])['person_weight'].sum().reset_index(name='num_pers')
+        else:
             wsloc_county = wsloc_results.groupby(['HomeCOUNTY','HomeCounty_name', 'WorkCOUNTY','WorkCounty_name']).size().reset_index(name='num_pers')
             wsloc_county['num_pers'] = wsloc_county['num_pers'] / self.sampleshare
-        
+
         county_ids = sorted(self.county_lookup)
         wsloc_county_spread = wsloc_county.pivot(index='HomeCOUNTY', columns='WorkCOUNTY', values='num_pers')
         wsloc_county_spread = wsloc_county_spread.reindex(index=county_ids, columns=county_ids)
         wsloc_county_spread = wsloc_county_spread.rename(index=self.county_lookup, columns=self.county_lookup)
         wsloc_county_spread.index.name = 'HomeCounty_name'
         wsloc_county_spread = wsloc_county_spread.fillna(0).reset_index()
-
-        wsloc_results.to_csv(wsloc_with_dist_file, index=False)
-        self.logger.info(f"Saved wsloc results with distances to {wsloc_with_dist_file}")
 
         # Process tour length distributions and averages
         self.logger.info("Processing tour length distributions...")
@@ -346,10 +344,10 @@ class WorkSchoolLocationCalibration(CalibrationBase):
             if df is not None:
                 validate_dataframe(df, TourLengthFrequency, expected_rows)
                 self.logger.info(f"✓ {tour_type.capitalize()} TLFD validated")
-        
+
         # Validate average tour lengths
         if results['avg_tour_lengths'] is not None:
-            validate_dataframe(results['avg_tour_lengths'], AverageTourLength, )
+            validate_dataframe(results['avg_tour_lengths'], AverageTourLength)
             self.logger.info("✓ Average Tour Length Summary Validated")
 
     def generate_outputs(self, results: dict):
@@ -377,53 +375,24 @@ class WorkSchoolLocationCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
 
-        if (self.bats_data):
-            tour_types = [('work', 2), ('univ', 15), ('school', 28)]
-            for tour_type, col in tour_types:
-                if results[f'tour_tlfd_{tour_type}'] is not None:
-                    tlfd_file = f"{self.output_dir}/{tour_type}TLFD.csv"
-                    results[f'tour_tlfd_{tour_type}'].to_csv(tlfd_file, index = False)
-                    self.write_dataframe_to_sheet(results[f'tour_tlfd_{tour_type}'], start_row= 4,  start_col=col, sheet_name="BATS 2023 TLFD",
-                                                 source_row=2, source_col=col, source_text=f"Source: {tlfd_file}")
-                    
-                    self.logger.info(f"Saving tour length frequency distributions for {tour_type} to {tlfd_file}")     
-        
-            # Average tour lengths
-            avg_length_file = f"{self.output_dir}/AvgTourLen.csv"
-            results['avg_tour_lengths'].to_csv(avg_length_file, index = False)
-            self.write_dataframe_to_sheet(results['avg_tour_lengths'], start_row=3, start_col=1, sheet_name="BATS 2023 AvgTourLen",
-                                        source_row=1, source_col=1, source_text=f"Source: {avg_length_file}")
-            self.logger.info(f"Saving average tour lengths to {avg_length_file}")     
-                
-        else: 
-            # County summary
-            self.logger.info("Generating output files and Excel updates...")
+        targets = []
+        if self.bats_data:
+            for tour_type, col in [("work", 2), ("univ", 15), ("school", 28)]:
+                targets.append(SheetTarget(f"tour_tlfd_{tour_type}", "BATS 2023 TLFD", 4, col,
+                                           f"{tour_type}TLFD.csv", (2, col)))
+            targets.append(SheetTarget("avg_tour_lengths", "BATS 2023 AvgTourLen", 3, 1,
+                                       "AvgTourLen.csv", (1, 1)))
+        else:
+            targets.append(SheetTarget("county_summary", "modeldata", 4, 1,
+                                       f"{self.submodel}_usual_work_school_location_TM_county.csv", (1, 1)))
+            for tour_type, col in [("work", 1), ("univ", 14), ("school", 27)]:
+                targets.append(SheetTarget(f"tour_tlfd_{tour_type}", "modeldata", 19, col,
+                                           f"{self.submodel}_usual_work_school_location_TM_{tour_type}_TLFD.csv", (17, col)))
+            targets.append(SheetTarget("avg_tour_lengths", "modeldata", 4, 14,
+                                       f"{self.submodel}_usual_work_school_location_TM_avgtourlen.csv", (3, 14)))
 
-            county_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_county.csv"
+        self.write_results_to_workbook(results, targets)
 
-            results['county_summary'].to_csv(county_file, index = False)
-            
-            self.write_dataframe_to_sheet(results['county_summary'], start_row=4, start_col=1,
-                                        source_row=1, source_col=1, source_text=f"Source: {county_file}")
-
-            self.logger.info(f"Saving county summary to {county_file}")            
-            # Tour length frequency distributions
-            tour_types = [('work', 1), ('univ', 14), ('school', 27)]
-            for tour_type, col in tour_types:
-                if results[f'tour_tlfd_{tour_type}'] is not None:
-
-                    tlfd_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_{tour_type}_TLFD.csv"
-                    results[f'tour_tlfd_{tour_type}'].to_csv(tlfd_file, index = False)
-                    self.write_dataframe_to_sheet(results[f'tour_tlfd_{tour_type}'], start_row=19, start_col=col,
-                                                source_row=17, source_col=col, source_text=f"Source: {tlfd_file}")
-                    self.logger.info(f"Saving tour length frequency distributions for {tour_type} to {tlfd_file}")            
-
-            # Average tour lengths
-            avg_length_file = f"{self.output_dir}/{self.submodel}_usual_work_school_location_TM_avgtourlen.csv"
-            results['avg_tour_lengths'].to_csv(avg_length_file, index = False)
-            self.write_dataframe_to_sheet(results['avg_tour_lengths'], start_row=4, start_col=14,
-                                        source_row=3, source_col=14, source_text=f"Source: {avg_length_file}")
-            self.logger.info(f"Saving average tour lengths to {avg_length_file}")            
             
 
 

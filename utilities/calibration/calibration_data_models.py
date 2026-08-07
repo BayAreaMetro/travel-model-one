@@ -134,12 +134,15 @@ class NonMandTourLengthFrequency(BaseModel):
 class TourModeChoiceModel(BaseModel):
     indiv_joint: IndivJoint
     tour_purpose: CTRAMPTourPurpose
-    zero_auto: float = Field(alias = ('Autos=0'))
-    autos_less_than_workers: float = Field(alias = ('Autos<Workers'))
-    autos_greater_than_workers: float = Field(alias = ('Autos>=Workers'))
+
+class TourModeSummaryLong(TourModeChoiceModel):
+    auto_suff: Literal["Autos=0", "Autos<Workers", "Autos>=Workers"]
 
 class TourModeSummary(TourModeChoiceModel):
     tour_mode: CTRAMPModeType
+    zero_auto: float = Field(alias = ('Autos=0'))
+    autos_less_than_workers: float = Field(alias = ('Autos<Workers'))
+    autos_greater_than_workers: float = Field(alias = ('Autos>=Workers'))
 
 # TODO: Create Transit Mode Class
 class TourModeTransitSummary(TourModeChoiceModel):

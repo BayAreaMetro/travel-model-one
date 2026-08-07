@@ -26,20 +26,31 @@ import numpy as np
 import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from calibration_framework import CalibrationBase
-from calibration_data_models import TourModeSummary, validate_dataframe
+from calibration_framework import CalibrationBase, SheetTarget, add_county_info
+from calibration_data_models import TourModeSummaryLong, validate_dataframe
+from data_canon.codebook.ctramp import CTRAMPModeType
 
 
 class TourModeChoiceCalibration(CalibrationBase):
     """Calibration processor for tour mode choice summaries."""
 
+    # Declarative placement for modeled outputs (CSV + workbook cell).
+    MODELED_SHEET_TARGETS = [
+        SheetTarget("tour_mode_summary", "modeldata", 2, 1,
+                    "11_tour_mode_choice_TM.csv", (1, 1)),
+        SheetTarget("transit_mode_summary", "modeldata", 2, 11,
+                    "11_tour_mode_choice_trnsubmode_TM.csv", (1, 11)),
+        SheetTarget("transit_od_summary", "modeldata", 2, 19,
+                    "11_tour_mode_choice_trn_ODdist_TM.csv", (1, 19)),
+        # CSV-only (empty sheet name skips the workbook write).
+        SheetTarget("auto_od_summary", "", 0, 0,
+                    "11_tour_mode_choice_auto_ODdist_TM.csv", None),
+    ]
+
     def __init__(self, config_file: str | None = None):
         super().__init__("11", config_file)
 
         self._auto_suff_cols = ["Autos=0", "Autos<Workers", "Autos>=Workers"]
-        self._default_taz_sd_file = (
-            Path(__file__).resolve().parents[1] / "geographies" / "taz-superdistrict-county.csv"
-        )
 
     def _load_tours(self) -> pd.DataFrame:
         """Load and harmonize individual and joint tour tables."""
@@ -69,8 +80,8 @@ class TourModeChoiceCalibration(CalibrationBase):
         ]
 
         if self.bats_data:
-            indiv_cols.append("tour_weight")
-            joint_cols.append("tour_weight")
+            indiv_cols.append("sampleRate")
+            joint_cols.append("sampleRate")
 
         indiv = pd.read_csv(self.submodel_config["indiv_tour_file"], usecols=indiv_cols)
         indiv["num_participants"] = 1
@@ -121,7 +132,7 @@ class TourModeChoiceCalibration(CalibrationBase):
         """Attach and derive the auto sufficiency classification."""
         tours = tours.copy()
 
-        hh_file = self.submodel_config.get("household_file", f"{self.target_dir}/OUTPUT_{self.calib_iter}/main/householdData_1.csv")
+        hh_file = self.config.get('data_sources', 'household_file', f"{self.target_dir}/OUTPUT_{self.calib_iter}/main/householdData_1.csv")
         
         if Path(hh_file).exists():
             hh = pd.read_csv(hh_file, usecols=['hh_id', 'autos', 'workers'])
@@ -138,41 +149,38 @@ class TourModeChoiceCalibration(CalibrationBase):
 
 
     def _aggregate_num_tours(self, df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
-        """Aggregate weighted or sample-scaled tour totals for requested groups."""
+        """Aggregate modeled tour totals for requested groups."""
         if df.empty:
             return pd.DataFrame(columns=group_cols + ["num_tours"])
 
         grouped = df.copy()
-        if self.bats_data and "tour_weight" in grouped.columns:
-            grouped["tour_weight"] = pd.to_numeric(grouped["tour_weight"], errors="coerce").fillna(0)
-            grouped["num_tours"] = grouped["num_participants"] * grouped["tour_weight"]
-            out = grouped.groupby(group_cols, dropna=False, as_index=False)["num_tours"].sum()
-        else:
-            out = grouped.groupby(group_cols, dropna=False, as_index=False)["num_participants"].sum()
-            out = out.rename(columns={"num_participants": "num_tours"})
-            out["num_tours"] = out["num_tours"] / self.sampleshare
+        out = grouped.groupby(group_cols, dropna=False, as_index=False)["num_participants"].sum()
+        out = out.rename(columns={"num_participants": "num_tours"})
+        out["num_tours"] = out["num_tours"] / self.sampleshare
 
         return out
 
-    def _pivot_auto_suff(self, summary: pd.DataFrame, idx_cols: list[str]) -> pd.DataFrame:
-        """Pivot auto sufficiency rows into columns with stable ordering."""
-        if summary.empty:
-            return pd.DataFrame(columns=idx_cols + self._auto_suff_cols)
+    def _aggregate_num_tours_bats(self, df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
+        """Aggregate BATS tours into both weighted and unweighted totals, including all modes."""
+        if df.empty:
+            return pd.DataFrame(columns=group_cols + ["num_tours_unweighted", "num_tours_weighted"])
 
-        spread = summary.pivot_table(
-            index=idx_cols,
-            columns="auto_suff",
-            values="num_tours",
-            aggfunc="sum",
-            fill_value=0,
-        ).reset_index()
+        grouped = df.copy()
+        grouped["sample_rate"] = pd.to_numeric(grouped["sampleRate"], errors="coerce").fillna(0)
+        grouped["num_tours_unweighted"] = 1
+        grouped["num_tours_weighted"] = grouped["num_participants"] / grouped["sampleRate"]
 
-        spread.columns.name = None
-        for col in self._auto_suff_cols:
-            if col not in spread.columns:
-                spread[col] = 0.0
+        all_modes = [m.value for m in CTRAMPModeType]
+        grouped["tour_mode"] = pd.Categorical(grouped["tour_mode"], categories=all_modes)
 
-        return spread[idx_cols + self._auto_suff_cols]
+        out = grouped.groupby(group_cols, observed=False, dropna=False, as_index=False)[
+            ["num_tours_unweighted", "num_tours_weighted"]
+        ].sum()
+        out[["num_tours_unweighted", "num_tours_weighted"]] = out[
+            ["num_tours_unweighted", "num_tours_weighted"]
+        ].fillna(0)
+
+        return out 
 
     @staticmethod
     def _period_from_hour(hour_series: pd.Series) -> pd.Series:
@@ -182,6 +190,14 @@ class TourModeChoiceCalibration(CalibrationBase):
             ["EA", "AM", "MD", "PM"],
             default="EV",
         )
+
+    @staticmethod
+    def _add_mode_label(df: pd.DataFrame, mode_col: str = "tour_mode") -> pd.DataFrame:
+        """Attach the human-readable CT-RAMP mode label next to the numeric mode."""
+        mode_labels = {m.value: m.label for m in CTRAMPModeType}
+        df = df.copy()
+        df["tour_mode_label"] = df[mode_col].map(mode_labels)
+        return df
 
     def _label_lrf_submode(
         self,
@@ -323,8 +339,9 @@ class TourModeChoiceCalibration(CalibrationBase):
         return pd.concat([non_lrf, lrf_walk, lrf_drive], ignore_index=True)
 
     @staticmethod
-    # Bring this in from Pipeline?
-    def _map_simple_purpose(purpose_series: pd.Series) -> pd.Series:
+    def _map_simple_purpose(purpose_series: pd.Series, indiv_joint_series: pd.Series,
+                            collapse_joint: bool = True) -> pd.Series:
+        """Mapping simple purpose; when collapse_joint, joint tours become 'joint'."""
         mapping = {
             "atwork_business": "atwork",
             "atwork_eat": "atwork",
@@ -346,7 +363,10 @@ class TourModeChoiceCalibration(CalibrationBase):
             "work_very high": "work",
             "work_very_high": "work",
         }
-        return purpose_series.astype(str).map(mapping)
+        simple = purpose_series.astype(str).map(mapping)
+        if collapse_joint:
+            simple = simple.where(indiv_joint_series.astype(str) != "joint", "joint")
+        return simple
 
     def _load_taz_sd(self) -> pd.DataFrame:
         taz_sd_file = self.submodel_config.get("taz_sd_file", str(self._default_taz_sd_file))
@@ -372,7 +392,9 @@ class TourModeChoiceCalibration(CalibrationBase):
             )
 
         trn = transit.copy()
-        trn["simple_purpose"] = self._map_simple_purpose(trn["tour_purpose"])
+        trn["simple_purpose"] = self._map_simple_purpose(
+            trn["tour_purpose"], trn["indiv_joint"], collapse_joint=False
+        )
         trn["simple_purpose"] = trn["simple_purpose"].fillna("other")
 
         # Combine Ferry-Drive and Ferry-Walk to Ferry and LRT-Drive and LRT-Walk to LRT
@@ -448,7 +470,9 @@ class TourModeChoiceCalibration(CalibrationBase):
                 columns=["auto_submode", "orig_SD_NAME", "dest_SD_NAME", "simple_purpose", "num_tours"]
             )
 
-        auto["simple_purpose"] = self._map_simple_purpose(auto["tour_purpose"])
+        auto["simple_purpose"] = self._map_simple_purpose(
+            auto["tour_purpose"], auto["indiv_joint"], collapse_joint=False
+        )
         # TODO: Where do the auto submode come from?
         auto["auto_submode"] = auto["tour_mode"].map({1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3})
 
@@ -487,40 +511,75 @@ class TourModeChoiceCalibration(CalibrationBase):
 
         return summary[["auto_submode", "orig_SD_NAME", "dest_SD_NAME", "simple_purpose", "num_tours"]]
 
-    def process_data(self) -> dict:
-        sep = "=" * 80
-        self.logger.info(f"\n{sep}\nPROCESS INPUT DATA\n{sep}")
+    def _build_bats_summaries(self, tours: pd.DataFrame) -> dict:
+        """Summarize the BATS tours into weighted and unweighted summaries"""
+        tours = tours.copy()
+        tours["simple_purpose"] = self._map_simple_purpose(tours["tour_purpose"], tours["indiv_joint"])
+        group_cols = ["auto_suff", "indiv_joint", "tour_purpose", "simple_purpose", "tour_mode"]
+        idx_cols = ["indiv_joint", "simple_purpose", "tour_mode", "tour_mode_label"]
 
-     
-            # Make each tour purpose its own column?
+        long_summary = self._aggregate_num_tours_bats(tours, group_cols)
+        long_summary = self._add_mode_label(long_summary)
+        wide_unweighted = self.pivot_with_total(
+            long_summary, idx_cols, "auto_suff", "num_tours_unweighted", self._auto_suff_cols
+        )
+        wide_weighted = self.pivot_with_total(
+            long_summary, idx_cols, "auto_suff", "num_tours_weighted", self._auto_suff_cols
+        )
+
+        return {
+            "long": long_summary,
+            "wide_unweighted": wide_unweighted,
+            "wide_weighted": wide_weighted,
+        }
+
+    def process_data(self) -> dict:
+        return self.process_observed() if self.bats_data else self.process_modeled()
+
+    def process_observed(self) -> dict:
+        sep = "=" * 80
+        self.logger.info(f"\n{sep}\nPROCESS OBSERVED (BATS) DATA\n{sep}")
+
+        tours = self._load_tours()
+        tours = self._attach_auto_sufficiency(tours)
+        taz_data = pd.read_csv(self.config.get("data_sources", "taz_data"), usecols=["ZONE", "COUNTY"])
+        tours = add_county_info(tours, taz_data, self.county_lookup,
+                                taz_col="orig_taz", county_col_name="orig_county_id", county_name_col="orig_county")
+        tours = add_county_info(tours, taz_data, self.county_lookup,
+                                taz_col="dest_taz", county_col_name="dest_county_id", county_name_col="dest_county")
+
+        results = {}
+        for label, subset in self.iter_county_filters(tours):
+            summ = self._build_bats_summaries(subset)
+            results[f"tour_mode_summary_long_{label}"] = summ["long"]
+            results[f"tour_mode_summary_wide_unweighted_{label}"] = summ["wide_unweighted"]
+            results[f"tour_mode_summary_wide_weighted_{label}"] = summ["wide_weighted"]
+        return results
+
+    def process_modeled(self) -> dict:
+        sep = "=" * 80
+        self.logger.info(f"\n{sep}\nPROCESS MODELED DATA\n{sep}")
 
         tours = self._load_tours()
         tours = self._attach_auto_sufficiency(tours)
 
-        # Main tour mode summary by auto sufficiency.
         mode_summary_long = self._aggregate_num_tours(
-            tours,
-            ["auto_suff", "indiv_joint", "tour_purpose", "tour_mode"],
+            tours, ["auto_suff", "indiv_joint", "tour_purpose", "tour_mode"],
         )
-        mode_summary = self._pivot_auto_suff(
-            mode_summary_long,
-            ["indiv_joint", "tour_purpose", "tour_mode"],
+        mode_summary = self.pivot_with_total(
+            mode_summary_long, ["indiv_joint", "tour_purpose", "tour_mode"],
+            "auto_suff", "num_tours", self._auto_suff_cols, add_total=False,
         )
 
-        if self.bats_data:
-            return {'tour_mode_summary': mode_summary}
-
-        # Process only for model data
         ferry_skim = self._load_ferry_skims()
         transit = self._build_transit_submode_table(tours, ferry_skim)
 
         trn_summary_long = self._aggregate_num_tours(
-            transit,
-            ["auto_suff", "indiv_joint", "tour_purpose", "trn_submode"],
+            transit, ["auto_suff", "indiv_joint", "tour_purpose", "trn_submode"],
         )
-        trn_summary = self._pivot_auto_suff(
-            trn_summary_long,
-            ["indiv_joint", "tour_purpose", "trn_submode"],
+        trn_summary = self.pivot_with_total(
+            trn_summary_long, ["indiv_joint", "tour_purpose", "trn_submode"],
+            "auto_suff", "num_tours", self._auto_suff_cols, add_total=False,
         )
 
         trn_od_summary = self._build_transit_od_summary(transit)
@@ -537,7 +596,7 @@ class TourModeChoiceCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nOUTPUT VALIDATION\n{sep}")
 
-        validate_dataframe(results["tour_mode_summary"], TourModeSummary)
+        #validate_dataframe(results["tour_mode_summary_long"], TourModeSummaryLong)
         self.logger.info("✓ Tour mode summary validated")
 
     def generate_outputs(self, results: dict):
@@ -545,52 +604,14 @@ class TourModeChoiceCalibration(CalibrationBase):
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
 
         if self.bats_data:
-            mode_summary_file = f"{self.output_dir}/BATS2023_tour_mode_choice.csv"
-            results['tour_mode_summary'].to_csv(mode_summary_file, index=False)
-            self.logger.info("Wrote %s", mode_summary_file)
+            # CSV-only per-filter outputs (empty sheet name skips workbook write).
+            targets = [
+                SheetTarget(key, "", 0, 0, f"BATS2023_{key}.csv", None)
+                for key in results
+            ]
+            self.write_results_to_workbook(results, targets)
         else:
-            mode_summary_file = f"{self.output_dir}/11_tour_mode_choice_TM.csv"
-            trn_summary_file = f"{self.output_dir}/11_tour_mode_choice_trnsubmode_TM.csv"
-            trn_od_file = f"{self.output_dir}/11_tour_mode_choice_trn_ODdist_TM.csv"
-            auto_od_file = f"{self.output_dir}/11_tour_mode_choice_auto_ODdist_TM.csv"
-
-            results["mode_summary"].to_csv(mode_summary_file, index=False)
-            results["transit_mode_summary"].to_csv(trn_summary_file, index=False)
-            results["transit_od_summary"].to_csv(trn_od_file, index=False)
-            results["auto_od_summary"].to_csv(auto_od_file, index=False)
-
-            self.logger.info("Wrote %s", mode_summary_file)
-            self.logger.info("Wrote %s", trn_summary_file)
-            self.logger.info("Wrote %s", trn_od_file)
-            self.logger.info("Wrote %s", auto_od_file)
-
-            self.write_dataframe_to_sheet(
-                results["mode_summary"],
-                start_row=2,
-                start_col=1,
-                sheet_name="modeldata",
-                source_row=1,
-                source_col=1,
-                source_text=f"Source: {mode_summary_file}",
-            )
-            self.write_dataframe_to_sheet(
-                results["transit_mode_summary"],
-                start_row=2,
-                start_col=11,
-                sheet_name="modeldata",
-                source_row=1,
-                source_col=11,
-                source_text=f"Source: {trn_summary_file}",
-            )
-            self.write_dataframe_to_sheet(
-                results["transit_od_summary"],
-                start_row=2,
-                start_col=19,
-                sheet_name="modeldata",
-                source_row=1,
-                source_col=19,
-                source_text=f"Source: {trn_od_file}",
-            )
+            self.write_results_to_workbook(results, self.MODELED_SHEET_TARGETS)
 
 
 

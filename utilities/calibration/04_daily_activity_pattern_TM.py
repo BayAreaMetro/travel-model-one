@@ -3,10 +3,11 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+from pathlib import Path
 
 # Import the calibration framework  
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from calibration_framework import CalibrationBase
+from calibration_framework import CalibrationBase, SheetTarget, add_county_info
 from calibration_data_models import (
     CTRAMPPersonType,
     CDAPSummary,
@@ -47,17 +48,26 @@ class DailyActivityPatternCalibration(CalibrationBase):
         self.logger.info(f"\n{sep}\nPROCESS DATA\n{sep}")
         cdap_results = pd.read_csv(self.submodel_config['input_file'])
         self.logger.info(f"Reading in CDAP Input File: {self.submodel_config['input_file']}")
-        CTRAMPPersonTypeLookUp = {person.label: person.id for person in CTRAMPPersonType}
+        CTRAMPPersonTypeLookUp = {person.label: person.value for person in CTRAMPPersonType}
 
 
         if self.bats_data :
             cdap_results['person_type'] = cdap_results['type'].map(CTRAMPPersonTypeLookUp)
             cdap_results.fillna({'person_weight':0}, inplace = True)
-            cdap_ptype = cdap_results.groupby(['person_type', 'activity_pattern'])['person_weight'].sum().reset_index(name='num_pers')
-            
-            return {
-                'person_type_summary': cdap_ptype
-            }
+
+            # Home TAZ comes from household data; attach home county for filtering.
+            taz_data = pd.read_csv(self.config.get('data_sources', 'taz_data'), usecols=['ZONE', 'COUNTY'])
+            hh = pd.read_csv(self.config.get('data_sources', 'household_file'), usecols=['hh_id', 'taz'])
+            cdap_results = cdap_results.merge(hh, on='hh_id', how='left')
+            cdap_results = add_county_info(cdap_results, taz_data, self.county_lookup,
+                                           taz_col='taz', county_col_name='home_county_id', county_name_col='home_county')
+
+            # One summary per county filter ("all" = unfiltered); filter on home county only.
+            results = {}
+            for label, subset in self.iter_county_filters(cdap_results, orig_county_col="home_county", dest_county_col=None):
+                cdap_ptype = subset.groupby(['person_type', 'activity_pattern'])['person_weight'].sum().reset_index(name='num_pers')
+                results[f'person_type_summary_{label}'] = cdap_ptype
+            return results
 
         else:
         # Summarize by person type and activity string
@@ -77,15 +87,14 @@ class DailyActivityPatternCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nOUTPUT VAlIDATION\n{sep}")
 
-        print(results)
-        # Validate person type summary            
-        if results['person_type_summary'] is not None:
-            if self.bats_data:
-                validate_dataframe(results['person_type_summary'], CDAPSummaryBATS)
-                self.logger.info("Person Type BATS Summary Validated")
-            else:
-                validate_dataframe(results['person_type_summary'], CDAPSummary)
-                self.logger.info("Person Type Summary Validated")
+        if self.bats_data:
+            for key, df in results.items():
+                if key.startswith('person_type_summary_') and df is not None:
+                    validate_dataframe(df, CDAPSummaryBATS)
+            self.logger.info("Person Type BATS Summary Validated (all county filters)")
+        elif results['person_type_summary'] is not None:
+            validate_dataframe(results['person_type_summary'], CDAPSummary)
+            self.logger.info("Person Type Summary Validated")
 
 
     def generate_outputs(self, results: dict):
@@ -94,19 +103,17 @@ class DailyActivityPatternCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
 
-        # Person type summary
-        if results['person_type_summary'] is not None:
-            if self.bats_data:
-                summary_file = f"{self.output_dir}/dap_summaries.csv"
-                self.write_dataframe_to_sheet(results['person_type_summary'],start_row =2, start_col=2,
-                                              sheet_name='BATS 2023', source_row=1, source_col=2, source_text=f"Source: {summary_file}")
-            else:
-                summary_file = f"{self.output_dir}/{self.submodel}_daily_activity_pattern_TM.csv"
-                self.write_dataframe_to_sheet(results['person_type_summary'], start_row=2, start_col=1,
-                                        source_row=1, source_col=1, source_text=f"Source: {summary_file}")
-
-            results['person_type_summary'].to_csv(summary_file, index = False)
-            self.logger.info(f"Saving person type summary to {summary_file}")
+        if self.bats_data:
+            targets = [SheetTarget("person_type_summary_all", "BATS 2023", 2, 2,
+                                   "dap_summaries.csv", (1, 2))]
+            for key in results:
+                if key.endswith("_all"):
+                    continue
+                targets.append(SheetTarget(key, "", 0, 0, f"BATS2023_{key}.csv", None))
+        else:
+            targets = [SheetTarget("person_type_summary", "modeldata", 2, 1,
+                                   f"{self.submodel}_daily_activity_pattern_TM.csv", (1, 1))]
+        self.write_results_to_workbook(results, targets)
 
 
 

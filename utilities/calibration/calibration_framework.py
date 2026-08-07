@@ -51,10 +51,31 @@ except ImportError:
     from openpyxl.utils.dataframe import dataframe_to_rows
     USE_XLWINGS = False
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 
 from calibration_data_models import CTRAMPCounty
 
+
+@dataclass(frozen=True)
+class SheetTarget:
+    """Declarative mapping of a result DataFrame to a workbook sheet/cell.
+
+    Attributes:
+        result_key: Key of the DataFrame within the results dict.
+        sheet: Destination worksheet name (e.g. ``"modeldata"`` or ``"targets"``).
+        start_row: 1-based row for the header row; data is written below it.
+        start_col: 1-based column for the leftmost data column.
+        csv_name: Optional CSV filename (written under ``output_dir``); ``None`` skips CSV.
+        source_cell: Optional ``(row, col)`` for a "Source:" annotation; ``None`` skips it.
+    """
+
+    result_key: str
+    sheet: str
+    start_row: int
+    start_col: int
+    csv_name: Optional[str] = None
+    source_cell: Optional[tuple] = None
 
 
 class CalibrationConfig:
@@ -269,6 +290,10 @@ class CalibrationConfig:
         """
         # Use canonical county labels from shared CTRAMP codebook.
         return {county.value: county.label for county in CTRAMPCounty}
+
+    def get_county_filter(self) -> dict:
+        """Return the shared county-filter sets from the config (label -> list of county names)."""
+        return self.config.get("county_filters", {})
     
     def get_submodel_config(self, submodel: str) -> Optional[Dict[str, str]]:
         """Return the configuration block for a specific submodel, or None.
@@ -366,6 +391,7 @@ class CalibrationBase(ABC):
 
         # Load shared data resources
         self.county_lookup = self.config.get_county_lookup()
+        self.county_filters = self.config.get_county_filter()
        
         # Print configuration
         self._print_config()
@@ -561,6 +587,143 @@ class CalibrationBase(ABC):
                 
         except Exception as e:
             self.logger.warning(f"Warning: Could not write to Excel sheet: {e}")
+
+    def write_results_to_workbook(self, results: Dict[str, pd.DataFrame],
+                                  targets: List["SheetTarget"]) -> None:
+        """Write result DataFrames to CSVs and workbook cells per declarative specs.
+
+        Args:
+            results: Mapping of result key -> DataFrame (from ``process_*``).
+            targets: SheetTarget specs describing sheet/cell placement and
+                optional CSV output for each result key.
+        """
+        for target in targets:
+            if target.result_key not in results:
+                self.logger.warning("No result for '%s'; skipping.", target.result_key)
+                continue
+
+            df = results[target.result_key]
+            if df is None:
+                self.logger.warning("Result '%s' is None; skipping.", target.result_key)
+                continue
+
+            source_text = ""
+            if target.csv_name:
+                csv_path = f"{self.output_dir}/{target.csv_name}"
+                df.to_csv(csv_path, index=False)
+                self.logger.info("Wrote %s", csv_path)
+                source_text = f"Source: {csv_path}"
+
+            source_row, source_col = target.source_cell or (None, None)
+            if target.sheet:
+                self.write_dataframe_to_sheet(
+                    df,
+                    start_row=target.start_row,
+                    start_col=target.start_col,
+                    sheet_name=target.sheet,
+                    source_row=source_row,
+                    source_col=source_col,
+                    source_text=source_text,
+                )
+
+    def load_geographies(self, taz_file: str | None = None) -> pd.DataFrame:
+        """Return the TAZ geography table (ZONE, SD_NAME, COUNTY_NAME), cached per run."""
+        if getattr(self, "_geographies", None) is not None:
+            return self._geographies
+
+        taz_file = taz_file or self.config.get("data_sources", "taz_sd_file")
+        if not taz_file or not os.path.exists(taz_file):
+            raise FileNotFoundError(f"TAZ geography file not found: {taz_file}")
+
+        self._geographies = pd.read_csv(taz_file, usecols=["ZONE", "SD_NAME", "COUNTY_NAME"])
+        return self._geographies
+
+    def attach_geographies(self, df: pd.DataFrame, taz_col: str,
+                           want: dict, taz_file: str | None = None) -> pd.DataFrame:
+        """Left-join geography attributes onto ``df`` via a TAZ column.
+
+        Args:
+            df: DataFrame containing ``taz_col``.
+            taz_col: TAZ column in ``df`` to join on.
+            want: Mapping of source geography column -> output column name,
+                e.g. ``{"COUNTY_NAME": "orig_county", "SD_NAME": "orig_SD"}``.
+            taz_file: Optional override for the geography file path.
+        """
+        geo = self.load_geographies(taz_file)
+        cols = ["ZONE", *want.keys()]
+        rename = {"ZONE": taz_col, **want}
+        return df.merge(geo[cols].rename(columns=rename), on=taz_col, how="left")
+
+    def apply_county_filter(self, df: pd.DataFrame, counties: list,
+                            orig_county_col: str = "orig_county",
+                            dest_county_col: str | None = "dest_county") -> pd.DataFrame:
+        """Filter to rows where origin OR destination county is in ``counties``.
+
+        An empty/falsy ``counties`` returns ``df`` unchanged (no filter).
+        """
+        if not counties:
+            return df
+        mask = df[orig_county_col].isin(counties)
+        if dest_county_col is not None:
+            mask = mask | df[dest_county_col].isin(counties)
+        return df[mask]
+
+    def iter_county_filters(self, df: pd.DataFrame,
+                            orig_county_col: str = "orig_county",
+                            dest_county_col: str | None = "dest_county"):
+        """Yield ``(label, subset)`` for each configured county filter.
+
+        Uses :attr:`county_filters`; falls back to a single unfiltered
+        ``("all", df)`` when no filters are configured.
+        """
+        filters = self.county_filters or {"all": []}
+        for label, counties in filters.items():
+            yield label, self.apply_county_filter(df, counties, orig_county_col, dest_county_col)
+
+    @staticmethod
+    def derive_auto_sufficiency(df: pd.DataFrame, autos_col: str = "autos",
+                                workers_col: str = "workers",
+                                out_col: str = "auto_suff") -> pd.DataFrame:
+        """Add an auto-sufficiency classification column derived from autos vs workers."""
+        df = df.copy()
+        df[out_col] = np.where(
+            df[autos_col] == 0,
+            "Autos=0",
+            np.where(df[autos_col] < df[workers_col], "Autos<Workers", "Autos>=Workers"),
+        )
+        return df
+
+    @staticmethod
+    def pivot_with_total(summary: pd.DataFrame, idx_cols: list, columns_col: str,
+                         value_col: str, ordered_cols: list,
+                         add_total: bool = True) -> pd.DataFrame:
+        """Pivot ``columns_col`` into columns with stable ordering and an optional Total.
+
+        Args:
+            summary: Long-format DataFrame to pivot.
+            idx_cols: Columns to keep as the row index.
+            columns_col: Column whose values become new columns.
+            value_col: Column to aggregate (summed).
+            ordered_cols: Desired output column order for the pivoted columns;
+                missing ones are created as 0.
+            add_total: When True, append a ``Total`` column summing
+                ``ordered_cols``.
+        """
+        out_cols = idx_cols + ordered_cols + (["Total"] if add_total else [])
+        if summary.empty:
+            return pd.DataFrame(columns=out_cols)
+
+        spread = summary.pivot_table(
+            index=idx_cols, columns=columns_col, values=value_col,
+            aggfunc="sum", fill_value=0,
+        ).reset_index()
+        spread.columns.name = None
+        for col in ordered_cols:
+            if col not in spread.columns:
+                spread[col] = 0.0
+        if add_total:
+            spread["Total"] = spread[ordered_cols].sum(axis=1)
+        return spread[out_cols]
 
     @staticmethod
     def _read_xls_range(worksheet, column: int, start_row: int, end_row: int) -> list:
@@ -882,6 +1045,3 @@ def create_histogram_tlfd(data: pd.Series, bins: range = None, sampleshare: floa
             'distbin': list(bins)[1:],
             'count': hist / sampleshare
         })
-
-# def attach_distance_skim() -> pd.DataFrame:
-    

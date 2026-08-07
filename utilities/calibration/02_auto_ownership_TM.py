@@ -7,7 +7,7 @@ import shutil
 
 # Import the calibration framework
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from calibration_framework import CalibrationBase, add_county_info
+from calibration_framework import CalibrationBase, SheetTarget, add_county_info
 from calibration_data_models import (
     AutoOwnershipCountySummary,
     AutoOwnershipLongSummary,
@@ -128,11 +128,10 @@ class AutoOwnershipCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
         # County summary
-        county_file = f"{self.output_dir}/{self.submodel}_auto_ownership_TAZ_TM.csv"
-        results['county_summary'].to_csv(county_file, index = False)
-        self.write_dataframe_to_sheet(results['county_summary'], start_row=3, start_col=1,
-                                     source_row=1, source_col=1, source_text=f"Source: {county_file}")
-        
+        county_target = SheetTarget("county_summary", "modeldata", 3, 1,
+                                    f"{self.submodel}_auto_ownership_TAZ_TM.csv", (1, 1))
+        self.write_results_to_workbook(results, [county_target])
+
         # TAZ summaries
         results['taz_long'] = f"{self.output_dir}/{self.submodel}_auto_ownership_TAZ_TM_long.csv"
         results['taz_spread'] = f"{self.output_dir}/{self.submodel}_auto_ownership_TAZ_TM.csv"

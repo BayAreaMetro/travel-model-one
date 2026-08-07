@@ -2,12 +2,13 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from calibration_framework import CalibrationBase, add_county_info, create_histogram_tlfd
+from calibration_framework import CalibrationBase, SheetTarget, add_county_info, create_histogram_tlfd
 from calibration_data_models import (
     NonMandAvgTourLength,
     NonMandTourLengthFrequency,
@@ -17,6 +18,21 @@ from calibration_data_models import (
 
 class NonWorkDestinationChoiceCalibration(CalibrationBase):
     """Calibration processor for non-work destination choice."""
+
+    # Declarative placement of summary tables into workbook cells (modeled vs observed).
+    # The unfiltered ("all") tables go to the workbook; filtered subsets are CSV-only.
+    MODELED_SHEET_TARGETS = [
+        SheetTarget("tour_tlfd_all", "modeldata", 3, 1,
+                    "09_nonwork_destination_TM_TLFD.csv", (2, 1)),
+        SheetTarget("avg_tour_lengths_all", "modeldata", 3, 10,
+                    "09_nonwork_destination_TM_avgtourlen.csv", (2, 10)),
+    ]
+    OBSERVED_SHEET_TARGETS = [
+        SheetTarget("tour_tlfd_all", "BATS 2023 TLFD", 3, 2,
+                    "BATS2023_TLFD.csv", (1, 2)),
+        SheetTarget("avg_tour_lengths_all", "BATS 2023 TLFD", 58, 3,
+                    "BATS2023_avgtourlen.csv", (57, 3)),
+    ]
 
     PURPOSE_GROUPS = {
         "escort": ["escort_kids", "escort_no kids"],
@@ -50,20 +66,8 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
         "atwork": ("calibration", 77, 4, 8),
     }
 
-    def __init__(
-        self,
-        config_file: str = None,
-        county_filters: list[str] | None = None,
-    ):
+    def __init__(self, config_file: str = None):
         super().__init__("09", config_file)
-        config_counties = self.submodel_config.get("county_filter_values")
-        if county_filters is None and config_counties:
-            if isinstance(config_counties, str):
-                county_filters = [token.strip() for token in config_counties.split(",") if token.strip()]
-            elif isinstance(config_counties, list):
-                county_filters = [str(token).strip() for token in config_counties if str(token).strip()]
-
-        self.county_filters = county_filters or []
 
     def _build_summary_tables(self, tour_results: pd.DataFrame) -> dict:
         """Build TLFD and average tour length summaries from prepared tour data."""
@@ -175,10 +179,10 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
                 "orig_taz",
                 "dest_taz",
                 'tour_participants',
-                "tour_weight"
+                "joint_tour_weight"
             ],
         )
-
+        joint_tours.rename(columns = {"joint_tour_weight": "tour_weight"})
         joint_tours['num_participants'] = joint_tours['tour_participants'].str.split(" ").str.len()
         joint_tours['indiv_joint'] = 'joint'
         joint_tours.drop(columns = "tour_participants", inplace = True)
@@ -222,64 +226,19 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
                                           validate= 'm:1')
         
         tour_results.to_csv(f"{self.target_dir}/tour_with_dist.csv", index = False)
-        results = self._build_summary_tables(tour_results)
 
-        # Optional second run for selected counties (full run is always retained).
-        if self.county_filters:
-            county_name_lookup = {name.lower(): name for name in self.county_lookup.values()}
-            selected_counties = set()
-            for token in self.county_filters:
-                raw = str(token).strip()
-                if not raw:
-                    continue
-                if raw.isdigit():
-                    county_name = self.county_lookup.get(int(raw))
-                else:
-                    county_name = county_name_lookup.get(raw.replace("_", " ").lower())
-                if county_name:
-                    selected_counties.add(county_name)
+        taz_data = pd.read_csv(self.config.get("data_sources", "taz_data"), usecols=["ZONE", "COUNTY"])
+        tour_results = add_county_info(tour_results, taz_data, self.county_lookup,
+                                       taz_col="orig_taz", county_col_name="orig_county_id", county_name_col="orig_county")
+        tour_results = add_county_info(tour_results, taz_data, self.county_lookup,
+                                       taz_col="dest_taz", county_col_name="dest_county_id", county_name_col="dest_county")
 
-            if not selected_counties:
-                self.logger.warning(
-                    "County filter requested but no valid counties were resolved; skipping filter run."
-                )
-                filtered_tours = pd.DataFrame(columns=tour_results.columns)
-            else:
-                taz_data = pd.read_csv(
-                    self.config.get("data_sources", "taz_data"),
-                    usecols=["ZONE", "COUNTY"],
-                )
-                tours_with_county = add_county_info(
-                    tour_results,
-                    taz_data,
-                    self.county_lookup,
-                    taz_col="orig_taz",
-                    county_col_name="orig_county_id",
-                    county_name_col="orig_county",
-                )
-                tours_with_county = add_county_info(
-                    tours_with_county,
-                    taz_data,
-                    self.county_lookup,
-                    taz_col="dest_taz",
-                    county_col_name="dest_county_id",
-                    county_name_col="dest_county",
-                )
-
-                county_mask = tours_with_county["orig_county"].isin(selected_counties) | tours_with_county[
-                    "dest_county"
-                ].isin(selected_counties)
-
-                filtered_tours = tours_with_county.loc[county_mask, tour_results.columns]
-                self.logger.info(
-                    "County-filtered run selected %d of %d tours using counties=%s",
-                    len(filtered_tours),
-                    len(tour_results),
-                    sorted(selected_counties),
-                )
-
-            results["county_filtered"] = self._build_summary_tables(filtered_tours)
-
+        # One set of summaries per configured county filter ("all" = unfiltered).
+        results = {}
+        for label, subset in self.iter_county_filters(tour_results):
+            summ = self._build_summary_tables(subset)
+            results[f"tour_tlfd_{label}"] = summ["tour_tlfd"]
+            results[f"avg_tour_lengths_{label}"] = summ["avg_tour_lengths"]
         return results
 
     def validate_outputs(self, results: dict):
@@ -287,121 +246,36 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
         self.logger.info(f"\n{sep}\nOUTPUT VALIDATION\n{sep}")
 
         expected_rows = 51 if self.bats_data else 150
-        validate_dataframe(results["tour_tlfd"], NonMandTourLengthFrequency, expected_rows=expected_rows)
-        self.logger.info("✓ Non-work TLFD validated")
-
-        validate_dataframe(results["avg_tour_lengths"], NonMandAvgTourLength, expected_rows=7)
-        self.logger.info("✓ Average tour length summary validated")
-
-        if "county_filtered" in results:
-            validate_dataframe(
-                results["county_filtered"]["tour_tlfd"],
-                NonMandTourLengthFrequency,
-                expected_rows=expected_rows,
-            )
-            validate_dataframe(
-                results["county_filtered"]["avg_tour_lengths"],
-                NonMandAvgTourLength,
-                expected_rows=7,
-            )
-            self.logger.info("✓ County-filtered non-work outputs validated")
+        for key, df in results.items():
+            if key.startswith("tour_tlfd_"):
+                validate_dataframe(df, NonMandTourLengthFrequency, expected_rows=expected_rows)
+            elif key.startswith("avg_tour_lengths_"):
+                validate_dataframe(df, NonMandAvgTourLength, expected_rows=7)
+        self.logger.info("\u2713 Non-work outputs validated (all county filters)")
 
     def generate_outputs(self, results: dict):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
 
-        if self.bats_data:
-            tlfd_file = f"{self.output_dir}/BATS2023_TLFD.csv"
-            results["tour_tlfd"].to_csv(tlfd_file, index=False)
-            self.write_dataframe_to_sheet(
-                results["tour_tlfd"],
-                sheet_name="BATS 2023 TLFD",
-                start_row=3,
-                start_col=2,
-                source_row=1,
-                source_col=2,
-                source_text=f"Source: {tlfd_file}",
-            )
-            self.logger.info(f"Saving tour length frequency distributions to {tlfd_file}")
+        targets = list(self.OBSERVED_SHEET_TARGETS if self.bats_data else self.MODELED_SHEET_TARGETS)
+        prefix = "BATS2023" if self.bats_data else "09_nonwork_destination_TM"
 
-            avg_tour_length_file = f"{self.output_dir}/BATS2023_avgtourlen.csv"
-            results["avg_tour_lengths"].to_csv(avg_tour_length_file, index=False)
-            self.write_dataframe_to_sheet(
-                results["avg_tour_lengths"],
-                sheet_name="BATS 2023 TLFD",
-                start_row=58,
-                start_col=3,
-                source_row=57,
-                source_col=3,
-                source_text=f"Source: {avg_tour_length_file}",
-            )
-            self.logger.info(f"Saving average tour lengths to {avg_tour_length_file}")
+        # Filtered subsets (everything except "_all") are CSV-only.
+        for key in results:
+            if key.endswith("_all"):
+                continue
+            targets.append(SheetTarget(key, "", 0, 0, f"{prefix}_{key}.csv", None))
 
-            if "county_filtered" in results:
-                tlfd_filtered = f"{self.output_dir}/BATS2023_TLFD_county_filtered.csv"
-                results["county_filtered"]["tour_tlfd"].to_csv(tlfd_filtered, index=False)
-                self.logger.info(f"Saving county-filtered tour length distributions to {tlfd_filtered}")
-
-                avg_filtered = f"{self.output_dir}/BATS2023_avgtourlen_county_filtered.csv"
-                results["county_filtered"]["avg_tour_lengths"].to_csv(avg_filtered, index=False)
-                self.logger.info(f"Saving county-filtered average tour lengths to {avg_filtered}")
-        else:
-            tlfd_file = f"{self.output_dir}/09_nonwork_destination_TM_TLFD.csv"
-            results["tour_tlfd"].to_csv(tlfd_file, index=False)
-            self.write_dataframe_to_sheet(
-                results["tour_tlfd"],
-                start_row=3,
-                start_col=1,
-                source_row=2,
-                source_col=1,
-                source_text=f"Source: {tlfd_file}",
-            )
-            self.logger.info(f"Saving tour length frequency distributions to {tlfd_file}")
-
-            avg_tour_length_file = f"{self.output_dir}/09_nonwork_destination_TM_avgtourlen.csv"
-            results["avg_tour_lengths"].to_csv(avg_tour_length_file, index=False)
-            self.write_dataframe_to_sheet(
-                results["avg_tour_lengths"],
-                start_row=3,
-                start_col=10,
-                source_row=2,
-                source_col=10,
-                source_text=f"Source: {avg_tour_length_file}",
-            )
-            self.logger.info(f"Saving average tour lengths to {avg_tour_length_file}")
-
-            if "county_filtered" in results:
-                tlfd_filtered = f"{self.output_dir}/09_nonwork_destination_TM_TLFD_county_filtered.csv"
-                results["county_filtered"]["tour_tlfd"].to_csv(tlfd_filtered, index=False)
-                self.logger.info(f"Saving county-filtered tour length distributions to {tlfd_filtered}")
-
-                avg_filtered = f"{self.output_dir}/09_nonwork_destination_TM_avgtourlen_county_filtered.csv"
-                results["county_filtered"]["avg_tour_lengths"].to_csv(avg_filtered, index=False)
-                self.logger.info(f"Saving county-filtered average tour lengths to {avg_filtered}")
+        self.write_results_to_workbook(results, targets)
 
 
 def main():
     """Parse CLI arguments and run the non-work destination choice calibration."""
     parser = argparse.ArgumentParser(description="Non-work destination choice calibration")
     parser.add_argument("--config", default=None, help="Path to calibration_config.yaml (default: same directory as this script)")
-    parser.add_argument(
-        "--counties",
-        default=None,
-        help=(
-            "Optional comma-separated county list for a second filtered run "
-            "(accepts county names or numeric county IDs)."
-        ),
-    )
     args = parser.parse_args()
 
-    counties = None
-    if args.counties:
-        counties = [token.strip() for token in args.counties.split(",") if token.strip()]
-
-    calibration = NonWorkDestinationChoiceCalibration(
-        config_file=args.config,
-        county_filters=counties,
-    )
+    calibration = NonWorkDestinationChoiceCalibration(config_file=args.config)
     calibration.logger.info("Starting non-work destination choice calibration...")
     calibration.run()
     calibration.logger.info("Calibration complete.")

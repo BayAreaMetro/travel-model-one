@@ -13,9 +13,15 @@ general:
   # workbook_templates/ folder inside the calibration scripts directory.
   workbook_base_path: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_mt_20260623_NoMon_rmo/ctramp_2023"
 
+county_filters:
+  all: []
+  solano_napa: ["Solano", "Napa"]
+  north_bay: ["Solano", "Napa", "Marin", "Sonoma"]
+
 data_sources:
   taz_data: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_00_Cube6/INPUT/landuse/tazData.csv"
   dist_skim: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_00_Cube6/OUTPUT_00/skims/nonmotskm.csv"
+  household_file: "{target_dir}/householdData_BATS2023.csv"
 
 calibration_01:
   name: Usual Work and School Location
@@ -48,7 +54,6 @@ calibration_11:
   joint_tour_file: "{target_dir}/jointTourData_BATS2023.csv"
   bats_data: true
   # Optional in BATS mode: used only if available to derive auto sufficiency.
-  household_file: "{target_dir}/householdData_BATS2023.csv"
   # ferry_skim_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_00_Cube6/OUTPUT_00/skims"
 
 # calibration_15:
