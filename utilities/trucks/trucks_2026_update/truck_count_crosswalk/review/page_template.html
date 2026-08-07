@@ -1,0 +1,1805 @@
+<title>Truck count conflation review</title>
+<style>
+  :root {
+    --bg: #edf0f3; --surface: #ffffff; --surface-2: #f4f7f9; --surface-3: #e8edf1;
+    --ink: #121a21; --muted: #5d6c79; --line: #d2dae1;
+    --accent: #1d4e77; --accent-soft: #dfeaf3;
+    --ok: #2c7a5f; --todo: #c25e1f; --bad: #9d4038;
+    --ctx: #b3bfc9; --ctx-fwy: #7d8b97; --ctx-art: #9aa7b2;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c1116; --surface: #141b21; --surface-2: #1a232a; --surface-3: #212c34;
+      --ink: #e3e9ee; --muted: #8998a5; --line: #29343d;
+      --accent: #5ea3d8; --accent-soft: #16303f;
+      --ok: #4bab8b; --todo: #e08744; --bad: #cf7268;
+      --ctx: #3d4952; --ctx-fwy: #66757f; --ctx-art: #4e5b65;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1116; --surface: #141b21; --surface-2: #1a232a; --surface-3: #212c34;
+    --ink: #e3e9ee; --muted: #8998a5; --line: #29343d;
+    --accent: #5ea3d8; --accent-soft: #16303f;
+    --ok: #4bab8b; --todo: #e08744; --bad: #cf7268;
+    --ctx: #3d4952; --ctx-fwy: #66757f; --ctx-art: #4e5b65;
+  }
+  :root[data-theme="light"] {
+    --bg: #edf0f3; --surface: #ffffff; --surface-2: #f4f7f9; --surface-3: #e8edf1;
+    --ink: #121a21; --muted: #5d6c79; --line: #d2dae1;
+    --accent: #1d4e77; --accent-soft: #dfeaf3;
+    --ok: #2c7a5f; --todo: #c25e1f; --bad: #9d4038;
+    --ctx: #b3bfc9; --ctx-fwy: #7d8b97; --ctx-art: #9aa7b2;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+    font-size: 14px; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  button {
+    font: inherit; font-size: 12.5px; padding: 5px 11px; border-radius: 5px;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer;
+  }
+  button:hover { background: var(--surface-3); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:disabled { opacity: .45; cursor: default; }
+
+  header {
+    display: flex; align-items: center; gap: 14px; padding: 10px 16px;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  header h1 { margin: 0; font-size: 14.5px; font-weight: 620; }
+  .funnel { color: var(--muted); font-size: 11.5px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .funnel .chain { font-family: var(--mono); }
+  .funnel .tally { color: var(--ink); }
+  .spacer { flex: 1; }
+  .pill {
+    font-size: 11px; font-family: var(--mono); padding: 3px 9px; border-radius: 20px;
+    border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+  }
+  .pill.disk { border-color: var(--ok); color: var(--ok); }
+  .pill.browser { border-color: var(--todo); color: var(--todo); }
+
+  main {
+    flex: 1; display: grid; grid-template-columns: 280px 1fr; min-height: 0;
+    position: relative;   /* anchors the split-view drag handles */
+  }
+
+  /* list: every location, colour says whether it still needs a decision */
+  nav {
+    border-right: 1px solid var(--line); background: var(--surface);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  #list { overflow-y: auto; flex: 1; }
+  .filter {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    border-bottom: 1px solid var(--line); font-size: 12px;
+  }
+  .filter select {
+    flex: 1; font: inherit; font-size: 12px; padding: 4px 7px; border-radius: 5px;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+  }
+  .filter select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .filter #listCount {
+    margin-left: auto; color: var(--muted); font-family: var(--mono); font-size: 11px;
+  }
+  .row {
+    display: grid; grid-template-columns: 6px 1fr; gap: 9px; width: 100%;
+    align-items: stretch; padding: 0 10px 0 0; text-align: left; background: none;
+    border: 0; border-bottom: 1px solid var(--line); border-radius: 0; cursor: pointer;
+  }
+  .row:hover { background: var(--surface-2); }
+  .row[aria-current="true"] { background: var(--accent-soft); }
+  .row .bar {
+    align-self: stretch; min-height: 38px; background: var(--line);
+    border-radius: 0 3px 3px 0;
+  }
+  .row .body { padding: 7px 0; min-width: 0; }
+  .row.todo .bar { background: var(--todo); }
+  .row.saved .bar { background: var(--ok); }
+  .row.auto .bar { background: var(--ok); opacity: .38; }
+  .row.dropped .bar { background: var(--muted); opacity: .45; }
+  .row .who { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+  .row.auto .who, .row.saved .who, .row.dropped .who {
+    color: var(--muted); font-weight: 500;
+  }
+  .row .desc {
+    color: var(--muted); font-size: 11px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; max-width: 215px;
+  }
+
+  /* map */
+  .maparea { position: relative; overflow: hidden; background: var(--surface-2); }
+  canvas, svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  svg.overlay { cursor: grab; }
+  svg.overlay:active { cursor: grabbing; }
+  .zoom { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; }
+  .zoom button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .attr {
+    position: absolute; bottom: 4px; right: 8px; font-size: 10px;
+    color: #fff; text-shadow: 0 0 3px #000; pointer-events: none;
+  }
+  #rubber {
+    position: absolute; border: 1.5px dashed var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    pointer-events: none;
+  }
+  .sat {
+    position: absolute; right: 12px; bottom: 12px; font-size: 11.5px; padding: 5px 10px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+    color: var(--accent); text-decoration: none;
+  }
+  .sat:hover { background: var(--surface-3); }
+  .tip {
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 5px;
+    padding: 4px 8px; font-family: var(--mono); font-size: 11px; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(10, 18, 26, .2);
+  }
+
+  /* editor card for the selected location */
+  .card {
+    position: absolute; left: 12px; bottom: 12px; width: 340px; max-height: 78%;
+    overflow-y: auto; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(10, 18, 26, .18);
+    display: none;
+  }
+  .card.open { display: block; }
+  .cardhead { display: flex; align-items: flex-start; gap: 8px; }
+  .cardhead h2 { flex: 1; }
+  #cFold {
+    flex: none; width: 22px; height: 22px; padding: 0; line-height: 1;
+    font-size: 14px; border-radius: 5px;
+  }
+  .card.folded .cardbody { display: none; }
+  /* In split the map pane is narrow, and the year table is duplicated by the
+     Series pane, so the card carries only what the map itself needs. */
+  main.split .card { width: 300px; max-height: 62%; }
+  main.split .card #cYears, main.split .card .hint { display: none; }
+  .card h2 { margin: 0 0 2px; font-size: 13.5px; font-weight: 620; }
+  .card .sub { color: var(--muted); font-size: 11.5px; font-family: var(--mono); }
+  .card .years {
+    color: var(--muted); font-size: 11px; font-family: var(--mono); margin-top: 3px;
+  }
+  .card .spike { color: var(--todo); margin-top: 4px; font-size: 10.5px; line-height: 1.35; }
+  table.series {
+    width: 100%; border-collapse: collapse; margin-top: 6px;
+    font-family: var(--mono); font-size: 10.5px; font-variant-numeric: tabular-nums;
+  }
+  table.series th {
+    text-align: right; font-weight: 600; color: var(--muted); font-size: 9px;
+    text-transform: uppercase; letter-spacing: .06em; padding: 0 0 2px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  table.series th:first-child, table.series td:first-child { text-align: left; padding-left: 0; }
+  table.series td { text-align: right; padding: 1px 0 1px 8px; color: var(--ink); }
+  table.series tbody td:first-child { color: var(--muted); }
+  table.series tfoot td {
+    border-top: 1px solid var(--line); color: var(--muted); padding-top: 3px;
+  }
+  table.series tfoot tr:first-child td { font-weight: 600; color: var(--ink); }
+  table.series tfoot i { font-style: normal; opacity: .7; }
+  table.series tr.spikeRow td { color: var(--todo); font-weight: 600; }
+  .legs { display: flex; gap: 5px; margin: 10px 0 8px; }
+  .legs button { font-family: var(--mono); font-size: 11.5px; flex: 1; }
+  .legs button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .picked { font-family: var(--mono); font-size: 11.5px; color: var(--muted); min-height: 18px; }
+  .picked b { color: var(--ink); }
+  .linksHead { font-family: var(--sans); font-size: 11px; margin: 2px 0 3px; }
+  table.linksTable { border-collapse: collapse; width: 100%; font-size: 11.5px; }
+  table.linksTable th {
+    text-align: right; font-weight: 400; opacity: .65; padding: 1px 6px 2px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  table.linksTable th:first-child, table.linksTable td:first-child { text-align: left; }
+  table.linksTable td { text-align: right; padding: 1px 6px 1px 0; }
+  table.linksTable td:nth-child(2) { text-align: left; }
+  table.linksTable .dim { opacity: .5; }
+  table.linksTable tr[data-key] { cursor: pointer; }
+  table.linksTable tr[data-key]:hover td { background: var(--surface-3); }
+  table.linksTable tr.sumRow td { border-top: 1px solid var(--line); padding-top: 2px; }
+  .compare {
+    margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--line); color: var(--muted);
+  }
+  .compare i {
+    font-style: normal; color: var(--todo); font-family: var(--sans); font-size: 11px;
+  }
+  .compare .okgauge { color: var(--ok); font-family: var(--sans); font-size: 11px; }
+  .picked b { color: var(--ink); }
+  .compare {
+    margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--line); color: var(--muted);
+  }
+  .compare i {
+    font-style: normal; color: var(--todo); font-family: var(--sans); font-size: 11px;
+  }
+  .hint { font-size: 11px; color: var(--muted); margin: 8px 0; }
+  .actions { display: flex; gap: 6px; margin-top: 10px; }
+  .actions .primary { flex: 1; }
+  input.note {
+    width: 100%; font: inherit; font-size: 12px; margin-top: 8px; padding: 5px 8px;
+    border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); color: var(--ink);
+  }
+  .dirty { color: var(--todo); font-size: 11px; font-weight: 600; margin-top: 6px; }
+
+  /* ---- Data / Fit tabs */
+  .tabs { display: flex; gap: 2px; margin-left: 14px; }
+  .tabs button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tabpane { grid-column: 1 / -1; display: flex; flex-direction: column; min-height: 0; }
+  .tabpane[hidden] { display: none; }
+  nav[hidden], .maparea[hidden] { display: none; }
+  /* Split: queue + map + fit on top, table across the bottom */
+  main.split {
+    grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 62%) minmax(0, 38%);
+  }
+  main.split nav { grid-row: 1; grid-column: 1; }
+  main.split .maparea { grid-row: 1; grid-column: 2; }
+  main.split #tab-fit { grid-row: 1; grid-column: 3; border-left: 1px solid var(--line); }
+  main.split #tab-data { grid-row: 2; grid-column: 1 / 3; border-top: 1px solid var(--line); }
+  main.split #tab-series {
+    grid-row: 2; grid-column: 3;
+    border-top: 1px solid var(--line); border-left: 1px solid var(--line);
+  }
+  /* Drag handles sitting on the grid lines; hidden outside the split view. */
+  .grip { position: absolute; z-index: 6; display: none; }
+  main.split .grip { display: block; }
+  .grip.v { width: 9px; cursor: col-resize; }
+  .grip.h { height: 9px; cursor: row-resize; }
+  .grip:hover { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+  #dTable tr.hl td { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+  .databar {
+    display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+    border-bottom: 1px solid var(--line); font-size: 12px;
+  }
+  .databar input[type="text"] {
+    font: inherit; font-size: 12px; padding: 3px 7px; border: 1px solid var(--line);
+    border-radius: 5px; background: var(--surface-2); color: var(--ink);
+  }
+  .databar label { display: flex; align-items: center; gap: 4px; color: var(--muted); }
+  .databar button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .unitsNote { color: var(--muted); font-size: 11px; }
+  .datawrap { flex: 1; overflow: auto; min-height: 0; }
+  #dTable { border-collapse: collapse; font-family: var(--mono); font-size: 11.5px; width: 100%; }
+  #dTable th {
+    position: sticky; top: 0; background: var(--surface-2); text-align: right;
+    padding: 5px 10px; border-bottom: 1px solid var(--line); cursor: pointer;
+    font-family: var(--sans); font-weight: 600; white-space: nowrap;
+  }
+  #dTable th.s0, #dTable td.s0 { text-align: left; }
+  #dTable td { text-align: right; padding: 2px 10px; white-space: nowrap; }
+  #dTable tr[data-loc]:not([data-loc="-1"]) { cursor: pointer; }
+  #dTable tr[data-loc]:not([data-loc="-1"]):hover td { background: var(--surface-3); }
+  #dTable td.flagged { color: var(--todo); }
+  .fitwrap { flex: 1; min-height: 0; position: relative; }
+  #fPlot, #sPlot { width: 100%; height: 100%; display: block; }
+  #fPlot circle { cursor: pointer; }
+</style>
+
+<header>
+  <h1>Count &rarr; link review</h1>
+  <span class="tabs">
+    <button data-tab="split" aria-pressed="true">Split</button>
+    <button data-tab="map" aria-pressed="false">Map</button>
+    <button data-tab="data" aria-pressed="false">Data</button>
+  </span>
+  <span class="funnel" id="funnel"></span>
+  <span class="spacer"></span>
+  <span class="pill" id="saveState">&hellip;</span>
+  <button id="export">Export</button>
+</header>
+
+<main>
+  <nav>
+    <div class="filter">
+      <select id="view" aria-label="Which locations to list">
+        <option value="todo">Unresolved</option>
+        <option value="dropped">Never matched</option>
+        <option value="all">All locations</option>
+      </select>
+      <span id="listCount"></span>
+    </div>
+    <div id="list"></div>
+  </nav>
+  <section class="maparea" id="maparea">
+    <canvas id="base"></canvas>
+    <svg class="overlay" id="overlay"></svg>
+    <div class="zoom">
+      <button id="zin" title="Zoom in">+</button>
+      <button id="zout" title="Zoom out">&minus;</button>
+      <button id="zregion" title="Whole network">Region</button>
+      <button id="imgy" title="Toggle satellite underlay" aria-pressed="false">Imagery</button>
+      <button id="mPng" title="Download the map view as PNG">PNG</button>
+    </div>
+    <a class="sat" id="sat" target="_blank" rel="noopener noreferrer">Satellite &#8599;</a>
+    <div class="attr" id="attr" hidden>imagery &copy; Esri World Imagery</div>
+    <div id="rubber" hidden></div>
+    <div class="tip" id="tip"></div>
+
+    <div class="card" id="card">
+      <div class="cardhead">
+        <h2 id="cTitle"></h2>
+        <button id="cFold" title="Collapse / expand this card">&minus;</button>
+      </div>
+      <div class="sub" id="cSub"></div>
+      <div class="cardbody" id="cBody">
+        <div class="years" id="cYears"></div>
+        <div class="years" id="cNotes"></div>
+        <div class="legs" id="cLegs"></div>
+        <div class="picked" id="cPicked"></div>
+        <div class="hint">A count is a <b>two-way</b> total, so it maps to the whole
+          cross-section &mdash; usually one link per direction, four where HOV lanes run
+          alongside. Click any link on the map to add or remove it; Shift-drag a box to
+          grab links that overlap exactly; click a table row to unselect. Dotted lines are the
+          matcher's suggestions.</div>
+        <input class="note" id="cNote" placeholder="Note (optional)">
+        <div class="actions">
+          <button class="primary" id="cSave">Save</button>
+          <button id="cRevert" title="Throw out the saved decision; back to the matcher's suggestion">Revert</button>
+          <button id="cNoMatch" title="Save this location as unmatchable">No match</button>
+        </div>
+        <div class="dirty" id="cDirty"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabpane" id="tab-data" hidden>
+    <div class="databar">
+      <input id="dRoute" type="text" placeholder="route" size="5">
+      <input id="dCounty" type="text" placeholder="county" size="5">
+      <input id="dYearFrom" type="text" placeholder="year &ge;" size="5">
+      <input id="dYearTo" type="text" placeholder="year &le;" size="5">
+      <label><input id="dFlagged" type="checkbox"> flagged only</label>
+      <label><input id="dMatched" type="checkbox"> matched only</label>
+      <button id="dCsv" title="Download the filtered rows as CSV">CSV</button>
+      <span id="dCount"></span>
+      <span class="spacer"></span>
+      <span class="unitsNote">counts: vehicles/day, both directions &middot;
+        click a row to open it on the map &middot; filters fade out the excluded
+        locations on the map and plot (values stay all-year)</span>
+    </div>
+    <div class="datawrap"><table id="dTable"></table></div>
+  </section>
+
+  <section class="tabpane" id="tab-series" hidden>
+    <div class="databar">
+      <button id="sTrk" aria-pressed="true">trucks</button>
+      <button id="sVeh" aria-pressed="false">vehicles</button>
+      <button id="sLog" aria-pressed="false" title="Log10 vertical scale">log</button>
+      <button id="sSvg" title="Download the plot as SVG">SVG</button>
+      <button id="sPng" title="Download the plot as PNG">PNG</button>
+      <span class="unitsNote" id="sNote"></span>
+    </div>
+    <div class="fitwrap"><svg id="sPlot"></svg></div>
+  </section>
+
+  <section class="tabpane" id="tab-fit" hidden>
+    <div class="databar">
+      <button id="fTrk" aria-pressed="true">trucks</button>
+      <button id="fVeh" aria-pressed="false">vehicles</button>
+      <button id="fSvg" title="Download the plot as SVG">SVG</button>
+      <button id="fPng" title="Download the plot as PNG">PNG</button>
+      <span id="fStats"></span>
+      <span class="spacer"></span>
+      <span class="unitsNote" id="fNote"></span>
+    </div>
+    <div class="fitwrap"><svg id="fPlot"></svg></div>
+  </section>
+
+  <div class="grip v" id="gripQueue" title="Drag to resize"></div>
+  <div class="grip v" id="gripMid" title="Drag to resize"></div>
+  <div class="grip h" id="gripRow" title="Drag to resize"></div>
+</main>
+
+<script>
+const DATA = /*__REVIEW_DATA__*/;
+const NET = DATA.network;
+const LOCS = DATA.locations;
+const el = (id) => document.getElementById(id);
+const fmt = (n) => n == null ? "—" : n.toLocaleString("en-US");
+/* Years present, collapsed: 2013-2024, or 2013-2018, 2021-2024 when there
+   are gaps, so a patchy record is visible at a glance. */
+function yearRanges(years) {
+  if (!years || !years.length) return "none";
+  const out = [];
+  let start = years[0], prev = years[0];
+  for (const y of years.slice(1)) {
+    if (y !== prev + 1) { out.push([start, prev]); start = y; }
+    prev = y;
+  }
+  out.push([start, prev]);
+  return out.map(([a, b]) => a === b ? `${a}` : `${a}\u2013${b}`).join(", ");
+}
+
+const NOTE_TEXT = {
+  legs_share_links: "A and B share links — no model node splits them here",
+};
+
+/* The whole series, not just its summary. Caltrans re-publishes an estimate
+   every year whether or not anything was counted, so seeing the values makes a
+   flat carried-forward record and a genuinely varying one tell themselves
+   apart -- and puts a stray-zero typo right next to its neighbours. */
+function seriesTable(leg) {
+  if (!leg || !leg.years || !leg.years.length) return "";
+  const cell = (v) => v == null ? "—" : fmt(Math.round(v));
+  const flags = leg.flags_by_year || [];
+  const rows = leg.years.map((year, i) => {
+    const flag = flags[i] || "";
+    return `<tr${flag ? ' class="spikeRow"' : ""} title="${flag}"><td>${year}</td>` +
+      `<td>${cell(leg.vehicle_by_year[i])}</td>` +
+      `<td>${cell(leg.truck_by_year[i])}</td>` +
+      `<td>${flag ? FLAG_MARK[flag.split(";")[0].trim()] || "!" : ""}</td></tr>`;
+  }).join("");
+  const pct = (sd, mean) => (sd && mean) ? ` <i>${(100 * sd / mean).toFixed(0)}%</i>` : "";
+  const seen = [...new Set(flags.filter(Boolean).flatMap((f) => f.split(";").map(
+    (x) => x.trim())))];
+  return `<table class="series">
+    <thead><tr><th>year</th><th>vehicle</th><th>truck</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot>
+      <tr><td>mean</td><td>${cell(leg.vehicle_mean)}</td><td>${cell(leg.truck_mean)}</td><td></td></tr>
+      <tr><td>median</td><td>${cell(leg.vehicle_median)}</td><td>${cell(leg.truck_median)}</td><td></td></tr>
+      <tr><td>sd</td><td>${cell(leg.vehicle_sd)}${pct(leg.vehicle_sd, leg.vehicle_mean)}</td>
+          <td>${cell(leg.truck_sd)}${pct(leg.truck_sd, leg.truck_mean)}</td><td></td></tr>
+    </tfoot>
+  </table>` + (seen.length
+    ? `<div class="spike">${seen.map((f) =>
+        `${FLAG_MARK[f] || "!"} ${FLAG_TEXT[f] || f}`).join("<br>")}
+       <br><i>flagged at source, nothing altered &mdash; the summary rows include
+       these values</i></div>`
+    : "");
+}
+
+/* Quality flags come from standardize.py, which marks suspect published rows
+   and changes nothing. The distinction that matters: one year unlike both its
+   neighbours is probably a typo, whereas a change that persists is a re-based
+   estimate or something real. */
+const FLAG_MARK = {
+  single_year_outlier: "\u25b2",
+  level_shift: "\u2933",
+  percent_disagrees: "%",
+  truck_exceeds_vehicle: "\u2718",
+  zero_trucks_with_percent: "0",
+  duplicate_row: "\u29c9",
+};
+const FLAG_TEXT = {
+  single_year_outlier: "one year unlike both neighbours \u2014 likely a source typo",
+  level_shift: "the level changes here and holds \u2014 re-based estimate or a real change",
+  percent_disagrees: "published truck % disagrees with truck \u00f7 vehicle",
+  truck_exceeds_vehicle: "more trucks than vehicles \u2014 impossible as published",
+  zero_trucks_with_percent: "zero trucks but a non-zero truck %",
+  duplicate_row: "the same row appears twice in the source workbook",
+};
+
+const GAUGE_CLASS = { 1: "freeway", 2: "freeway", 8: "freeway", 10: "freeway",
+                      3: "arterial", 7: "arterial", 4: "collector", 5: "ramp" };
+
+/* Read a ratio against the baseline for its own facility class, never against
+   1.00. Modelled volume sits near 0.76 of counted AADT on freeways, so judging
+   against 1.00 would call a correct cross-section low and hide a real
+   doubling. On rural collectors the model barely loads the road and the gauge
+   says nothing, which is worth stating rather than leaving to be inferred. */
+function readRatio(ratio, keys) {
+  if (!isFinite(ratio) || ratio <= 0) return "";
+  const kinds = [...new Set(keys.map((k) => GAUGE_CLASS[(BYKEY[k] || {}).ft]))];
+  const kind = kinds.length === 1 ? kinds[0] : "mixed";
+  const base = (DATA.gauge || {})[kind];
+  if (!base) return "";
+  const span = `${base.median.toFixed(2)}\u00d7 (${base.low.toFixed(2)}\u2013${
+    base.high.toFixed(2)}, n=${base.n})`;
+  if (kind === "collector") {
+    return `<br><i>the model barely loads rural collectors \u2014 typical ${span},
+            so this ratio carries little information</i>`;
+  }
+  const relative = ratio / base.median;
+  if (relative > 1.6 && relative < 2.6) {
+    return `<br><i>about double the usual \u2014 the count may cover one carriageway
+            while both are selected. Typical here ${span}</i>`;
+  }
+  if (relative > 0.35 && relative < 0.65) {
+    return `<br><i>about half the usual \u2014 the count may cover both directions
+            while only one is selected. Typical here ${span}</i>`;
+  }
+  if (relative >= 2.6 || relative <= 0.35) {
+    return `<br><i>far from usual \u2014 check the selection. Typical here ${span}</i>`;
+  }
+  return `<br><span class="okgauge">in line with typical ${span}</span>`;
+}
+
+const FT_NAME = { 1: "connector", 2: "freeway", 3: "expressway", 4: "collector",
+                  5: "ramp", 6: "centroid", 7: "arterial", 8: "managed fwy", 10: "toll" };
+
+/* ---- link index: key "A-B" -> geometry + attributes, for lookups and saving */
+const LINKS = [];
+const BYKEY = {};
+for (let i = 0; i < NET.a.length; i++) {
+  const link = {
+    key: NET.ia[i] + "-" + NET.ib[i],
+    ax: NET.x[NET.a[i]], ay: NET.y[NET.a[i]],
+    bx: NET.x[NET.b[i]], by: NET.y[NET.b[i]],
+    ft: NET.ft[i], lanes: NET.lanes[i], route: NET.route[i],
+    dir: NET.dir ? NET.dir[i] : "",
+    vol: NET.vol ? NET.vol[i] : null,
+    trk: NET.trk ? NET.trk[i] : null,
+  };
+  LINKS.push(link);
+  BYKEY[link.key] = link;
+}
+const BOUNDS = (() => {
+  const minx = Math.min(...NET.x), maxx = Math.max(...NET.x);
+  const miny = Math.min(...NET.y), maxy = Math.max(...NET.y);
+  return { cx: (minx + maxx) / 2, cy: (miny + maxy) / 2,
+           span: Math.max(maxx - minx, maxy - miny) / 2 };
+})();
+
+/* ---- state. Nothing writes anywhere except an explicit Save. */
+const S = {
+  sel: -1, leg: null, view: "todo", sat: false,
+  pass: null,           // locations surviving the Data filters, or null for all
+  cx: BOUNDS.cx, cy: BOUNDS.cy, span: BOUNDS.span,
+  pending: {},          // leg -> array of link keys, for the open location only
+  dirty: false,
+  saved: { picks: {}, decisions: {} },
+  backend: "browser",
+};
+const locId = (l) => l.location.id;
+const isSaved = (l) => !!S.saved.decisions[locId(l)];
+// Never matched: the model has no such route, or its corridor is far away.
+const isDropped = (l) => l.status === "off_network" || l.status === "no_model_route";
+// Worth a human: flagged or unmatched and not yet saved. Dropped ones are shown
+// and remain assignable, but are not queued -- most are outside the region.
+const isTodo = (l) => !isSaved(l) && !isDropped(l) && l.status !== "confident";
+
+/* ---- persistence: GET on load; POST only when the user presses Save */
+const API = "./api/decisions";
+const LSKEY = "truck-crosswalk-review";
+function setPill(kind, text) {
+  const pill = el("saveState");
+  pill.className = "pill " + kind;
+  pill.textContent = text;
+}
+async function loadSaved() {
+  try {
+    const response = await fetch(API, { cache: "no-store" });
+    if (response.ok) {
+      const body = await response.json();
+      S.saved.picks = body.picks || {};
+      S.saved.decisions = body.decisions || {};
+      S.backend = "disk";
+      setPill("disk", "saves to " + (body.path || "disk"));
+      el("export").hidden = true;   // decisions save to disk; nothing to export
+      return;
+    }
+  } catch (e) { /* not served locally */ }
+  try {
+    const body = JSON.parse(localStorage.getItem(LSKEY) || "{}");
+    S.saved.picks = body.picks || {};
+    S.saved.decisions = body.decisions || {};
+  } catch (e) { /* first run */ }
+  setPill("browser", "browser only — use Export");
+}
+async function persist() {
+  const body = JSON.stringify({ picks: S.saved.picks, decisions: S.saved.decisions });
+  if (S.backend === "disk") {
+    try {
+      const response = await fetch(API, { method: "POST",
+        headers: { "Content-Type": "application/json" }, body });
+      if (!response.ok) throw new Error(response.statusText);
+      setPill("disk", "saved " + new Date().toLocaleTimeString());
+      return;
+    } catch (e) { setPill("browser", "save failed — use Export"); }
+  }
+  try { localStorage.setItem(LSKEY, body); } catch (e) { /* view-only */ }
+}
+el("export").onclick = () => {
+  const blob = new Blob([JSON.stringify(
+    { picks: S.saved.picks, decisions: S.saved.decisions }, null, 2)],
+    { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "decisions.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/* ---- header: the funnel in one line, the full story on hover */
+function drawFunnel() {
+  const todo = LOCS.filter(isTodo).length;
+  const dropped = LOCS.filter(isDropped).length;
+  const saved = LOCS.filter(isSaved).length;
+  const stages = (DATA.coverage || []).filter((s) => s.unit === "locations");
+  const chain = stages
+    .map((s) => `${s.kept.toLocaleString()} ${s.stage}`)
+    .join("  \u2192  ");
+  el("funnel").innerHTML =
+    (chain ? `<span class="chain">${chain}</span>` : "") +
+    `<span class="tally">${todo} unresolved &middot; ${saved} saved &middot; ` +
+    `${dropped} never matched</span>`;
+}
+
+/* ---- list: every location; the stripe says where it stands */
+const DROP_LABEL = {
+  off_network: "too far from its route",
+  no_model_route: "route not in the model",
+};
+
+function rowClass(l) {
+  if (isSaved(l)) return "saved";
+  if (isTodo(l)) return "todo";
+  if (isDropped(l)) return "dropped";
+  return "auto";
+}
+
+function listOrder() {
+  const keep = { todo: isTodo, dropped: isDropped, all: () => true }[S.view];
+  const wanted = LOCS.map((_, i) => i).filter((i) => keep(LOCS[i]));
+  const rank = (l) => isTodo(l) ? 0 : isSaved(l) ? 1 : isDropped(l) ? 3 : 2;
+  return wanted.sort((a, b) => {
+    const d = rank(LOCS[a]) - rank(LOCS[b]);
+    if (d) return d;
+    const A = LOCS[a].location, B = LOCS[b].location;
+    return A.route - B.route || A.county.localeCompare(B.county) || A.postmile - B.postmile;
+  });
+}
+
+function drawList() {
+  const order = listOrder();
+  el("listCount").textContent = `${order.length} of ${LOCS.length}`;
+  el("list").innerHTML = order.map((i) => {
+    const l = LOCS[i];
+    const why = isDropped(l) ? DROP_LABEL[l.status] : (l.location.description || "—");
+    return `<button class="row ${rowClass(l)}" data-i="${i}" aria-current="${i === S.sel}">
+      <span class="bar"></span>
+      <span class="body">
+        <span class="who">${l.location.route} · ${l.location.county} · ${l.location.postmile_raw}</span><br>
+        <span class="desc">${why}</span>
+      </span>
+    </button>`;
+  }).join("");
+  for (const b of el("list").querySelectorAll(".row")) {
+    b.onclick = () => select(+b.dataset.i);
+  }
+  const current = el("list").querySelector('[aria-current="true"]');
+  if (current) current.scrollIntoView({ block: "nearest" });
+}
+
+/* ---- selection & pending edits */
+function select(i) {
+  if (S.dirty && !confirm("Discard unsaved changes on this location?")) return;
+  S.sel = i;
+  const loc = LOCS[i];
+  const legs = Object.keys(loc.legs).sort();
+  S.leg = legs[0];
+  S.pending = {};
+  const saved = S.saved.picks[locId(loc)] || {};
+  for (const leg of legs) {
+    S.pending[leg] = (saved[leg] || loc.assigned[leg] || []).slice();
+  }
+  S.dirty = false;
+  S.cx = loc.location.x;
+  S.cy = loc.location.y;
+  S.span = Math.min(S.span, 700);
+  el("cNote").value = (S.saved.decisions[locId(loc)] || {}).note || "";
+  drawList(); drawCard(); draw(); syncPanes();
+}
+
+function drawCard() {
+  const loc = LOCS[S.sel];
+  const card = el("card");
+  if (!loc) { card.className = "card"; return; }
+  card.className = "card open";
+  el("cTitle").textContent = `Rte ${loc.location.route} — ${loc.location.description || ""}`;
+  el("cSub").textContent = `${loc.location.county} PM ${loc.location.postmile_raw}` +
+    (isDropped(loc) ? ` · ${DROP_LABEL[loc.status]}` : "") +
+    (loc.reasons.length ? ` · ${loc.reasons.map((r) => r.split("(")[0]).join(", ")}` : "");
+  // Notes describe the match; they are not asking for a decision.
+  el("cNotes").textContent = (loc.notes || [])
+    .map((note) => NOTE_TEXT[note] || note).join(" · ");
+  el("cLegs").innerHTML = Object.keys(loc.legs).sort().map((leg) => {
+    const c = loc.legs[leg];
+    return `<button data-leg="${leg}" aria-pressed="${leg === S.leg}">
+      ${leg} · veh ${fmt(c.vehicle_mean)}</button>`;
+  }).join("");
+  const leg = loc.legs[S.leg] || {};
+  el("cYears").innerHTML = seriesTable(leg);
+  for (const b of el("cLegs").children) {
+    b.onclick = () => {
+      S.leg = b.dataset.leg;
+      drawCard(); draw();
+      if (!el("tab-series").hidden) drawSeries();
+    };
+  }
+  const picks = S.pending[S.leg] || [];
+  const modelledVeh = picks.reduce((sum, k) => sum + ((BYKEY[k] || {}).vol || 0), 0);
+  const modelledTrk = picks.reduce((sum, k) => sum + ((BYKEY[k] || {}).trk || 0), 0);
+  const countedVeh = leg.vehicle_median;
+  const countedTrk = leg.truck_median;
+  const anyZero = picks.some((k) => (BYKEY[k] || {}).vol === 0);
+  const DIRNAME = { N: "NB", S: "SB", E: "EB", W: "WB" };
+  el("cPicked").innerHTML = picks.length
+    ? `<div class="linksHead">selected links &mdash; model, one direction each,
+         vehicles/day</div>
+      <table class="linksTable">
+      <thead><tr><th>dir</th><th>link id</th><th>lanes</th><th>trucks 4ax+</th>
+        <th class="dim">all veh</th></tr></thead>
+      <tbody>` +
+      picks.map((k) => {
+        const link = BYKEY[k];
+        if (!link) return `<tr data-key="${k}" title="click to unselect">
+          <td></td><td>${k}</td><td colspan="3">not in network</td></tr>`;
+        return `<tr data-key="${k}" title="click to unselect">
+          <td>${DIRNAME[link.dir] || "\u2014"}</td><td>${k}</td>
+          <td>${link.lanes}</td><td><b>${fmt(link.trk)}</b></td>
+          <td class="dim">${fmt(link.vol)}</td></tr>`;
+      }).join("") +
+      `<tr class="sumRow"><td colspan="2">sum (${picks.length} link${
+         picks.length > 1 ? "s" : ""})</td><td></td>
+        <td><b>${fmt(modelledTrk)}</b></td><td class="dim">${fmt(modelledVeh)}</td></tr>
+      </tbody></table>` +
+      (countedVeh
+        ? `<div class="compare">vs count (median):
+            trucks ${fmt(Math.round(countedTrk))} \u2192 <b>${
+              (modelledTrk / countedTrk).toFixed(2)}\u00d7</b>
+            &nbsp;<span class="dim">veh ${fmt(Math.round(countedVeh))} \u2192 ${
+              (modelledVeh / countedVeh).toFixed(2)}\u00d7</span>` +
+          (anyZero
+            ? `<br><i>a selected link carries no modelled volume \u2014 the ratio is
+               not meaningful here</i>`
+            : readRatio(modelledVeh / countedVeh, picks)) + `</div>`
+        : "")
+    : `leg ${S.leg}: no links selected`;
+  for (const row of el("cPicked").querySelectorAll("tr[data-key]")) {
+    row.onclick = () => toggleLink(row.dataset.key);
+  }
+  el("cDirty").textContent = S.dirty ? "unsaved changes" : "";
+  el("cSave").disabled = !S.dirty && isSaved(loc);
+  el("sat").href =
+    `https://www.google.com/maps/@${loc.location.latitude},${loc.location.longitude},17z/data=!3m1!1e3`;
+}
+
+function toggleLink(key) {
+  if (S.sel < 0) return;
+  const picks = S.pending[S.leg];
+  const at = picks.indexOf(key);
+  if (at >= 0) picks.splice(at, 1); else picks.push(key);
+  S.dirty = true;
+  drawCard(); draw();
+}
+
+el("cSave").onclick = () => {
+  const loc = LOCS[S.sel];
+  if (!loc) return;
+  const id = locId(loc);
+  S.saved.picks[id] = {};
+  let edited = false;
+  for (const leg of Object.keys(S.pending)) {
+    S.saved.picks[id][leg] = S.pending[leg].slice();
+    const auto = (loc.assigned[leg] || []).slice().sort().join(" ");
+    if (S.pending[leg].slice().sort().join(" ") !== auto) edited = true;
+  }
+  S.saved.decisions[id] = { verdict: edited ? "edited" : "accept", note: el("cNote").value };
+  S.dirty = false;
+  persist();
+  drawFunnel(); drawList(); drawCard(); draw();
+};
+el("cRevert").onclick = () => {
+  // Un-decide: throw out the saved decision and picks so the location returns
+  // to the matcher's suggestion and the review queue.
+  const loc = LOCS[S.sel];
+  if (!loc) return;
+  const id = locId(loc);
+  delete S.saved.picks[id];
+  delete S.saved.decisions[id];
+  S.dirty = false;
+  persist();
+  drawFunnel();
+  select(S.sel);
+};
+el("cNoMatch").onclick = () => {
+  const loc = LOCS[S.sel];
+  if (!loc) return;
+  const id = locId(loc);
+  S.saved.picks[id] = {};
+  for (const leg of Object.keys(loc.legs)) S.saved.picks[id][leg] = [];
+  S.saved.decisions[id] = { verdict: "reject", note: el("cNote").value };
+  S.dirty = false;
+  persist();
+  drawFunnel(); drawList(); drawCard(); draw();
+};
+
+/* ---- map: canvas network below, SVG dots and selection above */
+function view() {
+  const area = el("maparea");
+  const w = area.clientWidth || 800, h = area.clientHeight || 500;
+  const scale = (Math.min(w, h) / 2 - 20) / S.span;
+  return { w, h, scale,
+    X: (mx) => w / 2 + (mx - S.cx) * scale,
+    Y: (my) => h / 2 - (my - S.cy) * scale,
+    invX: (px) => (px - w / 2) / scale + S.cx,
+    invY: (py) => (h / 2 - py) / scale + S.cy };
+}
+
+/* ---- satellite underlay: Esri World Imagery tiles reprojected onto the UTM canvas.
+   GRS80 transverse-Mercator forward/inverse for UTM zone 10N (EPSG:26910);
+   NAD83 vs WGS84 is centimetres, far below a 256px tile. */
+const TM = (() => {
+  const a = 6378137, f = 1 / 298.257222101, k0 = 0.9996;
+  const e2 = f * (2 - f), ep2 = e2 / (1 - e2), lon0 = -123 * Math.PI / 180;
+  const mCoef = 1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 ** 3 / 256;
+  function toLL(x, y) {
+    const M = y / k0, mu = M / (a * mCoef);
+    const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+    const phi1 = mu + (3 * e1 / 2 - 27 * e1 ** 3 / 32) * Math.sin(2 * mu)
+      + (21 * e1 * e1 / 16 - 55 * e1 ** 4 / 32) * Math.sin(4 * mu)
+      + (151 * e1 ** 3 / 96) * Math.sin(6 * mu);
+    const sp = Math.sin(phi1), cp = Math.cos(phi1), tp = Math.tan(phi1);
+    const C1 = ep2 * cp * cp, T1 = tp * tp;
+    const N1 = a / Math.sqrt(1 - e2 * sp * sp), R1 = N1 * (1 - e2) / (1 - e2 * sp * sp);
+    const D = (x - 500000) / (N1 * k0);
+    const lat = phi1 - (N1 * tp / R1) * (D * D / 2
+      - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * D ** 4 / 24
+      + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * D ** 6 / 720);
+    const lon = lon0 + (D - (1 + 2 * T1 + C1) * D ** 3 / 6
+      + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * D ** 5 / 120) / cp;
+    return [lat * 180 / Math.PI, lon * 180 / Math.PI];
+  }
+  function toUTM(lat, lon) {
+    const rl = lat * Math.PI / 180, sp = Math.sin(rl), cp = Math.cos(rl), tp = Math.tan(rl);
+    const N = a / Math.sqrt(1 - e2 * sp * sp), T = tp * tp, C = ep2 * cp * cp;
+    const A = cp * (lon * Math.PI / 180 - lon0);
+    const M = a * (mCoef * rl
+      - (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * e2 ** 3 / 1024) * Math.sin(2 * rl)
+      + (15 * e2 * e2 / 256 + 45 * e2 ** 3 / 1024) * Math.sin(4 * rl)
+      - (35 * e2 ** 3 / 3072) * Math.sin(6 * rl));
+    const x = k0 * N * (A + (1 - T + C) * A ** 3 / 6
+      + (5 - 18 * T + T * T + 72 * C - 58 * ep2) * A ** 5 / 120) + 500000;
+    const y = k0 * (M + N * tp * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A ** 4 / 24
+      + (61 - 58 * T + T * T + 600 * C - 330 * ep2) * A ** 6 / 720));
+    return [x, y];
+  }
+  return { toLL, toUTM };
+})();
+
+const TILES = new Map();   // "z/y/x" -> Image (or null while loading)
+function tileImage(z, ty, tx) {
+  const key = `${z}/${ty}/${tx}`;
+  if (TILES.has(key)) return TILES.get(key);
+  if (TILES.size > 400) TILES.clear();
+  const img = new Image();
+  img.crossOrigin = "anonymous";   // keeps the canvas exportable as PNG
+  img.onload = () => { TILES.set(key, img); draw(); };
+  img.onerror = () => TILES.set(key, null);
+  img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`;
+  TILES.set(key, null);
+  return null;
+}
+function tileNW(z, tx, ty) {   // NW corner of a WebMercator tile, degrees
+  const n = 2 ** z;
+  const lon = tx / n * 360 - 180;
+  const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * ty / n))) * 180 / Math.PI;
+  return [lat, lon];
+}
+
+function drawImagery(ctx, w, h, scale, X, Y, invX, invY, ratio) {
+  // Pick the zoom whose ground resolution best matches the screen.
+  const z = Math.max(3, Math.min(19,
+    Math.round(Math.log2(156543.03 * Math.cos(37.7 * Math.PI / 180) * scale))));
+  const n = 2 ** z;
+  const toTile = (lat, lon) => [
+    (lon + 180) / 360 * n,
+    (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n,
+  ];
+  // Visible tile range from the four view corners.
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const [px, py] of [[0, 0], [w, 0], [0, h], [w, h]]) {
+    const [lat, lon] = TM.toLL(invX(px), invY(py));
+    const [tx, ty] = toTile(lat, lon);
+    x0 = Math.min(x0, tx); x1 = Math.max(x1, tx);
+    y0 = Math.min(y0, ty); y1 = Math.max(y1, ty);
+  }
+  if ((x1 - x0 + 1) * (y1 - y0 + 1) > 80) return;   // zoomed way out; skip
+  for (let ty = Math.floor(y0); ty <= Math.floor(y1); ty++) {
+    for (let tx = Math.floor(x0); tx <= Math.floor(x1); tx++) {
+      const img = tileImage(z, ty, tx);
+      if (!img) continue;
+      // Affine from tile pixels to screen via three reprojected corners.
+      const c = (dx, dy) => {
+        const [lat, lon] = tileNW(z, tx + dx, ty + dy);
+        const [ux, uy] = TM.toUTM(lat, lon);
+        return [X(ux), Y(uy)];
+      };
+      const [nw, ne, sw] = [c(0, 0), c(1, 0), c(0, 1)];
+      ctx.globalAlpha = 0.45;
+      ctx.setTransform(
+        ratio * (ne[0] - nw[0]) / 256, ratio * (ne[1] - nw[1]) / 256,
+        ratio * (sw[0] - nw[0]) / 256, ratio * (sw[1] - nw[1]) / 256,
+        ratio * nw[0], ratio * nw[1]);
+      ctx.drawImage(img, 0, 0);
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+
+function drawBase() {
+  const canvas = el("base");
+  const { w, h, scale, X, Y, invX, invY } = view();
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = w * ratio;
+  canvas.height = h * ratio;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (S.sat) drawImagery(ctx, w, h, scale, X, Y, invX, invY, ratio);
+  const css = getComputedStyle(document.documentElement);
+  const colour = { fwy: css.getPropertyValue("--ctx-fwy").trim(),
+                   art: css.getPropertyValue("--ctx-art").trim(),
+                   minor: css.getPropertyValue("--ctx").trim() };
+  const cls = (ft) => (ft === 2 || ft === 8 || ft === 10) ? "fwy"
+                    : (ft === 3 || ft === 7) ? "art" : "minor";
+  const detail = scale > 0.004;   // drop the minor grid when zoomed far out
+  ctx.lineCap = "round";
+  ctx.globalAlpha = 0.8;
+  for (const layer of ["minor", "art", "fwy"]) {
+    if (layer === "minor" && !detail) continue;
+    ctx.strokeStyle = colour[layer];
+    ctx.lineWidth = layer === "fwy" ? 2.6 : layer === "art" ? 1.5 : 1;
+    ctx.beginPath();
+    for (const l of LINKS) {
+      if (cls(l.ft) !== layer) continue;
+      const ax = X(l.ax), ay = Y(l.ay), bx = X(l.bx), by = Y(l.by);
+      if ((ax < -60 && bx < -60) || (ax > w + 60 && bx > w + 60)) continue;
+      if ((ay < -60 && by < -60) || (ay > h + 60 && by > h + 60)) continue;
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function draw() {
+  drawBase();
+  const { w, h, X, Y } = view();
+  const parts = [];
+  const loc = LOCS[S.sel];
+
+  if (loc) {
+    // other legs' picks, faded, so the full cross-section stays visible
+    for (const [leg, picks] of Object.entries(S.pending)) {
+      if (leg === S.leg) continue;
+      for (const key of picks) {
+        const l = BYKEY[key];
+        if (!l) continue;
+        parts.push(`<line x1="${X(l.ax)}" y1="${Y(l.ay)}" x2="${X(l.bx)}" y2="${Y(l.by)}"
+          stroke="var(--accent)" stroke-width="3" opacity=".25" stroke-linecap="round"/>`);
+      }
+    }
+    // the matcher's unchosen suggestions, dotted, one click away
+    for (const c of loc.candidates) {
+      if ((S.pending[S.leg] || []).includes(c.link)) continue;
+      const [[ax, ay], [bx, by]] = c.geometry;
+      parts.push(`<line x1="${X(ax)}" y1="${Y(ay)}" x2="${X(bx)}" y2="${Y(by)}"
+        stroke="var(--accent)" stroke-width="2" stroke-dasharray="3 5" opacity=".7"
+        stroke-linecap="round"><title>suggested: ${c.link}</title></line>`);
+    }
+    // the active leg's current selection
+    for (const key of (S.pending[S.leg] || [])) {
+      const l = BYKEY[key];
+      if (!l) continue;
+      parts.push(`<line x1="${X(l.ax)}" y1="${Y(l.ay)}" x2="${X(l.bx)}" y2="${Y(l.by)}"
+        stroke="var(--accent)" stroke-width="10" opacity=".2" stroke-linecap="round"/>`);
+      parts.push(`<line x1="${X(l.ax)}" y1="${Y(l.ay)}" x2="${X(l.bx)}" y2="${Y(l.by)}"
+        stroke="var(--accent)" stroke-width="3.6" stroke-linecap="round"
+        ><title>${key} · ${FT_NAME[l.ft] || l.ft} · ${l.lanes} ln</title></line>`);
+    }
+    // direction of increasing postmile
+    if (loc.axis_bearing != null) {
+      const rad = loc.axis_bearing * Math.PI / 180, len = 42;
+      const cx = X(loc.location.x), cy = Y(loc.location.y);
+      parts.push(`<line x1="${cx}" y1="${cy}" x2="${cx + Math.sin(rad) * len}"
+        y2="${cy - Math.cos(rad) * len}" stroke="var(--accent)" stroke-width="1.5" opacity=".8"/>`);
+      parts.push(`<text x="${cx + Math.sin(rad) * (len + 11)}" y="${cy - Math.cos(rad) * (len + 11)}"
+        text-anchor="middle" font-size="9.5" fill="var(--accent)"
+        font-family="var(--mono)">+PM</text>`);
+    }
+  }
+
+  // every count location as a dot: orange = unresolved, green = saved, grey = confident
+  LOCS.forEach((l, i) => {
+    const px = X(l.location.x), py = Y(l.location.y);
+    if (px < -20 || px > w + 20 || py < -20 || py > h + 20) return;
+    const fill = isSaved(l) ? "var(--ok)" : isTodo(l) ? "var(--todo)"
+               : isDropped(l) ? "var(--muted)" : "var(--ok)";
+    const r = i === S.sel ? 7 : isDropped(l) ? 3.5 : 4.5;
+    // Filtered out by the Data tab: still drawn, but faint.
+    const alpha = !passes(i) ? 0.05 : isDropped(l) ? 0.5 : 1;
+    parts.push(`<circle class="dot" data-i="${i}" cx="${px}" cy="${py}" r="${r}"
+      fill="${fill}" stroke="var(--surface)" stroke-width="1.6" style="cursor:pointer"
+      opacity="${alpha}"><title>${l.location.route} ${l.location.county} ${
+        l.location.postmile_raw}${isDropped(l) ? " — " + DROP_LABEL[l.status] : ""}</title></circle>`);
+  });
+
+  el("overlay").innerHTML = parts.join("");
+}
+
+/* Which count dot is under the pointer, in screen space. Dots win over links:
+   they are small deliberate targets, and jumping to a location is the more
+   common intent than editing one. */
+function dotAt(clientX, clientY, tolerance) {
+  const rect = overlay.getBoundingClientRect();
+  const px = clientX - rect.left, py = clientY - rect.top;
+  const { X, Y } = view();
+  let best = -1, bestD = tolerance;
+  LOCS.forEach((l, i) => {
+    const d = Math.hypot(X(l.location.x) - px, Y(l.location.y) - py);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+/* ---- clicking near any link toggles it for the active leg */
+function nearestLink(mx, my, tolerance) {
+  let best = null, bestD = tolerance;
+  for (const l of LINKS) {
+    const vx = l.bx - l.ax, vy = l.by - l.ay;
+    const s2 = vx * vx + vy * vy;
+    const t = s2 ? Math.max(0, Math.min(1, ((mx - l.ax) * vx + (my - l.ay) * vy) / s2)) : 0;
+    const d = Math.hypot(l.ax + t * vx - mx, l.ay + t * vy - my);
+    if (d < bestD) { bestD = d; best = l; }
+  }
+  return best;
+}
+
+/* Hover anything on the map and say what it is, so a count on Route 123 can be
+   matched against a link that says Route 123. Throttled to one frame because
+   the search walks every link. */
+let hoverPending = false;
+function showTip(clientX, clientY) {
+  const rect = overlay.getBoundingClientRect();
+  const tip = el("tip");
+  let text = "";
+
+  const hit = dotAt(clientX, clientY, 11);
+  if (hit >= 0) {
+    const l = LOCS[hit];
+    const place = l.location;
+    text = `Rte ${place.route} · ${place.county} PM ${place.postmile_raw}` +
+      (place.description ? ` · ${place.description}` : "") +
+      (isDropped(l) ? ` · ${DROP_LABEL[l.status]}` : "") + "  — click to review";
+    overlay.style.cursor = "pointer";
+  } else {
+    overlay.style.cursor = "";
+    const { invX, invY, scale } = view();
+    const link = nearestLink(invX(clientX - rect.left), invY(clientY - rect.top), 14 / scale);
+    if (link) {
+      const route = link.route ? `Route ${link.route}` : "unnumbered";
+      const dir = { N: " NB", S: " SB", E: " EB", W: " WB" }[link.dir] || "";
+      text = `${route}${dir} · ${FT_NAME[link.ft] || "ft " + link.ft} · ` +
+        `${link.lanes} ln · trucks ${fmt(link.trk)}/day · veh ${fmt(link.vol)}/day · ${link.key}`;
+    }
+  }
+
+  if (!text) { tip.style.display = "none"; return; }
+  tip.textContent = text;
+  tip.style.display = "block";
+  tip.style.left = Math.min(clientX - rect.left + 14, rect.width - 260) + "px";
+  tip.style.top = (clientY - rect.top + 14) + "px";
+}
+
+let drag = null, moved = false;
+const overlay = el("overlay");
+overlay.addEventListener("mousemove", (e) => {
+  if (drag || hoverPending) return;
+  hoverPending = true;
+  requestAnimationFrame(() => { hoverPending = false; showTip(e.clientX, e.clientY); });
+});
+overlay.addEventListener("mouseleave", () => {
+  el("tip").style.display = "none";
+  overlay.style.cursor = "";
+});
+/* Shift-drag: rubber-band select. Adds every link crossing the box to the
+   current leg's picks -- the way to grab links that overlap exactly. */
+let box = null;
+function segmentInBox(l, x0, x1, y0, y1) {
+  const inside = (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+  if (inside(l.ax, l.ay) || inside(l.bx, l.by)) return true;
+  const cross = (px, py, qx, qy, rx, ry, sx, sy) => {
+    const d = (qx - px) * (sy - ry) - (qy - py) * (sx - rx);
+    if (!d) return false;
+    const t = ((rx - px) * (sy - ry) - (ry - py) * (sx - rx)) / d;
+    const u = ((rx - px) * (qy - py) - (ry - py) * (qx - px)) / d;
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+  };
+  return cross(l.ax, l.ay, l.bx, l.by, x0, y0, x1, y0)
+      || cross(l.ax, l.ay, l.bx, l.by, x0, y1, x1, y1)
+      || cross(l.ax, l.ay, l.bx, l.by, x0, y0, x0, y1)
+      || cross(l.ax, l.ay, l.bx, l.by, x1, y0, x1, y1);
+}
+overlay.addEventListener("pointerdown", (e) => {
+  if (e.shiftKey && S.sel >= 0) {
+    box = { px: e.clientX, py: e.clientY, qx: e.clientX, qy: e.clientY };
+    overlay.setPointerCapture(e.pointerId);
+    return;
+  }
+  drag = { px: e.clientX, py: e.clientY, cx: S.cx, cy: S.cy };
+  moved = false;
+  overlay.setPointerCapture(e.pointerId);
+});
+overlay.addEventListener("pointermove", (e) => {
+  if (box) {
+    box.qx = e.clientX; box.qy = e.clientY;
+    const rubber = el("rubber");
+    const rect = overlay.getBoundingClientRect();
+    rubber.hidden = false;
+    rubber.style.left = Math.min(box.px, box.qx) - rect.left + "px";
+    rubber.style.top = Math.min(box.py, box.qy) - rect.top + "px";
+    rubber.style.width = Math.abs(box.qx - box.px) + "px";
+    rubber.style.height = Math.abs(box.qy - box.py) + "px";
+    return;
+  }
+  if (!drag) return;
+  const dx = e.clientX - drag.px, dy = e.clientY - drag.py;
+  if (Math.abs(dx) + Math.abs(dy) > 4) moved = true;
+  const { scale } = view();
+  S.cx = drag.cx - dx / scale;
+  S.cy = drag.cy + dy / scale;
+  if (moved) draw();
+});
+overlay.addEventListener("pointerup", (e) => {
+  if (box) {
+    el("rubber").hidden = true;
+    const rect = overlay.getBoundingClientRect();
+    const { invX, invY } = view();
+    const xs = [invX(box.px - rect.left), invX(box.qx - rect.left)].sort((a, b) => a - b);
+    const ys = [invY(box.py - rect.top), invY(box.qy - rect.top)].sort((a, b) => a - b);
+    box = null;
+    const picks = S.pending[S.leg] || [];
+    let added = 0;
+    for (const l of LINKS) {
+      if (picks.includes(l.key)) continue;
+      if (segmentInBox(l, xs[0], xs[1], ys[0], ys[1])) { picks.push(l.key); added++; }
+    }
+    if (added) { S.dirty = true; drawCard(); draw(); }
+    return;
+  }
+  const wasDrag = moved;
+  drag = null;
+  if (wasDrag) return;
+  // A dot first: click one to jump straight to that location for review.
+  const hit = dotAt(e.clientX, e.clientY, 11);
+  if (hit >= 0) {
+    if (hit !== S.sel) select(hit);
+    return;
+  }
+  if (S.sel < 0) return;
+  const { invX, invY, scale } = view();
+  const rect = overlay.getBoundingClientRect();
+  const link = nearestLink(invX(e.clientX - rect.left), invY(e.clientY - rect.top), 14 / scale);
+  if (link) toggleLink(link.key);
+});
+overlay.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  S.span = Math.max(100, Math.min(BOUNDS.span, S.span * (e.deltaY > 0 ? 1.25 : 0.8)));
+  draw();
+}, { passive: false });
+el("zin").onclick = () => { S.span = Math.max(100, S.span / 1.5); draw(); };
+el("zout").onclick = () => { S.span = Math.min(BOUNDS.span, S.span * 1.5); draw(); };
+el("zregion").onclick = () => {
+  S.cx = BOUNDS.cx; S.cy = BOUNDS.cy; S.span = BOUNDS.span;
+  draw();
+};
+el("cFold").onclick = () => {
+  const folded = el("card").classList.toggle("folded");
+  el("cFold").textContent = folded ? "+" : "−";
+};
+el("imgy").onclick = () => {
+  S.sat = !S.sat;
+  el("imgy").setAttribute("aria-pressed", S.sat);
+  el("attr").hidden = !S.sat;
+  draw();
+};
+
+/* ---- tabs: Map (the reviewer), Data (the count CSV), Fit (count vs model) */
+const TABLE = DATA.table || null;
+const FIT = DATA.fit || [];
+function setTab(tab) {
+  for (const btn of document.querySelectorAll(".tabs button")) {
+    btn.setAttribute("aria-pressed", btn.dataset.tab === tab);
+  }
+  const split = tab === "split";
+  const main = document.querySelector("main");
+  main.classList.toggle("split", split);
+  if (!split) { main.style.gridTemplateColumns = ""; main.style.gridTemplateRows = ""; }
+  document.querySelector("nav").hidden = !(tab === "map" || split);
+  el("maparea").hidden = !(tab === "map" || split);
+  el("tab-data").hidden = !(tab === "data" || split);
+  el("tab-fit").hidden = !(tab === "fit" || split);
+  el("tab-series").hidden = !split;
+  applySplit();
+  if (tab === "data" || split) drawTable(true);
+  if (tab === "fit" || split) drawFit();
+  if (split) drawSeries();
+  if (tab === "map" || split) draw();
+}
+
+/* Cross-highlight the open location in every visible pane. */
+function syncPanes() {
+  for (const dot of el("fPlot").querySelectorAll("circle")) {
+    const on = +dot.dataset.loc === S.sel;
+    dot.setAttribute("stroke", on ? "var(--ink)" : "none");
+    dot.setAttribute("stroke-width", "2.5");
+    dot.setAttribute("opacity", on ? "1" : dot.dataset.base || ".55");
+  }
+  let first = null;
+  for (const tr of el("dTable").querySelectorAll("tr[data-loc]")) {
+    const on = +tr.dataset.loc === S.sel;
+    tr.classList.toggle("hl", on);
+    if (on && !first) first = tr;
+  }
+  if (first) first.scrollIntoView({ block: "nearest" });
+  if (!el("tab-series").hidden) drawSeries();
+}
+for (const btn of document.querySelectorAll(".tabs button")) {
+  btn.onclick = () => setTab(btn.dataset.tab);
+}
+
+/* ---- resizable split panes: three drag handles over the grid lines.
+   The grid is driven from these fractions, and the handles are repositioned
+   from the panes' own geometry so they stay put after a window resize. */
+const SPLIT = { queue: 220, mid: 0.5, row: 0.62 };
+function applySplit() {
+  const main = document.querySelector("main");
+  if (!main.classList.contains("split")) return;
+  const rest = main.clientWidth - SPLIT.queue;
+  main.style.gridTemplateColumns =
+    `${SPLIT.queue}px ${rest * SPLIT.mid}px minmax(0, 1fr)`;
+  main.style.gridTemplateRows =
+    `${main.clientHeight * SPLIT.row}px minmax(0, 1fr)`;
+  const box = main.getBoundingClientRect();
+  const place = (id, style) => Object.assign(el(id).style, style);
+  const rowY = main.clientHeight * SPLIT.row;
+  place("gripQueue", { left: `${SPLIT.queue - 4}px`, top: "0px", height: `${rowY}px` });
+  place("gripMid", {
+    left: `${SPLIT.queue + rest * SPLIT.mid - 4}px`, top: "0px", height: `${rowY}px`,
+  });
+  place("gripRow", { left: "0px", top: `${rowY - 4}px`, width: `${box.width}px` });
+}
+function dragGrip(id, apply) {
+  el(id).addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    el(id).setPointerCapture(e.pointerId);
+    const main = document.querySelector("main");
+    const move = (ev) => {
+      const box = main.getBoundingClientRect();
+      apply(ev.clientX - box.left, ev.clientY - box.top, main);
+      applySplit();
+      draw(); drawFit(); drawSeries();
+    };
+    const up = () => {
+      el(id).removeEventListener("pointermove", move);
+      el(id).removeEventListener("pointerup", up);
+    };
+    el(id).addEventListener("pointermove", move);
+    el(id).addEventListener("pointerup", up);
+  });
+}
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+dragGrip("gripQueue", (x, _y, main) => {
+  SPLIT.queue = clamp(x, 130, main.clientWidth * 0.4);
+});
+dragGrip("gripMid", (x, _y, main) => {
+  const rest = main.clientWidth - SPLIT.queue;
+  SPLIT.mid = clamp((x - SPLIT.queue) / rest, 0.15, 0.85);
+});
+dragGrip("gripRow", (_x, y, main) => {
+  SPLIT.row = clamp(y / main.clientHeight, 0.2, 0.85);
+});
+window.addEventListener("resize", applySplit);
+
+/* ---- Data tab: the standardized CSV, filterable and sortable */
+const DCOLS = [
+  { k: "year", label: "year" }, { k: "route", label: "route" },
+  { k: "county", label: "county" }, { k: "pm", label: "postmile" },
+  { k: "leg", label: "leg" }, { k: "desc", label: "description", text: true },
+  { k: "veh", label: "vehicles" }, { k: "trk", label: "trucks" },
+  { k: "ax2", label: "2ax" }, { k: "ax3", label: "3ax" },
+  { k: "ax4", label: "4ax" }, { k: "ax5", label: "5ax+" },
+  { k: "flags", label: "flags", text: true },
+];
+let dSort = { k: "year", dir: -1 };
+/* Any filter set means the map and plot dim whatever the table excludes;
+   with none set, S.pass stays null and everything draws at full strength. */
+function filtersActive() {
+  return !!(el("dRoute").value.trim() || el("dCounty").value.trim()
+    || el("dYearFrom").value.trim() || el("dYearTo").value.trim()
+    || el("dFlagged").checked || el("dMatched").checked);
+}
+function tableRows() {
+  const T = TABLE, total = T.year.length;
+  const route = el("dRoute").value.trim();
+  const county = el("dCounty").value.trim().toUpperCase();
+  const from = parseInt(el("dYearFrom").value.trim(), 10);
+  const to = parseInt(el("dYearTo").value.trim(), 10);
+  const rows = [];
+  for (let i = 0; i < total; i++) {
+    if (route && String(T.route[i]) !== route) continue;
+    if (county && !String(T.county[i]).toUpperCase().includes(county)) continue;
+    if (!isNaN(from) && T.year[i] < from) continue;
+    if (!isNaN(to) && T.year[i] > to) continue;
+    if (el("dFlagged").checked && !T.flags[i]) continue;
+    if (el("dMatched").checked && (T.loc[i] < 0
+      || !["confident", "review", "reviewed"].includes(LOCS[T.loc[i]].status))) continue;
+    rows.push(i);
+  }
+  const { k, dir } = dSort;
+  rows.sort((a, b) => {
+    const x = T[k][a], y = T[k][b];
+    return (x == null ? -1 : y == null ? 1 : x < y ? -1 : x > y ? 1 : 0) * dir;
+  });
+  return rows;
+}
+const passes = (i) => !S.pass || S.pass.has(i);
+function drawTable(quiet) {
+  if (!TABLE) return;
+  const T = TABLE, total = T.year.length;
+  const { k, dir } = dSort;
+  const rows = tableRows();
+  // Locations surviving the filter, so the other panes can dim the rest.
+  S.pass = filtersActive()
+    ? new Set(rows.map((i) => T.loc[i]).filter((v) => v >= 0)) : null;
+  if (!quiet) { draw(); drawFit(); if (!el("tab-series").hidden) drawSeries(); }
+  const shown = rows.slice(0, 1500);
+  el("dCount").textContent = `${rows.length.toLocaleString()} of ${total.toLocaleString()} rows`
+    + (rows.length > shown.length ? ` (first ${shown.length.toLocaleString()} shown)` : "");
+  el("dTable").innerHTML = "<thead><tr>" + DCOLS.map((c) =>
+      `<th class="${c.text ? "s0" : ""}" data-k="${c.k}">${c.label}${
+        k === c.k ? (dir > 0 ? " ↑" : " ↓") : ""}</th>`).join("")
+    + "</tr></thead><tbody>"
+    + shown.map((i) => `<tr data-loc="${T.loc[i]}">` + DCOLS.map((c) => {
+        const v = T[c.k][i];
+        return `<td class="${c.text ? "s0" : ""}${c.k === "flags" && v ? " flagged" : ""}">${
+          c.text ? (v || "") : fmt(v)}</td>`;
+      }).join("") + "</tr>").join("") + "</tbody>";
+  for (const th of el("dTable").querySelectorAll("th")) {
+    th.onclick = () => {
+      dSort = { k: th.dataset.k, dir: dSort.k === th.dataset.k ? -dSort.dir : 1 };
+      drawTable();
+    };
+  }
+  for (const tr of el("dTable").querySelectorAll("tr[data-loc]")) {
+    const at = +tr.dataset.loc;
+    if (at >= 0) {
+      tr.onclick = () => {
+        if (el("maparea").hidden) setTab("map");
+        select(at);
+      };
+    }
+  }
+  syncPanes();
+}
+for (const id of ["dRoute", "dCounty", "dYearFrom", "dYearTo"]) {
+  el(id).oninput = () => drawTable();
+}
+for (const id of ["dFlagged", "dMatched"]) el(id).onchange = () => drawTable();
+
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+el("dCsv").onclick = () => {
+  const T = TABLE;
+  const lines = [DCOLS.map((c) => c.label).join(",")];
+  for (const i of tableRows()) {
+    lines.push(DCOLS.map((c) => {
+      const v = T[c.k][i];
+      return c.text ? `"${String(v || "").replace(/"/g, '""')}"` : (v ?? "");
+    }).join(","));
+  }
+  download("truck_counts_filtered.csv", lines.join("\n"), "text/csv");
+};
+el("mPng").onclick = async () => {
+  // Compose the canvas basemap and the SVG overlay into one PNG.
+  const base = el("base");
+  const out = document.createElement("canvas");
+  out.width = base.width;
+  out.height = base.height;
+  const ctx = out.getContext("2d");
+  const style = getComputedStyle(document.documentElement);
+  ctx.fillStyle = style.getPropertyValue("--surface-2").trim() || "#fff";
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.drawImage(base, 0, 0);
+  let overlay = el("overlay").outerHTML.replace(/var\((--[a-z0-9-]+)\)/g,
+    (_, name) => style.getPropertyValue(name).trim() || "#888");
+  overlay = overlay.replace("<svg", `<svg xmlns="http://www.w3.org/2000/svg"
+    width="${out.width}" height="${out.height}"
+    viewBox="0 0 ${base.clientWidth} ${base.clientHeight}"`);
+  const img = new Image();
+  await new Promise((ok, fail) => {
+    img.onload = ok;
+    img.onerror = fail;
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(overlay);
+  });
+  ctx.drawImage(img, 0, 0);
+  out.toBlob((blob) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "map.png";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+};
+/* Standalone copy of a plot: CSS variables resolved to literal colours and an
+   explicit size, since nothing outside the page can supply either. */
+function plotSvg(id) {
+  const style = getComputedStyle(document.documentElement);
+  const svg = el(id);
+  const w = svg.clientWidth, h = svg.clientHeight;
+  return svg.outerHTML
+    .replace(/var\((--[a-z0-9-]+)\)/g,
+      (_, name) => style.getPropertyValue(name).trim() || "#888")
+    .replace("<svg", `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"
+      viewBox="0 0 ${w} ${h}"`);
+}
+async function plotPng(id, name) {
+  const style = getComputedStyle(document.documentElement);
+  const scale = 2;   // retina-ish, so the labels stay legible in a document
+  const w = el(id).clientWidth, h = el(id).clientHeight;
+  const canvas = document.createElement("canvas");
+  canvas.width = w * scale;
+  canvas.height = h * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = style.getPropertyValue("--surface").trim() || "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const img = new Image();
+  await new Promise((ok, fail) => {
+    img.onload = ok;
+    img.onerror = fail;
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(plotSvg(id));
+  });
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  canvas.toBlob((blob) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+}
+el("fSvg").onclick = () => download(`fit_${qVar}.svg`, plotSvg("fPlot"), "image/svg+xml");
+el("fPng").onclick = () => plotPng("fPlot", `fit_${qVar}.png`);
+el("sSvg").onclick = () =>
+  download(`series_${qVar}.svg`, plotSvg("sPlot"), "image/svg+xml");
+el("sPng").onclick = () => plotPng("sPlot", `series_${qVar}.png`);
+
+/* ---- Fit tab: count vs model with a no-intercept OLS line.
+   The trucks/vehicles choice is shared with the time series. */
+el("fTrk").onclick = () => { qVar = "trk"; drawFit(); drawSeries(); };
+el("fVeh").onclick = () => { qVar = "veh"; drawFit(); drawSeries(); };
+function median(values) {
+  const clean = values.filter((v) => v != null).sort((a, b) => a - b);
+  if (!clean.length) return null;
+  const mid = clean.length >> 1;
+  return clean.length % 2 ? clean[mid] : (clean[mid - 1] + clean[mid]) / 2;
+}
+function stdev(values) {
+  const clean = values.filter((v) => v != null);
+  if (clean.length < 2) return null;
+  const mean = clean.reduce((a, b) => a + b, 0) / clean.length;
+  return Math.sqrt(clean.reduce((a, b) => a + (b - mean) ** 2, 0) / (clean.length - 1));
+}
+let sLog = false;
+let qVar = "trk";   // which quantity both plots show: trucks or vehicles
+function niceStep(span) {
+  const raw = span / 5, mag = 10 ** Math.floor(Math.log10(raw));
+  return [1, 2, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+}
+function drawFit() {
+  el("fTrk").setAttribute("aria-pressed", qVar === "trk");
+  el("fVeh").setAttribute("aria-pressed", qVar === "veh");
+  el("fNote").textContent = qVar === "trk"
+    ? "x: Caltrans 4-axle + 5-axle+ median (2-way/day) · y: model large-truck volume on assigned links · click a point to open it"
+    : "x: Caltrans vehicle AADT median (2-way/day) · y: model total volume on assigned links · click a point to open it";
+  const pts = FIT.filter((p) => p["cx_" + qVar] > 0 && p["cy_" + qVar] > 0);
+  let sxy = 0, sxx = 0, syy = 0;
+  for (const p of pts) {
+    const x = p["cx_" + qVar], y = p["cy_" + qVar];
+    sxy += x * y; sxx += x * x; syy += y * y;
+  }
+  const slope = sxy / sxx;
+  let sse = 0;
+  for (const p of pts) sse += (p["cy_" + qVar] - slope * p["cx_" + qVar]) ** 2;
+  const r2 = 1 - sse / syy;   // uncentered, as fits a no-intercept model
+  el("fStats").textContent =
+    `slope ${slope.toFixed(2)} (through origin) · R² ${r2.toFixed(2)} · n=${pts.length}`;
+
+  const svg = el("fPlot");
+  const w = svg.clientWidth || 800, h = svg.clientHeight || 500;
+  const pad = { l: 76, r: 16, t: 16, b: 52 };
+  // Square plot, one shared scale on both axes: a 45-degree line means the
+  // model matches the count. Unequal axes would flatten the error away.
+  const side = Math.min(w - pad.l - pad.r, h - pad.t - pad.b);
+  const max = Math.max(
+    ...pts.map((p) => p["cx_" + qVar]),
+    ...pts.map((p) => p["cy_" + qVar])) * 1.05;
+  const px = (x) => pad.l + x / max * side;
+  const py = (y) => pad.t + side - y / max * side;
+  const parts = [];
+  const step = niceStep(max);
+  for (let v = 0; v <= max; v += step) {
+    parts.push(`<line x1="${px(v)}" y1="${py(0)}" x2="${px(v)}" y2="${py(max)}"
+      stroke="var(--line)" stroke-width="1"/>
+      <text x="${px(v)}" y="${py(0) + 15}" text-anchor="middle"
+        font-size="10" fill="var(--muted)">${fmt(v)}</text>
+      <line x1="${px(0)}" y1="${py(v)}" x2="${px(max)}" y2="${py(v)}"
+      stroke="var(--line)" stroke-width="1"/>
+      <text x="${px(0) - 6}" y="${py(v) + 3}" text-anchor="end"
+        font-size="10" fill="var(--muted)">${fmt(v)}</text>`);
+  }
+  const XLABEL = {
+    trk: "count: 4-axle + 5-axle+ trucks (2-way, per day)",
+    veh: "count: vehicle AADT (2-way, per day)",
+  };
+  const YLABEL = {
+    trk: "model: large trucks on assigned links (per day)",
+    veh: "model: total volume on assigned links (per day)",
+  };
+  parts.push(`<text x="${px(0) + side / 2}" y="${py(0) + 34}" text-anchor="middle"
+    font-size="11" fill="var(--ink)">${XLABEL[qVar]}</text>`);
+  parts.push(`<text x="${px(0) - 58}" y="${py(0) - side / 2}" text-anchor="middle"
+    font-size="11" fill="var(--ink)"
+    transform="rotate(-90 ${px(0) - 58} ${py(0) - side / 2})">${YLABEL[qVar]}</text>`);
+  parts.push(`<line x1="${px(0)}" y1="${py(0)}" x2="${px(max)}" y2="${py(max)}"
+    stroke="var(--muted)" stroke-width="1" stroke-dasharray="5 4" opacity=".5"/>`);
+  const fitEnd = Math.min(max, max / slope);
+  parts.push(`<line x1="${px(0)}" y1="${py(0)}" x2="${px(fitEnd)}" y2="${py(fitEnd * slope)}"
+    stroke="var(--accent)" stroke-width="1.6"/>`);
+  parts.push(`<text x="${px(max) - 4}" y="${pad.t + 12}" text-anchor="end"
+    font-size="10" fill="var(--muted)">dashed: y = x · solid: fit</text>`);
+  for (const p of pts) {
+    const loc = LOCS[p.loc];
+    const base = passes(p.loc) ? 0.55 : 0.04;
+    parts.push(`<circle cx="${px(p["cx_" + qVar])}" cy="${py(p["cy_" + qVar])}" r="4"
+      fill="var(--accent)" opacity="${base}" data-base="${base}" data-loc="${p.loc}">
+      <title>Rte ${loc.location.route} · ${loc.location.county} PM ${
+        loc.location.postmile_raw} · leg ${p.leg}
+count ${fmt(Math.round(p["cx_" + qVar]))} · model ${fmt(Math.round(p["cy_" + qVar]))} (${
+        (p["cy_" + qVar] / p["cx_" + qVar]).toFixed(2)}×)</title></circle>`);
+  }
+  svg.innerHTML = parts.join("");
+  for (const dot of svg.querySelectorAll("circle")) {
+    dot.onclick = (e) => {
+      e.stopPropagation();   // otherwise the background clears the selection
+      if (el("maparea").hidden) setTab("map");
+      select(+dot.dataset.loc);
+    };
+  }
+  // Clicking empty plot space clears the selection.
+  svg.onclick = () => deselect();
+  syncPanes();
+}
+
+function deselect() {
+  if (S.sel < 0) return;
+  if (S.dirty && !confirm("Discard unsaved changes on this location?")) return;
+  S.sel = -1;
+  S.leg = null;
+  S.pending = {};
+  S.dirty = false;
+  S.cx = BOUNDS.cx; S.cy = BOUNDS.cy; S.span = BOUNDS.span;   // back to full view
+  drawList(); drawCard(); draw(); syncPanes();
+}
+window.addEventListener("resize", () => { if (!el("tab-fit").hidden) drawFit(); });
+
+/* ---- Time series: the open location's counts when one is selected, otherwise
+   the filtered set's trend.  The aggregate is indexed rather than averaged --
+   see the note drawn beside the legend.
+
+   Bear in mind when reading a truck series that it is rarely an independent
+   measurement: for 94% of series the published truck percentage never changes
+   across the twelve years, so the truck line is the vehicle line rescaled by a
+   constant, typically last verified around 2001. */
+function drawSeries() {
+  if (!TABLE) return;
+  const T = TABLE;
+
+  // One series at a time: the open location when there is one, otherwise the
+  // filtered median. Drawing both put a single road and a regional median on
+  // one axis, where whichever is smaller collapses into the baseline.
+  let series = null, own = false;
+  if (S.sel >= 0) {
+    const want = new Map();
+    for (let i = 0; i < T.year.length; i++) {
+      if (T.loc[i] !== S.sel || T.leg[i] !== S.leg) continue;
+      want.set(T.year[i], { veh: T.veh[i], trk: T.trk[i] });
+    }
+    if (want.size) {
+      own = true;
+      series = [...want.entries()].sort((a, b) => a[0] - b[0])
+        .map(([year, v]) => ({ year, veh: v.veh, trk: v.trk }));
+    }
+  }
+  let rows = [], sites = 0;
+  if (!series) {
+    // Aggregate view: each location's series indexed to its own median (100),
+    // because levels differ 100-fold across the region and cannot be averaged.
+    // The y-axis hugs the data -- the movement lives within a few percent of
+    // 100, so an axis anchored at zero flattens it into a line.
+    rows = filtersActive() ? tableRows() : T.year.map((_, i) => i);
+    const bySite = new Map();
+    for (const i of rows) {
+      const key = T.loc[i] + "|" + T.leg[i];
+      if (!bySite.has(key)) bySite.set(key, []);
+      bySite.get(key).push(i);
+    }
+    const byYear = new Map();
+    for (const indices of bySite.values()) {
+      const baseVeh = median(indices.map((i) => T.veh[i]));
+      const baseTrk = median(indices.map((i) => T.trk[i]));
+      if (!baseVeh) continue;
+      sites++;
+      for (const i of indices) {
+        if (!byYear.has(T.year[i])) byYear.set(T.year[i], { veh: [], trk: [] });
+        const bucket = byYear.get(T.year[i]);
+        if (T.veh[i] != null) bucket.veh.push(T.veh[i] / baseVeh * 100);
+        if (T.trk[i] != null && baseTrk) bucket.trk.push(T.trk[i] / baseTrk * 100);
+      }
+    }
+    const quantile = (values, q) => {
+      const clean = values.filter((v) => v != null).sort((a, b) => a - b);
+      return clean.length ? clean[Math.min(clean.length - 1,
+        Math.floor(q * clean.length))] : null;
+    };
+    series = [...byYear.keys()].sort((a, b) => a - b).map((y) => {
+      const b = byYear.get(y);
+      return {
+        year: y, veh: median(b.veh), trk: median(b.trk),
+        vehLo: quantile(b.veh, 0.25), vehHi: quantile(b.veh, 0.75),
+        trkLo: quantile(b.trk, 0.25), trkHi: quantile(b.trk, 0.75),
+        n: b.veh.length,
+      };
+    });
+  }
+  const years = series.map((d) => d.year);
+
+  el("sTrk").setAttribute("aria-pressed", qVar === "trk");
+  el("sVeh").setAttribute("aria-pressed", qVar === "veh");
+  const what = qVar === "trk" ? "trucks" : "all vehicles";
+  const loc = own ? LOCS[S.sel] : null;
+  el("sNote").innerHTML = own
+    ? `<b>Rte ${loc.location.route} ${loc.location.county} PM ${
+        loc.location.postmile_raw} leg ${S.leg}</b> &mdash; ${what}, per day, both directions`
+    : `<b>${sites.toLocaleString()} ${what} series, each indexed to its own median (=100)</b> `
+      + `&mdash; median index, band is the IQR`;
+
+  const svg = el("sPlot");
+  const w = svg.clientWidth || 600, h = svg.clientHeight || 300;
+  const pad = { l: 62, r: 150, t: 14, b: 30 };
+  const HI = qVar + "Hi", LO = qVar + "Lo";
+  // The axis hugs the data (with the 100 reference kept in view for the
+  // indexed aggregate) -- anchoring at zero squashed a 90-110 band flat.
+  const spans = series.flatMap((d) =>
+    [d[qVar], d[LO], d[HI]].filter((v) => v != null));
+  if (!own) spans.push(100);
+  let vmin = Math.min(...spans), vmax = Math.max(...spans);
+  const margin = (vmax - vmin || vmax || 1) * 0.08;
+  vmin = Math.max(0, vmin - margin);
+  vmax += margin;
+  const y0 = years[0], y1 = years[years.length - 1];
+  const px = (year) => pad.l + (year - y0) / Math.max(1, y1 - y0) * (w - pad.l - pad.r);
+  // The floor stops a zero running off to negative infinity on the log scale.
+  const floor = Math.max(vmin, 1);
+  const lo = Math.log10(floor), hi = Math.log10(Math.max(vmax, floor * 1.1));
+  const py = sLog
+    ? (v) => h - pad.b - (Math.log10(Math.max(v, floor)) - lo) / (hi - lo) * (h - pad.t - pad.b)
+    : (v) => h - pad.b - (v - vmin) / (vmax - vmin) * (h - pad.t - pad.b);
+  const parts = [];
+  // Ticks over the visible range, placed through py so they are correct on
+  // either scale.
+  const step = niceStep(vmax - vmin);
+  for (let v = Math.ceil(vmin / step) * step; v <= vmax; v += step) {
+    parts.push(`<line x1="${pad.l}" y1="${py(v)}" x2="${w - pad.r}" y2="${py(v)}"
+      stroke="var(--line)" stroke-width="1"/>
+      <text x="${pad.l - 6}" y="${py(v) + 3}" text-anchor="end" font-size="10"
+        fill="var(--muted)">${fmt(v)}</text>`);
+  }
+  for (const year of years) {
+    if (years.length > 8 && year % 2) continue;
+    parts.push(`<text x="${px(year)}" y="${h - pad.b + 15}" text-anchor="middle"
+      font-size="10" fill="var(--muted)">${year}</text>`);
+  }
+  const path = (key) => series.filter((d) => d[key] != null)
+    .map((d, i) => `${i ? "L" : "M"}${px(d.year)},${py(d[key])}`).join(" ");
+  const colour = own ? "var(--accent)" : "var(--muted)";
+  // Spread band first, so the lines sit on top of it.
+  if (!own) {
+    const band = series.filter((d) => d[LO] != null && d[HI] != null);
+    if (band.length >= 2) {
+      const top = band.map((d, i) => `${i ? "L" : "M"}${px(d.year)},${py(d[HI])}`).join(" ");
+      const bottom = [...band].reverse().map((d) => `L${px(d.year)},${py(d[LO])}`).join(" ");
+      parts.push(`<path d="${top} ${bottom} Z" fill="var(--accent)" opacity=".12"/>`);
+    }
+    // 100 = each series at its own median, so departures read directly.
+    parts.push(`<line x1="${pad.l}" y1="${py(100)}" x2="${w - pad.r}" y2="${py(100)}"
+      stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>`);
+  }
+  parts.push(`<path d="${path(qVar)}" fill="none" stroke="${colour}" stroke-width="2.2"/>`);
+  for (const d of series) {
+    if (d[qVar] == null) continue;
+    parts.push(`<circle cx="${px(d.year)}" cy="${py(d[qVar])}" r="3" fill="${colour}">
+      <title>${d.year}: ${own
+        ? `${fmt(Math.round(d[qVar]))} ${what}`
+        : `${d[qVar].toFixed(1)}% of own median (${d.n} series)`
+      }</title></circle>`);
+  }
+
+  // Legend in the right margin, one row per line actually drawn.
+  const legend = [
+    { colour, dash: "", label: own ? `selected location · ${what}` : `median index · ${what}` },
+  ];
+  const lx = w - pad.r + 12;
+  if (!own) {
+    legend.push({ colour: "var(--accent)", dash: "", label: "band: IQR", band: true });
+  }
+  legend.forEach((row, i) => {
+    const ly = pad.t + 10 + i * 17;
+    if (row.band) {
+      parts.push(`<rect x="${lx}" y="${ly - 5}" width="22" height="10"
+        fill="var(--accent)" opacity=".10"/>
+        <text x="${lx + 28}" y="${ly + 3.5}" font-size="10" fill="var(--muted)">${
+          row.label}</text>`);
+      return;
+    }
+    parts.push(`<line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}"
+      stroke="${row.colour}" stroke-width="2.2"${
+        row.dash ? ` stroke-dasharray="${row.dash}"` : ""}/>
+      <text x="${lx + 28}" y="${ly + 3.5}" font-size="10" fill="var(--muted)">${
+        row.label}</text>`);
+  });
+  const footY = pad.t + 10 + legend.length * 17 + 14;
+  const foot = own ? [] : ["Normalized to the median", "of all years"];
+  parts.push(foot.map((line, i) =>
+    `<text x="${lx}" y="${footY + i * 12}" font-size="9.5"
+      fill="var(--muted)">${line}</text>`).join(""));
+  svg.innerHTML = parts.join("");
+}
+el("sLog").onclick = () => {
+  sLog = !sLog;
+  el("sLog").setAttribute("aria-pressed", sLog);
+  drawSeries();
+};
+el("sTrk").onclick = () => { qVar = "trk"; drawSeries(); drawFit(); };
+el("sVeh").onclick = () => { qVar = "veh"; drawSeries(); drawFit(); };
+window.addEventListener("resize", () => { if (!el("tab-series").hidden) drawSeries(); });
+el("view").onchange = (event) => {
+  S.view = event.target.value;
+  drawList();
+};
+window.addEventListener("resize", draw);
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return;
+  const order = [...el("list").querySelectorAll(".row")].map((b) => +b.dataset.i);
+  const at = order.indexOf(S.sel);
+  if (e.key === "j" || e.key === "ArrowDown") {
+    select(order[Math.min(at + 1, order.length - 1)]);
+    e.preventDefault();
+  } else if (e.key === "k" || e.key === "ArrowUp") {
+    select(order[Math.max(at - 1, 0)]);
+    e.preventDefault();
+  }
+});
+
+(async function boot() {
+  await loadSaved();
+  drawFunnel(); drawList();
+  setTab("split");
+  const first = LOCS.findIndex(isTodo);
+  if (first >= 0) select(first);
+})();
+</script>
