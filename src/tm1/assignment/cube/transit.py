@@ -148,9 +148,16 @@ def run_transit(
 
     Replays trnAssign.bat's single pass from ``trn/TransitAssignment.iter{N}/``:
     stage lines -> PrepHwyNet -> BuildTransitNetworks -> TransitAssign ->
-    TransitSkims -> copy the averaged skims up to ``skims/``.  Uses the averaged
-    highway networks (``hwy/avgLOAD{P}.net``) produced by the highway feedback, so
-    call this *after* :func:`tm1.assignment.run_highway_feedback`.
+    TransitSkims -> copy the averaged skims up to ``skims/``.
+
+    ``PrepHwyNet.job`` reads ``hwy/avgLOAD{P}.net`` to derive bus speeds, and
+    :func:`~tm1.assignment.cube.highway.run_highway_feedback` rewrites that file --
+    so *which* round's speeds this sees is decided by the caller, not here.
+    :func:`tm1.assignment.cube.ctramp.run_iteration` calls this **before** feedback,
+    matching ``RunIteration.bat``, and therefore uses the previous round's network;
+    :func:`tm1.assignment.cube.asim_bridge.run_assignment_iteration` calls it
+    **after**.  That divergence is known and unresolved -- see the warning on the
+    latter.
 
     The bus-dwell feedback (``transitDwellAccess.py`` Complex mode) only affects the
     *next* global iteration's bus speeds and is not yet wired; a single global

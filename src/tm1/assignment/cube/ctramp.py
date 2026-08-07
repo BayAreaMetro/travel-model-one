@@ -200,9 +200,10 @@ def run_iteration(  # noqa: PLR0913
     -----
     Transit runs *before* the feedback block, matching ``RunIteration.bat``
     (transit is step 4, feedback is step 5), so it sees the previous iteration's
-    ``avgLOAD{PERIOD}.net`` bus speeds.  :func:`tm1.assignment.cube.transit.run_transit`
-    documents the opposite order, because the ActivitySim loop calls it after
-    feedback.
+    ``avgLOAD{PERIOD}.net`` bus speeds.  This is the reference behaviour and the
+    parity bar.  :func:`tm1.assignment.cube.asim_bridge.run_assignment_iteration`
+    runs the two in the opposite order; that divergence is known, deliberate for
+    now, and documented in the warning on that function.
 
     This ordering has been run against live Cube for iteration 1 of the 2023 base
     year: every job returned cleanly and produced a full skim set.  That

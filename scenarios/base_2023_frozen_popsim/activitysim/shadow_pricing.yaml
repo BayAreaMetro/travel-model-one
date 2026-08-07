@@ -1,0 +1,21 @@
+# base_2023 override — warm-start shadow pricing from a prior converged run.
+#
+# Inherits the base shadow_pricing.yaml but raises MAX_ITERATIONS_SAVED so the
+# location models can re-converge from loaded shadow prices (the saved prices
+# were converged on a slightly different population, so 1 iteration may not be
+# within tolerance). Early-stops once PERCENT_TOLERANCE/FAIL_THRESHOLD are met.
+shadow_pricing_models:
+  school: school_location
+  workplace: workplace_location
+
+LOAD_SAVED_SHADOW_PRICES: True
+MAX_ITERATIONS: 10
+MAX_ITERATIONS_SAVED: 5
+
+SIZE_THRESHOLD: 10
+PERCENT_TOLERANCE: 5
+FAIL_THRESHOLD: 10
+SHADOW_PRICE_METHOD: ctramp
+DAMPING_FACTOR: 1
+DAYSIM_ABSOLUTE_TOLERANCE: 50
+DAYSIM_PERCENT_TOLERANCE: 10

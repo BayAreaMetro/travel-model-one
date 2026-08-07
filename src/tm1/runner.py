@@ -45,16 +45,24 @@ from datetime import datetime
 from pathlib import Path
 from types import ModuleType
 
+import yaml
+
 import tm1.steps.assignment as assignment_step
 import tm1.steps.build.highway_networks as build_highway_networks_step
 import tm1.steps.build.hsr_trips as build_hsr_trips_step
 import tm1.steps.build.nonmotorized_skims as build_nonmotorized_skims_step
 import tm1.steps.build.transit_lines as build_transit_lines_step
 import tm1.steps.configure_ctramp as configure_ctramp_step
+import tm1.steps.convert_skims as convert_skims_step
 import tm1.steps.filter_popsyn as filter_popsyn_step
+import tm1.steps.populationsim as populationsim_step
+import tm1.steps.prepare_survey as prepare_survey_step
 import tm1.steps.setup as setup_step
+import tm1.steps.simulate_activitysim as simulate_activitysim_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 import tm1.steps.summaries.calibration as calibration_step
+import tm1.steps.summaries.core as core_step
+import tm1.steps.walk_access_buffers as walk_access_buffers_step
 import tm1.steps.warmstart as warmstart_step
 from tm1 import add_run_logfile, remove_run_logfile, slack
 from tm1.config import load_config, resolve_templates
@@ -79,6 +87,7 @@ def _fmt_elapsed(seconds: float) -> str:
 #: scenario-supplied steps resolve to exactly the same kind of thing.
 STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
+    "walk_access_buffers": walk_access_buffers_step.run,
     "build_highway_networks": build_highway_networks_step.run,
     "build_nonmotorized_skims": build_nonmotorized_skims_step.run,
     "build_transit_lines": build_transit_lines_step.run,
@@ -86,8 +95,13 @@ STEPS: dict[str, Callable] = {
     "warmstart": warmstart_step.run,
     "filter_popsyn": filter_popsyn_step.run,
     "configure_ctramp": configure_ctramp_step.run,
+    "convert_skims": convert_skims_step.run,
+    "prepare_survey": prepare_survey_step.run,
+    "populationsim": populationsim_step.run,
+    "simulate_activitysim": simulate_activitysim_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,
+    "core_summaries": core_step.run,
     "calibration": calibration_step.run,
 }
 
@@ -331,27 +345,40 @@ def _notify_start(
     flat_steps_cfg: dict,
     n_iters: int,
     kwargs: dict,
+    scenario_dir: Path | None = None,
     log_path: Path | None = None,
 ) -> None:
     """Announce what is about to run.
 
     Reads the demand step from the *flattened* configs: it normally sits inside
-    ``iterate``, so a top-level lookup would silently report defaults.  The log
-    path is included so a reader can follow the run without first finding the
-    machine.
+    ``iterate``, so a top-level lookup would silently report defaults.  The two
+    demand models describe their run differently -- ActivitySim by household
+    sample size and process count, CT-RAMP by sample rate and thread count -- so
+    each reports in its own terms.  The log path is included so a reader can
+    follow the run without first finding the machine.
     """
-    sim_cfg = (
-        flat_steps_cfg.get("simulate_ctramp")
-        or flat_steps_cfg.get("simulate_activitysim")
-        or {}
-    )
-    sample_rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
-    sample_str = "per-iteration ramp" if sample_rate is None else f"{sample_rate:.0%}"
+    asim_cfg = flat_steps_cfg.get("simulate_activitysim") or {}
+    if asim_cfg:
+        base = kwargs.get("base_model_dir") or (
+            scenario_dir.parent.parent if scenario_dir else Path()
+        )
+        asim = _merged_asim_settings(asim_cfg, base)
+        sample = asim.get("households_sample_size", 0)
+        sample_str = "full" if sample == 0 else f"{sample:,} HH"
+        threads = asim.get("num_processes", 1)
+        shadow = asim.get("use_shadow_pricing", False)
+    else:
+        sim_cfg = flat_steps_cfg.get("simulate_ctramp") or {}
+        rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
+        sample_str = "per-iteration ramp" if rate is None else f"{rate:.0%}"
+        threads = sim_cfg.get("threads", 1)
+        shadow = sim_cfg.get("shadow_pricing", False)
+
     notify(
         f":rabbit2: Starting {label}\n"
         f"  • steps: {', '.join(steps)}\n"
-        f"  • sample: {sample_str} | threads: {sim_cfg.get('threads', 1)} | "
-        f"shadow pricing: {'on' if sim_cfg.get('shadow_pricing', False) else 'off'}\n"
+        f"  • sample: {sample_str} | threads: {threads} | "
+        f"shadow pricing: {'on' if shadow else 'off'}\n"
         f"  • iterations: {n_iters}"
         + (f"\n  • log: {log_path}" if log_path else "")
     )
@@ -513,6 +540,19 @@ def _load_step(step_name: str, steps_cfg: dict, scenario_dir: Path) -> Callable:
     return func
 
 
+def _merged_asim_settings(sim_cfg: dict, base_model_dir: object) -> dict:
+    """Merge ``settings.yaml`` down the ActivitySim config-inheritance chain."""
+    asim_cfg = sim_cfg.get("activitysim", sim_cfg) if sim_cfg else {}
+    settings: dict = {}
+    for c in reversed(asim_cfg.get("configs", [])):
+        p = Path(c) if Path(c).is_absolute() else Path(str(base_model_dir)) / c
+        sf = p / "settings.yaml"
+        if sf.exists():
+            with sf.open(encoding="utf-8") as f:
+                settings.update(yaml.safe_load(f) or {})
+    return settings
+
+
 def run_model(
     scenario_dir: Path,
     steps: list[str] | None = None,
@@ -560,7 +600,9 @@ def run_model(
         # `--iterations N` overrides iterate.count for this run.
         full_plan, plan, n_iters = _prepare_plan(steps_cfg, steps, cfg, kwargs)
         prev_iter = None
-        _notify_start(label, steps, flat_steps_cfg, n_iters, kwargs, log_path)
+        _notify_start(
+            label, steps, flat_steps_cfg, n_iters, kwargs, scenario_dir, log_path
+        )
 
         for name, iteration in plan:
             run_step = _load_step(name, flat_steps_cfg, scenario_dir)
