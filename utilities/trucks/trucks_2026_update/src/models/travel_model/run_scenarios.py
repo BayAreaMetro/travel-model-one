@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from datetime import datetime
 
 import yaml
 
@@ -58,8 +59,13 @@ def main() -> None:
     args = parser.parse_args()
 
     raw_cfg = yaml.safe_load(args.config.read_text())
-    outpath = raw_cfg["evaluation_output"]
-    save_yaml(raw_cfg, Path(outpath, "configurations_used.yaml")) # For reproducibility
+    outpath = raw_cfg.get("out_folder", raw_cfg.get("evaluation_folder", "models/evaluation")) # evaluation_folder will be a depreciated argument. 
+    experiment_name = raw_cfg.get("experiment_name", "test")
+    timestamp = datetime.now()
+    experiment_dir = f"{outpath}/{timestamp:%Y%m%d_%H%M%S}_{experiment_name}"
+    raw_cfg["experiment_dir"] = experiment_dir
+    raw_cfg["timestamp"] = f"{timestamp:%Y%m%d_%H%M%S}"
+    save_yaml(raw_cfg, Path(experiment_dir, "configurations_used.yaml")) # For reproducibility
     config = RunConfig.model_validate(raw_cfg)
     completed_scenarios = run_all(config)
     run_evaluation(raw_cfg, completed_scenarios)

@@ -157,7 +157,7 @@ def write_excel(
     # )
 
 
-    out_path = Path(output_dir) / "truck_model_evaluation.xlsx"
+    out_path = Path(output_dir) / f"summary_{cfg["timestamp"]}_{cfg.get("experiment_name", "test")}.xlsx"
     wb.save(out_path)
     logger.info("Wrote Excel workbook: %s", out_path)
 

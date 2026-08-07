@@ -6,6 +6,8 @@ import functools
 from typing import Callable, Optional
 from datetime import datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from zipfile import ZipFile, ZIP_DEFLATED
 
 
 import geopandas as gpd
@@ -89,32 +91,81 @@ def timeit(func: Callable) -> Callable:
 
 def save_shapefile(
     gdf: gpd.GeoDataFrame,
-    path: str,
+    path: Path,
     crs: Optional[str] = None,
 ) -> None:
     """
-    Save a GeoDataFrame as a shapefile.
+    Save a GeoDataFrame as a shapefile and ZIP archive inside a
+    self-contained folder.
 
-    If `crs` is provided:
-        - If gdf has a CRS → reproject to the provided CRS
-        - If gdf has no CRS → assign the provided CRS
+    If ``crs`` is provided:
+        - Reproject the GeoDataFrame if it already has a CRS.
+        - Assign the CRS if it does not have one.
 
     Parameters
     ----------
-    gdf : GeoDataFrame
+    gdf : geopandas.GeoDataFrame
         Input geospatial data.
-    path : str
-        Output shapefile path.
-    crs : Optional[str]
-        Target CRS (e.g., 'EPSG:4326').
-    """
-    if crs is not None:
-        if gdf.crs is None:
-            gdf = gdf.set_crs(crs)
-        else:
-            gdf = gdf.to_crs(crs)
 
-    gdf.to_file(path)
+    path : pathlib.Path
+        Requested output path. The filename stem is used for both the
+        output folder and shapefile name.
+
+    crs : str, optional
+        Target CRS, such as ``"EPSG:4326"``.
+    """
+    path = Path(path).resolve()
+
+    # Use the requested filename as the folder and shapefile name.
+    output_name = path.stem
+    output_folder = path.parent / output_name
+    shapefile_path = output_folder / f"{output_name}.shp"
+    zip_path = path.with_suffix(".zip")
+
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    # Avoid modifying the original GeoDataFrame.
+    output_gdf = gdf.copy()
+
+    if crs is not None:
+        if output_gdf.crs is None:
+            output_gdf = output_gdf.set_crs(crs)
+        else:
+            output_gdf = output_gdf.to_crs(crs)
+
+
+    # Write the individual shapefile components.
+    output_gdf.to_file(
+        shapefile_path,
+        driver="ESRI Shapefile",
+        engine="pyogrio",
+        index=False,
+    )
+
+    # Find all components created by GeoPandas/Pyogrio.
+    components = [
+        component
+        for component in output_folder.glob(f"{output_name}.*")
+        if component.is_file()
+        and component.suffix.lower() != ".zip"
+    ]
+
+    if not components:
+        raise RuntimeError(
+            f"No shapefile components were created for {shapefile_path}"
+        )
+
+    # Create the ZIP inside the same self-contained folder.
+    with ZipFile(
+        zip_path,
+        mode="w",
+        compression=ZIP_DEFLATED,
+    ) as archive:
+        for component in components:
+            archive.write(
+                component,
+                arcname=component.name,
+            )
 
 def save(data, filepath: str, overwrite: bool = True, crs: Optional[str] = None) -> None:
     """

@@ -84,7 +84,7 @@ def run_evaluation(cfg: dict, completed_scenarios: list[dict]) -> None:
         logger.warning("No completed scenarios to evaluate Finished")
         return
 
-    output_dir = Path(cfg["evaluation_output"])
+    output_dir = Path(cfg["experiment_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
     plots_dir = output_dir / "plots"
     plots_dir.mkdir(exist_ok=True)
@@ -445,7 +445,7 @@ def save_tableau_shapefile(
     out = gpd.GeoDataFrame(out, geometry="geometry")
     out = out.set_crs(cfg["network_crs"])
 
-    out_path = Path(cfg["evaluation_output"]) / "validation_table.shp"
+    out_path = Path(cfg["experiment_dir"]) / "assigned_volumnes.shp"
     save(out, out_path, crs="EPSG:4326")
     logger.info("Wrote Tableau shapefile: %s", out_path)
 
