@@ -226,20 +226,53 @@ def _run_cube(
     route(proj_dir, iteration, sampleshare, demand, step_cfg)
 
 
+def _run_aeq(
+    proj_dir: Path, iteration: int, sampleshare: float, demand: str, step_cfg: dict,  # noqa: ARG001
+) -> None:
+    """AequilibraE: multi-class user equilibrium and skims, no Cube licence.
+
+    ``proj_dir`` and ``sampleshare`` are unused.  There is no Cube project tree to
+    run jobs out of -- the network arrives as ``network_csv`` -- and ActivitySim has
+    already expanded its sample to full population.
+    """
+    from tm1.assignment.aeq.runner import run_assignment_iteration  # noqa: PLC0415
+
+    missing = [key for key in ("network_csv", "skims_omx") if not step_cfg.get(key)]
+    if missing:
+        msg = (
+            f"assignment backend 'aeq' needs {', '.join(f'`{k}`' for k in missing)}. "
+            f"`network_csv` is the link table it assigns over; `skims_omx` is where "
+            f"the refreshed skims are written for the next demand run."
+        )
+        raise ValueError(msg)
+
+    run_assignment_iteration(
+        demand,
+        step_cfg["network_csv"],
+        step_cfg.get("nonres_dir", ""),
+        step_cfg["skims_omx"],
+        iteration=iteration,
+        max_iter=step_cfg.get("max_iter", 100),
+        gap_target=step_cfg.get("gap_target", 1e-4),
+        cores=step_cfg.get("cores"),
+        transit_inputs_dir=step_cfg.get("transit_inputs_dir"),
+        params_path=step_cfg.get("params"),
+    )
+
+
 #: Assignment engines, keyed by the ``backend:`` value that selects them.
 #:
-#: Cube and AequilibraE solve the same problem -- multi-class user equilibrium
-#: over the same network from the same demand -- so they belong behind one step
-#: rather than under separate names.  ``aeq`` is not registered here: the
-#: AequilibraE runner and its OMX demand path arrive with the ActivitySim
-#: swap-in.  Adding it is an entry in this table, not a new step.
+#: Cube and AequilibraE solve the same problem -- multi-class user equilibrium over
+#: the same network from the same demand -- so they sit behind one step rather than
+#: under separate names.  Adding a third engine is an entry in this table.
 #:
 #: Every backend takes the same five arguments -- project dir, iteration, the sample
 #: rate the demand ran at, the demand artifact, and its own config block -- because
 #: assignment has one contract regardless of engine: demand and a network in, a
-#: loaded network and skims out.
+#: loaded network and skims out.  An engine ignores what it does not need.
 _BACKENDS: dict[str, Callable[[Path, int, float, str, dict], None]] = {
     "cube": _run_cube,
+    "aeq": _run_aeq,
 }
 
 
@@ -260,13 +293,7 @@ def run_backend(step_cfg: dict, cfg: dict, iteration: int) -> None:
     backend = str(step_cfg.get("backend", "cube")).lower()
     if backend not in _BACKENDS:
         available = ", ".join(sorted(_BACKENDS))
-        extra = (
-            " AequilibraE arrives with the ActivitySim swap-in, which brings the "
-            "engine and the OMX demand path it reads."
-            if backend == "aeq"
-            else ""
-        )
-        msg = f"Unknown assignment backend {backend!r}; available: {available}.{extra}"
+        msg = f"Unknown assignment backend {backend!r}; available: {available}."
         raise ValueError(msg)
 
     sampleshare = _resolve_sampleshare(cfg, step_cfg, iteration)
