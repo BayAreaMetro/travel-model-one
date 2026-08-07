@@ -339,6 +339,33 @@ def run_cube_job(
         cpath = Path(commpath).resolve() if commpath else cwd / "commpath"
         cpath.mkdir(parents=True, exist_ok=True)
 
+    try:
+        rc, log_text, logfile = _execute_job(
+            job, cwd, env_extra=env_extra, timeout=timeout,
+            cluster_nodes=cluster_nodes, cpath=cpath,
+        )
+    except KeyboardInterrupt:
+        # Ctrl-C kills this process, but the cluster nodes were started by cmd or
+        # by the scheduled task and never see the signal: without this they keep
+        # running and holding license leases (a 48-node job leaves 49 orphans).
+        # The bat file's `Cluster ... Close Exit` line never runs either.
+        log.warning("Cancelled during Cube job %s — clearing cluster", job.name)
+        recover_license()
+        raise
+
+    return _check_job_result(job, cwd, rc, log_text, logfile)
+
+
+def _execute_job(
+    job: Path,
+    cwd: Path,
+    *,
+    env_extra: dict[str, object] | None,
+    timeout: float,
+    cluster_nodes: int | None,
+    cpath: Path | None,
+) -> tuple[int, str]:
+    """Run the job and return ``(exit code, log text)``, retrying once on a hang."""
     if is_interactive_session():
         env = os.environ.copy()
         env["PATH"] = _CUBE_PATH + ";" + env.get("PATH", "")
@@ -363,6 +390,7 @@ def run_cube_job(
             rc = int(sentinel.read_text().strip() or "1") if sentinel.exists() else 1
             log_text = logfile.read_text(errors="replace") if logfile.exists() else ""
         else:
+            logfile = None
             proc = subprocess.run(
                 [_RUNTPP, str(job)], cwd=str(cwd), env=env,
                 capture_output=True, text=True, timeout=timeout, check=False,
@@ -386,11 +414,19 @@ def run_cube_job(
                 cluster_nodes=cluster_nodes, commpath=cpath,
             )
         log_text = logfile.read_text(errors="replace") if logfile.exists() else ""
+    return rc, log_text, logfile
 
-    # A startup access-violation (0xC0000005 / -1073741819) means runtpp could not
-    # reach the Bentley license pipe — a broken license entitlement, not a stuck
-    # lease.  Retrying or killing license agents cannot fix it and only makes it
-    # worse; fail fast with the manual remedy.
+
+def _check_job_result(
+    job: Path, cwd: Path, rc: int, log_text: str, logfile: Path | None
+) -> int:
+    """Turn a finished job's exit code and log into success or a named failure.
+
+    A startup access-violation (0xC0000005 / -1073741819) means runtpp could not
+    reach the Bentley license pipe -- a broken entitlement, not a stuck lease.
+    Retrying or killing license agents cannot fix it and only makes it worse, so
+    that case fails fast with the manual remedy.
+    """
     if rc in (_ACCESS_VIOLATION, _ACCESS_VIOLATION_U) and _engine_returncode(log_text) is None:
         msg = (
             f"Cube job {job.name} access-violated at startup (exit={rc}): runtpp could "

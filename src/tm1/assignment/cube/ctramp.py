@@ -176,7 +176,10 @@ def run_iteration(  # noqa: PLR0913
     Parameters
     ----------
     iteration
-        Current global iteration (>= 1).
+        Current global iteration.  ``0`` is the warm start: the demand comes
+        from ``INPUT/warmstart`` rather than a demand model, so ``PrepAssign``
+        and the non-residential models are skipped and only the demand is
+        verified -- matching ``RunIteration.bat``'s jump to ``:hwyAssign``.
     model_year, future
         Passed to the non-residential models; see :func:`run_nonres`.
     sampleshare
@@ -209,10 +212,19 @@ def run_iteration(  # noqa: PLR0913
     proj_dir = Path(proj_dir)
     log.info("=== CT-RAMP assignment iteration %d ===", iteration)
 
-    if do_nonres:
+    # Iteration 0 is the warm start: RunIteration.bat jumps straight to
+    # :hwyAssign, over the skim, demand *and* nonres blocks.  Its demand comes
+    # from INPUT/warmstart -- already assignment-ready and already including
+    # truck/IX trips -- so PrepAssign has nothing to fold and nonres must not run.
+    warm_start = iteration == 0
+
+    if do_nonres and not warm_start:
         run_nonres(proj_dir, model_year=model_year, future=future)
 
-    run_prep_assign(proj_dir, iteration, sampleshare, demand)
+    if warm_start:
+        _verify_demand(demand)
+    else:
+        run_prep_assign(proj_dir, iteration, sampleshare, demand)
     run_highway_assignment(proj_dir, cluster_nodes=cluster_nodes)
 
     if do_transit:
