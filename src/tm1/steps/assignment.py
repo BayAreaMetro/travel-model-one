@@ -136,14 +136,17 @@ def _run_cube(
         )
         raise FileNotFoundError(msg)
 
+    # Defaulted from the scenario by `run` before dispatch, so a step key is only
+    # needed to override the run-wide value.
     model_year = step_cfg.get("model_year")
     future = step_cfg.get("future")
     if model_year is None or future is None:
         msg = (
-            "assignment step needs `model_year` and `future` -- the "
-            "non-residential models branch on them (IxForecasts_horizon.job). "
-            "RunModel.bat derives them from the project folder name; set them "
-            "explicitly in the scenario config instead."
+            "Scenario needs `model_year` and `future` at the top level -- the "
+            "non-residential models branch on them (IxForecasts_horizon.job), and "
+            "the Cube jobs read them as %MODEL_YEAR% / %FUTURE%. RunModel.bat "
+            "derives them from the project folder name; set them explicitly in the "
+            "scenario config instead."
         )
         raise ValueError(msg)
 
@@ -182,6 +185,15 @@ _BACKENDS: dict[str, Callable[[Path, int, float, str, dict], None]] = {
 def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Run one assignment + feedback pass for the current iteration."""
     step_cfg = cfg.get("steps", {}).get("assignment", {}) or {}
+
+    # `model_year` and `future` describe the run, not this step: the pre-process
+    # reads them too (HsrTripGeneration.job wants %MODEL_YEAR% before any assignment
+    # exists).  Defaulted from the scenario here so every backend sees them without
+    # widening the `_BACKENDS` signature; a step key still wins.
+    step_cfg = {
+        **{k: cfg[k] for k in ("model_year", "future") if cfg.get(k) is not None},
+        **step_cfg,
+    }
 
     proj_dir = step_cfg.get("proj_dir") or cfg.get("proj_dir")
     if not proj_dir:

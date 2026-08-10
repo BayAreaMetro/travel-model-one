@@ -1,124 +1,212 @@
-# Base 2023 CTRAMP Scenario — run the legacy Java model via Python orchestration
+# Base 2023 CT-RAMP — RunModel.bat, driven by the Python runner instead of cmd.
 #
-# Same model, same inputs, same results as the batch-file workflow; only the
-# orchestration changes (RunModel.bat -> `tm1 run --scenario base_2023_ctramp`).
+# Same model, same inputs, same results: every legacy .job and .py runs unmodified, from
+# where it already lives.  Only the orchestration changes.  Steps run in the order written,
+# and the sections below follow RunModel.bat's own numbering, so the two read side by side.
 #
-# Runs one full global iteration: CT-RAMP demand -> Cube assignment -> feedback
-# -> skims.  Every Cube .job script is the stock one, run unmodified.
-#
-# Requires Cube Voyager + licence.  Set `reference_run` and `proj_dir` below;
-# copy_inputs fetches everything else, so the run is self-contained and
-# does not write into the reference run.
+# Needs Cube Voyager + licence.  Set reference_run and proj_dir; copy_inputs fetches the
+# rest, so a run is self-contained and never writes into the reference run.
 
 slack: "off"
 
-# Every run writes a timestamped log to {proj_dir}/logs/tm1_<stamp>_<pid>.log,
-# capturing step boundaries, each Cube job's result and any traceback.  The
-# console stays terser than the file.  Both keys are optional.
 logging:
-  level: DEBUG           # what reaches the file; the console stays at INFO
-  # dir: "{proj_dir}/logs"   # uncomment to write run logs somewhere else
-#
-# ┌─────────────────────────────────────────────────────────────────────────────┐
-# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
-# └─────────────────────────────────────────────────────────────────────────────┘
+  level: DEBUG                      # what reaches the run log; console stays at INFO
+  # dir: "{proj_dir}/logs"
+
+# ── Machine-specific — edit for your environment ────────────────────────────────────────
 reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
 proj_dir: "E:/Tests/base_2023_ctramp"
 
-# ┌─────────────────────────────────────────────────────────────────────────────┐
-# │  DERIVED PATHS — generally no need to change                               │
-# └─────────────────────────────────────────────────────────────────────────────┘
+# ── Scenario identity ───────────────────────────────────────────────────────────────────
+# Legacy names: the Cube jobs read them as %MODEL_YEAR% / %FUTURE%.  RunModel.bat slices
+# both out of the project folder name ("2023_TM161_IPA_35" -> 2023, IPA -> PBA50); stating
+# them here means results no longer depend on how a directory is spelled.
+#
+#   model_year  forecast year.  IxForecasts_horizon.job has fixed tables for 2005/2015,
+#               a 2021 base, and extrapolates later years linearly from it.
+#   future      a planning-scenario family, not a year.  IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/
+#               TRR all map to PBA50, the only one implemented.
+#
+# Scenario-level because the pre-process needs them too, before any assignment exists.
+model_year: 2023
+future: PBA50
+
+# ── Environment the legacy jobs and scripts read ────────────────────────────────────────
+# They take parameters from the environment, not argv: HwyAssign reads %ITER%, the feedback
+# jobs read %WGT%.  This block is only part of it — ITER, PREV_ITER, WGT, PREV_WGT,
+# SAMPLESHARE and SEED come from the runner per round, transcribed from RunModel.bat's four
+# iteration blocks.  A step may add its own `env:`, layered on top.  Model parameters only;
+# secrets stay in the process environment (see SLACK_WEBHOOK_URL in tm1/slack.py).
+env:
+  EN7: DISABLED                     # required: RunModel.bat 115-128 will not start without it
+  PATH: "C:/Program Files/Git/usr/bin;{env:PATH}"   # gawk, for BuildTransitNetworks.job
+  # MAXITERATIONS: 3                # RunModel.bat 135-147 hard-codes these
+  # TRNCONFIG: FAST                 # STANDARD makes transit iterate; not supported yet
+
 ctramp_output_dir: "{proj_dir}/main"
 
-
-# ┌─────────────────────────────────────────────────────────────────────────────┐
-# │  PIPELINE STEPS                                                            │
-# └─────────────────────────────────────────────────────────────────────────────┘
-# Steps run in the order written.  Each key is a step; the only nesting is
-# `iterate:`, whose body is the feedback loop.  A step with a `script:` or
-# `module:` key runs your own code -- see `vmt_vht_metrics` at the end.
+# ════════════════════════════════════════════════════════════════════════════════════════
+# PIPELINE
+#
+# Four ways to declare a step:
+#   job:      a Cube .job, run through Cube        \  spawned; paths relative to proj_dir
+#   command:  any other program, spawned            /
+#   module:   importable dotted path                \  imported and called with the config
+#   script:   a .py in this scenario directory      /
+#
+# `iterate:` is the only nesting: its body is the feedback loop.
+# ════════════════════════════════════════════════════════════════════════════════════════
 steps:
-  # --- 1. Stage every input the model reads into the project directory ---
+
+  # ── Steps 1-2 · stage every input the model reads ─────────────────────────────────────
+  # Entries run in the order written, and later ones may source from what earlier ones
+  # wrote.  Directory entries merge file by file and never overwrite, so two sources can
+  # land in one directory and a re-run cannot clobber what a later step built.
+  #
+  # Everything the model *produces* is absent by design: no skims, no accessibility, no
+  # popsyn, no taxi_tnc_occ_factors.  Staging those would hide a failure in the steps
+  # that build them, which is the whole point of running end to end.
   copy_inputs:
-    # whole dir: CT-RAMP reads tazData.csv, but the Cube nonres jobs read the
-    # .dbf twin (TruckTripGeneration.job -> landuse	azdata.dbf)
+    # 1. The pristine inputs, staged whole.  This has to land inside proj_dir because
+    #    the legacy scripts read it by relative path -- filterUnconnectedHouseholds
+    #    reads INPUT/popsyn, updateTelecommute_forEN7 reads INPUT/landuse and
+    #    INPUT/params.properties.
+    input:
+      from: "{reference_run}/INPUT"
+      to: "{proj_dir}/INPUT"
+
+    # 2. RunModel.bat 172-178, out of INPUT/ into the working directories.
+    hwy:
+      from: "{proj_dir}/INPUT/hwy"
+      to: "{proj_dir}/hwy"
+    trn:
+      from: "{proj_dir}/INPUT/trn"
+      to: "{proj_dir}/trn"
     landuse:
-      from: "{reference_run}/landuse"
+      from: "{proj_dir}/INPUT/landuse"
       to: "{proj_dir}/landuse"
-    households:
-      from: "{reference_run}/popsyn/hhFile.csv"
-      to: "{proj_dir}/popsyn/hhFile.csv"
-    persons:
-      from: "{reference_run}/popsyn/personFile.csv"
-      to: "{proj_dir}/popsyn/personFile.csv"
-    skims:
-      from: "{reference_run}/skims"
-      to: "{proj_dir}/skims"
-      glob: "*.tpp"
-    accessibility:
-      from: "{reference_run}/skims/accessibility.csv"
-      to: "{proj_dir}/skims/accessibility.csv"
+    nonres:
+      from: "{proj_dir}/INPUT/nonres"
+      to: "{proj_dir}/nonres"
+    warmstart_main:                 # the demand iteration 0 assigns
+      from: "{proj_dir}/INPUT/warmstart/main"
+      to: "{proj_dir}/main"
+    warmstart_nonres:               # merges into nonres/ alongside the entry above
+      from: "{proj_dir}/INPUT/warmstart/nonres"
+      to: "{proj_dir}/nonres"
+    logsums:
+      from: "{proj_dir}/INPUT/logsums"
+      to: "{proj_dir}/logsums"
+
+    # 3. The model itself -- code and UECs, not inputs, and not in INPUT/.  A legacy run
+    #    has these because the project directory *is* a copy of the model template.
     ctramp_model:
       from: "{reference_run}/CTRAMP/model"
       to: "{proj_dir}/CTRAMP/model"
-    shadow_prices:
-      from: "{reference_run}/main/ShadowPricing_5.csv"
-      to: "{proj_dir}/main/ShadowPricing_5.csv"
     ctramp_runtime:
       from: "{reference_run}/CTRAMP/runtime"
       to: "{proj_dir}/CTRAMP/runtime"
-    # --- Cube assignment inputs -------------------------------------------
     ctramp_scripts:
       from: "{reference_run}/CTRAMP/scripts"
       to: "{proj_dir}/CTRAMP/scripts"
-    hwy:
-      from: "{reference_run}/hwy"
-      to: "{proj_dir}/hwy"
-    nonres:
-      from: "{reference_run}/nonres"
-      to: "{proj_dir}/nonres"
-    # PrepAssign.job reads this by bare relative path, so it must sit at the
-    # project root rather than under a subdirectory
-    taxi_tnc_occ_factors:
-      from: "{reference_run}/taxi_tnc_occ_factors.csv"
-      to: "{proj_dir}/taxi_tnc_occ_factors.csv"
-    # Transit line files, fare tables and support links.  `glob: "*"` takes the
-    # top-level files only -- the reference run's TransitAssignment.iter* output
-    # directories are skipped, since each iteration rebuilds its own.
-    trn:
-      from: "{reference_run}/trn"
-      to: "{proj_dir}/trn"
-      glob: "*"
 
-  # --- 2. The global feedback loop -------------------------------------
-  #
-  # One iteration = demand + assignment, the body of RunIteration.bat: demand
-  # responds to the congested skims the previous assignment produced.  Nesting
-  # them here is what makes them a loop; steps outside `iterate` run once.
+    # Nothing reads this today: simulate_ctramp clears ShadowPrice.Input.File at
+    # iteration 1, so shadow prices are always recomputed from zero.  Kept for when a
+    # convergence run produces a file worth seeding from -- which also means teaching
+    # iteration 1 to stop clearing the input.  See shadow_price_run_notes.
+    # shadow_prices:
+    #   from: "{reference_run}/main/ShadowPricing_5.csv"
+    #   to: "{proj_dir}/main/ShadowPricing_5.csv"
+
+  # ── Step 3 · pre-process ──────────────────────────────────────────────────────────────
+  runtime_configuration:
+    command: "CTRAMP/scripts/preprocess/RuntimeConfiguration.py"
+  csv_to_dbf:
+    command: "CTRAMP/scripts/preprocess/csvToDbf.py"
+    args: ["hwy/tolls.csv", "hwy/tolls.dbf"]
+  set_tolls:
+    job: "CTRAMP/scripts/preprocess/SetTolls.job"
+  set_hov_xfer_penalties:
+    job: "CTRAMP/scripts/preprocess/SetHovXferPenalties.job"
+  create_five_highway_networks:
+    job: "CTRAMP/scripts/preprocess/CreateFiveHighwayNetworks.job"
+  hsr_trip_generation:
+    job: "CTRAMP/scripts/preprocess/HsrTripGeneration.job"
+
+  # ── Step 4 · non-motorized level of service ───────────────────────────────────────────
+  create_nonmotorized_network:
+    job: "CTRAMP/scripts/skims/CreateNonMotorizedNetwork.job"
+  nonmotorized_skims:
+    job: "CTRAMP/scripts/skims/NonMotorizedSkims.job"
+  transit_dwell_access:
+    command: "CTRAMP/scripts/skims/transitDwellAccess.py"
+    # The argv the script receives, not a transliteration: RunModel.bat 146-147 set the
+    # complex-mode variables to a single space and cmd collapses those, so passing "" here
+    # would add arguments the script never saw and crash it on int("").
+    args: ["NORMAL", "NoExtraDelay", "Simple", "complexDwell", "complexAccess"]
+
+  # ── Once, after the warm start · needs its skims ──────────────────────────────────────
+  # RunIteration.bat parks these under IF %ITER%==1 for want of anywhere else to put
+  # "after the warm start, before the loop".  Here that place exists.
+  find_no_access_zones:
+    job: "CTRAMP/scripts/skims/FindNoAccessZones.job"
+  filter_unconnected_households:
+    command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
+    args: ["popsyn"]
+
+  # ── Steps 5-9 · the feedback loop, RunIteration.bat ───────────────────────────────────
+  # One round = demand + assignment; demand responds to the skims the last assignment left.
   # `--iterations N` overrides count.
-  #
   iterate:
-    count: 1
+    count: 3
+
+    # RunIteration.bat:19 -- `if %ITER%==0 goto hwyAssign`.  Iteration 0 is the warm start:
+    # a previous run's demand, assigned once so round 1 has skims to read.  It runs this
+    # slice of the body below -- named, not duplicated -- and seeds the running average
+    # rather than computing it, having no earlier round to average against.
+    warm_start:
+      - hwy_assign
+      - stage_transit_lines
+      - prep_hwy_net
+      - build_transit_networks
+      - transit_assign
+      - transit_skims
+      - stage_loaded_networks
+      - rename_assignment_variables
+      - seed_average_networks: # This is a weird one that runs after warm-start but isn't in the loop.
+          module: "tm1.steps.staging:seed_average_networks"
+      - test_network_convergence
+      - merge_networks
+      - publish_networks
+
     steps:
-      # --- 2. Simulate: run CTRAMP Java demand model ---
-      #
-      # Runs one iteration per call; the enclosing `iterate:` block drives the loop.
-      # Sample rate follows RunModel.bat's ramp (0.15, 0.30, 0.50 by iteration)
-      # unless sample_rate is set.  Shadow pricing is configured per iteration.
-      #
+      # ── step 1 · level of service ──
+      hwy_skims:
+        job: "CTRAMP/scripts/skims/HwySkims.job"
+        cluster_nodes: 5            # DistributeMultistep, one node per period
+      accessibility:
+        job: "CTRAMP/scripts/skims/Accessibility.job"
+
+      # ── step 2 · CT-RAMP ──
+      runtime_configuration_iter:
+        command: "CTRAMP/scripts/preprocess/RuntimeConfiguration.py"
+        args: ["--iter", "{iteration}"]
       simulate_ctramp:
         project_dir: "{proj_dir}"
         runtime_dir: "{proj_dir}/CTRAMP/runtime"
         host_ip: "localhost"
-        threads: 48 # It will reserve 2 threads for infrastructure to leave some headroom.
-        # iteration: 3         # pin this step to a specific iteration number; normally
-        #                      # the runner supplies it from the enclosing `iterate:` block
-        # sample_rate: 0.50    # uncomment to override the default per-iteration ramp
+        threads: 48                 # 2 are reserved for infrastructure
         seed: 0
-        shadow_pricing: true   # set false to disable shadow pricing
-        # All components enabled for full model run.
-        # Set individual components to false to disable them.
-        components:
+        shadow_pricing: true        # recomputed every run; nothing is reused
+        shadow_price_passes:        # an inner loop of location choice, per global round
+          first: 4                  # round 1 starts from zero prices
+          subsequent: 2             # later rounds top up the previous round's
+          # 4 + 2 + 2 chains to seven, which is known not to converge.  Raising these
+          # is a convergence run, not a parity run -- see simulate_ctramp's
+          # shadow_price_run_notes.
+        # sample_rate: 0.50         # overrides RunModel.bat's 0.15/0.30/0.50 ramp
+        # iteration: 3              # normally supplied by the enclosing iterate:
+        components:                 # set any to false to skip it
           UsualWorkAndSchoolLocationChoice: true
           AutoOwnership: true
           FreeParking: true
@@ -140,67 +228,101 @@ steps:
           AtWorkSubTourModeChoice: true
           StopFrequency: true
           StopLocation: true
+      update_telecommute_en7:       # runs every round; the script exits at once if EN7=DISABLED
+        command: "CTRAMP/scripts/preprocess/updateTelecommute_forEN7.py"
 
-      # --- 3. Assignment: Cube highway + transit, then feedback ---
-      #
-      # Runs RunIteration.bat's Cube half, in its order:
-      #   PrepAssign -> HwyAssign -> transit -> feedback -> HwySkims
-      # Leaves hwy/avgLOAD{PERIOD}.net and refreshed skims for the next iteration.
-      #
-      # Needs CTRAMP/scripts, hwy/ and nonres/ in the project dir (copied above).
-      #
-      assignment:
-        proj_dir: "{proj_dir}"
+      # ── step 3 · non-residential models ──
+      # IX and truck are full demand models; air passenger and HSR process input tables.
+      # They write their own trip tables, which HwyAssign reads alongside trips{PERIOD}.tpp.
+      ix_forecasts:
+        job: "CTRAMP/scripts/nonres/IxForecasts_horizon.job"
+      ix_time_of_day:
+        job: "CTRAMP/scripts/nonres/IxTimeOfDay.job"
+        cluster_nodes: 5
+      ix_toll_choice:
+        job: "CTRAMP/scripts/nonres/IxTollChoice.job"
+        cluster_nodes: 5
+      truck_trip_generation:
+        job: "CTRAMP/scripts/nonres/TruckTripGeneration.job"
+      truck_trip_distribution:
+        job: "CTRAMP/scripts/nonres/TruckTripDistribution.job"
+      truck_time_of_day:
+        job: "CTRAMP/scripts/nonres/TruckTimeOfDay.job"
+      truck_toll_choice:
+        job: "CTRAMP/scripts/nonres/TruckTollChoice.job"
+        cluster_nodes: 5
+      hsr_transit_submode_choice:
+        job: "CTRAMP/scripts/nonres/HsrTransitSubmodeChoice.job"
+        cluster_nodes: 5
+      move_air_pax_trips:
+        job: "CTRAMP/scripts/nonres/MoveAirPaxTrips_IfNoFreePath.job"
+        cluster_nodes: 5
 
-        # The demand this assignment consumes.  The step names the *artifact*, not
-        # the step that produced it, so the demand model and the assignment engine
-        # meet at a file rather than at each other's internals.  `{PERIOD}` expands
-        # to EA/AM/MD/PM/EV.  This is the default and can be omitted; it is written
-        # out here because it is the seam the whole pipeline is built around.
-        demand: "{proj_dir}/main/trips{PERIOD}.tpp"
+      # ── step 4 · highway assignment ──
+      prep_assign:                  # folds CT-RAMP's trip lists into main/trips{PERIOD}.tpp
+        job: "CTRAMP/scripts/assign/PrepAssign.job"
+        cluster_nodes: 5
+      hwy_assign:
+        job: "CTRAMP/scripts/assign/HwyAssign.job"
+        cluster_nodes: 48           # must match the intrastep range in HwyIntraStep.block
 
-        # `model_year` and `future` are legacy names, kept verbatim because the
-        # Cube jobs read them as %MODEL_YEAR% / %FUTURE%.  RunModel.bat derives
-        # both by slicing the *project folder name* -- "2023_TM161_IPA_35" gives
-        # chars 1-4 as the year and chars 12-14 ("IPA") as a project code, which
-        # a lookup maps to a FUTURE.  Setting them here instead means a run's
-        # results no longer depend on how its output directory is spelled.
-        #
-        #   model_year  the forecast year, used by IxForecasts_horizon.job to
-        #               pick the internal-external trip forecast: 2005 and 2015
-        #               are fixed tables, 2021 is the base, and later years are
-        #               extrapolated linearly from it (year_delta = year - 2021).
-        #               Years before 2021 other than 2015 are not supported.
-        #
-        #   future      *not* a year -- the name of a planning-scenario family,
-        #               selecting which growth assumptions the forecast uses.
-        #               IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/TRR all map to PBA50,
-        #               which is the only one implemented.  (PPA runs instead
-        #               use RisingTidesFallingFortunes / CleanAndGreen /
-        #               BackToTheFuture, chosen by a further two characters of
-        #               the folder name.)
-        # Which engine solves the assignment.  Cube and AequilibraE solve the
-        # same problem -- multi-class user equilibrium over the same network
-        # from the same demand -- so switching is a value here, not a different
-        # step.  `aeq` arrives with the ActivitySim swap-in, which brings the
-        # engine and the OMX demand path it reads.
-        backend: cube
+      # ── step 4 · transit assignment (trnAssign.bat) ──
+      # These run from the round's own directory, as trnAssign.bat does; their cluster still
+      # talks in proj_dir/commpath rather than under it.
+      stage_transit_lines:
+        module: "tm1.steps.staging:stage_transit_lines"
+      prep_hwy_net:
+        job: "CTRAMP/scripts/skims/PrepHwyNet.job"
+        cwd: "trn/TransitAssignment.iter{iteration}"
+        timeout: 1800
+      build_transit_networks:
+        job: "CTRAMP/scripts/skims/BuildTransitNetworks.job"
+        cwd: "trn/TransitAssignment.iter{iteration}"
+        timeout: 3600
+      transit_assign:
+        job: "CTRAMP/scripts/assign/TransitAssign.job"
+        cwd: "trn/TransitAssignment.iter{iteration}"
+        commpath: "commpath"
+        cluster_nodes: 15           # accegg(3) x path(5) tasks per period
+      transit_skims:
+        job: "CTRAMP/scripts/skims/TransitSkims.job"
+        cwd: "trn/TransitAssignment.iter{iteration}"
+        commpath: "commpath"
+        cluster_nodes: 15
 
-        model_year: 2023
-        future: PBA50
-        do_nonres: true        # internal/external, truck, air passenger, HSR models
-        do_transit: true       # transit assignment + skims (15-node cluster)
-        build_skims: true      # rebuild highway skims + accessibility afterwards
-        cluster_nodes: 48      # must match the intrastep range in HwyIntraStep.block
+      # ── step 5 · feedback ──
+      # AverageNetworkVolumes runs every round, where the .bat skips it at iteration 1 and
+      # copies instead: its weights already make round 1 a copy (WGT 1.0, PREV_WGT 0.00),
+      # and the only blocker was PREV_ITER pointing at the file it was writing.  Parity
+      # plan, finding 5.
+      stage_loaded_networks:
+        module: "tm1.steps.staging:stage_loaded_networks"
+      rename_assignment_variables:
+        job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
+      average_network_volumes:
+        job: "CTRAMP/scripts/feedback/AverageNetworkVolumes.job"
+      calculate_speeds:
+        job: "CTRAMP/scripts/feedback/CalculateSpeeds.job"
+        cluster_nodes: 5
+      test_network_convergence:
+        job: "CTRAMP/scripts/feedback/TestNetworkConvergence.job"
+      merge_networks:
+        job: "CTRAMP/scripts/feedback/MergeNetworks.job"
+      publish_networks:
+        module: "tm1.steps.staging:publish_networks"
 
-  # --- 4. Your own code: any step with `script:` or `module:` ---
+  # ── Steps 11, 17 · post-process ───────────────────────────────────────────────────────
+  skims_database:
+    job: "CTRAMP/scripts/database/SkimsDatabase.job"
+  net2csv_avgload5period:
+    job: "CTRAMP/scripts/metrics/net2csv_avgload5period.job"
+
+  # A demonstration of where this is heading.  Every step above spawns a legacy artifact
+  # -- a Cube .job, or a .py run as its own process, exactly as RunModel.bat ran it.  This
+  # one is Python native: `script:` imports the module and calls it with the resolved
+  # config, so it can read what earlier steps computed and return "skipped".  Phase 4
+  # converts the legacy steps to look like this one, a few at a time.
   #
-  # This one runs last, so it is post-processing.  Move it above
-  # `simulate_ctramp` and the same mechanism makes it pre-processing -- position
-  # in this list is the only thing that decides.
-  #
-  # `hooks.py:vmt_vht_metrics` names the function; without the `:name` suffix
-  # the step calls `run()`, so one file can hold several steps.
-  #
+  # Position in this list is the only thing that makes a step pre- or post-processing.
   vmt_vht_metrics:
     script: "hooks.py:vmt_vht_metrics"

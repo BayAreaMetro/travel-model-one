@@ -12,11 +12,24 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Needed only to run the legacy transit dwell/access feedback (transitDwellAccess.py
-# via NetworkWrangler, cloned separately — see the transit-assignment-env memo).
-transit = [
+# What the legacy RunModel.bat scripts need, and nothing else does.  Every entry
+# exists to run one `command:` step in the CT-RAMP scenario:
+#
+#   dbfpy3       csvToDbf.py            hwy/tolls.csv -> the .dbf Cube's LOOKUPI reads
+#   simpleparse  transitDwellAccess.py  via NetworkWrangler, which is cloned separately
+#                                       (see the transit-assignment-env memo)
+#   xlrd/xlwt/   RuntimeConfiguration.py  patches costPerMile into the UEC .xls files
+#     xlutils
+#   pywin32      NetworkWrangler
+#
+# Phase 4 replaces those scripts with native steps, and this whole extra goes with
+# them -- it is complete when no `command:` in any scenario points into CTRAMP/scripts.
+legacy = [
+    "dbfpy3>=2.3",
     "simpleparse>=2.2",
     "xlrd>=2.0",
+    "xlutils>=2.0",
+    "xlwt>=1.3",
     "pywin32>=304",
 ]
 
