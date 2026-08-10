@@ -12,7 +12,13 @@ the loop body, run once before the rounds, which is the one branch of
 
 import pytest
 
-from tm1.runner import _flatten_steps, _iteration_plan
+from tm1.runner import (
+    _apply_resume,
+    _apply_until,
+    _flatten_steps,
+    _iteration_plan,
+    _select_steps,
+)
 
 
 def _plan(steps_cfg: dict, override: int | None = None) -> list[tuple[str, int]]:
@@ -130,6 +136,74 @@ def test_a_loop_with_no_warm_start_is_unchanged() -> None:
     plan = _plan({"iterate": {"count": 2, "steps": {"assignment": {}}}})
 
     assert _rounds(plan, "assignment") == [1, 2]
+
+
+# --- selecting a slice of the plan -----------------------------------------
+
+
+def _pipeline() -> dict:
+    """A config with steps before, inside and after the loop."""
+    return {
+        "copy_inputs": {},
+        "iterate": {
+            "count": 3,
+            "warm_start": ["hwy_assign"],
+            "steps": {"simulate_ctramp": {}, "hwy_assign": {}, "publish": {}},
+        },
+    }
+
+
+def test_until_stops_after_the_named_step() -> None:
+    """The mirror of --resume-at: inclusive, so the named step itself runs."""
+    plan = _apply_until(_plan(_pipeline()), "0:hwy_assign")
+
+    assert plan[-1] == ("hwy_assign", 0)
+
+
+def test_until_composes_with_resume_at_to_name_a_slice() -> None:
+    """Together they express any contiguous range without listing steps."""
+    full = _plan(_pipeline())
+
+    sliced = _apply_until(_apply_resume(full, "2:simulate_ctramp"), "2:publish")
+
+    assert sliced == [("simulate_ctramp", 2), ("hwy_assign", 2), ("publish", 2)]
+
+
+def test_until_refuses_an_ambiguous_bare_name() -> None:
+    """Picking the wrong round costs hours of Cube, so it asks rather than guesses."""
+    with pytest.raises(ValueError, match="ambiguous"):
+        _apply_until(_plan(_pipeline()), "hwy_assign")
+
+
+def test_steps_filters_the_plan_and_keeps_real_round_numbers() -> None:
+    """The bug this replaces: a fresh plan from bare names numbered everything 1.
+
+    A warm-start step run as iteration 1 writes hwy/iter1/ from iteration-0
+    demand -- succeeding, while producing nonsense.
+    """
+    plan = _select_steps(_plan(_pipeline()), ["hwy_assign"])
+
+    assert plan == [("hwy_assign", i) for i in (0, 1, 2, 3)]
+
+
+def test_steps_may_name_one_round() -> None:
+    """`0:hwy_assign` picks the warm start's run and leaves the loop alone."""
+    plan = _select_steps(_plan(_pipeline()), ["0:hwy_assign"])
+
+    assert plan == [("hwy_assign", 0)]
+
+
+def test_steps_keeps_plan_order_not_argument_order() -> None:
+    """Order is the pipeline's, so a mistyped argument order cannot reorder a run."""
+    plan = _select_steps(_plan(_pipeline()), ["1:publish", "1:simulate_ctramp"])
+
+    assert plan == [("simulate_ctramp", 1), ("publish", 1)]
+
+
+def test_steps_naming_nothing_is_refused() -> None:
+    """A typo should not quietly run nothing and report success."""
+    with pytest.raises(ValueError, match="matches nothing"):
+        _select_steps(_plan(_pipeline()), ["no_such_step"])
 
 
 def test_empty_loop_body_is_refused() -> None:

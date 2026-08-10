@@ -86,6 +86,7 @@ def cmd_run(args: argparse.Namespace) -> None:
         force=args.force,
         iterations=args.iterations,
         resume_at=args.resume_at,
+        until=args.until,
     )
 
 
@@ -126,6 +127,17 @@ def main() -> None:
             "before it is skipped. Prefix with an iteration (e.g. 2:assignment) "
             "when the step runs in more than one. The step re-runs from the "
             "start, never continues part-way"
+        ),
+    )
+    run_parser.add_argument(
+        "--until",
+        metavar="[N:]STEP",
+        default=None,
+        help=(
+            "Stop after STEP, which itself runs -- the mirror of --resume-at, and "
+            "combinable with it to run any slice. Prefix with an iteration "
+            "(e.g. 0:publish_networks for the end of the warm start) when the step "
+            "runs in more than one"
         ),
     )
     run_parser.add_argument(

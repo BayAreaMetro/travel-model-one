@@ -321,6 +321,92 @@ def resume_token(plan: list[tuple[str, int]], step: str, iteration: int) -> str:
     return f"{iteration}:{step}" if sum(s == step for s, _ in plan) > 1 else step
 
 
+def _match_token(
+    plan: list[tuple[str, int]], token: str, flag: str
+) -> int:
+    """Index in *plan* of the entry a ``[N:]STEP`` token names.
+
+    A bare name matching several rounds is an error rather than a guess: picking
+    the wrong round costs hours of Cube.
+    """
+    prefix, _, name = token.rpartition(":")
+    name = name.strip()
+    want = int(prefix.strip()) if prefix.strip() else None
+
+    matches = [
+        i for i, (step, it) in enumerate(plan)
+        if step == name and (want is None or it == want)
+    ]
+    n_iters = max((i for _, i in plan), default=1)
+
+    if not matches:
+        msg = (
+            f"{flag} {token!r} matches nothing in this run.\n"
+            f"Planned: {_fmt_plan(plan, n_iters)}\n"
+            f"Give a step name, or iteration:step to pick a round."
+        )
+        raise ValueError(msg)
+
+    if want is None and len(matches) > 1:
+        rounds = ", ".join(f"{plan[i][1]}:{name}" for i in matches)
+        msg = (
+            f"{flag} {name!r} is ambiguous -- it runs in {len(matches)} "
+            f"iterations. Say which: {rounds}"
+        )
+        raise ValueError(msg)
+
+    return matches[0]
+
+
+def _apply_until(
+    plan: list[tuple[str, int]], until: str | None
+) -> list[tuple[str, int]]:
+    """Drop everything after *until*, which itself **runs**.
+
+    The mirror of :func:`_apply_resume`, and composable with it -- together they
+    name any contiguous slice of the plan.  Naming a boundary rather than listing
+    steps is what keeps this usable as the pipeline grows: ``--until
+    0:publish_networks`` is the whole warm start however many steps that is.
+    """
+    if not until:
+        return plan
+    return plan[: _match_token(plan, until, "--until") + 1]
+
+
+def _select_steps(
+    plan: list[tuple[str, int]], steps: list[str] | None
+) -> list[tuple[str, int]]:
+    """Keep only the named steps, **without** disturbing their round numbers.
+
+    ``--steps`` filters the real plan rather than standing in for one.  Building a
+    fresh plan from bare names loses the ``iterate:`` expansion, so every step
+    would be numbered 1 -- and a warm-start step run as iteration 1 writes
+    ``hwy/iter1/`` from iteration-0 demand, succeeding while producing nonsense.
+
+    A name may carry a round (``0:hwy_assign``) to pick one; bare, it keeps every
+    round that step legitimately runs in.
+    """
+    if not steps:
+        return plan
+
+    wanted: set[tuple[str, int]] = set()
+    for token in steps:
+        prefix, _, name = token.rpartition(":")
+        name = name.strip()
+        want = int(prefix.strip()) if prefix.strip() else None
+        hits = [(s, i) for s, i in plan if s == name and (want is None or i == want)]
+        if not hits:
+            n_iters = max((i for _, i in plan), default=1)
+            msg = (
+                f"--steps {token!r} matches nothing in this run.\n"
+                f"Planned: {_fmt_plan(plan, n_iters)}"
+            )
+            raise ValueError(msg)
+        wanted.update(hits)
+
+    return [entry for entry in plan if entry in wanted]
+
+
 def _apply_resume(
     plan: list[tuple[str, int]],
     resume_at: str | None,
@@ -596,24 +682,27 @@ def run_model(
     _resolve_slack_level(cfg, slack_level)
 
     steps_cfg = cfg.get("steps", {})  # pyright: ignore[reportAttributeAccessIssue]
-    if steps is None:
-        steps = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
+    declared = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
 
     # Step lookup sees the loop body as ordinary steps, so `--steps assignment`
     # works whether or not assignment sits inside `iterate`.
     flat_steps_cfg = _flatten_steps(steps_cfg)
 
-    log_handler = _start_run_log(cfg, label, steps)
+    log_handler = _start_run_log(cfg, label, steps or declared)
     t0_total = time.time()
 
     try:
-        # `--iterations N` overrides iterate.count for this run.
-        full_plan = _iteration_plan(steps_cfg, steps, override=kwargs.get("iterations"))
+        # Always the config's whole plan: `--steps`, `--resume-at` and `--until`
+        # select from it rather than defining one, so a step keeps the round it
+        # actually belongs to.  `--iterations N` overrides iterate.count.
+        full_plan = _iteration_plan(steps_cfg, declared, override=kwargs.get("iterations"))
         n_iters = max((i for _, i in full_plan), default=1)
-        plan = _apply_resume(full_plan, kwargs.get("resume_at"), cfg.get("proj_dir"))
+        plan = _select_steps(full_plan, steps)
+        plan = _apply_resume(plan, kwargs.get("resume_at"), cfg.get("proj_dir"))
+        plan = _apply_until(plan, kwargs.get("until"))
         _report_resume(full_plan, plan, n_iters)
         prev_iter = None
-        _notify_start(label, steps, flat_steps_cfg, n_iters, kwargs)
+        _notify_start(label, steps or declared, flat_steps_cfg, n_iters, kwargs)
 
         for name, iteration in plan:
             run_step = _load_step(name, flat_steps_cfg, scenario_dir)
