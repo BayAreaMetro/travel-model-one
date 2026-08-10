@@ -275,6 +275,7 @@ steps:
       prep_assign:                  # folds CT-RAMP's trip lists into main/trips{PERIOD}.tpp
         job: "CTRAMP/scripts/assign/PrepAssign.job"
         cluster_nodes: 5
+        verify: ["main/trips{PERIOD}.tpp"]   # it exits 0 with no trip lists to read
       hwy_assign:
         job: "CTRAMP/scripts/assign/HwyAssign.job"
         cluster_nodes: 48           # must match the intrastep range in HwyIntraStep.block

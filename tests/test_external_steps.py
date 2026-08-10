@@ -406,3 +406,78 @@ def test_unknown_step_error_mentions_the_external_keys(proj: Path) -> None:
     """The message has to teach all four ways to declare a step, not two."""
     with pytest.raises(ValueError, match="command"):
         _load_step("mystery", {"mystery": {}}, proj)
+
+
+# --- verify: what a step says it produces ----------------------------------
+
+#: Writes the files named in ``MAKE``, so a test can control what a step produces.
+_PRODUCER = """
+import os
+for rel in os.environ["MAKE"].split(";"):
+    if not rel:
+        continue
+    path, _, size = rel.partition("=")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    open(path, "w").write("x" * int(size))
+"""
+
+
+def _producer(proj: Path, makes: dict[str, int]) -> dict:
+    """A ``command:`` step that writes *makes* -- ``{relative path: bytes}``."""
+    rel = _write_script(proj, "produce.py", _PRODUCER)
+    spec = ";".join(f"{proj / p}={n}" for p, n in makes.items())
+    return {"command": rel, "env": {"MAKE": spec}}
+
+
+def test_verify_passes_when_the_step_produced_its_outputs(proj: Path) -> None:
+    """The ordinary case: the step wrote what it said it would, and nothing happens."""
+    step = _producer(proj, {"main/tripsAM.tpp": 10})
+    step["verify"] = ["main/tripsAM.tpp"]
+
+    assert external.make_step("prep", step)(proj, _cfg(proj, "prep", step)) is None
+
+
+def test_verify_fails_the_step_that_produced_nothing(proj: Path) -> None:
+    """PrepAssign.job's failure mode: exit 0, no demand, HwyAssign blamed later."""
+    step = _producer(proj, {})
+    step["verify"] = ["main/tripsAM.tpp"]
+
+    with pytest.raises(FileNotFoundError, match="did not produce"):
+        external.make_step("prep", step)(proj, _cfg(proj, "prep", step))
+
+
+def test_verify_counts_an_empty_file_as_missing(proj: Path) -> None:
+    """A Cube job that opens its output and writes nothing leaves the file behind."""
+    step = _producer(proj, {"main/tripsAM.tpp": 0})
+    step["verify"] = ["main/tripsAM.tpp"]
+
+    with pytest.raises(FileNotFoundError, match="tripsAM"):
+        external.make_step("prep", step)(proj, _cfg(proj, "prep", step))
+
+
+def test_verify_expands_period_over_all_five(proj: Path) -> None:
+    """One line covers the per-period case; a single missing period still fails."""
+    made = {f"main/trips{p}.tpp": 10 for p in external.PERIODS if p != "EV"}
+    step = _producer(proj, made)
+    step["verify"] = ["main/trips{PERIOD}.tpp"]
+
+    with pytest.raises(FileNotFoundError, match="tripsEV"):
+        external.make_step("prep", step)(proj, _cfg(proj, "prep", step))
+
+
+def test_verify_substitutes_the_iteration(proj: Path) -> None:
+    """Outputs are per-round, so the check has to name the round being run."""
+    step = _producer(proj, {"hwy/iter2/avgload.net": 10})
+    step["verify"] = ["hwy/iter{iteration}/avgload.net"]
+
+    external.make_step("stage", step)(proj, _cfg(proj, "stage", step), iteration=2)
+
+    with pytest.raises(FileNotFoundError, match="iter3"):
+        external.make_step("stage", step)(proj, _cfg(proj, "stage", step), iteration=3)
+
+
+def test_a_step_without_verify_is_unchanged(proj: Path) -> None:
+    """`verify:` is opt-in -- most steps have no single artifact worth naming."""
+    step = _producer(proj, {})
+
+    assert external.make_step("plain", step)(proj, _cfg(proj, "plain", step)) is None

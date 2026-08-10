@@ -55,6 +55,20 @@ run outside ``proj_dir`` has to say where its nodes should talk.
 the loop; the warm-start steps sit outside it and say ``iteration: 0``, which is
 ``RunModel.bat``'s ``set ITER=0``.
 
+``verify:`` names the artifacts a step must have produced::
+
+    prep_assign:
+      job: "CTRAMP/scripts/assign/PrepAssign.job"
+      verify: ["main/trips{PERIOD}.tpp"]
+
+An exit code says the program ran, not that it did anything.  ``PrepAssign.job``
+returns cleanly when the CT-RAMP trip lists it reads are absent, and the empty
+matrices then surface minutes later as an unrelated ``HwyAssign.job`` failure --
+so the run reports the wrong step.  A step that declares its outputs fails where
+the fault is.  ``{PERIOD}`` expands over the five assignment periods, which keeps
+the common case one line.  This is only for external steps: a ``module:`` or
+``script:`` step is called in-process and raises.
+
 **``args:`` is the argv the program receives, not a transliteration of the ``.bat``
 line.**  ``RunModel.bat`` sets its empty variables to a single space on purpose
 ("NOTE the blank ones should have a space"), and ``cmd`` collapses those on
@@ -84,6 +98,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
+from tm1.assignment.cube.highway import PERIODS
 from tm1.assignment.cube.runner import run_cube_job
 
 log = logging.getLogger(__name__)
@@ -92,6 +107,13 @@ log = logging.getLogger(__name__)
 JOB_KEY = "job"
 COMMAND_KEY = "command"
 KEYS: tuple[str, ...] = (JOB_KEY, COMMAND_KEY)
+
+#: Artifacts a step declares it produces, checked once it returns.
+VERIFY_KEY = "verify"
+
+#: Expanded over the five assignment periods in a ``verify:`` entry, so the usual
+#: case -- one artifact per period -- stays a single line.
+_PERIOD_REF = "{PERIOD}"
 
 #: Seconds before a spawned program is presumed hung.  Generous: transitDwellAccess
 #: parses a 33k-line transit network, and SkimsDatabase-scale work is slower still.
@@ -363,6 +385,52 @@ def _run_command(
     log.debug("%s: output -> %s", step_name, logfile)
 
 
+def _verify_outputs(
+    step_name: str, step_cfg: dict, proj_dir: Path, values: dict
+) -> None:
+    """Check the artifacts a step declared under ``verify:``.
+
+    A clean exit means the program ran, not that it produced anything.
+    ``PrepAssign.job`` is the case that motivated this: it returns 0 when the
+    CT-RAMP trip lists it reads are missing, and the empty ``trips{PERIOD}.tpp``
+    then fails ``HwyAssign.job`` minutes later, blaming the wrong step.
+
+    Zero bytes counts as missing.  A Cube job that opens its output and writes
+    nothing leaves the file behind, and that is the shape this failure takes.
+    """
+    declared = step_cfg.get(VERIFY_KEY) or []
+    if isinstance(declared, str):
+        declared = [declared]
+
+    expected: list[str] = []
+    for entry in declared:
+        text = _substitute(entry, values)
+        if _PERIOD_REF in text:
+            expected.extend(text.replace(_PERIOD_REF, period) for period in PERIODS)
+        else:
+            expected.append(text)
+
+    missing = []
+    for entry in expected:
+        path = Path(entry).expanduser()
+        path = path if path.is_absolute() else proj_dir / path
+        if not path.is_file() or path.stat().st_size == 0:
+            missing.append(path)
+
+    if missing:
+        names = "\n  ".join(str(p) for p in missing)
+        msg = (
+            f"Step {step_name!r} returned cleanly but did not produce what it "
+            f"declares under {VERIFY_KEY}:\n  {names}\n"
+            f"The step's own log is in {proj_dir / 'logs'}; the fault is here, not "
+            f"in whatever reads these next."
+        )
+        raise FileNotFoundError(msg)
+
+    if expected:
+        log.debug("%s: verified %d output(s)", step_name, len(expected))
+
+
 def make_step(step_name: str, step_cfg: dict) -> Callable[..., str | None]:
     """Build the ``run(scenario_dir, cfg, **kwargs)`` callable for an external step.
 
@@ -393,6 +461,7 @@ def make_step(step_name: str, step_cfg: dict) -> Callable[..., str | None]:
             _run_command(
                 step_name, step_cfg, proj_dir, Path(scenario_dir), env, values
             )
+        _verify_outputs(step_name, step_cfg, proj_dir, values)
         return None
 
     run.__name__ = step_name
