@@ -24,6 +24,38 @@ def _strip_ctrl_z(path: Path) -> None:
             f.truncate()
 
 
+def _copy_tree(src: Path, dest: Path, *, glob: str | None, force: bool) -> int:
+    r"""Copy a directory into *dest*, returning the number of files written.
+
+    File by file rather than :func:`shutil.copytree`, for two reasons.  Two sources
+    can **merge** into one directory -- ``RunModel.bat`` 175-177 copies both
+    ``INPUT\\nonres`` and ``INPUT\\warmstart\\nonres`` into ``nonres\\``.  And an
+    existing file is left alone unless *force*, so re-running staging never clobbers
+    what a later step built on top of it.
+
+    ``glob`` selects top-level files only and flattens them into *dest*; without it
+    the whole tree is walked and its shape preserved.
+    """
+    files = (
+        [f for f in sorted(src.glob(glob)) if f.is_file()]
+        if glob
+        else sorted(p for p in src.rglob("*") if p.is_file())
+    )
+
+    dest.mkdir(parents=True, exist_ok=True)
+    written = 0
+    for f in files:
+        target = dest / (f.name if glob else f.relative_to(src))
+        if not force and target.exists():
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f, target)
+        written += 1
+
+    log.info("Copied %s%s -> %s (%d files)", src, f"/{glob}" if glob else "", dest, written)
+    return written
+
+
 def run(
     scenario_dir: Path,  # noqa: ARG001
     cfg: dict,
@@ -42,26 +74,7 @@ def run(
             sys.exit(f"Source not found: {src}")
 
         if src.is_dir():
-            pattern = entry.get("glob")
-            if pattern:
-                # Copy only files matching the glob from a directory.
-                dest.mkdir(parents=True, exist_ok=True)
-                for f in sorted(src.glob(pattern)):
-                    if not f.is_file():
-                        continue
-                    target = dest / f.name
-                    if not force and target.exists():
-                        continue
-                    shutil.copy2(f, target)
-                    copied += 1
-                log.info("Copied %s/%s -> %s (%d files)", src, pattern, dest, copied)
-            else:
-                if not force and dest.exists():
-                    log.info("Already exists: %s", dest)
-                    continue
-                log.info("Copying directory %s -> %s", src, dest)
-                shutil.copytree(src, dest, dirs_exist_ok=force)
-                copied += 1
+            copied += _copy_tree(src, dest, glob=entry.get("glob"), force=bool(force))
         else:
             dest.parent.mkdir(parents=True, exist_ok=True)
             if not force and dest.exists():
