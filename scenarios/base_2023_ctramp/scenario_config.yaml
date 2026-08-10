@@ -40,6 +40,7 @@ future: PBA50
 env:
   EN7: DISABLED                     # required: RunModel.bat 115-128 will not start without it
   PATH: "C:/Program Files/Git/usr/bin;{env:PATH}"   # gawk, for BuildTransitNetworks.job
+  PYTHONPATH: "E:/GitHub/NetworkWrangler"           # transitDwellAccess.py imports Wrangler
   # MAXITERATIONS: 3                # RunModel.bat 135-147 hard-codes these
   # TRNCONFIG: FAST                 # STANDARD makes transit iterate; not supported yet
 
@@ -59,18 +60,22 @@ ctramp_output_dir: "{proj_dir}/main"
 steps:
 
   # ── Steps 1-2 · stage every input the model reads ─────────────────────────────────────
-  # Entries run in the order written, and later ones may source from what earlier ones
-  # wrote.  Directory entries merge file by file and never overwrite, so two sources can
-  # land in one directory and a re-run cannot clobber what a later step built.
+
+  # RunModel.bat 156-165.  Cube jobs do not create their own output directories, and
+  # skims/, popsyn/ and database/ have no staged inputs.
+  make_directories:
+    module: "tm1.steps.staging:make_directories"
+    dirs: [hwy, trn, skims, landuse, popsyn, nonres, main, logs, database, logsums]
+
+  # Entries run in the order written; later ones may read what earlier ones wrote.
+  # Directory entries merge file by file and never overwrite.
   #
-  # Everything the model *produces* is absent by design: no skims, no accessibility, no
-  # popsyn, no taxi_tnc_occ_factors.  Staging those would hide a failure in the steps
-  # that build them, which is the whole point of running end to end.
+  # Nothing the model produces is staged -- no skims, accessibility, popsyn or
+  # taxi_tnc_occ_factors -- so a failure in the steps that build them cannot hide.
   copy_inputs:
-    # 1. The pristine inputs, staged whole.  This has to land inside proj_dir because
-    #    the legacy scripts read it by relative path -- filterUnconnectedHouseholds
-    #    reads INPUT/popsyn, updateTelecommute_forEN7 reads INPUT/landuse and
-    #    INPUT/params.properties.
+    # 1. The pristine inputs.  Staged inside proj_dir because the legacy scripts read
+    #    INPUT/ by relative path: filterUnconnectedHouseholds reads INPUT/popsyn,
+    #    updateTelecommute_forEN7 reads INPUT/landuse and INPUT/params.properties.
     input:
       from: "{reference_run}/INPUT"
       to: "{proj_dir}/INPUT"
@@ -181,6 +186,7 @@ steps:
       - build_transit_networks
       - transit_assign
       - transit_skims
+      - copy_transit_skims
       - stage_loaded_networks
       - rename_assignment_variables
       - seed_average_networks: # This is a weird one that runs after warm-start but isn't in the loop.
@@ -296,12 +302,15 @@ steps:
         cwd: "trn/TransitAssignment.iter{iteration}"
         commpath: "commpath"
         cluster_nodes: 15
+        env:                      # trnAssign.bat's counters; FAST is a single pass
+          TRNASSIGNITER: "0"
+          PREVTRNASSIGNITER: "NEG1"
+      copy_transit_skims:         # trnAssign.bat copy-up: iteration dir -> skims/
+        module: "tm1.steps.staging:copy_transit_skims"
 
       # ── step 5 · feedback ──
-      # AverageNetworkVolumes runs every round, where the .bat skips it at iteration 1 and
-      # copies instead: its weights already make round 1 a copy (WGT 1.0, PREV_WGT 0.00),
-      # and the only blocker was PREV_ITER pointing at the file it was writing.  Parity
-      # plan, finding 5.
+      # AverageNetworkVolumes runs every round.  The .bat skips it at iteration 1 and
+      # copies instead; PREV_ITER=0 makes it equivalent -- see the parity plan, finding 5.
       stage_loaded_networks:
         module: "tm1.steps.staging:stage_loaded_networks"
       rename_assignment_variables:
@@ -324,12 +333,8 @@ steps:
   net2csv_avgload5period:
     job: "CTRAMP/scripts/metrics/net2csv_avgload5period.job"
 
-  # A demonstration of where this is heading.  Every step above spawns a legacy artifact
-  # -- a Cube .job, or a .py run as its own process, exactly as RunModel.bat ran it.  This
-  # one is Python native: `script:` imports the module and calls it with the resolved
-  # config, so it can read what earlier steps computed and return "skipped".  Phase 4
-  # converts the legacy steps to look like this one, a few at a time.
-  #
-  # Position in this list is the only thing that makes a step pre- or post-processing.
+  # Python-native, unlike every step above: `script:` imports and calls with the resolved
+  # config rather than spawning a subprocess.  This is the shape phase 4 converts the
+  # legacy steps into.  Position in the list decides pre- or post-processing.
   vmt_vht_metrics:
     script: "hooks.py:vmt_vht_metrics"

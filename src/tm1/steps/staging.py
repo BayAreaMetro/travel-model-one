@@ -55,6 +55,35 @@ def _iter_dir(cfg: dict, kwargs: dict) -> tuple[Path, Path]:
     return hwy, iter_dir
 
 
+def make_directories(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+    """Create the working directories, ``RunModel.bat`` 156-165.
+
+    Native steps create what they write, so this looks redundant -- but a Cube job
+    does not.  ``NonMotorizedSkims.job`` writing to ``skims/nonmotskm.tpp`` fails
+    with "the system cannot find the path specified" if ``skims/`` is absent, and
+    nothing else creates it: only directories that happen to be ``copy_inputs``
+    targets exist by the time the jobs run.  ``skims``, ``popsyn`` and ``database``
+    have no staged inputs at all.
+    """
+    step_cfg = cfg.get("steps", {}).get(str(kwargs.get("step_name", "")), {}) or {}
+    names = step_cfg.get("dirs")
+    if not names:
+        msg = (
+            "make_directories needs `dirs:` -- the list RunModel.bat 156-165 creates. "
+            "It is stated in the config rather than hard-coded because which "
+            "directories a run needs is a property of the pipeline, not of this step."
+        )
+        raise ValueError(msg)
+
+    proj_dir = Path(cfg["proj_dir"])
+    made = [n for n in names if not (proj_dir / str(n)).is_dir()]
+    for name in names:
+        (proj_dir / str(name)).mkdir(parents=True, exist_ok=True)
+
+    log.info("Directories ready in %s (%d created)", proj_dir, len(made))
+    return None
+
+
 def stage_transit_lines(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Seed this round's transit assignment directory with its line files.
 
@@ -82,6 +111,34 @@ def stage_transit_lines(scenario_dir: Path, cfg: dict, **kwargs: object) -> str 
         shutil.copy2(source, ta_dir / f"transit{period}.lin")
 
     log.info("Staged %d transit line files in %s", 2 * len(PERIODS), ta_dir)
+    return None
+
+
+def copy_transit_skims(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+    """Lift this round's transit skims out of the iteration directory, into ``skims/``.
+
+    ``trnAssign.bat``'s copy-up.  ``TransitSkims.job`` writes into
+    ``trn/TransitAssignment.iter{N}/``; CT-RAMP reads ``skims/``.  The
+    ``.avg.iter{N}`` suffix is kept, because that is what resolves the latest
+    iteration when the skims are read back.
+    """
+    proj_dir = Path(cfg["proj_dir"])
+    iteration = _iteration(cfg, kwargs)
+    ta_dir = proj_dir / "trn" / f"TransitAssignment.iter{iteration}"
+    skims = proj_dir / "skims"
+    skims.mkdir(parents=True, exist_ok=True)
+
+    found = sorted(ta_dir.glob("trnskm*.avg.iter*.tpp"))
+    if not found:
+        msg = (
+            f"No transit skims in {ta_dir}. TransitSkims.job writes "
+            f"trnskm*.avg.iter*.tpp there; check that it ran for this round."
+        )
+        raise FileNotFoundError(msg)
+    for f in found:
+        shutil.copy2(f, skims / f.name)
+
+    log.info("Copied %d transit skims to %s", len(found), skims)
     return None
 
 
