@@ -26,6 +26,29 @@ individually with ``tm1 run --steps <name>``.
 ``script``/``module`` may name the function after a colon; without one, ``run`` is
 used, matching the built-in steps.  Naming it lets one file hold several steps.
 
+A step may instead run a program the harness cannot call in-process — a Cube
+``.job``, or anything else, spawned as a subprocess::
+
+    steps:
+      set_tolls:
+        job: "CTRAMP/scripts/preprocess/SetTolls.job"    # relative to proj_dir
+      csv_to_dbf:
+        command: "CTRAMP/scripts/preprocess/csvToDbf.py"
+        args: ["hwy/tolls.csv", "hwy/tolls.dbf"]
+
+**Writing the code yourself? Use ``script:`` or ``module:``.**  They are imported
+and called with the resolved ``cfg``, so the step can pass values to later steps
+and return ``"skipped"``.  ``command:`` gets none of that -- only argv, an
+environment, and an exit code -- and exists for programs the harness does not own,
+today the legacy ``RunModel.bat`` corpus.  Pointing ``command:`` at something in the
+scenario directory is an error naming ``script:``, because that is where your own
+code lives.
+
+``job:``/``command:`` are executed rather than imported, so they name no entrypoint
+and resolve against ``proj_dir`` rather than the scenario directory — that is the
+directory ``RunModel.bat`` ran its artifacts from, and every one of them assumes it.
+See :mod:`tm1.steps.external`.
+
 Built-in step names always win: a scenario can add steps but never redefine one.
 
 ``cfg`` is shared across steps, so a step *may* modify it to pass computed values
@@ -46,6 +69,7 @@ from pathlib import Path
 from types import ModuleType
 
 import tm1.steps.assignment as assignment_step
+import tm1.steps.external as external_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 from tm1 import add_run_logfile, remove_run_logfile, slack
@@ -77,8 +101,10 @@ STEPS: dict[str, Callable] = {
 
 DEFAULT_STEPS = list(STEPS.keys())
 
-#: Keys a scenario uses to point a step at its own code.
-_CUSTOM_KEYS = ("script", "module")
+#: Keys a scenario uses to point a step at code the runner does not supply.
+#: ``script``/``module`` are imported and called; ``job``/``command`` are spawned
+#: (see :mod:`tm1.steps.external`).  Order matters only for the error messages.
+_CUSTOM_KEYS = ("script", "module", *external_step.KEYS)
 
 #: Function called on a custom step's module when none is named after a colon.
 _DEFAULT_ENTRYPOINT = "run"
@@ -120,6 +146,74 @@ def _load_script(path: Path, scenario_dir: Path) -> ModuleType:
 #: Step name reserved for the global feedback loop.
 _ITERATE = "iterate"
 
+#: Key on ``iterate`` naming the slice of the body that runs once, before the loop.
+_WARM_START = "warm_start"
+
+#: The round a warm start runs as -- ``RunModel.bat``'s ``set ITER=0``.
+_WARM_START_ITERATION = 0
+
+
+def _warm_start_entries(it_cfg: dict) -> list[tuple[str, dict | None]]:
+    """Parse ``warm_start:`` into ``(step name, its own config or None)``.
+
+    An entry is either a bare name, reusing the loop body's definition of that
+    step, or a single-key mapping defining a step the warm start alone has::
+
+        warm_start:
+          - hwy_assign                       # as the loop defines it
+          - seed_average_networks:           # warm start only
+              module: "tm1.steps.staging:seed_average_networks"
+
+    The bare form is the point: iteration 0 runs a *slice of the loop body*, not a
+    second copy of it, so the steps are named once and referenced here.
+    """
+    declared = it_cfg.get(_WARM_START) or []
+    if not isinstance(declared, list):
+        msg = (
+            f"`{_ITERATE}.{_WARM_START}` must be a list of step names -- the slice "
+            f"of the loop body that iteration 0 runs. Got {type(declared).__name__}."
+        )
+        raise TypeError(msg)
+
+    entries: list[tuple[str, dict | None]] = []
+    for item in declared:
+        if isinstance(item, str):
+            entries.append((item, None))
+            continue
+        if isinstance(item, dict) and len(item) == 1:
+            name, cfg = next(iter(item.items()))
+            entries.append((str(name), cfg or {}))
+            continue
+        msg = (
+            f"`{_ITERATE}.{_WARM_START}` entries are either a step name, or a "
+            f"single name with its own config. Got: {item!r}"
+        )
+        raise ValueError(msg)
+    return entries
+
+
+def _warm_start_definitions(it_cfg: dict) -> dict:
+    """Step configs the warm start alone defines, keyed by name.
+
+    A bare name needs nothing here -- it reuses the loop body's definition, and the
+    plan supplies iteration 0, so the *same* config runs as a different round.  Only
+    entries that carry their own body contribute.
+    """
+    body = it_cfg.get("steps") or {}
+    own_definitions: dict = {}
+    for name, own in _warm_start_entries(it_cfg):
+        if own is None:
+            if name not in body:
+                msg = (
+                    f"`{_ITERATE}.{_WARM_START}` names {name!r}, which the loop body "
+                    f"does not define. Either add it to `steps:`, or give it a config "
+                    f"here if only the warm start runs it."
+                )
+                raise ValueError(msg)
+            continue
+        own_definitions[name] = own
+    return own_definitions
+
 
 def _flatten_steps(steps_cfg: dict) -> dict:
     """Step configs with the loop body lifted alongside the top-level steps.
@@ -131,6 +225,8 @@ def _flatten_steps(steps_cfg: dict) -> dict:
     for name, step_cfg in steps_cfg.items():
         if name == _ITERATE:
             flat.update((step_cfg or {}).get("steps") or {})
+            # Warm-start-only steps, which the loop body never runs.
+            flat.update(_warm_start_definitions(step_cfg or {}))
         else:
             flat[name] = step_cfg
     return flat
@@ -157,6 +253,11 @@ def _iteration_plan(
     Nesting makes the body contiguous by construction, and names each step once.
     Steps before the loop run at iteration 1; steps after it run once at the final
     iteration, since they summarise the finished run.
+
+    The loop starts at 1.  ``RunModel.bat``'s iteration 0 is a *warm start* -- it
+    assigns a previous run's demand to produce the first skims, and jumps past the
+    skim, demand and non-residential blocks -- so it is a named step before the
+    loop, not a round of it.
     """
     plan: list[tuple[str, int]] = []
     current = 1
@@ -184,6 +285,16 @@ def _iteration_plan(
         if not body:
             msg = f"`{_ITERATE}` declares no steps; the loop body cannot be empty."
             raise ValueError(msg)
+
+        # The warm start runs first, as iteration 0: RunModel.bat's `set ITER=0`
+        # block, which calls the same body and jumps straight to :hwyAssign.
+        # Validated here rather than at load time, so a name that matches nothing
+        # is caught while the plan is being built -- before any step has run.
+        _warm_start_definitions(it_cfg)
+        plan += [
+            (name, _WARM_START_ITERATION)
+            for name, _ in _warm_start_entries(it_cfg)
+        ]
 
         for i in range(1, count + 1):
             plan += [(s, i) for s in body]
@@ -369,12 +480,35 @@ def _start_run_log(cfg: dict, label: str, steps: list[str]) -> logging.Handler |
     return handler
 
 
+def _sole_custom_key(step_name: str, declared: list[str]) -> str:
+    """The one custom key a step declares, or an error explaining the alternatives."""
+    if len(declared) > 1:
+        named = ", ".join(repr(k) for k in declared)
+        msg = f"Step {step_name!r} declares {named}; use exactly one."
+        raise ValueError(msg)
+
+    if not declared:
+        msg = (
+            f"Unknown step: {step_name!r}. Built-in steps are "
+            f"{', '.join(STEPS)}. To run your own code, give the step a "
+            f"'script:' (path relative to the scenario directory) or a "
+            f"'module:' (importable dotted path) -- both imported and called. To "
+            f"spawn a program the harness does not own, give it a 'job:' (Cube "
+            f".job) or a 'command:', both relative to proj_dir."
+        )
+        raise ValueError(msg)
+
+    return declared[0]
+
+
 def _load_step(step_name: str, steps_cfg: dict, scenario_dir: Path) -> Callable:
     """Resolve a step name to the callable that runs it.
 
-    Built-in steps take precedence.  Anything else must declare ``script:`` (a
-    path, relative to the scenario directory unless absolute) or ``module:`` (an
-    importable dotted path), either optionally naming a function after a colon.
+    Built-in steps take precedence.  Anything else declares either native Python
+    (``script:``, a path relative to the scenario directory, or ``module:``, an
+    importable dotted path, each optionally naming a function after a colon) or a
+    legacy artifact to run in place (``job:``/``legacy_script:``, relative to
+    ``proj_dir``).
     """
     step_cfg = steps_cfg.get(step_name)
     declared = (
@@ -391,22 +525,17 @@ def _load_step(step_name: str, steps_cfg: dict, scenario_dir: Path) -> Callable:
             raise ValueError(msg)
         return STEPS[step_name]
 
-    if len(declared) > 1:
-        msg = f"Step {step_name!r} declares both 'script' and 'module'; use one."
-        raise ValueError(msg)
+    key = _sole_custom_key(step_name, declared)
 
-    if not declared:
-        msg = (
-            f"Unknown step: {step_name!r}. Built-in steps are "
-            f"{', '.join(STEPS)}. To run your own code, give the step a "
-            f"'script:' (path relative to the scenario directory) or a "
-            f"'module:' (importable dotted path)."
-        )
-        raise ValueError(msg)
+    # Legacy artifacts are executed, not imported: there is no module to load and
+    # no entrypoint to name, so they resolve before the import machinery below.
+    if key in external_step.KEYS:
+        log.info("Step %s -> legacy %s at %s", step_name, key, step_cfg[key])
+        return external_step.make_step(step_name, step_cfg)
 
-    target, func_name = _split_entrypoint(step_cfg[declared[0]])
+    target, func_name = _split_entrypoint(step_cfg[key])
 
-    if declared[0] == "module":
+    if key == "module":
         mod = importlib.import_module(target)
     else:
         path = Path(target).expanduser()
@@ -496,7 +625,13 @@ def run_model(
             try:
                 # Merged rather than passed positionally: an explicit caller-supplied
                 # `iteration` would otherwise be a duplicate-keyword TypeError.
-                result = run_step(scenario_dir, cfg, **{**kwargs, "iteration": iteration})
+                # `step_name` lets a step find its own config block when a scenario
+                # gives it a name of its own -- the same function can then appear
+                # twice under different names, as the warm-start steps do.
+                result = run_step(
+                    scenario_dir, cfg,
+                    **{**kwargs, "iteration": iteration, "step_name": name},
+                )
             except KeyboardInterrupt:
                 log.warning("Cancelled during %s", name)
                 notify(f":no_entry_sign: {label} cancelled during {name}")
