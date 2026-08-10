@@ -52,9 +52,11 @@ calibration_11:
   household_file: "{target_dir}/OUTPUT_{calib_iter}/main/householdData_{iter}.csv"
   ferry_skim_dir: "{target_dir}/OUTPUT_00/skims"
 
-# calibration_15:
-#   name: Trip Mode Choice
-#   workbook_template: 15_TripModeChoice
-#   indiv_trip_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTripData_{iter}.csv"
-#   joint_trip_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTripData_{iter}.csv"
-#   taz_sd_file: X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv
+calibration_15:
+  name: Trip Mode Choice
+  workbook_template: 15_TripModeChoice_2023
+  indiv_trip_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTripData_{iter}.csv"
+  joint_trip_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTripData_{iter}.csv"
+  household_file: "{target_dir}/OUTPUT_{calib_iter}/main/householdData_{iter}.csv"
+  taz_sd_file: X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv
+  ferry_skim_dir: "{target_dir}/OUTPUT_00/skims"
