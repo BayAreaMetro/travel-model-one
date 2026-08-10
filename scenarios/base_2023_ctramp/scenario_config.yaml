@@ -110,17 +110,27 @@ steps:
       from: "{reference_run}/CTRAMP/scripts"
       to: "{proj_dir}/CTRAMP/scripts"
 
-    # Nothing reads this today: simulate_ctramp clears ShadowPrice.Input.File at
-    # iteration 1, so shadow prices are always recomputed from zero.  Kept for when a
-    # convergence run produces a file worth seeding from -- which also means teaching
-    # iteration 1 to stop clearing the input.  See shadow_price_run_notes.
+    # Unused: iteration 1 clears ShadowPrice.Input.File, so prices start from zero.
+    # Kept for a future converged file -- see simulate_ctramp.shadow_price_run_notes.
     # shadow_prices:
     #   from: "{reference_run}/main/ShadowPricing_5.csv"
     #   to: "{proj_dir}/main/ShadowPricing_5.csv"
 
   # ── Step 3 · pre-process ──────────────────────────────────────────────────────────────
-  runtime_configuration:
-    command: "CTRAMP/scripts/preprocess/RuntimeConfiguration.py"
+  # RunModel.bat 190's RuntimeConfiguration.py, native.  Stamps params.properties into
+  # mtcTourBased.properties, accessibilities.properties, hwyParam.block, trnParam.block
+  # and the UEC workbooks, and writes taxi_tnc_occ_factors.csv.
+  configure_ctramp:
+    proj_dir: "{proj_dir}"
+    params: "{proj_dir}/INPUT/params.properties"
+    # num.acc.threads, read by the Java accessibility calculator that RunLogsums.bat
+    # runs.  This pipeline does not run it -- Accessibility.job is pure Cube -- so the
+    # value is set for faithfulness only, and nothing here consumes it.
+    acc_threads: 48
+    # Selects HwyIntraStep_48.block: the Cube process numbers HwyAssign allocates per
+    # period.  Must not exceed hwy_assign's cluster_nodes, or it addresses processes
+    # that were never started.
+    intrastep_processes: 48
   csv_to_dbf:
     command: "CTRAMP/scripts/preprocess/csvToDbf.py"
     args: ["hwy/tolls.csv", "hwy/tolls.dbf"]
@@ -188,22 +198,19 @@ steps:
         job: "CTRAMP/scripts/skims/Accessibility.job"
 
       # ── step 2 · CT-RAMP ──
-      runtime_configuration_iter:
-        command: "CTRAMP/scripts/preprocess/RuntimeConfiguration.py"
-        args: ["--iter", "{iteration}"]
+      # RunIteration.bat also calls RuntimeConfiguration.py --iter here; it sets only the
+      # shadow-price properties, which simulate_ctramp writes from shadow_price_passes.
       simulate_ctramp:
         project_dir: "{proj_dir}"
         runtime_dir: "{proj_dir}/CTRAMP/runtime"
         host_ip: "localhost"
-        threads: 48                 # 2 are reserved for infrastructure
+        threads: 24                 # processing.threads per JPPF node, as the .bat sets it
         seed: 0
         shadow_pricing: true        # recomputed every run; nothing is reused
         shadow_price_passes:        # an inner loop of location choice, per global round
           first: 4                  # round 1 starts from zero prices
           subsequent: 2             # later rounds top up the previous round's
-          # 4 + 2 + 2 chains to seven, which is known not to converge.  Raising these
-          # is a convergence run, not a parity run -- see simulate_ctramp's
-          # shadow_price_run_notes.
+          # 4 + 2 + 2 chains to seven; raising it is a convergence run, not a parity run.
         # sample_rate: 0.50         # overrides RunModel.bat's 0.15/0.30/0.50 ramp
         # iteration: 3              # normally supplied by the enclosing iterate:
         components:                 # set any to false to skip it
