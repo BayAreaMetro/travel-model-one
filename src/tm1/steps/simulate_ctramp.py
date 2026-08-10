@@ -133,10 +133,38 @@ def components_to_flags(components: dict[str, bool]) -> dict[str, str]:
 DEFAULT_SAMPLE_RATES: dict[int, float] = {1: 0.15, 2: 0.30, 3: 0.50}
 
 
+#: Shadow-price passes per global round, as ``RuntimeConfiguration.py`` sets them.
+#: A scenario overrides either key through ``shadow_price_passes:``; leaving it out
+#: reproduces the legacy ladder exactly.
+DEFAULT_SHADOW_PRICE_PASSES: dict[str, int] = {"first": 4, "subsequent": 2}
+
+
+def _passes_for(iteration: int, passes: dict | None) -> int:
+    """How many shadow-price passes this round runs.
+
+    ``first`` and ``subsequent`` because that is the whole shape of the ladder:
+    round 1 starts from zero prices and needs several passes to reach the right
+    range; later rounds inherit prices that are already close and only top them up.
+    """
+    declared = passes or {}
+    unknown = set(declared) - set(DEFAULT_SHADOW_PRICE_PASSES)
+    if unknown:
+        msg = (
+            f"shadow_price_passes: unknown key(s) {', '.join(sorted(unknown))}. "
+            f"Use {' and '.join(DEFAULT_SHADOW_PRICE_PASSES)} -- round 1 starts from "
+            f"zero prices, every later round tops up the previous round's."
+        )
+        raise ValueError(msg)
+
+    spec = {**DEFAULT_SHADOW_PRICE_PASSES, **declared}
+    return int(spec["first"] if iteration == 1 else spec["subsequent"])
+
+
 def shadow_pricing_flags(
     iteration: int,
     *,
     shadow_pricing: bool = True,
+    passes: dict | None = None,
 ) -> dict[str, str]:
     """Return properties flags for shadow pricing at a given iteration.
 
@@ -146,8 +174,24 @@ def shadow_pricing_flags(
         Iteration 2:  input = main/ShadowPricing_3.csv, MaximumIterations = 2
         Iteration n:  input = main/ShadowPricing_{2n-1}.csv, MaxIter = 2
 
+    A stock three-round run therefore performs 4 + 2 + 2 = **eight** passes, but
+    the chain that survives is **seven**: round 2 restarts from
+    ``ShadowPricing_3``, so round 1's fourth pass is computed and discarded.
+    (Round 3 reading ``_5`` is what shows the numbering continues rather than
+    restarting.)  Iteration 1 also starts from nothing, so a ``ShadowPricing_*.csv``
+    staged into ``main/`` beforehand is never read.
+
     When *shadow_pricing* is False, forces MaximumIterations = 1 and comments
     out the input file (effectively disabling shadow pricing).
+
+    *passes* overrides how many passes each round runs -- ``{"first": n,
+    "subsequent": m}``, defaulting to :data:`DEFAULT_SHADOW_PRICE_PASSES`.  It is
+    what a **convergence run** turns up: seven chained passes are known not to be
+    enough.  See :func:`shadow_price_run_notes`.
+
+    The input-file chain is deliberately not configurable -- it is derived from what
+    the previous round wrote, so a free-hand value would name a file that does not
+    exist.
     """
     prefix = "UsualWorkAndSchoolLocationChoice"
     flags: dict[str, str] = {}
@@ -157,15 +201,51 @@ def shadow_pricing_flags(
         flags[f"{prefix}.ShadowPrice.Input.File"] = ""
         return flags
 
+    flags[f"{prefix}.ShadowPricing.MaximumIterations"] = str(
+        _passes_for(iteration, passes)
+    )
     if iteration == 1:
-        flags[f"{prefix}.ShadowPricing.MaximumIterations"] = "4"
         flags[f"{prefix}.ShadowPrice.Input.File"] = ""
     else:
         sp_input = 2 * iteration - 1
         flags[f"{prefix}.ShadowPrice.Input.File"] = f"main/ShadowPricing_{sp_input}.csv"
-        flags[f"{prefix}.ShadowPricing.MaximumIterations"] = "2"
 
     return flags
+
+
+def shadow_price_run_notes() -> str:
+    """How to run shadow pricing to convergence, and why it is a separate run.
+
+    Shadow prices adjust destination attractiveness until modeled employment and
+    enrolment match the size terms.  The stock ladder gives them seven iterations
+    across a full run, which is known to be insufficient -- the tell is the spread
+    of modeled-to-target fill ratios, which stays wide instead of settling flat.
+
+    Converging them is a *scenario*, not a step, because three things have to
+    change together::
+
+        simulate_ctramp:
+          sample_rate: 1.0                 # at 0.15 the per-zone counts are noise
+          shadow_price_passes:
+            first: 30                      # instead of the ladder's 4
+            subsequent: 30                 # ... and 2
+          components:
+            UsualWorkAndSchoolLocationChoice: true
+            # every other component false -- location choice is the only model
+            # shadow pricing touches, so the tour, trip and assignment stack is
+            # dead weight here
+
+    That combination is what makes it affordable: one component, one global
+    iteration, no assignment.
+
+    The product is a converged ``main/ShadowPricing_{N}.csv``.  Using it as a warm
+    start needs one further change, because the ladder above clears the input file
+    at iteration 1 -- a seeded run has to keep it.
+
+    Converging shadow prices changes results, so it re-baselines whatever it
+    touches.  It is deliberately not part of a parity run.
+    """
+    return shadow_price_run_notes.__doc__ or ""
 
 
 def patch_properties(props_path: Path, flags: dict[str, str]) -> None:
@@ -852,7 +932,11 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     interactive = _preflight_license()
 
     sample_rate = explicit_rate or DEFAULT_SAMPLE_RATES.get(iteration, 0.50)
-    sp_flags = shadow_pricing_flags(iteration, shadow_pricing=do_shadow_pricing)
+    sp_flags = shadow_pricing_flags(
+        iteration,
+        shadow_pricing=do_shadow_pricing,
+        passes=step_cfg.get("shadow_price_passes"),
+    )
     patch_properties(props_path, sp_flags)
     log.info("CT-RAMP iteration %d  sample_rate=%.2f", iteration, sample_rate)
 
