@@ -23,19 +23,17 @@ import logging
 import shutil
 from pathlib import Path
 
+from tm1.config import step_config
+
 log = logging.getLogger(__name__)
 
 PERIODS: tuple[str, ...] = ("EA", "AM", "MD", "PM", "EV")
 
 
 def _iteration(cfg: dict, kwargs: dict) -> int:
-    """This step's round: its own ``iteration:`` key, else the loop's.
-
-    The name comes from the runner, so one function can serve several steps -- the
-    warm start reuses these under ``warmstart_*`` names.
-    """
+    """This step's round: its own ``iteration:`` key, else the loop's."""
     step_name = str(kwargs.get("step_name", "?"))
-    step_cfg = cfg.get("steps", {}).get(step_name) or {}
+    step_cfg = step_config(cfg, step_name, kwargs)
     declared = step_cfg.get("iteration", kwargs.get("iteration"))
     if declared is None:
         msg = (
@@ -65,7 +63,7 @@ def make_directories(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | N
     targets exist by the time the jobs run.  ``skims``, ``popsyn`` and ``database``
     have no staged inputs at all.
     """
-    step_cfg = cfg.get("steps", {}).get(str(kwargs.get("step_name", "")), {}) or {}
+    step_cfg = step_config(cfg, str(kwargs.get("step_name", "")), kwargs)
     names = step_cfg.get("dirs")
     if not names:
         msg = (

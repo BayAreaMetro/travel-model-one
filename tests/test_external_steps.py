@@ -382,30 +382,26 @@ def test_runner_resolves_both_external_keys(proj: Path) -> None:
         "set_tolls": {"job": "CTRAMP/scripts/SetTolls.job"},
     }
 
-    for name in steps_cfg:
-        assert callable(_load_step(name, steps_cfg, proj))
+    for name, step_cfg in steps_cfg.items():
+        assert callable(_load_step(name, step_cfg, proj))
 
 
 def test_declaring_two_kinds_of_step_is_rejected(proj: Path) -> None:
     """A step is one thing: a .job runs through Cube, a .py through the interpreter."""
-    steps_cfg = {"muddle": {"job": "a.job", "command": "b.py"}}
-
     with pytest.raises(ValueError, match="use exactly one"):
-        _load_step("muddle", steps_cfg, proj)
+        _load_step("muddle", {"job": "a.job", "command": "b.py"}, proj)
 
 
 def test_builtin_step_cannot_be_redefined_as_external(proj: Path) -> None:
     """Built-in names still win -- the new keys do not open a back door."""
-    steps_cfg = {"assignment": {"job": "CTRAMP/scripts/HwyAssign.job"}}
-
     with pytest.raises(ValueError, match="built in"):
-        _load_step("assignment", steps_cfg, proj)
+        _load_step("assignment", {"job": "CTRAMP/scripts/HwyAssign.job"}, proj)
 
 
 def test_unknown_step_error_mentions_the_external_keys(proj: Path) -> None:
     """The message has to teach all four ways to declare a step, not two."""
     with pytest.raises(ValueError, match="command"):
-        _load_step("mystery", {"mystery": {}}, proj)
+        _load_step("mystery", {}, proj)
 
 
 # --- verify: what a step says it produces ----------------------------------

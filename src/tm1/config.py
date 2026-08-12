@@ -15,6 +15,27 @@ def load_config(scenario_dir: Path) -> dict:
         return yaml.safe_load(f)
 
 
+def step_config(cfg: dict, name: str, kwargs: dict | None = None) -> dict:
+    """A step's own block from the scenario config.
+
+    The runner hands each step the exact block it was launched from as
+    ``kwargs["step_cfg"]`` — with ``steps:`` as a list the same name may appear
+    twice (the warm start and the loop each carry their own copy), so the entry,
+    not the name, identifies the block.  Name lookup is the fallback, for direct
+    calls in tests and for reading *another* step's block.
+    """
+    if kwargs is not None and isinstance(kwargs.get("step_cfg"), dict):
+        return kwargs["step_cfg"]
+    steps = cfg.get("steps")
+    if isinstance(steps, dict):
+        return steps.get(name) or {}
+    if isinstance(steps, list):
+        for item in steps:
+            if isinstance(item, dict) and name in item:
+                return item[name] or {}
+    return {}
+
+
 def resolve_templates(
     obj: str | dict | list | object, variables: dict[str, str] | None = None
 ) -> str | dict | list | object:

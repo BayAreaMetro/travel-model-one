@@ -1,28 +1,33 @@
 """Tests for the feedback loop's execution plan.
 
 The plan decides what runs and in which round, which is also what ``--resume-at``
-resolves against and what the "planned:" line reports.  It had no coverage; these
-pin the shape the conventions lock -- ``iterate: {count, steps}``, the loop starting
-at 1, and steps around it taking the first and last rounds.
+resolves against and what the "planned:" line reports.  The shape the conventions
+lock: ``steps:`` is a list of ``name: {config}`` entries run in the order written
+(a mapping also works, but cannot repeat a name); ``iterate: {count, steps}`` is
+the only nesting and repeats its body identically; a step outside the loop may pin
+``iteration:`` and declare ``skip_if_exists:``, and the loop refuses both.
 
-``RunModel.bat``'s iteration 0 arrives through ``warm_start:`` -- a named slice of
-the loop body, run once before the rounds, which is the one branch of
-``RunIteration.bat`` that survives structurally (``if %ITER%==0 goto hwyAssign``).
+There is no other mechanism.  ``RunModel.bat``'s iteration 0 is ordinary steps
+written before the loop with ``iteration: 0``; its ``if %ITER%==1`` block is
+warm-start steps that skip on their products.
 """
+
+from pathlib import Path
 
 import pytest
 
 from tm1.runner import (
     _apply_resume,
     _apply_until,
-    _flatten_steps,
     _iteration_plan,
     _select_steps,
+    _skip_target,
 )
 
 
-def _plan(steps_cfg: dict, override: int | None = None) -> list[tuple[str, int]]:
-    return _iteration_plan(steps_cfg, list(steps_cfg.keys()), override)
+def _plan(steps_cfg: object, override: int | None = None) -> list[tuple[str, int]]:
+    plan, _ = _iteration_plan(steps_cfg, override)
+    return plan
 
 
 def _rounds(plan: list[tuple[str, int]], step: str) -> list[int]:
@@ -75,82 +80,157 @@ def test_a_run_without_a_loop_is_a_flat_sequence() -> None:
     assert plan == [("copy_inputs", 1), ("assignment", 1)]
 
 
-# --- warm_start: the slice of the body that runs as iteration 0 ------------
+# --- the list form: order, repetition, and each entry keeping its config ----
 
 
-def _warm_cfg(warm: list, body: dict | None = None) -> dict:
-    body = body or {"hwy_assign": {}, "simulate_ctramp": {}}
-    return {"iterate": {"count": 3, "warm_start": warm, "steps": body}}
+def _listform() -> list:
+    """Setup, a two-step warm start, the loop, a summary -- the real shape."""
+    return [
+        {"copy_inputs": {}},
+        {"hwy_assign": {"job": "warm.job", "iteration": 0,
+                        "skip_if_exists": "hwy/iter0/LOADEA.net"}},
+        {"hwy_skims": {"job": "skims.job", "iteration": 0}},
+        {"iterate": {"count": 3, "steps": [
+            {"simulate_ctramp": {}},
+            {"hwy_assign": {"job": "loop.job"}},
+            {"hwy_skims": {"job": "skims.job"}},
+        ]}},
+        {"summarize": {}},
+    ]
 
 
-def test_warm_start_runs_before_the_loop_as_iteration_zero() -> None:
-    """RunModel.bat's `set ITER=0` block, calling the same body."""
-    plan = _plan(_warm_cfg(["hwy_assign"]))
+def test_list_form_runs_in_the_order_written() -> None:
+    """The list is the pipeline; nothing reorders it."""
+    plan = _plan(_listform())
 
-    assert plan[0] == ("hwy_assign", 0)
+    assert plan[:3] == [("copy_inputs", 1), ("hwy_assign", 0), ("hwy_skims", 0)]
+    assert plan[-1] == ("summarize", 3)
+
+
+def test_a_name_may_appear_outside_and_inside_the_loop() -> None:
+    """The point of the list form: the warm start and the loop each carry their own copy."""
+    plan = _plan(_listform())
+
     assert _rounds(plan, "hwy_assign") == [0, 1, 2, 3]
 
 
-def test_warm_start_keeps_its_written_order() -> None:
-    """It is a sequence, not a set -- rename must precede seed must precede merge."""
-    body = {"a": {}, "b": {}, "c": {}}
-    plan = _plan(_warm_cfg(["c", "a"], body))
+def test_each_entry_keeps_its_own_config() -> None:
+    """Two entries with one name are different steps -- the entry identifies it."""
+    _, configs = _iteration_plan(_listform())
 
-    assert [n for n, i in plan if i == 0] == ["c", "a"]
-
-
-def test_a_bare_name_reuses_the_loop_definition() -> None:
-    """The point of naming rather than duplicating: one definition, two rounds."""
-    body = {"hwy_assign": {"job": "HwyAssign.job", "cluster_nodes": 48}}
-    cfg = _warm_cfg(["hwy_assign"], body)
-
-    flat = _flatten_steps(cfg)
-
-    assert flat["hwy_assign"] == {"job": "HwyAssign.job", "cluster_nodes": 48}
+    assert configs[("hwy_assign", 0)]["job"] == "warm.job"
+    assert configs[("hwy_assign", 2)]["job"] == "loop.job"
 
 
-def test_an_entry_with_a_body_defines_a_warm_start_only_step() -> None:
-    """seed_average_networks exists only at iteration 0; the loop averages instead."""
-    cfg = _warm_cfg([{"seed_average_networks": {"module": "tm1.steps.staging:seed"}}])
+def test_iteration_key_pins_a_steps_round() -> None:
+    """`iteration: 0` is RunModel.bat's `set ITER=0`, stated on the step."""
+    plan = _plan([
+        {"warm_assign": {"iteration": 0}},
+        {"iterate": {"count": 2, "steps": [{"assignment": {}}]}},
+    ])
 
-    flat = _flatten_steps(cfg)
-
-    assert flat["seed_average_networks"] == {"module": "tm1.steps.staging:seed"}
-    assert _rounds(_plan(cfg), "seed_average_networks") == [0]
-
-
-def test_naming_a_step_the_body_does_not_define_is_refused() -> None:
-    """A typo would otherwise be a step that silently never runs."""
-    with pytest.raises(ValueError, match="does not define"):
-        _plan(_warm_cfg(["typo_assign"]))
+    assert plan[0] == ("warm_assign", 0)
 
 
-def test_warm_start_must_be_a_list() -> None:
-    """It is an ordered slice of the body, so a mapping would lose the order."""
-    with pytest.raises(TypeError, match="list of step names"):
-        _plan({"iterate": {"count": 1, "warm_start": {"a": 1}, "steps": {"a": {}}}})
+def test_the_same_name_twice_in_one_round_is_refused() -> None:
+    """Two definitions for one (step, round) would make --resume-at ambiguous."""
+    with pytest.raises(ValueError, match="defined twice"):
+        _plan([{"a": {}}, {"a": {}}])
 
 
-def test_a_loop_with_no_warm_start_is_unchanged() -> None:
-    """`warm_start:` is opt-in; ActivitySim scenarios will declare their own."""
-    plan = _plan({"iterate": {"count": 2, "steps": {"assignment": {}}}})
+def test_a_list_entry_must_be_a_single_named_mapping() -> None:
+    """A bare string has no step kind to run; two keys is two steps."""
+    with pytest.raises(TypeError, match="one `name"):
+        _plan(["hwy_assign"])
 
-    assert _rounds(plan, "assignment") == [1, 2]
+
+# --- what the loop refuses ---------------------------------------------------
+
+
+def test_skip_if_exists_is_refused_inside_the_loop() -> None:
+    """Loop outputs land on the same paths every round, so the check cannot work."""
+    cfg = {"iterate": {"count": 3, "steps": [
+        {"prep_assign": {"skip_if_exists": "main/tripsAM.tpp"}},
+    ]}}
+
+    with pytest.raises(ValueError, match="always re-runs"):
+        _plan(cfg)
+
+
+def test_iteration_pin_is_refused_inside_the_loop() -> None:
+    """The loop numbers its own rounds; a pinned step would lie about its files."""
+    cfg = {"iterate": {"count": 3, "steps": [{"hwy_assign": {"iteration": 0}}]}}
+
+    with pytest.raises(ValueError, match="numbered by the loop"):
+        _plan(cfg)
+
+
+def test_removed_mechanisms_are_refused_by_name() -> None:
+    """A config written for warm_start:/first_round: fails loudly, not silently."""
+    cfg = {"iterate": {"count": 3, "warm_start": ["a"], "steps": {"a": {}}}}
+
+    with pytest.raises(ValueError, match="warm_start"):
+        _plan(cfg)
+
+
+def test_empty_loop_body_is_refused() -> None:
+    """An empty body is always a mistake, and silently does nothing."""
+    with pytest.raises(ValueError, match="cannot be empty"):
+        _plan({"iterate": {"count": 3, "steps": {}}})
+
+
+def test_zero_count_is_refused() -> None:
+    """A loop that runs nothing is a typo, not a configuration."""
+    with pytest.raises(ValueError, match="must be >= 1"):
+        _plan({"iterate": {"count": 0, "steps": {"assignment": {}}}})
+
+
+def test_iterate_must_be_a_block() -> None:
+    """The error shows the shape, since this is the one nesting the config allows."""
+    with pytest.raises(TypeError, match="count"):
+        _plan({"iterate": 3})
+
+
+# --- skip_if_exists: the declared product gate -------------------------------
+
+
+def test_skip_target_resolves_against_proj_dir(tmp_path: Path) -> None:
+    """Relative paths mean proj_dir, where every model artifact lives."""
+    (tmp_path / "popsyn").mkdir()
+    (tmp_path / "popsyn" / "hhFile.csv").write_text("done")
+    cfg = {"proj_dir": str(tmp_path)}
+
+    hit = _skip_target({"skip_if_exists": "popsyn/hhFile.csv"}, cfg)
+
+    assert hit == tmp_path / "popsyn" / "hhFile.csv"
+
+
+def test_skip_target_is_none_when_the_product_is_absent(tmp_path: Path) -> None:
+    """No file, no skip: the step runs and builds it."""
+    cfg = {"proj_dir": str(tmp_path)}
+
+    assert _skip_target({"skip_if_exists": "popsyn/hhFile.csv"}, cfg) is None
+
+
+def test_a_step_without_the_key_never_skips(tmp_path: Path) -> None:
+    """skip_if_exists is opt-in; an undeclared step always runs."""
+    assert _skip_target({}, {"proj_dir": str(tmp_path)}) is None
 
 
 # --- selecting a slice of the plan -----------------------------------------
 
 
-def _pipeline() -> dict:
+def _pipeline() -> list:
     """A config with steps before, inside and after the loop."""
-    return {
-        "copy_inputs": {},
-        "iterate": {
-            "count": 3,
-            "warm_start": ["hwy_assign"],
-            "steps": {"simulate_ctramp": {}, "hwy_assign": {}, "publish": {}},
-        },
-    }
+    return [
+        {"copy_inputs": {}},
+        {"hwy_assign": {"job": "warm.job", "iteration": 0}},
+        {"iterate": {"count": 3, "steps": [
+            {"simulate_ctramp": {}},
+            {"hwy_assign": {"job": "loop.job"}},
+            {"publish": {}},
+        ]}},
+    ]
 
 
 def test_until_stops_after_the_named_step() -> None:
@@ -204,21 +284,3 @@ def test_steps_naming_nothing_is_refused() -> None:
     """A typo should not quietly run nothing and report success."""
     with pytest.raises(ValueError, match="matches nothing"):
         _select_steps(_plan(_pipeline()), ["no_such_step"])
-
-
-def test_empty_loop_body_is_refused() -> None:
-    """An empty body is always a mistake, and silently does nothing."""
-    with pytest.raises(ValueError, match="cannot be empty"):
-        _plan({"iterate": {"count": 3, "steps": {}}})
-
-
-def test_zero_count_is_refused() -> None:
-    """A loop that runs nothing is a typo, not a configuration."""
-    with pytest.raises(ValueError, match="must be >= 1"):
-        _plan({"iterate": {"count": 0, "steps": {"assignment": {}}}})
-
-
-def test_iterate_must_be_a_block() -> None:
-    """The error shows the shape, since this is the one nesting the config allows."""
-    with pytest.raises(TypeError, match="count"):
-        _plan({"iterate": 3})

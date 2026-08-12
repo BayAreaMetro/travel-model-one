@@ -41,9 +41,9 @@ Five things checked before writing this, because each could have changed the pla
 
 `RunIteration.bat:19` (`if %ITER%==0 goto hwyAssign`) jumps into the shared body at a
 label: iteration 0 runs everything from `HwyAssign` onward and none of the demand side.
-It is a *slice*, not a separate pipeline — 11 of its 12 steps are ones the loop already
-runs, differing only in round. `warm_start:` names that slice; see the config shape
-below.
+It is the loop body minus the demand half, not a separate pipeline. In the config it is
+written out as ordinary steps before `iterate:`, each pinned with `iteration: 0` — see
+the config shape below.
 
 Phase 4's `warmstart.py` is not the model for it. That module bundles two things the
 `.bat` keeps apart, and adds a third the `.bat` does not have:
@@ -54,8 +54,8 @@ Phase 4's `warmstart.py` is not the model for it. That module bundles two things
 | runs `assignment` at iteration 0 | lines 252–264, the `ITER=0` call to `RunIteration.bat` |
 | `from: coldstart` — writes zero demand | **no legacy equivalent**; its own docstring says so |
 
-So the copy belongs in `copy_inputs`, and iteration 0 belongs in `warm_start:`. Phase 4's
-consolidation is phase 4's business.
+So the copy belongs in `copy_inputs`, and iteration 0 is its own steps before the loop.
+Phase 4's consolidation is phase 4's business.
 
 ### 2. `updateTelecommute_forEN7.py` — the crosswalk row is mechanically wrong
 
@@ -79,10 +79,13 @@ the two produce the same three skim builds from the same three networks:
 | | skim builds |
 |---|---|
 | `.bat` | iter 0 none; iter 1, 2, 3 each skim the *previous* iteration's networks |
-| harness | iter 0, 1, 2 each skim their own networks at the tail; iter 3 `build_skims=False` |
+| harness | iter 0, 1, 2, 3 each skim their own networks at the tail |
 
-Identical set. This is a faithful reordering, not a behaviour change — recorded here so it
-does not resurface as a suspected parity bug. It does change what `--resume-at` lands on.
+Every demand model reads the same skims in both layouts — round N's demand sees round
+N−1's network either way. The one difference is the extra build at the end: the `.bat`
+never skims the final round's network, so its `SkimsDatabase` reflects the
+*second-to-last* network. The harness skims it, ~6 minutes, and `skims_database`
+reflects the finished network — a deliberate, flagged departure, not an accident.
 
 ### 4. `args:` states the resulting argv, not the `.bat`'s text
 
@@ -111,13 +114,14 @@ branches internally five times. None of those branches needs a config mechanism.
 | `.bat` guard | What it is actually for | Where it goes |
 |---|---|---|
 | `ITER==0 goto hwyAssign` | this round has no demand model | iteration 0 is its own step list → gone |
-| `ITER==1` FindNoAccessZones + filterUnconnectedHouseholds | one-time popsyn cleanup that needs skims | steps between the warm start and the loop → gone |
+| `ITER==1` FindNoAccessZones + filterUnconnectedHouseholds | one-time popsyn cleanup that needs skims | ordinary warm-start steps, since iteration 0 now ends by building skims (finding 3) → gone |
 | `ITER==1` javaOnly_runMain / runNode0 | start the JPPF services once | absorbed into `simulate_ctramp` → gone |
 | `ITER GTR 0` PrepAssign | iteration 0's demand is pre-made | goes with iteration 0 → gone |
 | `ITER GTR 1` average, `ELSE` copy | seeding a running average | **see below** — gone, for one changed value |
 
-The config is therefore two flat step lists (warm start, then the loop body) with no
-conditionals, no `rounds:`, and no `iterations:` on any step.
+The config is therefore two flat step lists — the warm start written out before the
+loop, then a body that is identical every round — with no conditionals and no
+`rounds:` tags on any step.
 
 #### The averaging branch, and why it is safe to delete
 
@@ -302,80 +306,77 @@ steps:
     # NOT ["...", "complexDwell", "", "complexAccess", ""] -- see finding 4.
     args: ["NORMAL", "NoExtraDelay", "Simple", "complexDwell", "complexAccess"]
 
-  # RunIteration.bat's ITER==1 block, hoisted out of the loop (see finding 5)
-  find_no_access_zones: {job: "CTRAMP/scripts/skims/FindNoAccessZones.job"}
-  filter_unconnected_households:
-    command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
-    args: ["popsyn"]
+  # 252-264 -- iteration 0, written out as ordinary steps.  Each carries its round
+  # (`iteration: 0`, the .bat's `set ITER=0`) and, on the expensive Cube steps, the
+  # product that proves it already ran.
+  - hwy_assign:
+      job: "CTRAMP/scripts/assign/HwyAssign.job"
+      cluster_nodes: 48
+      iteration: 0
+      skip_if_exists: "hwy/iter0/LOADEA.net"
+  # ...transit chain, feedback with seed_average_networks in place of
+  # average_network_volumes + calculate_speeds, publish_networks...
+  - hwy_skims:     {job: "...HwySkims.job", cluster_nodes: 5, iteration: 0,
+                    skip_if_exists: "skims/HWYSKMEA.tpp"}
+  - accessibility: {job: "...Accessibility.job", iteration: 0,
+                    skip_if_exists: "skims/accessibility.csv"}
+  # RunIteration.bat's ITER==1 block: ordinary warm-start steps once the skims
+  # above exist (findings 3 and 5)
+  - find_no_access_zones:
+      job: "CTRAMP/scripts/skims/FindNoAccessZones.job"
+      iteration: 0
+      skip_if_exists: "skims/unconnected_zones.csv"
+  - filter_unconnected_households:
+      command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
+      args: ["popsyn"]
+      iteration: 0
+      skip_if_exists: "popsyn/hhFile.csv"
 
-  # 252-336 -- iteration 0, then iterations 1-3
-  iterate:
-    count: 3
-
-    # RunIteration.bat:19 -- `if %ITER%==0 goto hwyAssign`.  Iteration 0 runs this
-    # slice of the body below, named rather than duplicated, and seeds the running
-    # average rather than computing it.
-    warm_start:
-      - hwy_assign
-      - stage_transit_lines
-      - prep_hwy_net
-      - build_transit_networks
-      - transit_assign
-      - transit_skims
-      - stage_loaded_networks
-      - rename_assignment_variables
-      - seed_average_networks:              # the only step the loop does not have
-          module: "tm1.steps.staging:seed_average_networks"
-      - test_network_convergence
-      - merge_networks
-      - publish_networks
-
-    steps:
-      hwy_skims:     {job: "CTRAMP/scripts/skims/HwySkims.job", cluster_nodes: 5}
-      accessibility: {job: "CTRAMP/scripts/skims/Accessibility.job"}
-      runtime_configuration_iter:
-        command: "CTRAMP/scripts/preprocess/RuntimeConfiguration.py"
-        args: ["--iter", "{iteration}"]
-      simulate_ctramp: {...}               # unchanged from #103
-      update_telecommute_en7:
-        command: "CTRAMP/scripts/preprocess/updateTelecommute_forEN7.py"
-      ...9 nonres jobs...
-      prep_assign: {job: "CTRAMP/scripts/assign/PrepAssign.job", cluster_nodes: 5}
-      hwy_assign:  {job: "CTRAMP/scripts/assign/HwyAssign.job",  cluster_nodes: 48}
-      stage_transit_lines: {module: "tm1.steps.staging:stage_transit_lines"}
-      prep_hwy_net:
-        job: "CTRAMP/scripts/skims/PrepHwyNet.job"
-        cwd: "trn/TransitAssignment.iter{iteration}"
-      ...3 more transit jobs...
-      stage_loaded_networks:      {module: "tm1.steps.staging:stage_loaded_networks"}
-      rename_assignment_variables: {job: ".../RenameAssignmentVariables.job"}
-      average_network_volumes:     {job: ".../AverageNetworkVolumes.job"}
-      calculate_speeds:            {job: ".../CalculateSpeeds.job", cluster_nodes: 5}
-      test_network_convergence:    {job: ".../TestNetworkConvergence.job"}
-      merge_networks:              {job: ".../MergeNetworks.job"}
-      publish_networks:            {module: "tm1.steps.staging:publish_networks"}
+  # 276-336 -- iterations 1-3, identical rounds
+  - iterate:
+      count: 3
+      steps:
+        - simulate_ctramp: {...}               # unchanged from #103
+        - update_telecommute_en7:
+            command: "CTRAMP/scripts/preprocess/updateTelecommute_forEN7.py"
+        # ...9 nonres jobs...
+        - prep_assign: {job: "...PrepAssign.job", cluster_nodes: 5}
+        - hwy_assign:  {job: "...HwyAssign.job",  cluster_nodes: 48}
+        # ...transit chain, feedback with average_network_volumes +
+        #    calculate_speeds, publish_networks...
+        - hwy_skims:     {job: "...HwySkims.job", cluster_nodes: 5}
+        - accessibility: {job: "...Accessibility.job"}
 
   # 350, 364, 446-454
-  skims_database: {job: "CTRAMP/scripts/database/SkimsDatabase.job"}
-  net2csv:        {job: "CTRAMP/scripts/metrics/net2csv_avgload5period.job"}
-  cleanup:        {...}
+  - skims_database: {job: "CTRAMP/scripts/database/SkimsDatabase.job"}
+  - net2csv:        {job: "CTRAMP/scripts/metrics/net2csv_avgload5period.job"}
 ```
 
-### `warm_start:` — the one branch that survives
+### Iteration 0 — ordinary steps, no mechanism
 
-Iteration 0 is a *slice of the loop body*, not a second pipeline: 11 of its 12 steps are
-the ones the loop already defines, differing only by round. Naming them keeps each step
-defined once, so a change to `transit_assign`'s cluster size or `cwd` cannot drift
-between the two.
+`steps:` is a list, so a name may appear twice: the warm start and the loop each carry
+their own copy of the assignment steps, each fully readable in place. There is no
+`warm_start:` key and no round-gating vocabulary — the two `.bat` branches come out as:
 
-A bare name reuses the loop's definition; a name with a body defines a step only the
-warm start has. `seed_average_networks` is the only one — the loop computes the running
-average where iteration 0 must seed it, since round 0 has no earlier iteration
-directory to average against. (Round *1* does, which is what finding 5 exploits; round
-0 does not, which is why one step remains.)
+- `if %ITER%==0 goto hwyAssign` → the warm-start steps are written before `iterate:`,
+  pinned with `iteration: 0`. `seed_average_networks` sits where the loop has
+  `average_network_volumes` + `calculate_speeds`, because round 0 has no earlier round
+  to average against — visible as a differing line, not encoded.
+- `if %ITER%==1` → gone (findings 3 and 5): `hwy_skims`/`accessibility` run at the *end* of
+  iteration 0 and of every round rather than the head, so `find_no_access_zones` and
+  `filter_unconnected_households` are ordinary warm-start steps. Rounds 1-3 are
+  identical. The tail-position move means the final round's network also gets skimmed,
+  so `skims_database` reflects the finished network — a deliberate, flagged departure.
 
-A name that matches nothing in the body is an error raised while the plan is built,
-before any step runs — a typo would otherwise be a step that silently never happens.
+`skip_if_exists:` is the warm start's rerun behaviour, declared per step: the step's
+work is done when the named product is on disk, and deleting the file forces a rebuild.
+The loop refuses the key — its outputs land on the same paths every round, so an
+existence check cannot tell this round's product from the last one's. Steps without it
+(the seconds-cheap file shuffles) simply rerun, harmlessly.
+
+The costs, stated: the assignment steps are written twice (a change must be made in
+both copies — grep is the mitigation), and the final round's skims are ~6 minutes of
+work the `.bat` never did.
 
 
 ## Environment contract
@@ -407,8 +408,9 @@ values the runner supplies:
 
 **Edited: 3**
 
-- `src/tm1/runner.py` — two `_CUSTOM_KEYS` entries, a `_load_step` branch, `step_name`
-  passed to every step, and `warm_start:` expansion in `_iteration_plan`.
+- `src/tm1/runner.py` — two `_CUSTOM_KEYS` entries, a `_load_step` branch, list-form
+  `steps:` with each plan entry carrying its own config, `iteration:` pinning and
+  `skip_if_exists:` (both refused inside `iterate:`).
 - `scenarios/base_2023_ctramp/scenario_config.yaml` — the bulk of the work
 - `pyproject.toml` — `legacy` extra
 
@@ -419,7 +421,7 @@ file lives on the phase-4 branch, so it is a phase-4 edit rather than part of th
 
 1. `job:` and `command:` step types, with tests
 2. Environment/cwd contract — the `.bat`'s implicit environment made explicit
-3. `warm_start:` on `iterate:` -- iteration 0 as a named slice of the body
+3. List-form `steps:` -- iteration 0 written out, `skip_if_exists:` on its products
 4. The scenario config, sourced from `INPUT/` only — and with it, the first **live-Cube
    smoke test of the `job:` path**. It has never run real Cube: the tests patch
    `run_cube_job`, and `run_cube_job` itself has no automated tests at all, only the

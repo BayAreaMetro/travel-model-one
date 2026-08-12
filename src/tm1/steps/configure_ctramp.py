@@ -73,6 +73,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from tm1.config import step_config
+
 log = logging.getLogger(__name__)
 
 #: Workbook cell markers: (filename, marker column, marker text, value column, alignment).
@@ -390,10 +392,10 @@ def config_machine_size(proj_dir: Path, step_cfg: dict) -> None:
 def run(
     scenario_dir: Path,  # noqa: ARG001
     cfg: dict,
-    **kwargs: object,  # noqa: ARG001
+    **kwargs: object,
 ) -> str | None:
     """Propagate params.properties into CT-RAMP's properties, blocks and UECs."""
-    step_cfg = cfg.get("steps", {}).get("configure_ctramp", {}) or {}
+    step_cfg = step_config(cfg, "configure_ctramp", kwargs)
     missing = [k for k in _REQUIRED_KEYS if k not in step_cfg and k not in cfg]
     if missing:
         msg = f"configure_ctramp config is missing keys: {', '.join(missing)}"

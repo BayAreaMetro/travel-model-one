@@ -11,6 +11,8 @@ import shutil
 import sys
 from pathlib import Path
 
+from tm1.config import step_config
+
 log = logging.getLogger(__name__)
 
 
@@ -64,7 +66,7 @@ def run(
     """Copy input files as specified in the copy_inputs step."""
     force = kwargs.get("force", False)
 
-    copy_inputs = cfg.get("steps", {}).get("copy_inputs", {})
+    copy_inputs = step_config(cfg, "copy_inputs", kwargs)
 
     copied = 0
     for name, entry in copy_inputs.items():

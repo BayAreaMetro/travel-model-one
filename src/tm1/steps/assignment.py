@@ -62,6 +62,7 @@ from pathlib import Path
 
 from tm1.assignment.cube.ctramp import run_iteration
 from tm1.assignment.cube.highway import PERIODS
+from tm1.config import step_config
 
 log = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ def _resolve_sampleshare(cfg: dict, step_cfg: dict, iteration: int) -> float:
     if step_cfg.get("sampleshare") is not None:
         return float(step_cfg["sampleshare"])
 
-    sim = cfg.get("steps", {}).get("simulate_ctramp", {}) or {}
+    sim = step_config(cfg, "simulate_ctramp")
     if sim.get("sample_rate") is not None:
         return float(sim["sample_rate"])
 
@@ -184,7 +185,7 @@ _BACKENDS: dict[str, Callable[[Path, int, float, str, dict], None]] = {
 
 def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Run one assignment + feedback pass for the current iteration."""
-    step_cfg = cfg.get("steps", {}).get("assignment", {}) or {}
+    step_cfg = step_config(cfg, "assignment", kwargs)
 
     # `model_year` and `future` describe the run, not this step: the pre-process
     # reads them too (HsrTripGeneration.job wants %MODEL_YEAR% before any assignment

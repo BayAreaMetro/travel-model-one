@@ -1,9 +1,17 @@
 """Step orchestrator — runs steps declared in scenario_config.yaml.
 
 Each step is a module (or any object) exposing ``run(scenario_dir, cfg, **kwargs)``.
-Steps are flat: every step is a top-level key under ``steps:``, and they run in the
-order written.  There is no grouping and no nesting, so "what runs, and when" is
+Steps run in the order written; ``iterate:`` is the only nesting, and its body is
+the feedback loop.  ``steps:`` is a list of ``name: {config}`` entries (a mapping
+also works, but only the list form can name a step twice -- the warm start and the
+loop each carry their own copy of the assignment steps).  "What runs, and when" is
 answerable by reading the config top to bottom.
+
+A step outside the loop may pin its round with ``iteration:`` (the warm-start
+steps say ``iteration: 0``, ``RunModel.bat``'s ``set ITER=0``) and may declare
+``skip_if_exists: <path>`` -- its work is done when that file is on disk, so a
+rerun walks past it and a deleted file forces a rebuild.  Both keys are refused
+inside ``iterate:``: the loop is the part of the run that always re-runs.
 
 A scenario may add its own steps -- typically pre- or post-processing -- by
 pointing at Python code::
@@ -148,161 +156,163 @@ def _load_script(path: Path, scenario_dir: Path) -> ModuleType:
 #: Step name reserved for the global feedback loop.
 _ITERATE = "iterate"
 
-#: Key on ``iterate`` naming the slice of the body that runs once, before the loop.
-_WARM_START = "warm_start"
+#: Keys `iterate:` understands.  Anything else is refused by name, so a config
+#: written for a removed mechanism (`warm_start:`, `first_round:`) fails loudly
+#: instead of being silently ignored.
+_ITERATE_KEYS = ("count", "steps")
 
-#: The round a warm start runs as -- ``RunModel.bat``'s ``set ITER=0``.
-_WARM_START_ITERATION = 0
+#: Key letting a step *outside* the loop skip itself when its product is on disk.
+_SKIP_IF_EXISTS = "skip_if_exists"
 
 
-def _warm_start_entries(it_cfg: dict) -> list[tuple[str, dict | None]]:
-    """Parse ``warm_start:`` into ``(step name, its own config or None)``.
+def _normalize_steps(steps_cfg: object, where: str = "steps") -> list[tuple[str, dict]]:
+    """Ordered ``(name, config)`` pairs from either shape of ``steps:``.
 
-    An entry is either a bare name, reusing the loop body's definition of that
-    step, or a single-key mapping defining a step the warm start alone has::
-
-        warm_start:
-          - hwy_assign                       # as the loop defines it
-          - seed_average_networks:           # warm start only
-              module: "tm1.steps.staging:seed_average_networks"
-
-    The bare form is the point: iteration 0 runs a *slice of the loop body*, not a
-    second copy of it, so the steps are named once and referenced here.
+    A mapping is the compact form.  A list of single-key mappings is the explicit
+    form -- and the only one that can name the same step twice, which is how the
+    warm start and the loop each carry their own copy of the assignment steps.
     """
-    declared = it_cfg.get(_WARM_START) or []
-    if not isinstance(declared, list):
-        msg = (
-            f"`{_ITERATE}.{_WARM_START}` must be a list of step names -- the slice "
-            f"of the loop body that iteration 0 runs. Got {type(declared).__name__}."
-        )
-        raise TypeError(msg)
-
-    entries: list[tuple[str, dict | None]] = []
-    for item in declared:
-        if isinstance(item, str):
-            entries.append((item, None))
-            continue
-        if isinstance(item, dict) and len(item) == 1:
-            name, cfg = next(iter(item.items()))
-            entries.append((str(name), cfg or {}))
-            continue
-        msg = (
-            f"`{_ITERATE}.{_WARM_START}` entries are either a step name, or a "
-            f"single name with its own config. Got: {item!r}"
-        )
-        raise ValueError(msg)
-    return entries
-
-
-def _warm_start_definitions(it_cfg: dict) -> dict:
-    """Step configs the warm start alone defines, keyed by name.
-
-    A bare name needs nothing here -- it reuses the loop body's definition, and the
-    plan supplies iteration 0, so the *same* config runs as a different round.  Only
-    entries that carry their own body contribute.
-    """
-    body = it_cfg.get("steps") or {}
-    own_definitions: dict = {}
-    for name, own in _warm_start_entries(it_cfg):
-        if own is None:
-            if name not in body:
+    if isinstance(steps_cfg, dict):
+        return [(str(name), cfg or {}) for name, cfg in steps_cfg.items()]
+    if isinstance(steps_cfg, list):
+        pairs: list[tuple[str, dict]] = []
+        for item in steps_cfg:
+            if not isinstance(item, dict) or len(item) != 1:
                 msg = (
-                    f"`{_ITERATE}.{_WARM_START}` names {name!r}, which the loop body "
-                    f"does not define. Either add it to `steps:`, or give it a config "
-                    f"here if only the warm start runs it."
+                    f"`{where}` entries must each be one `name: {{config}}` "
+                    f"mapping; got {item!r}."
                 )
-                raise ValueError(msg)
-            continue
-        own_definitions[name] = own
-    return own_definitions
-
-
-def _flatten_steps(steps_cfg: dict) -> dict:
-    """Step configs with the loop body lifted alongside the top-level steps.
-
-    Lets step lookup stay uniform: a step inside ``iterate`` resolves exactly as
-    one outside it.
-    """
-    flat: dict = {}
-    for name, step_cfg in steps_cfg.items():
-        if name == _ITERATE:
-            flat.update((step_cfg or {}).get("steps") or {})
-            # Warm-start-only steps, which the loop body never runs.
-            flat.update(_warm_start_definitions(step_cfg or {}))
-        else:
-            flat[name] = step_cfg
-    return flat
+                raise TypeError(msg)
+            name, cfg = next(iter(item.items()))
+            pairs.append((str(name), cfg or {}))
+        return pairs
+    msg = f"`{where}` must be a mapping or a list of `name: {{config}}` entries."
+    raise TypeError(msg)
 
 
 def _iteration_plan(
-    steps_cfg: dict, steps: list[str], override: int | None = None
-) -> list[tuple[str, int]]:
-    """Expand the step list into an ordered ``[(step, iteration)]`` execution plan.
+    steps_cfg: object, override: int | None = None
+) -> tuple[list[tuple[str, int]], dict[tuple[str, int], dict]]:
+    """Expand the config into the execution plan, one entry per run of a step.
 
-    A *global iteration* is demand plus assignment: demand responds to the
-    congested skims the previous assignment produced.  ``RunModel.bat`` expresses
-    that by calling ``RunIteration.bat`` N times; here the loop body is nested::
+    Returns ``(plan, configs)``: the ordered ``[(step, round)]`` list, and the
+    config block behind each entry.  The block travels with the entry because a
+    name may appear more than once -- the warm start's ``hwy_assign`` and the
+    loop's are different entries with different configs.
 
-        steps:
-          copy_inputs: {}
-          iterate:
-            count: 3
-            steps:
-              simulate_ctramp: {}
-              assignment: {}
-          calibration: {}
+    There is no round logic beyond two rules, both visible in the config:
 
-    Nesting makes the body contiguous by construction, and names each step once.
-    Steps before the loop run at iteration 1; steps after it run once at the final
-    iteration, since they summarise the finished run.
-
-    The loop starts at 1.  ``RunModel.bat``'s iteration 0 is a *warm start* -- it
-    assigns a previous run's demand to produce the first skims, and jumps past the
-    skim, demand and non-residential blocks -- so it is a named step before the
-    loop, not a round of it.
+    - A step outside ``iterate:`` runs once, where it is written.  It runs as
+      round 1 (or the final round, after the loop) unless it pins its own
+      ``iteration:`` -- the warm-start steps say ``iteration: 0``, which is
+      ``RunModel.bat``'s ``set ITER=0``.
+    - ``iterate:`` repeats its body ``count`` times, rounds 1..N, identically.
+      Body steps may not pin ``iteration:`` or declare ``skip_if_exists:`` --
+      the loop is the part of the run that always re-runs.
     """
     plan: list[tuple[str, int]] = []
+    configs: dict[tuple[str, int], dict] = {}
     current = 1
 
-    for name in steps:
+    def add(name: str, rnd: int, cfg: dict) -> None:
+        if (name, rnd) in configs:
+            msg = (
+                f"Step {name!r} is defined twice for iteration {rnd}. Two copies "
+                f"of a step must run in different rounds -- pin one with "
+                f"`iteration:`, or rename it."
+            )
+            raise ValueError(msg)
+        configs[(name, rnd)] = cfg
+        plan.append((name, rnd))
+
+    for name, step_cfg in _normalize_steps(steps_cfg):
         if name != _ITERATE:
-            plan.append((name, current))
+            declared = step_cfg.get("iteration")
+            add(name, int(declared) if declared is not None else current, step_cfg)
             continue
 
-        it_cfg = steps_cfg.get(_ITERATE)
-        if not isinstance(it_cfg, dict):
-            msg = (
-                f"`{_ITERATE}` must be a block with `count` and `steps`:\n\n"
-                f"    {_ITERATE}:\n      count: 3\n      steps:\n"
-                f"        simulate_ctramp: {{}}\n        assignment: {{}}"
-            )
-            raise TypeError(msg)
-
-        count = int(override if override is not None else it_cfg.get("count", 1))
-        if count < 1:
-            msg = f"{_ITERATE}.count must be >= 1, got {count}"
-            raise ValueError(msg)
-
-        body = list((it_cfg.get("steps") or {}).keys())
-        if not body:
-            msg = f"`{_ITERATE}` declares no steps; the loop body cannot be empty."
-            raise ValueError(msg)
-
-        # The warm start runs first, as iteration 0: RunModel.bat's `set ITER=0`
-        # block, which calls the same body and jumps straight to :hwyAssign.
-        # Validated here rather than at load time, so a name that matches nothing
-        # is caught while the plan is being built -- before any step has run.
-        _warm_start_definitions(it_cfg)
-        plan += [
-            (name, _WARM_START_ITERATION)
-            for name, _ in _warm_start_entries(it_cfg)
-        ]
-
+        count, body = _iterate_block(step_cfg, override)
         for i in range(1, count + 1):
-            plan += [(s, i) for s in body]
+            for body_name, body_cfg in body:
+                add(body_name, i, body_cfg)
         current = count
 
-    return plan
+    return plan, configs
+
+
+def _iterate_block(
+    it_cfg: object, override: int | None
+) -> tuple[int, list[tuple[str, dict]]]:
+    """Validate the ``iterate:`` block and return ``(count, body)``.
+
+    The body is checked here for the two keys the loop refuses -- see
+    :func:`_iteration_plan` -- and the block itself for keys it does not take,
+    so a config written for a removed mechanism fails loudly.
+    """
+    if not isinstance(it_cfg, dict) or not it_cfg:
+        msg = (
+            f"`{_ITERATE}` must be a block with `count` and `steps`:\n\n"
+            f"    {_ITERATE}:\n      count: 3\n      steps:\n"
+            f"        - simulate_ctramp: {{}}\n        - assignment: {{}}"
+        )
+        raise TypeError(msg)
+
+    unknown = [k for k in it_cfg if k not in _ITERATE_KEYS]
+    if unknown:
+        msg = (
+            f"`{_ITERATE}` does not take {', '.join(map(repr, unknown))} -- "
+            f"only `count` and `steps`. Steps that run outside the rounds "
+            f"(a warm start, one-time setup) are ordinary steps written "
+            f"before the loop, with their own `iteration:` and, if wanted, "
+            f"`{_SKIP_IF_EXISTS}:`."
+        )
+        raise ValueError(msg)
+
+    count = int(override if override is not None else it_cfg.get("count", 1))
+    if count < 1:
+        msg = f"{_ITERATE}.count must be >= 1, got {count}"
+        raise ValueError(msg)
+
+    body = _normalize_steps(it_cfg.get("steps") or [], where=f"{_ITERATE}.steps")
+    if not body:
+        msg = f"`{_ITERATE}` declares no steps; the loop body cannot be empty."
+        raise ValueError(msg)
+
+    for body_name, body_cfg in body:
+        if _SKIP_IF_EXISTS in body_cfg:
+            msg = (
+                f"Step {body_name!r} declares `{_SKIP_IF_EXISTS}` inside "
+                f"`{_ITERATE}`. The loop always re-runs -- its outputs land "
+                f"on the same paths every round, so an existence check "
+                f"cannot tell this round's product from the last one's. "
+                f"Move the step outside the loop if it runs once."
+            )
+            raise ValueError(msg)
+        if "iteration" in body_cfg:
+            msg = (
+                f"Step {body_name!r} pins `iteration:` inside `{_ITERATE}`, "
+                f"whose rounds are numbered by the loop itself."
+            )
+            raise ValueError(msg)
+
+    return count, body
+
+
+def _skip_target(step_cfg: dict, cfg: dict) -> Path | None:
+    """The declared product that lets this step skip itself, if it is on disk.
+
+    ``skip_if_exists:`` is a statement in the config -- *this step's work is done
+    when this file exists* -- and the check is exactly that, nothing inferred.
+    Deleting the file forces a rebuild.  Relative paths resolve against
+    ``proj_dir``, where every model artifact lives.
+    """
+    declared = step_cfg.get(_SKIP_IF_EXISTS)
+    if not declared:
+        return None
+    path = Path(str(declared)).expanduser()
+    if not path.is_absolute():
+        path = Path(cfg["proj_dir"]) / path
+    return path if path.exists() else None
 
 
 def _fmt_plan(plan: list[tuple[str, int]], n_iters: int) -> str:
@@ -507,17 +517,20 @@ def _report_resume(
 
 
 def _notify_start(
-    label: str, steps: list[str], flat_steps_cfg: dict, n_iters: int, kwargs: dict
+    label: str, steps: list[str], configs: dict[tuple[str, int], dict],
+    n_iters: int, kwargs: dict,
 ) -> None:
     """Announce what is about to run.
 
-    Reads the demand step from the *flattened* configs: it normally sits inside
+    Reads the demand step's config off the plan entries: it sits inside
     ``iterate``, so a top-level lookup would silently report defaults.
     """
-    sim_cfg = (
-        flat_steps_cfg.get("simulate_ctramp")
-        or flat_steps_cfg.get("simulate_activitysim")
-        or {}
+    sim_cfg = next(
+        (
+            entry_cfg for (name, _), entry_cfg in configs.items()
+            if name in ("simulate_ctramp", "simulate_activitysim")
+        ),
+        {},
     )
     sample_rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
     sample_str = "per-iteration ramp" if sample_rate is None else f"{sample_rate:.0%}"
@@ -589,16 +602,18 @@ def _sole_custom_key(step_name: str, declared: list[str]) -> str:
     return declared[0]
 
 
-def _load_step(step_name: str, steps_cfg: dict, scenario_dir: Path) -> Callable:
-    """Resolve a step name to the callable that runs it.
+def _load_step(step_name: str, step_cfg: dict | None, scenario_dir: Path) -> Callable:
+    """Resolve one step's config block to the callable that runs it.
+
+    Takes the block itself rather than a name to look up, because a name may
+    appear more than once in the plan -- the entry identifies the step.
 
     Built-in steps take precedence.  Anything else declares either native Python
     (``script:``, a path relative to the scenario directory, or ``module:``, an
     importable dotted path, each optionally naming a function after a colon) or a
-    legacy artifact to run in place (``job:``/``legacy_script:``, relative to
+    legacy artifact to run in place (``job:``/``command:``, relative to
     ``proj_dir``).
     """
-    step_cfg = steps_cfg.get(step_name)
     declared = (
         [k for k in _CUSTOM_KEYS if k in step_cfg] if isinstance(step_cfg, dict) else []
     )
@@ -681,31 +696,39 @@ def run_model(
 
     _resolve_slack_level(cfg, slack_level)
 
-    steps_cfg = cfg.get("steps", {})  # pyright: ignore[reportAttributeAccessIssue]
-    declared = list(steps_cfg.keys()) or DEFAULT_STEPS  # pyright: ignore[reportAttributeAccessIssue]
+    steps_cfg = cfg.get("steps") or {name: {} for name in DEFAULT_STEPS}  # pyright: ignore[reportAttributeAccessIssue]
 
-    # Step lookup sees the loop body as ordinary steps, so `--steps assignment`
-    # works whether or not assignment sits inside `iterate`.
-    flat_steps_cfg = _flatten_steps(steps_cfg)
+    # Always the config's whole plan: `--steps`, `--resume-at` and `--until`
+    # select from it rather than defining one, so a step keeps the round it
+    # actually belongs to.  `--iterations N` overrides iterate.count.  Built
+    # before the run log opens: a config error is a console conversation, not
+    # a run.
+    full_plan, configs = _iteration_plan(steps_cfg, override=kwargs.get("iterations"))
 
+    declared = list(dict.fromkeys(name for name, _ in full_plan))
     log_handler = _start_run_log(cfg, label, steps or declared)
     t0_total = time.time()
 
     try:
-        # Always the config's whole plan: `--steps`, `--resume-at` and `--until`
-        # select from it rather than defining one, so a step keeps the round it
-        # actually belongs to.  `--iterations N` overrides iterate.count.
-        full_plan = _iteration_plan(steps_cfg, declared, override=kwargs.get("iterations"))
         n_iters = max((i for _, i in full_plan), default=1)
         plan = _select_steps(full_plan, steps)
         plan = _apply_resume(plan, kwargs.get("resume_at"), cfg.get("proj_dir"))
         plan = _apply_until(plan, kwargs.get("until"))
         _report_resume(full_plan, plan, n_iters)
         prev_iter = None
-        _notify_start(label, steps or declared, flat_steps_cfg, n_iters, kwargs)
+        _notify_start(label, steps or declared, configs, n_iters, kwargs)
 
         for name, iteration in plan:
-            run_step = _load_step(name, flat_steps_cfg, scenario_dir)
+            step_cfg = configs[(name, iteration)]
+
+            # The step's declared product is already on disk: its work is done.
+            skip = _skip_target(step_cfg, cfg)
+            if skip is not None:
+                log.info("--- Step: %s -- skipped, %s exists ---", name, skip)
+                notify(f"[{label}] {name} skipped ({skip.name} exists)")
+                continue
+
+            run_step = _load_step(name, step_cfg, scenario_dir)
 
             if n_iters > 1 and iteration != prev_iter:
                 log.info("=== Iteration %d of %d ===", iteration, n_iters)
@@ -716,12 +739,16 @@ def run_model(
             try:
                 # Merged rather than passed positionally: an explicit caller-supplied
                 # `iteration` would otherwise be a duplicate-keyword TypeError.
-                # `step_name` lets a step find its own config block when a scenario
-                # gives it a name of its own -- the same function can then appear
-                # twice under different names, as the warm-start steps do.
+                # `step_cfg` is the entry's own block -- with `steps:` as a list a
+                # name may appear twice, so the entry, not the name, identifies it.
                 result = run_step(
                     scenario_dir, cfg,
-                    **{**kwargs, "iteration": iteration, "step_name": name},
+                    **{
+                        **kwargs,
+                        "iteration": iteration,
+                        "step_name": name,
+                        "step_cfg": step_cfg,
+                    },
                 )
             except KeyboardInterrupt:
                 log.warning("Cancelled during %s", name)

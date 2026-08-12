@@ -68,6 +68,8 @@ import threading
 import time
 from pathlib import Path
 
+from tm1.config import step_config
+
 log = logging.getLogger(__name__)
 
 # Execution order of CTRAMP model components (matches mtcTourBased.properties).
@@ -286,7 +288,7 @@ def patch_jppf_configs(
 ) -> None:
     """Patch JPPF config files with the correct host IP and thread count."""
     # Derive driver name from IP (e.g. "localhost" -> "driverlocalhost")
-    last_part = host_ip.split(".")[-1] if "." in host_ip else host_ip
+    last_part = host_ip.rsplit(".", maxsplit=1)[-1] if "." in host_ip else host_ip
     driver = f"driver{last_part}"
 
     # Patch driver name and server host in client properties
@@ -856,7 +858,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
               UsualWorkAndSchoolLocationChoice: true
               ...
     """
-    step_cfg = cfg["steps"]["simulate_ctramp"]
+    step_cfg = step_config(cfg, "simulate_ctramp", kwargs)
     project_dir = Path(step_cfg["project_dir"])
     runtime_dir = Path(step_cfg.get("runtime_dir", str(project_dir / "CTRAMP" / "runtime")))
     host_ip = step_cfg.get("host_ip", "localhost")
