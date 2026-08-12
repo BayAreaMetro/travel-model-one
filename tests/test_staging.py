@@ -57,6 +57,75 @@ def test_missing_loaded_network_names_the_job_that_writes_it(proj: Path) -> None
         _call(staging.stage_loaded_networks, proj, "stage_loaded_networks", iteration=1)
 
 
+# --- copy_transit_skims ----------------------------------------------------
+
+
+def test_transit_skims_copy_up_strips_the_iteration_suffix(proj: Path) -> None:
+    """skims/ gets plain trnskm names -- the ones CT-RAMP and Accessibility read.
+
+    trnAssign.bat:231-235 renames on copy; keeping the suffix crashes
+    Accessibility.job at startup on the missing input.
+    """
+    ta = proj / "trn" / "TransitAssignment.iter0"
+    ta.mkdir()
+    (ta / "trnskmam_wlk_trn_wlk.avg.iter0.tpp").write_text("am")
+    (ta / "trnskmev_drv_com_wlk.avg.iter0.tpp").write_text("ev")
+
+    _call(staging.copy_transit_skims, proj, "copy_transit_skims", iteration=0)
+
+    assert (proj / "skims" / "trnskmam_wlk_trn_wlk.tpp").read_text() == "am"
+    assert (proj / "skims" / "trnskmev_drv_com_wlk.tpp").read_text() == "ev"
+    assert not (proj / "skims" / "trnskmam_wlk_trn_wlk.avg.iter0.tpp").exists()
+
+
+def test_the_suffix_is_the_transit_subiteration_not_the_round(proj: Path) -> None:
+    """Under TRNCONFIG=FAST the counter stays 0 in every global round.
+
+    Round 2's directory therefore holds `.avg.iter0.tpp`, not `.avg.iter2.tpp`.
+    Deriving the suffix from the round instead finds nothing and fails the step.
+    """
+    ta = proj / "trn" / "TransitAssignment.iter2"
+    ta.mkdir()
+    (ta / "trnskmam_wlk_trn_wlk.avg.iter0.tpp").write_text("round 2 output")
+
+    _call(staging.copy_transit_skims, proj, "copy_transit_skims", iteration=2)
+
+    assert (proj / "skims" / "trnskmam_wlk_trn_wlk.tpp").read_text() == "round 2 output"
+
+
+def test_the_highest_subiteration_wins(proj: Path) -> None:
+    """trnAssign.bat copies %LASTITER_{period}% -- where STANDARD iterated to."""
+    ta = proj / "trn" / "TransitAssignment.iter1"
+    ta.mkdir()
+    (ta / "trnskmam_wlk_trn_wlk.avg.iter0.tpp").write_text("first pass")
+    (ta / "trnskmam_wlk_trn_wlk.avg.iter2.tpp").write_text("converged")
+    (ta / "trnskmam_wlk_trn_wlk.avg.iter1.tpp").write_text("middle")
+
+    _call(staging.copy_transit_skims, proj, "copy_transit_skims", iteration=1)
+
+    assert (proj / "skims" / "trnskmam_wlk_trn_wlk.tpp").read_text() == "converged"
+
+
+def test_the_negative_seed_copy_is_ignored(proj: Path) -> None:
+    """TransitSkims.job:424 seeds `.avg.iterNEG1.tpp`; it is not a sub-iteration."""
+    ta = proj / "trn" / "TransitAssignment.iter0"
+    ta.mkdir()
+    (ta / "trnskmam_wlk_trn_wlk.avg.iterNEG1.tpp").write_text("seed")
+    (ta / "trnskmam_wlk_trn_wlk.avg.iter0.tpp").write_text("real")
+
+    _call(staging.copy_transit_skims, proj, "copy_transit_skims", iteration=0)
+
+    assert (proj / "skims" / "trnskmam_wlk_trn_wlk.tpp").read_text() == "real"
+
+
+def test_missing_transit_skims_name_the_job_that_writes_them(proj: Path) -> None:
+    """An empty iteration directory means TransitSkims.job never ran."""
+    (proj / "trn" / "TransitAssignment.iter1").mkdir()
+
+    with pytest.raises(FileNotFoundError, match=r"TransitSkims\.job"):
+        _call(staging.copy_transit_skims, proj, "copy_transit_skims", iteration=1)
+
+
 # --- seed_average_networks -------------------------------------------------
 
 

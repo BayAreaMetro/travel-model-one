@@ -115,10 +115,22 @@ def stage_transit_lines(scenario_dir: Path, cfg: dict, **kwargs: object) -> str 
 def copy_transit_skims(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Lift this round's transit skims out of the iteration directory, into ``skims/``.
 
-    ``trnAssign.bat``'s copy-up.  ``TransitSkims.job`` writes into
-    ``trn/TransitAssignment.iter{N}/``; CT-RAMP reads ``skims/``.  The
-    ``.avg.iter{N}`` suffix is kept, because that is what resolves the latest
-    iteration when the skims are read back.
+    ``trnAssign.bat:231-235``.  ``TransitSkims.job`` writes
+    ``trnskm{period}_{access}_{path}_{egress}.avg.iter{S}.tpp`` into
+    ``trn/TransitAssignment.iter{N}/``; the copy-up **strips the suffix**, so
+    ``skims/`` holds plain ``trnskm{period}_{path}.tpp`` -- the names CT-RAMP and
+    ``Accessibility.job`` read.  Keeping the suffix leaves the plain names
+    missing, which crashes ``Accessibility.job`` at startup.
+
+    **``S`` is the transit sub-iteration, not the global round.**  It comes from
+    ``%TRNASSIGNITER%`` (``TransitSkims.job:431``), a counter internal to
+    ``trnAssign.bat`` that starts at 0 and only advances in the ``STANDARD``
+    configuration, where transit assignment iterates to convergence.  Under
+    ``FAST`` -- one pass, what this pipeline runs -- it stays 0 in *every* global
+    round, so round 2's directory holds ``.avg.iter0.tpp`` just as round 0's does.
+
+    The ``.bat`` copies ``%LASTITER_{period}%``, the last sub-iteration reached,
+    so this takes the highest one present per skim rather than assuming a number.
     """
     proj_dir = Path(cfg["proj_dir"])
     iteration = _iteration(cfg, kwargs)
@@ -126,17 +138,33 @@ def copy_transit_skims(scenario_dir: Path, cfg: dict, **kwargs: object) -> str |
     skims = proj_dir / "skims"
     skims.mkdir(parents=True, exist_ok=True)
 
-    found = sorted(ta_dir.glob("trnskm*.avg.iter*.tpp"))
-    if not found:
+    # base name -> (sub-iteration, file), keeping the highest sub-iteration.
+    latest: dict[str, tuple[int, Path]] = {}
+    for path in sorted(ta_dir.glob("trnskm*.avg.iter*.tpp")):
+        base, _, tail = path.name.partition(".avg.iter")
+        sub = tail.removesuffix(".tpp")
+        if not sub.isdigit():
+            continue  # `.avg.iterNEG1.tpp`, TransitSkims.job:424's seed copy
+        if base not in latest or int(sub) > latest[base][0]:
+            latest[base] = (int(sub), path)
+
+    if not latest:
         msg = (
             f"No transit skims in {ta_dir}. TransitSkims.job writes "
-            f"trnskm*.avg.iter*.tpp there; check that it ran for this round."
+            f"trnskm*.avg.iter{{S}}.tpp there, where S is the transit "
+            f"sub-iteration (0 under TRNCONFIG=FAST, not the global round); "
+            f"check that it ran for this round."
         )
         raise FileNotFoundError(msg)
-    for f in found:
-        shutil.copy2(f, skims / f.name)
 
-    log.info("Copied %d transit skims to %s", len(found), skims)
+    for base, (_, path) in latest.items():
+        shutil.copy2(path, skims / f"{base}.tpp")
+
+    subs = sorted({sub for sub, _ in latest.values()})
+    log.info(
+        "Copied %d transit skims to %s (sub-iteration %s, suffix stripped)",
+        len(latest), skims, ", ".join(str(s) for s in subs),
+    )
     return None
 
 

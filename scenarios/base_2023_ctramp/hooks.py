@@ -32,7 +32,7 @@ _DUMMY_FT = 6
 def vmt_vht_metrics(
     scenario_dir: Path,  # noqa: ARG001
     cfg: dict,
-    **kwargs: object,  # noqa: ARG001
+    **kwargs: object,
 ) -> str | None:
     """Summarise the loaded network into VMT and VHT by facility type.
 
@@ -48,7 +48,10 @@ def vmt_vht_metrics(
     output is a handful of rows, so nothing is duplicated on disk.
     """
     proj_dir = Path(cfg["proj_dir"])
-    iteration = cfg.get("steps", {}).get("assignment", {}).get("iteration") or 1
+    # The runner supplies this step's round -- for a step after the loop, the
+    # final one.  Reading it out of `steps:` is what a step must NOT do now that
+    # a name can appear in several rounds.
+    iteration = int(kwargs.get("iteration") or 1)
 
     loaded = proj_dir / "hwy" / f"iter{iteration}" / "avgload5period.csv"
     if not loaded.is_file():

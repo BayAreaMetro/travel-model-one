@@ -6,9 +6,11 @@ choice unconverged.  The total it produces -- seven -- is the number a convergen
 run has to beat, so it is asserted rather than left to inference.
 """
 
+from pathlib import Path
+
 import pytest
 
-from tm1.steps.simulate_ctramp import shadow_pricing_flags
+from tm1.steps.simulate_ctramp import _popsyn_files, shadow_pricing_flags
 
 PREFIX = "UsualWorkAndSchoolLocationChoice"
 MAX_ITER = f"{PREFIX}.ShadowPricing.MaximumIterations"
@@ -103,3 +105,38 @@ def test_disabling_beats_the_override() -> None:
     flags = shadow_pricing_flags(1, shadow_pricing=False, passes={"first": 30})
 
     assert flags[MAX_ITER] == "1"
+
+
+# --- the synthetic-population filenames CT-RAMP is pointed at ---------------
+
+
+def test_popsyn_files_use_the_versioned_names_that_exist(tmp_path: Path) -> None:
+    """The versioned name is the real one, so the properties must state it.
+
+    Hard-coding ``hhFile.csv`` is a FileNotFoundException three processes deep
+    in the Java model.
+    """
+    popsyn = tmp_path / "INPUT" / "popsyn"
+    popsyn.mkdir(parents=True)
+    (popsyn / "hhFile.2023_v12.csv").write_text("hh")
+    (popsyn / "personFile.2023_v12.csv").write_text("per")
+
+    hh, person = _popsyn_files(tmp_path)
+
+    assert hh == "popsyn/hhFile.2023_v12.csv"
+    assert person == "popsyn/personFile.2023_v12.csv"
+
+
+def test_popsyn_files_refuse_ambiguity(tmp_path: Path) -> None:
+    """Two candidates would let the properties name one arbitrarily.
+
+    The legacy RuntimeConfiguration asserts exactly one match, and so does this.
+    """
+    popsyn = tmp_path / "INPUT" / "popsyn"
+    popsyn.mkdir(parents=True)
+    (popsyn / "hhFile.a.csv").write_text("a")
+    (popsyn / "hhFile.b.csv").write_text("b")
+    (popsyn / "personFile.csv").write_text("p")
+
+    with pytest.raises(FileNotFoundError, match="exactly one"):
+        _popsyn_files(tmp_path)

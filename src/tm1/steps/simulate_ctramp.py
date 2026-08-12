@@ -250,6 +250,31 @@ def shadow_price_run_notes() -> str:
     return shadow_price_run_notes.__doc__ or ""
 
 
+def _popsyn_files(project_dir: Path) -> tuple[str, str]:
+    """The synthetic-population filenames, found rather than assumed.
+
+    ``RuntimeConfiguration.config_popsyn_files``: the files carry a version in
+    the name (``hhFile.2023_v12.csv``), so the properties must state what is
+    actually there.  Globbed in ``INPUT/popsyn`` because that is the shipped
+    input; ``filterUnconnectedHouseholds.py`` copies the same names into
+    ``popsyn/``, which is the path prefix CT-RAMP reads.  Hard-coding
+    ``popsyn/hhFile.csv`` here is a FileNotFoundException three processes deep
+    in the Java model.
+    """
+    found: list[str] = []
+    for stem in ("hhFile", "personFile"):
+        matches = sorted((project_dir / "INPUT" / "popsyn").glob(f"{stem}.*"))
+        if len(matches) != 1:
+            names = ", ".join(m.name for m in matches) or "none"
+            msg = (
+                f"Expected exactly one INPUT/popsyn/{stem}.* "
+                f"(the legacy RuntimeConfiguration asserts this too); found: {names}"
+            )
+            raise FileNotFoundError(msg)
+        found.append(f"popsyn/{matches[0].name}")
+    return found[0], found[1]
+
+
 def patch_properties(props_path: Path, flags: dict[str, str]) -> None:
     """Patch mtcTourBased.properties in-place. Backs up on first call.
 
@@ -903,8 +928,9 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     # Patch runtime configuration (replaces what RuntimeConfiguration.py did).
     proj_dir_fwd = str(project_dir).replace("\\", "/").rstrip("/") + "/"
     flags["Project.Directory"] = proj_dir_fwd
-    flags["PopulationSynthesizer.InputToCTRAMP.HouseholdFile"] = "popsyn/hhFile.csv"
-    flags["PopulationSynthesizer.InputToCTRAMP.PersonFile"] = "popsyn/personFile.csv"
+    hh_file, person_file = _popsyn_files(project_dir)
+    flags["PopulationSynthesizer.InputToCTRAMP.HouseholdFile"] = hh_file
+    flags["PopulationSynthesizer.InputToCTRAMP.PersonFile"] = person_file
     flags["RunModel.MatrixServerAddress"] = host_ip
     flags["RunModel.HouseholdServerAddress"] = host_ip
     flags["Model.Random.Seed"] = str(seed)
