@@ -23,16 +23,27 @@ def step_config(cfg: dict, name: str, kwargs: dict | None = None) -> dict:
     twice (the warm start and the loop each carry their own copy), so the entry,
     not the name, identifies the block.  Name lookup is the fallback, for direct
     calls in tests and for reading *another* step's block.
+
+    The fallback descends into ``warmstart:`` because its steps are the ones with
+    no top-level entry.  It does not descend into ``iterate:``: a loop step's block
+    is only reachable by round, which a name does not carry.
     """
     if kwargs is not None and isinstance(kwargs.get("step_cfg"), dict):
         return kwargs["step_cfg"]
     steps = cfg.get("steps")
     if isinstance(steps, dict):
-        return steps.get(name) or {}
-    if isinstance(steps, list):
-        for item in steps:
-            if isinstance(item, dict) and name in item:
-                return item[name] or {}
+        steps = [{k: v} for k, v in steps.items()]
+    if not isinstance(steps, list):
+        return {}
+    for item in steps:
+        if not isinstance(item, dict):
+            continue
+        if name in item:
+            return item[name] or {}
+        if "warmstart" in item:
+            found = step_config({"steps": item["warmstart"]}, name)
+            if found:
+                return found
     return {}
 
 

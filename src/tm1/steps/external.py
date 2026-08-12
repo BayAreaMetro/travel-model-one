@@ -51,9 +51,9 @@ jobs are why it exists: ``trnAssign.bat`` runs them from
 goes with it -- Cube's cluster directory defaults to ``<cwd>/commpath``, so a job
 run outside ``proj_dir`` has to say where its nodes should talk.
 
-``iteration:`` pins a step to a round.  Steps inside ``iterate:`` get theirs from
-the loop; the warm-start steps sit outside it and say ``iteration: 0``, which is
-``RunModel.bat``'s ``set ITER=0``.
+A step's round is decided by the block it is written in -- ``warmstart:`` runs at
+iteration 0, ``RunModel.bat``'s ``set ITER=0``, and ``iterate:`` numbers its own
+rounds 1..count.  ``{iteration}`` above expands to that number.
 
 ``verify:`` names the artifacts a step must have produced::
 
@@ -449,9 +449,9 @@ def make_step(step_name: str, step_cfg: dict) -> Callable[..., str | None]:
 
     def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:
         proj_dir = Path(cfg["proj_dir"])
-        # A step may name its own round.  The warm-start steps do: they sit outside
-        # `iterate:`, where the runner would otherwise call them iteration 1, and
-        # RunModel.bat's `set ITER=0` block is exactly this.
+        # The runner supplies the round, from the block this step is written in.
+        # The step_cfg lookup is for direct calls -- a config that states its own
+        # `iteration:` is refused by the runner before it gets here.
         iteration = step_cfg.get("iteration", kwargs.get("iteration", ""))
         values = {"iteration": iteration}
         env = _step_env(cfg, step_cfg, values)

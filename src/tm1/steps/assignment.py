@@ -21,7 +21,6 @@ assignment::
             do_nonres: true      # internal/external, truck, air, HSR models
             do_transit: true
             build_skims: true    # rebuild highway skims + accessibility after
-            iteration: 1         # optional; the runner supplies the current one
             sampleshare: 0.15    # optional; defaults to simulate_ctramp's rate,
                                  # else RunModel.bat's ramp for this iteration
 
@@ -74,12 +73,13 @@ _DEFAULT_DEMAND = "{proj_dir}/main/trips{PERIOD}.tpp"
 
 
 def _resolve_iteration(cfg: dict, step_cfg: dict, kwargs: dict) -> int:  # noqa: ARG001
-    """Iteration to assign: the runner's, unless this step overrides it.
+    """Iteration to assign, supplied by the runner from the enclosing block.
 
-    The runner drives the global feedback loop and passes the current iteration,
-    so there is nothing to infer here.  Note that a demand step's iteration *count*
-    is not its iteration *number*: reading one as the other would assign the last
-    round's number to every round.
+    ``warmstart:`` gives 0, ``iterate:`` gives the round, so there is nothing to
+    infer here.  Note that a demand step's iteration *count* is not its iteration
+    *number*: reading one as the other would assign the last round's number to
+    every round.  The ``step_cfg`` lookup serves direct calls only -- the runner
+    refuses a config that states its own ``iteration:``.
     """
     if step_cfg.get("iteration") is not None:
         return int(step_cfg["iteration"])

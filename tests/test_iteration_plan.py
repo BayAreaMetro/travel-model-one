@@ -3,13 +3,13 @@
 The plan decides what runs and in which round, which is also what ``--resume-at``
 resolves against and what the "planned:" line reports.  The shape the conventions
 lock: ``steps:`` is a list of ``name: {config}`` entries run in the order written
-(a mapping also works, but cannot repeat a name); ``iterate: {count, steps}`` is
-the only nesting and repeats its body identically; a step outside the loop may pin
-``iteration:`` and declare ``skip_if_exists:``, and the loop refuses both.
+(a mapping also works, but cannot repeat a name); ``warmstart:`` and
+``iterate: {count, steps}`` are the only nesting, and a step's round comes from
+which of them it sits in and from nothing else.
 
-There is no other mechanism.  ``RunModel.bat``'s iteration 0 is ordinary steps
-written before the loop with ``iteration: 0``; its ``if %ITER%==1`` block is
-warm-start steps that skip on their products.
+There is no other mechanism.  ``RunModel.bat``'s ``set ITER=0`` pass is
+``warmstart:``; its ``if %ITER%==1`` block is warm-start steps that skip on their
+products via ``skip_if_exists:``, which the loop refuses.
 """
 
 from pathlib import Path
@@ -87,9 +87,11 @@ def _listform() -> list:
     """Setup, a two-step warm start, the loop, a summary -- the real shape."""
     return [
         {"copy_inputs": {}},
-        {"hwy_assign": {"job": "warm.job", "iteration": 0,
-                        "skip_if_exists": "hwy/iter0/LOADEA.net"}},
-        {"hwy_skims": {"job": "skims.job", "iteration": 0}},
+        {"warmstart": [
+            {"hwy_assign": {"job": "warm.job",
+                            "skip_if_exists": "hwy/iter0/LOADEA.net"}},
+            {"hwy_skims": {"job": "skims.job"}},
+        ]},
         {"iterate": {"count": 3, "steps": [
             {"simulate_ctramp": {}},
             {"hwy_assign": {"job": "loop.job"}},
@@ -122,14 +124,83 @@ def test_each_entry_keeps_its_own_config() -> None:
     assert configs[("hwy_assign", 2)]["job"] == "loop.job"
 
 
-def test_iteration_key_pins_a_steps_round() -> None:
-    """`iteration: 0` is RunModel.bat's `set ITER=0`, stated on the step."""
+# --- warmstart: the round-0 block --------------------------------------------
+
+
+def test_warmstart_steps_run_at_round_zero() -> None:
+    """`warmstart:` is RunModel.bat's `set ITER=0`, stated once for the block."""
     plan = _plan([
-        {"warm_assign": {"iteration": 0}},
+        {"warmstart": [{"warm_assign": {}}]},
         {"iterate": {"count": 2, "steps": [{"assignment": {}}]}},
     ])
 
     assert plan[0] == ("warm_assign", 0)
+
+
+def test_warmstart_keeps_its_written_order() -> None:
+    """It is a pipeline, not a set: transit skims depend on the assignment before them."""
+    plan = _plan([{"warmstart": [{"a": {}}, {"b": {}}, {"c": {}}]}])
+
+    assert plan == [("a", 0), ("b", 0), ("c", 0)]
+
+
+def test_warmstart_steps_may_skip_on_their_products() -> None:
+    """The point of the block: an expensive round-0 step is not redone on a rerun."""
+    _, configs = _iteration_plan(_listform())
+
+    assert configs[("hwy_assign", 0)]["skip_if_exists"] == "hwy/iter0/LOADEA.net"
+
+
+def test_warmstart_accepts_the_compact_mapping_form() -> None:
+    """Same two shapes as `steps:` -- a block is not a different kind of list."""
+    plan = _plan([{"warmstart": {"a": {}, "b": {}}}])
+
+    assert plan == [("a", 0), ("b", 0)]
+
+
+def test_warmstart_written_as_a_block_is_refused() -> None:
+    """`warmstart: {steps: [...]}` is `iterate:` by analogy; it has no count to hold."""
+    with pytest.raises(TypeError, match="bare list"):
+        _plan([{"warmstart": {"steps": [{"a": {}}]}}])
+
+
+def test_empty_warmstart_is_refused() -> None:
+    """An empty block silently does nothing, which reads as "the warm start ran"."""
+    with pytest.raises(ValueError, match="declares no steps"):
+        _plan([{"warmstart": []}])
+
+
+def test_warmstart_after_the_loop_is_refused() -> None:
+    """Round-0 steps at the end would overwrite the finished round's networks."""
+    cfg = [
+        {"iterate": {"count": 2, "steps": [{"assignment": {}}]}},
+        {"warmstart": [{"hwy_assign": {}}]},
+    ]
+
+    with pytest.raises(ValueError, match="has to come before"):
+        _plan(cfg)
+
+
+def test_two_warmstart_blocks_are_refused() -> None:
+    """A second block would silently redefine round 0 rather than extend it."""
+    with pytest.raises(ValueError, match="declared twice"):
+        _plan([{"warmstart": [{"a": {}}]}, {"warmstart": [{"b": {}}]}])
+
+
+def test_iteration_pin_is_refused_inside_warmstart() -> None:
+    """The block already says the round; a key repeating it can disagree with it."""
+    with pytest.raises(ValueError, match="Drop the key"):
+        _plan([{"warmstart": [{"hwy_assign": {"iteration": 1}}]}])
+
+
+def test_the_old_iteration_key_is_refused_with_a_pointer() -> None:
+    """A config written before `warmstart:` fails loudly, not as a silent round 1.
+
+    Silently, it would run a warm-start step as round 1 -- writing hwy/iter1/ from
+    iteration-0 demand, succeeding while producing nonsense.
+    """
+    with pytest.raises(ValueError, match="warmstart"):
+        _plan([{"hwy_assign": {"iteration": 0}}])
 
 
 def test_the_same_name_twice_in_one_round_is_refused() -> None:
@@ -224,7 +295,7 @@ def _pipeline() -> list:
     """A config with steps before, inside and after the loop."""
     return [
         {"copy_inputs": {}},
-        {"hwy_assign": {"job": "warm.job", "iteration": 0}},
+        {"warmstart": [{"hwy_assign": {"job": "warm.job"}}]},
         {"iterate": {"count": 3, "steps": [
             {"simulate_ctramp": {}},
             {"hwy_assign": {"job": "loop.job"}},

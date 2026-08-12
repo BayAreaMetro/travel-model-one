@@ -47,8 +47,7 @@ Usage in scenario_config.yaml::
     simulate_ctramp:
       project_dir: "E:/Projects/2023_TM161_IPA_35_testrun"
       host_ip: "123.123.123.123"  # IP address of the machine running CTRAMP
-      iteration: 3
-      sample_rate: 0.5
+      sample_rate: 0.5            # optional; else RunModel.bat's per-round ramp
       components:
         UsualWorkAndSchoolLocationChoice: true
         AutoOwnership: true
@@ -859,29 +858,25 @@ def run_model(
 def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
     """Run CTRAMP with the component flags specified in scenario config.
 
-    Supports two modes:
-
-    * **Single iteration** (``iteration: 3``): run just that iteration with
-      the given ``sample_rate``.  Shadow pricing input is derived from the
-      iteration number (see :func:`shadow_pricing_flags`).
-    * **Multi-iteration loop** (``iterations: 3``): run iterations 1 through N,
-      ramping the sample rate per :data:`DEFAULT_SAMPLE_RATES`.  Infrastructure
-      is started once and kept alive across iterations.  A per-iteration
-      ``sample_rate`` key can override the default ramp.
+    One call runs one round.  The runner owns the feedback loop and supplies the
+    round number, which sets the sample rate (:data:`DEFAULT_SAMPLE_RATES`) and the
+    shadow-price chain (:func:`shadow_pricing_flags`).
 
     Config structure::
 
         steps:
-          simulate_ctramp:
-            project_dir: "E:/Projects/..."
-            host_ip: "localhost"
-            iterations: 3              # loop 1..3 (or "iteration: 3" for single)
-            sample_rate: 0.5           # override per-iter default
-            shadow_pricing: true       # set false to disable
-            seed: 0
-            components:
-              UsualWorkAndSchoolLocationChoice: true
-              ...
+          - iterate:
+              count: 3
+              steps:
+                - simulate_ctramp:
+                    project_dir: "E:/Projects/..."
+                    host_ip: "localhost"
+                    sample_rate: 0.5           # optional; else the per-round ramp
+                    shadow_pricing: true       # set false to disable
+                    seed: 0
+                    components:
+                      UsualWorkAndSchoolLocationChoice: true
+                      ...
     """
     step_cfg = step_config(cfg, "simulate_ctramp", kwargs)
     project_dir = Path(step_cfg["project_dir"])
