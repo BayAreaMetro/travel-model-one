@@ -47,6 +47,26 @@ class TourModeChoiceCalibration(CalibrationBase):
                     "11_tour_mode_choice_auto_ODdist_TM.csv", None),
     ]
 
+    # Observed (BATS): which wide summaries and county filters get written to the
+    # 'targets' sheet (all results are still written to CSV). Blocks are split by
+    # simple_purpose (stacked vertically), and each county filter occupies the
+    # next set of columns to the right in the same format.
+    OBSERVED_TARGETS_SHEET = "targets"
+    OBSERVED_TARGETS_HEADER_ROW = 3
+    OBSERVED_TARGETS_START_COL = 2
+    OBSERVED_TARGETS_RESULT_TYPES = ["unweighted", "weighted"]
+    OBSERVED_TARGETS_FILTERS = ["all", "solano_napa", "north_bay"]
+
+    # Order in which simple_purpose blocks are written to the targets sheet;
+    # any purpose not listed is appended afterward in its natural order.
+    OBSERVED_PURPOSE_ORDER = ["work", "university", "school", "ind_maint", "ind_disc",
+                             "atwork", "joint"]
+
+    # Toll drive modes (DA toll, SR2 toll, SR3+ toll) to exclude from observed outputs.
+    EXCLUDED_TOUR_MODES = [2, 4, 6]
+
+
+
     def __init__(self, config_file: str | None = None):
         super().__init__("11", config_file)
 
@@ -198,6 +218,22 @@ class TourModeChoiceCalibration(CalibrationBase):
         df = df.copy()
         df["tour_mode_label"] = df[mode_col].map(mode_labels)
         return df
+
+    @staticmethod
+    def _append_group_column_totals(wide: pd.DataFrame, group_col: str, label_col: str,
+                                    value_cols: list[str]) -> pd.DataFrame:
+        """Append a totals row summing each value column within each group."""
+        if wide.empty:
+            return wide
+        parts = []
+        for grp, block in wide.groupby(group_col, sort=False):
+            totals = {c: "" for c in wide.columns}
+            totals[group_col] = grp
+            totals[label_col] = "Total"
+            for c in value_cols:
+                totals[c] = block[c].sum()
+            parts.append(pd.concat([block, pd.DataFrame([totals])], ignore_index=True))
+        return pd.concat(parts, ignore_index=True)
 
     def _label_lrf_submode(
         self,
@@ -520,12 +556,18 @@ class TourModeChoiceCalibration(CalibrationBase):
 
         long_summary = self._aggregate_num_tours_bats(tours, group_cols)
         long_summary = self._add_mode_label(long_summary)
-        wide_unweighted = self.pivot_with_total(
-            long_summary, idx_cols, "auto_suff", "num_tours_unweighted", self._auto_suff_cols
-        )
-        wide_weighted = self.pivot_with_total(
-            long_summary, idx_cols, "auto_suff", "num_tours_weighted", self._auto_suff_cols
-        )
+        long_summary = long_summary[~long_summary["tour_mode"].isin(self.EXCLUDED_TOUR_MODES)]
+
+        value_cols = self._auto_suff_cols + ["Total"]
+        wide_unweighted = self._append_group_column_totals(
+            self.pivot_with_total(long_summary, idx_cols, "auto_suff",
+                                  "num_tours_unweighted", self._auto_suff_cols),
+            "simple_purpose", "tour_mode_label", value_cols)
+
+        wide_weighted = self._append_group_column_totals(
+            self.pivot_with_total(long_summary, idx_cols, "auto_suff",
+                                  "num_tours_weighted", self._auto_suff_cols),
+            "simple_purpose", "tour_mode_label", value_cols)
 
         return {
             "long": long_summary,
@@ -552,8 +594,8 @@ class TourModeChoiceCalibration(CalibrationBase):
         for label, subset in self.iter_county_filters(tours):
             summ = self._build_bats_summaries(subset)
             results[f"tour_mode_summary_long_{label}"] = summ["long"]
-            results[f"tour_mode_summary_wide_unweighted_{label}"] = summ["wide_unweighted"]
-            results[f"tour_mode_summary_wide_weighted_{label}"] = summ["wide_weighted"]
+            results[f"tour_mode_summary_unweighted_{label}"] = summ["wide_unweighted"]
+            results[f"tour_mode_summary_weighted_{label}"] = summ["wide_weighted"]
         return results
 
     def process_modeled(self) -> dict:
@@ -599,6 +641,48 @@ class TourModeChoiceCalibration(CalibrationBase):
         #validate_dataframe(results["tour_mode_summary_long"], TourModeSummaryLong)
         self.logger.info("✓ Tour mode summary validated")
 
+    def _write_purpose_blocks(self, df: pd.DataFrame, start_row: int, start_col: int, filter_label: str) -> int:
+        """Write a wide summary to the targets sheet, one contiguous block per simple_purpose."""
+        value_cols = [c for c in df.columns if c not in  ["simple_purpose", "indiv_joint", "tour_mode"]]
+        self.write_dataframe_to_sheet(
+            pd.DataFrame(columns=[str(filter_label)]), start_row, start_col, self.OBSERVED_TARGETS_SHEET
+        )
+        row = start_row + 1
+        present = list(df["simple_purpose"].unique())
+        ordered = [p for p in self.OBSERVED_PURPOSE_ORDER if p in present]
+        ordered += [p for p in present if p not in ordered]
+        for purpose in ordered:
+            block = df[df["simple_purpose"] == purpose]
+            self.write_dataframe_to_sheet(
+                block[value_cols], row + 1, start_col, self.OBSERVED_TARGETS_SHEET,
+                source_row=row, source_col=start_col, source_text=str(purpose))
+            row += len(block) + 3  # purpose label + header + data rows + blank separator
+        return row
+
+    def _write_observed_targets(self, results: dict) -> None:
+        """Place selected wide summaries on the targets sheet: purposes stacked, filters across columns."""
+        if not getattr(self, "calib_workbook", None):
+            self.logger.warning("No workbook available; skipping targets-sheet placement.")
+            return
+
+        row = self.OBSERVED_TARGETS_HEADER_ROW
+        col = self.OBSERVED_TARGETS_START_COL
+        for flt in self.OBSERVED_TARGETS_FILTERS:
+            section_bottom = row
+            for result_type in self.OBSERVED_TARGETS_RESULT_TYPES:
+                key = f"tour_mode_summary_{result_type}_{flt}"
+                df = results.get(key)
+                if df is None:
+                    self.logger.warning("No observed result for %s/%s; skipping. ", result_type, flt)
+                    continue
+                self.write_dataframe_to_sheet(pd.DataFrame(columns=[f"Source: {self.output_dir}/BATS2023_{key}"]), 1, col,
+                                              self.OBSERVED_TARGETS_SHEET)
+                section_bottom = max(section_bottom, self._write_purpose_blocks(df, row, col, f"{flt} - {result_type}"))
+                            
+                col += len([c for c in df.columns if c not in ("simple_purpose", "indiv_joint", "tour_mode")]) + 1
+            col = col + 2
+
+
     def generate_outputs(self, results: dict):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
@@ -610,6 +694,8 @@ class TourModeChoiceCalibration(CalibrationBase):
                 for key in results
             ]
             self.write_results_to_workbook(results, targets)
+            # Additionally place selected wide summaries onto the 'targets' sheet.
+            self._write_observed_targets(results)
         else:
             self.write_results_to_workbook(results, self.MODELED_SHEET_TARGETS)
 
