@@ -65,9 +65,12 @@ ctramp_output_dir: "{proj_dir}/main"
 # A step outside `iterate:` may also declare:
 #   skip_if_exists: F   its work is done when F is on disk; delete F to force a rebuild
 #
-# Steps without skip_if_exists always run.  In the warm start below, the seconds-cheap
-# file-shuffling steps redo their work harmlessly on a rerun; only the expensive Cube
-# steps and the two model-defining products declare a skip.
+# A step may only declare skip_if_exists on a file that is ITS product and nobody
+# else's.  Naming one a later round overwrites makes the check answer a different
+# question -- "does round 3's output exist" -- and skip work that was never done.
+# Steps without the key always run: in the warm start below, the seconds-cheap file
+# shuffles redo their work harmlessly, and hwy_skims/accessibility rebuild because
+# their outputs are not round-specific (see the note there).
 # ════════════════════════════════════════════════════════════════════════════════════════
 steps:
 
@@ -240,13 +243,19 @@ steps:
       - publish_networks:             # hwy/avgLOAD{P}.net -- what the next round's skims read
           module: "tm1.steps.staging:publish_networks"
 
+      # No skip_if_exists on these two, unlike every other expensive step here.
+      # HwySkims.job writes skims\HWYSKM{PERIOD}.tpp and Accessibility.job writes
+      # skims\accessibility.csv -- no iteration in either path, so every loop round
+      # overwrites them.  An existence check would find round 3's skims and skip,
+      # leaving round 1 to read them instead of round 0's: a re-run that quietly
+      # differs from a fresh one.  The steps above can skip because their products
+      # (hwy/iter0/, trn/TransitAssignment.iter0/) are round 0's alone.  Rebuilding
+      # these costs ~4 minutes on a re-run.
       - hwy_skims:
           job: "CTRAMP/scripts/skims/HwySkims.job"
           cluster_nodes: 5            # DistributeMultistep, one node per period
-          skip_if_exists: "skims/HWYSKMEA.tpp"
       - accessibility:
           job: "CTRAMP/scripts/skims/Accessibility.job"
-          skip_if_exists: "skims/accessibility.csv"
 
       # RunIteration.bat 49-57 parks these under `if %ITER%==1`; with the skims built above
       # they are ordinary warm-start steps.  Once the households are filtered they stay
