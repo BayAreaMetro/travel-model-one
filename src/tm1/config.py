@@ -1,9 +1,17 @@
 """Scenario configuration utilities for TM1."""
 
+import os
+import re
 import sys
 from pathlib import Path
 
 import yaml
+
+#: ``{env:NAME}`` -- a value from the environment, which ``tm1`` populates from
+#: ``.env`` at import.  This is how a scenario config stays machine-independent:
+#: every path that differs between machines is named here and set in ``.env``,
+#: leaving the YAML as the model recipe and nothing else.
+_ENV_REF = re.compile(r"\{env:([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 def load_config(scenario_dir: Path) -> dict:
@@ -47,15 +55,47 @@ def step_config(cfg: dict, name: str, kwargs: dict | None = None) -> dict:
     return {}
 
 
+def expand_env(obj: str | dict | list | object) -> str | dict | list | object:
+    """Replace every ``{env:NAME}`` with that environment variable, recursively.
+
+    An unset variable is an **error**, not an empty string.  Silently expanding
+    ``proj_dir: "{env:TM1_PROJ_DIR}"`` to ``""`` would point a fifteen-hour run at
+    the current working directory and succeed at it.
+    """
+    if isinstance(obj, str):
+        return _ENV_REF.sub(lambda m: _env_value(m.group(1), obj), obj)
+    if isinstance(obj, dict):
+        return {k: expand_env(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [expand_env(item) for item in obj]
+    return obj
+
+
+def _env_value(name: str, context: str) -> str:
+    """One environment variable, or an error naming it and where to set it."""
+    value = os.environ.get(name)
+    if value is None:
+        msg = (
+            f"{{env:{name}}} in {context!r}, but {name} is not set. Machine-specific "
+            f"paths live in .env at the repo root -- copy .env.example to .env and "
+            f"set {name} there, or export it before running."
+        )
+        raise ValueError(msg)
+    return value
+
+
 def resolve_templates(
     obj: str | dict | list | object, variables: dict[str, str] | None = None
 ) -> str | dict | list | object:
-    """Expand ``{key}`` placeholders recursively.
+    """Expand ``{env:NAME}`` then ``{key}`` placeholders, recursively.
 
-    If *variables* is None, top-level string values in *obj* are used
-    (assuming *obj* is a dict).
+    If *variables* is None, top-level string values in *obj* are used (assuming
+    *obj* is a dict) -- and the environment pass runs first, so a key whose own
+    value comes from ``.env`` (``proj_dir``) is a real path by the time anything
+    interpolates ``{proj_dir}``.
     """
     if variables is None:
+        obj = expand_env(obj)
         if isinstance(obj, dict):
             variables = {k: v for k, v in obj.items() if isinstance(v, str)}
         else:

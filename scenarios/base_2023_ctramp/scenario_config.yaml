@@ -14,9 +14,12 @@ logging:
   level: DEBUG                      # what reaches the run log; console stays at INFO
   # dir: "{proj_dir}/logs"
 
-# ── Machine-specific — edit for your environment ────────────────────────────────────────
-reference_run: "//MODEL3-C/Model3C-Share/Projects/2023_TM161_IPA_35_testrun"
-proj_dir: "E:/Tests/base_2023_ctramp"
+# ── Machine-specific — set these in .env, not here ──────────────────────────────────────
+# {env:NAME} reads the environment, which tm1 populates from .env at the repo root.
+# Copy .env.example to .env and fill it in; an unset variable is an error naming it.
+# Nothing below this block differs between machines, which is the point.
+reference_run: "{env:TM1_REFERENCE_RUN}"    # inputs are copied FROM here; never written to
+proj_dir: "{env:TM1_PROJ_DIR}"              # where the run happens
 
 # ── Scenario identity ───────────────────────────────────────────────────────────────────
 # Legacy names: the Cube jobs read them as %MODEL_YEAR% / %FUTURE%.  RunModel.bat slices
@@ -40,8 +43,8 @@ future: PBA50
 # secrets stay in the process environment (see SLACK_WEBHOOK_URL in tm1/slack.py).
 env:
   EN7: DISABLED                     # required: RunModel.bat 115-128 will not start without it
-  PATH: "C:/Program Files/Git/usr/bin;{env:PATH}"   # gawk, for BuildTransitNetworks.job
-  PYTHONPATH: "E:/GitHub/NetworkWrangler"           # transitDwellAccess.py imports Wrangler
+  PATH: "{env:TM1_GAWK_DIR};{env:PATH}"      # gawk, for BuildTransitNetworks.job
+  PYTHONPATH: "{env:TM1_NETWORKWRANGLER}"    # transitDwellAccess.py imports Wrangler
   # MAXITERATIONS: 3                # RunModel.bat 135-147 hard-codes these
   # TRNCONFIG: FAST                 # STANDARD makes transit iterate; not supported yet
 
@@ -208,6 +211,12 @@ steps:
           job: "CTRAMP/scripts/skims/BuildTransitNetworks.job"
           cwd: "trn/TransitAssignment.iter{iteration}"
           timeout: 3600
+          # The two files gawk writes.  If TM1_GAWK_DIR is wrong the job still exits
+          # 0 -- the shell redirect creates these, empty -- and the failure would
+          # otherwise surface in transit_assign, blaming the wrong step.
+          verify:
+            - "trn/TransitAssignment.iter{iteration}/{PERIOD}_walk_egrlinks.dat"
+            - "trn/TransitAssignment.iter{iteration}/{PERIOD}_transit_suplinks_walk.dat"
           skip_if_exists: "trn/TransitAssignment.iter0/EA_transit_suplinks.dat"
       - transit_assign:
           job: "CTRAMP/scripts/assign/TransitAssign.job"
@@ -366,6 +375,9 @@ steps:
             job: "CTRAMP/scripts/skims/BuildTransitNetworks.job"
             cwd: "trn/TransitAssignment.iter{iteration}"
             timeout: 3600
+            verify:                     # gawk's output; see the warm start's copy
+              - "trn/TransitAssignment.iter{iteration}/{PERIOD}_walk_egrlinks.dat"
+              - "trn/TransitAssignment.iter{iteration}/{PERIOD}_transit_suplinks_walk.dat"
         - transit_assign:
             job: "CTRAMP/scripts/assign/TransitAssign.job"
             cwd: "trn/TransitAssignment.iter{iteration}"

@@ -6,12 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "pandas>=2.0",
-    # `tm1 status` asks whether the process that wrote a run log is still alive.
-    # Not os.kill(pid, 0): on Windows that is not a probe, it is TerminateProcess,
-    # so the portable-looking idiom would kill the running model.  psutil also
-    # supplies create_time(), which is what distinguishes a live run from a
-    # recycled PID -- and it already works on Linux, so nothing here has to be
-    # unpicked when Cube goes.
     "psutil>=5.9",
     "python-dotenv>=1.0",
     "pyyaml>=6.0",
