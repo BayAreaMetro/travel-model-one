@@ -15,6 +15,10 @@ Restart a failed run at the step that died, rather than from the beginning::
 ``--scenario`` also takes a path, so a scenario can live outside the repo::
 
     tm1 run --scenario E:/runs/my_scenario
+
+Ask where a run got to -- from another shell, during or after it::
+
+    tm1 status --scenario base_2023_ctramp
 """
 
 import argparse
@@ -23,6 +27,7 @@ from pathlib import Path
 
 from tm1 import setup_logging
 from tm1.runner import run_model
+from tm1.status import status
 
 
 def _find_repo_root() -> Path:
@@ -90,6 +95,14 @@ def cmd_run(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_status(args: argparse.Namespace) -> None:
+    """Execute the 'status' subcommand."""
+    scenario_dir = _resolve_scenario_dir(args.scenario, _find_repo_root())
+    # Written to stdout rather than logged: it is a report, not a run event, and
+    # it must not land in the run log of a run happening in another shell.
+    sys.stdout.write(status(scenario_dir) + "\n")
+
+
 def main() -> None:
     """Parse arguments and dispatch to subcommands."""
     setup_logging()
@@ -152,10 +165,22 @@ def main() -> None:
         help="Slack notification level (default: from scenario config, or 'minimal')",
     )
 
+    status_parser = sub.add_parser(
+        "status",
+        help="Show where the newest run got to, and how to resume it",
+    )
+    status_parser.add_argument(
+        "--scenario",
+        required=True,
+        help="Scenario name or path, the same as `tm1 run --scenario`",
+    )
+
     args = parser.parse_args()
 
     if args.command == "run":
         cmd_run(args)
+    elif args.command == "status":
+        cmd_status(args)
     else:
         parser.print_help()
         sys.exit(1)

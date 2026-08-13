@@ -829,19 +829,28 @@ def run_model(
             step_cfg = configs[(name, iteration)]
 
             # The step's declared product is already on disk: its work is done.
+            # Announced before the skip check, not after: a skipped step still
+            # belongs to its round, and anything placing it by the last banner --
+            # a reader, or `tm1 status` -- would file it under the previous one.
+            if n_iters > 1 and iteration != prev_iter:
+                log.info("=== Iteration %d of %d ===", iteration, n_iters)
+                prev_iter = iteration
+
             skip = _skip_target(step_cfg, cfg)
             if skip is not None:
-                log.info("--- Step: %s -- skipped, %s exists ---", name, skip)
+                # The round is on the line so `tm1 status` can place a step in the
+                # plan exactly, rather than inferring it from position -- a resumed
+                # run starts mid-plan, where position alone is ambiguous.
+                log.info(
+                    "--- Step: %s (iteration %d) -- skipped, %s exists ---",
+                    name, iteration, skip,
+                )
                 notify(f"[{label}] {name} skipped ({skip.name} exists)")
                 continue
 
             run_step = _load_step(name, step_cfg, scenario_dir)
 
-            if n_iters > 1 and iteration != prev_iter:
-                log.info("=== Iteration %d of %d ===", iteration, n_iters)
-                prev_iter = iteration
-
-            log.info("--- Step: %s ---", name)
+            log.info("--- Step: %s (iteration %d) ---", name, iteration)
             t0_step = time.time()
             try:
                 # Merged rather than passed positionally: an explicit caller-supplied
@@ -875,6 +884,9 @@ def run_model(
             _report_step(label, name, result, time.time() - t0_step)
 
         total = time.time() - t0_total
+        # Logged as well as notified: it is how `tm1 status` tells a finished run
+        # from one that stopped on the last step it happened to reach.
+        log.info("=== Finished %s in %s ===", label, _fmt_elapsed(total))
         notify(f"Finished {label} in {_fmt_elapsed(total)} :white_check_mark:")
     finally:
         # Detached even on failure, so the log is flushed and a second run in the
