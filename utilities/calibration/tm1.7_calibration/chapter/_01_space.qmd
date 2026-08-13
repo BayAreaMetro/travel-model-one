@@ -1,4 +1,4 @@
-[//]: # (### Treatment of Space)
+[// Space]: # (### Treatment of Space)
 
 _Travel Model One_ uses an existing 1454-zone system to cover the entire nine-county region. Since the zones are fairly large, representation of transit access in the mode choice may be distort. To address this problem, the zones have been further sub-divided into three categories of transit access, as shown in @tbl-subzones. 
 

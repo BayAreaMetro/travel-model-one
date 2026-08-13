@@ -19,15 +19,18 @@
 {{< include _01_activity_type.qmd >}}
 
 ### Treatment of Time
+{{< include _01_treatment_time.qmd >}}
 
 ### Trip Modes
+{{< include _01_trip_mode.qmd >}}
 
 ### Basic Design
--- Include diagram here of the flow process
+{{< include _01_basic_design.qmd >}}
 
 ## Model Inputs and Calibration Target Data
 
-
 ### Inputs
+
+
 
 ### Calibration Targets

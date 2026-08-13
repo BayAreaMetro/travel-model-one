@@ -1,0 +1,138 @@
+<!-- Basic Design -->
+@fig-model-design shows the general design of the travel demand model. Choices that are related to the entire household or a group of household members and assume explicit modeling of intra-household interactions are italicized. Choice models are shown in the green boxes.  
+
+The model system uses a synthetic population as a base input. It is then followed by long-term choices that relate to the usual workplace/university/school for each worker and student, household car ownership, and the availability of free parking at workplaces.
+
+The daily activity pattern type of each household model is the first travel-related sub-model in the hierarchy. The model classifies daily patterns by three types:
+- **Mandatory**: Includes at least one out-of-home mandatory activity (work or school)
+- **Non-Mandatory**: Includes at least one out-of-home non-mandatory activity but does not include out-of-home mandatory activites
+- **Home**: Does not include any out-of-home activity or travel
+
+Prior to the CDAP choice model, the work from home (WFH) choice model will run which determines if a worker will work from home based on person's income, home county, and employment industry. If the worker is predicted to work from home, the mandatory activity pattern is not available for that work. 
+
+Daily pattern-type choices of the household members are linked in such a way that decisions made by members are reflected in the decisions made by other members.
+
+After frequency and scheduling for work and school tours are determined, the next major model component relates to joint household travel. This component produces a number of joint tours by travel purpose for the entire household, travel party composition in terms of adults and children, and then defines the partricipation of each household member in each joint household tour. It is then followed by choice of destination and scheduling. 
+
+The next components aare related to non-mandatory tours modeled at a individual person level. Individul non-mandatory tours are any maintenance and discretionary tours while at-work subtours are any non-mandatory tours that originate and end at the work location. At-work subtours only occur for workers at their work locations. For both components, the models include tour frequency, destination location, and scheduling. 
+
+After the daily decisions, tour-level decisions like tour mode, stop frequency, and stop location are decided. It is then followed by the last set of submodels - trip-level decisions - which adds details for each individual trip include trip departure time and trip mode. The trips are then assigned to highway and transit networks depending on the trip mode. 
+
+```{mermaid}
+%%| label: fig-model-design
+%%| fig-cap: Basic Model Design
+
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 8, 'bottom': 8}}}}%%
+graph TB
+    subgraph 1["1. Population Synthesizer"]
+        direction LR
+    end
+    
+   1 --> 2
+    subgraph 2["2. Long-term Decisions"]
+        direction LR
+        2a[Work & School Location]
+        2b[Auto Ownership]
+        2c[Free Parking]
+        2a ~~~ 2b ~~~ 2c
+    end
+
+    2 --> 3
+    subgraph 3["3. Daily Decisions"]
+
+        direction TB
+        subgraph 3a["Coordinated Daily Activity Pattern"]
+            direction LR
+            3a1[Work From Home Choice Model]
+            3a2[CDAP]
+            3a1 --> 3a2
+        end
+
+        3b[Mandatory]
+        3c[Non-Mandatory]
+        3d[Home]
+
+        subgraph 3f["Individual Mandatory Tours"]
+            direction TB
+            3f1[Frequency]
+            3f2[Scheduling]
+            3f1 --> 3f2
+        end
+        subgraph 3g["Joint Non-Mandatory Tours"]
+            direction TB
+            3g1[Frequency]
+            3g2[Party size]
+            3g3[Participation]
+            3g4[Location]
+            3g5[Scheduling]
+            3g1 --> 3g2
+            3g2 --> 3g3
+            3g3 --> 3g4
+            3g4 --> 3g5
+        end
+        subgraph 3h["Individual Non-Mandatory Tours"]
+            direction TB
+            3h1[Frequency]
+            3h2[Location]
+            3h3[Scheduling]
+            3h1 --> 3h2
+            3h2 --> 3h3
+        end
+        subgraph 3i["At-Work Subtours"]
+            direction TB
+            3i1[Frequency]
+            3i2[Location]
+            3i3[Scheduling]
+            3i1 --> 3i2
+            3i2 --> 3i3
+        end
+
+        3a --> 3b
+        3a --> 3c
+        3a --> 3d
+        3b --> 3f
+        3c --> 3g
+        3c --> 3h
+        3c --> 3i
+        
+
+    end
+    
+    3 --> 4
+    subgraph 4["4. Tour-level Decisions"]
+        direction LR
+        4a[Tour Mode]
+        4b[Stop Frequency]
+        4c[Stop Location]
+        4a --> 4b --> 4c
+    end
+    
+    4 --> 5
+    subgraph 5["5. Trip-level Decisions"]
+        direction LR
+        5a[Departure Time]
+        5b[Trip mode]
+    end
+    
+    %% gray full-width bands
+    style 1 fill:#e6e6e6,stroke:#666,color:#000
+    style 2 fill:#e6e6e6,stroke:#666,color:#000
+    style 3 fill:#e6e6e6,stroke:#666,color:#000
+    style 4 fill:#e6e6e6,stroke:#666,color:#000
+    style 5 fill:#e6e6e6,stroke:#666,color:#000
+
+    %% colored sub-tour clusters within band 3
+    style 3a fill:#e8f0fb,stroke:#5b8def,color:#000
+    style 3f fill:#fffde7,stroke:#c9b458,color:#000
+    style 3g fill:#fffde7,stroke:#c9b458,color:#000
+    style 3h fill:#fffde7,stroke:#c9b458,color:#000
+    style 3i fill:#fffde7,stroke:#c9b458,color:#000
+
+    %% default gray nodes, highlighted household nodes
+    classDef default fill:#d9d9d9,stroke:#333,color:#000
+    classDef Household fill:#e8f5e8,stroke:#2f7d32,color:#000,font-weight:bold
+    class 2b,3a2,3g1,3g2 Household
+
+
+```
+

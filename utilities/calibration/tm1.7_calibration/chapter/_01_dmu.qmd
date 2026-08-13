@@ -2,7 +2,7 @@
 
 Decision-makers in the model system are households and persons. These decision-makers are synthesized from a _5-year census data_ and forecasted TAZ-level distributions of households and persons by socio-economic categories. The decision-makers are used in the subsequent discrete-choice models to select a single alternative from a list of available alternatives according to a probability distribution. The probability distribution is generated from a logit model which accounts for the attributes of the decision-maker and the attributes of the various alternatives. 
 
-[//]:# (TO DO: Confirm the ACS data years for the 5 year census data)
+<! -- (TO DO: Confirm the ACS data years for the 5 year census data) -->
 
 
 Households and persons are synthesize using _PopulationSim_ ^[PopulationSim Documentation: https://activitysim.github.io/populationsim/], an open platform for population synthesis developed in 2017.

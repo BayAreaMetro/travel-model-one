@@ -1,0 +1,29 @@
+<!-- Trip Mode -->
+
+@tbl-trip-modes lists the trip modes defined in the MTC models. There are 21 trip modes in the model, including auto by occupancy and toll/non-toll choice, walk and bike, walk and drive access to five different transit line-haul mode, and taxis and transportation network companies (TNCS). Pay modes are those that involve paying a choice or "value" toll (i.e., an express lane toll). Because drivers have little choice about paying tolls on the bridges in the area, those are counted as a cost, but the mode is considered "free". The number of the mode is given as reference since these are used to identify modes in the model.
+
+| Number | Mode |
+|:-----------------------------------|:-----------------------------------|
+| 1 | Drive Alone (Single-occupany vehicles), Free |
+| 2 | Drive Alone (Single-occupany vehicles), Pay | 
+| 3 | Shared Ride 2 (Two-occupant vehicles), Free |
+| 4 | Shared Ride 2 (Two-occupant vehicles), Pay |
+| 5 | Shared Ride 3+ (Three or more occupant vehicles), Free |
+| 6 | Shared Ride 3+ (Three or more occupant vehicles), Pay |
+| 7 | Walk |
+| 8 | Bike |
+| 9 | Walk to local bus |
+| 10 | Walk to light rail or ferry | 
+| 11 | Walk to express bus | 
+| 12 | Walk to heavy rail |
+| 13 | Walk to commuter rail | 
+| 14 | Drive to local bus | 
+| 15 | Drive to light rail or ferry | 
+| 16 | Drive to express bus | 
+| 17 | Drive to heavy rail | 
+| 18 | Drive to commuter rail |
+| 19 | Taxi | 
+| 20 | TNC - Single Party | 
+| 21 | TNC - Shared |
+
+: Trip Modes for Assignment {@tbl-trip-modes}
