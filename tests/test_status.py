@@ -488,6 +488,37 @@ def test_the_grid_shows_one_column_per_round(tmp_path: Path) -> None:
     assert row.split() == ["simulate_ctramp", "1h00m", "-", "-"]
 
 
+def test_a_first_run_says_there_is_no_estimate_yet(tmp_path: Path) -> None:
+    """Nothing pending has ever run, so there is no history to price from.
+
+    Summing nothing gives 0, and `~0s left` on a four-minute-old run reads as
+    "nearly done" — the opposite of the truth.
+    """
+    state = read_log(_log(tmp_path, [
+        (0, "--- Step: copy_inputs (iteration 1) ---"),
+        (2, "--- Done: copy_inputs (2.0m) ---"),
+        (2, "--- Step: hwy_assign (iteration 0) ---"),
+    ]))
+
+    out = render("base_2023_ctramp", _plan(), state, tmp_path, alive=True)
+
+    assert "no estimate yet" in out
+    assert "~0s left" not in out
+
+
+def test_an_estimate_appears_once_a_step_has_a_precedent(tmp_path: Path) -> None:
+    """Round 1's hwy_assign prices rounds 2 and 3."""
+    state = read_log(_log(tmp_path, [
+        (0, "--- Step: hwy_assign (iteration 1) ---"),
+        (30, "--- Done: hwy_assign (30.0m) ---"),
+    ]))
+
+    out = render("base_2023_ctramp", _plan(), state, tmp_path, alive=True)
+
+    assert "no estimate yet" not in out
+    assert "left" in out
+
+
 def test_a_complete_run_says_so_instead_of_estimating(tmp_path: Path) -> None:
     """An ETA on a finished run is noise, and reads as though it is still going.
 

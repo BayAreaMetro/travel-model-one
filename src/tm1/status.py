@@ -317,26 +317,33 @@ def newest_write(proj_dir: Path) -> tuple[Path, float] | None:
 # --- rendering ---------------------------------------------------------------
 
 
-def _estimate_remaining(plan: Sections, state: RunLog) -> float:
+def _estimate_remaining(plan: Sections, state: RunLog) -> float | None:
     """Seconds of work left, priced from what the same step cost earlier.
 
-    Rough by construction, and stated as such in the output.  A step never yet
-    run is priced at zero rather than guessed, so the estimate is a floor.
-    ``simulate_ctramp`` is scaled by the sample-rate ramp, which is the one step
-    whose cost is known to change between rounds by a known factor.
+    ``None`` when nothing still pending has ever run -- the whole of a first run.
+    There is no history to price from, and reporting the sum of nothing as ``0s``
+    reads as *nearly done* on a run that has barely started.
+
+    Otherwise rough by construction, and a floor: a step never yet run contributes
+    nothing rather than a guess.  ``simulate_ctramp`` is scaled by the sample-rate
+    ramp, the one step whose cost changes between rounds by a known factor.
     """
     priced = {name: seconds for (name, _), seconds in state.done.items()}
     base_rate = DEFAULT_SAMPLE_RATES.get(1, 0.50)
     remaining = 0.0
+    known = False
 
     for name, rnd in plan.entries():
         if state.settled((name, rnd)) or (name, rnd) == state.open_step:
             continue
-        cost = priced.get(name, 0.0)
+        cost = priced.get(name)
+        if cost is None:
+            continue
+        known = True
         if name == "simulate_ctramp":
             cost *= DEFAULT_SAMPLE_RATES.get(rnd, 0.50) / base_rate
         remaining += cost
-    return remaining
+    return remaining if known else None
 
 
 def _cell(name: str, rnd: int, state: RunLog, planned: set[tuple[str, int]]) -> str:
@@ -458,7 +465,8 @@ def _verdict(plan: Sections, state: RunLog, alive: bool | None) -> list[str]:
     if state.failed:
         return ["FAILED"]
 
-    left = f"~{_fmt_elapsed(_estimate_remaining(plan, state))} left"
+    estimate = _estimate_remaining(plan, state)
+    left = "no estimate yet" if estimate is None else f"~{_fmt_elapsed(estimate)} left"
     if alive is True:
         return [f"running (pid {harness_pid(state.path)})", left]
     if alive is False:
