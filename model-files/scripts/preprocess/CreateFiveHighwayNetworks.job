@@ -36,14 +36,23 @@
 loop period = 1, 5
 
    ; exclude park-and-ride links from being built across certain bridges
+
+; JEF THESE ARE TM1.6 SETTINGS (COMMENTED OUT FOR NOW)
+;   token_richmond_bridge_nopnr  = 'if ((a = 2341 & b = 2357) | (a = 2242 & b = 2358))  PNROK = 0'
+;   token_bay_bridge_east_nopnr  = 'if ((a = 2784 & b = 2802) | (a = 2803 & b = 2783))  PNROK = 0'
+;   token_sanmateo_bridge_nopnr  = 'if ((a = 3642 & b = 3649) | (a = 3650 & b = 6381))  PNROK = 0'
+;   token_dumbarton_bridge_nopnr = 'if ((a = 3895 & b = 3896) | (a = 3880 & b = 5938))  PNROK = 0'
+; JEF THESE ARE SNABM1.5 SETTINGS
+   token_richmond_bridge_nopnr  = 'if ((a = 32341 & b = 32357) | (a = 32242 & b = 32358))  PNROK = 0'
+   token_bay_bridge_east_nopnr  = 'if ((a = 32784 & b = 32802) | (a = 32803 & b = 32783))  PNROK = 0'
+   token_sanmateo_bridge_nopnr  = 'if ((a = 33642 & b = 33649) | (a = 33650 & b = 36381))  PNROK = 0'
+   token_dumbarton_bridge_nopnr = 'if ((a = 33895 & b = 33896) | (a = 33880 & b = 5938))  PNROK = 0'
+
+; JEF THESE ARE 1.6 SETTINGS WHICH ARE THE SAME AS SNABM1.5
    token_benicia_bridge_nopnr   = '; allow park-and-ride' 
-   token_richmond_bridge_nopnr  = 'if ((a = 2341 & b = 2357) | (a = 2242 & b = 2358))  PNROK = 0'
    token_carquinez_bridge_nopnr = '; allow park-and-ride'
    token_golden_bridge_nopnr    = 'if ((a = 7319 & b = 7338) | (a = 7315 & b = 7339))  PNROK = 0'      
-   token_bay_bridge_east_nopnr  = 'if ((a = 2784 & b = 2802) | (a = 2803 & b = 2783))  PNROK = 0'
    token_bay_bridge_west_nopnr  = 'if ((a = 7017 & b = 6971) | (a = 6970 & b = 7016))  PNROK = 0'
-   token_sanmateo_bridge_nopnr  = 'if ((a = 3642 & b = 3649) | (a = 3650 & b = 6381))  PNROK = 0'
-   token_dumbarton_bridge_nopnr = 'if ((a = 3895 & b = 3896) | (a = 3880 & b = 5938))  PNROK = 0'
    token_antioch_bridge_nopnr   = '; allow park-and-ride'
      
    ; a two letter token is used for each time period
@@ -61,7 +70,12 @@ loop period = 1, 5
       token_sterling_onramp = 'USE = 1'
       
       ; shared ride bridge delay by-pass links
-      token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      ; JEF THIS IS TM1.6
+      ; token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      ; JEF SNABM1.5
+      token_carquinez_bridge_sr_bypass = '; do not delete the link'
+
+      
       token_bay_bridge_sr_bypass       = 'if (a = 9867  & b = 9869)  delete'
       token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
       token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'
@@ -99,7 +113,12 @@ loop period = 1, 5
       token_sterling_onramp = 'USE = 1'
       
       ; shared ride bridge delay by-pass links
-      token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      
+      ; JEF THIS IS TM1.6 SETTING (COMMENTED OUT FOR NOW)
+      ; token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      ; JEF THIS IS SNABM1.5       
+       token_carquinez_bridge_sr_bypass = '; do not delete the link'
+       
       token_bay_bridge_sr_bypass       = 'if (a = 9867  & b = 9869)  delete'
       token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
       token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'
@@ -137,7 +156,12 @@ loop period = 1, 5
       token_sterling_onramp = 'USE = 1'
       
       ; shared ride bridge delay by-pass links
-      token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      
+      ; JEF TM1.6 (COMMENTED OUT)
+      ;token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      ; JEF SNABM1.5
+      token_carquinez_bridge_sr_bypass = '; do not delete the link'
+
       token_bay_bridge_sr_bypass       = 'if (a = 9867  & b = 9869)  delete'
       token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
       token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'

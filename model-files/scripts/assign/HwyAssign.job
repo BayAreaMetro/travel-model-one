@@ -88,6 +88,7 @@
 ; ----------------------------------------------------------------------------------------------------------------
 
 read file = ctramp\scripts\block\HwyIntraStep.block
+TOT_ZONES=%TOTAL_ZONES%
 
 ; do, more or less, the same assignment procedure for each time period
 loop period = 1, 5
@@ -183,8 +184,9 @@ loop period = 1, 5
       ; set the assignment paramters -- equilibrium assignment, frank-wolfe
       parameters combine = equi; , enhance = 2
 
-      ; set the assignment parameters -- 1454 internal zones + 21 external zones
-      parameters zones = 1475
+      ; JEF MAKE THIS DYNAMIC
+      ; set the assignment parameters -- 2340 internal zones + 36 external zones
+      parameters zones = @TOT_ZONES@
 
       ; set the assignment parameters -- maximum number of iterations to 300
       @token_maxiters@

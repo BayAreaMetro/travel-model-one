@@ -46,7 +46,7 @@
 ; ----------------------------------------------------------------------------------------------------------------
 
 ; set the number of zones token
-token_number_of_internal_zones = 1454
+token_number_of_internal_zones = %INTERNAL_ZONES%
 
 ; apply the generation models
 run pgm = tripgen

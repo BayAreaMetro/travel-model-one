@@ -62,6 +62,8 @@ token_debug_origin = '1224'
 ; set a debug destination
 token_debug_destination = '1'
 
+INT_ZONES = %INTERNAL_ZONES%
+
 ; model parameters - dispersion parameters
 token_dispersion_parameter_automobile = '-0.05'
 token_dispersion_parameter_transit    = '-0.05'
@@ -109,7 +111,7 @@ run pgm = matrix
    filei zdati[1]= landuse\tazdata.dbf
    
    ; only need calculations for the internal zones (xxx check that this is true xxx)
-   zones = 1454                 
+   zones = @INT_ZONES@                 
    
    ; set the dispersion parameters
    _kAuto = @token_dispersion_parameter_automobile@
