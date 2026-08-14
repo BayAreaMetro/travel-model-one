@@ -334,6 +334,10 @@ def run_cube_job(
         raise FileNotFoundError(msg)
     cwd.mkdir(parents=True, exist_ok=True)
 
+    # Bound up front so every path below -- and the messages after them -- can name
+    # the log.  The schtasks path replaces it with its own per-run name.
+    logfile = cwd / f"_cube_{job.stem}.log"
+
     cpath: Path | None = None
     if cluster_nodes:
         cpath = Path(commpath).resolve() if commpath else cwd / "commpath"
@@ -350,7 +354,6 @@ def run_cube_job(
         if cluster_nodes:
             # Reuse the bat path so the cluster bracketing is identical to remote.
             sentinel = cwd / f"_cube_{job.stem}.sentinel"
-            logfile = cwd / f"_cube_{job.stem}.log"
             sentinel.unlink(missing_ok=True)
             bat = _write_job_bat(
                 job, cwd, sentinel, logfile, env_extra,
@@ -368,6 +371,9 @@ def run_cube_job(
                 capture_output=True, text=True, timeout=timeout, check=False,
             )
             rc, log_text = proc.returncode, proc.stdout or ""
+            # Only this path gets Cube's output through a pipe rather than a file
+            # redirect -- land it on disk so a failure names a log that exists.
+            logfile.write_text(log_text, encoding="utf-8", errors="replace")
     else:
         try:
             rc, logfile = _run_via_schtasks(
