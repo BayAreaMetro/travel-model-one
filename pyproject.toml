@@ -16,22 +16,25 @@ dependencies = [
 # What the legacy RunModel.bat scripts need, and nothing else does.  Every entry
 # exists to run one `command:` step in the CT-RAMP scenario:
 #
-#   dbfpy3       csvToDbf.py            hwy/tolls.csv -> the .dbf Cube's LOOKUPI reads
-#   simpleparse  transitDwellAccess.py  via NetworkWrangler, which is cloned separately
-#                                       (see the transit-assignment-env memo)
-#   xlrd/xlwt/   RuntimeConfiguration.py  patches costPerMile into the UEC .xls files
+#   dbfpy3           csvToDbf.py            hwy/tolls.csv -> the .dbf Cube's LOOKUPI reads
+#   NetworkWrangler  transitDwellAccess.py  `from Wrangler import ...`; pulls simpleparse,
+#                                           xlrd, numpy, pandas and pywin32 itself
+#   xlrd/xlwt/       RuntimeConfiguration.py  patches costPerMile into the UEC .xls files
 #     xlutils
-#   pywin32      NetworkWrangler
+#
+# NetworkWrangler is pinned to a commit, not a branch, so `uv sync` on another machine
+# resolves to the same code.  c806951 is the commit that made it installable at all --
+# before it, setup.py omitted the _static/ directory that Wrangler imports at module
+# level, so only `pip install -e` off a clone ever worked.
 #
 # Phase 4 replaces those scripts with native steps, and this whole extra goes with
 # them -- it is complete when no `command:` in any scenario points into CTRAMP/scripts.
 legacy = [
     "dbfpy3>=2.3",
-    "simpleparse>=2.2",
+    "NetworkWrangler @ git+https://github.com/BayAreaMetro/NetworkWrangler@c806951496126c6c5a3a37f5c325176aee91f31d",
     "xlrd>=2.0",
     "xlutils>=2.0",
     "xlwt>=1.3",
-    "pywin32>=304",
 ]
 
 [project.scripts]
@@ -47,6 +50,13 @@ dev = [
     "pytest-coverage>=0.0",
     "ruff>=0.15.11",
 ]
+
+[tool.hatch.metadata]
+# The `legacy` extra pins NetworkWrangler to a git commit.  Hatchling refuses such
+# direct references unless told to allow them, because they cannot be published to
+# PyPI -- which is fine here: this package is never published, and NetworkWrangler
+# is not on PyPI either.
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tm1"]

@@ -107,6 +107,18 @@ wheels = [
 ]
 
 [[package]]
+name = "networkwrangler"
+version = "1.5"
+source = { git = "https://github.com/BayAreaMetro/NetworkWrangler?rev=c806951496126c6c5a3a37f5c325176aee91f31d#c806951496126c6c5a3a37f5c325176aee91f31d" }
+dependencies = [
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "pywin32" },
+    { name = "simpleparse" },
+    { name = "xlrd" },
+]
+
+[[package]]
 name = "numpy"
 version = "1.25.2"
 source = { registry = "https://pypi.org/simple" }
@@ -388,8 +400,7 @@ dependencies = [
 [package.optional-dependencies]
 legacy = [
     { name = "dbfpy3" },
-    { name = "pywin32" },
-    { name = "simpleparse" },
+    { name = "networkwrangler" },
     { name = "xlrd" },
     { name = "xlutils" },
     { name = "xlwt" },
@@ -405,13 +416,12 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dbfpy3", marker = "extra == 'legacy'", specifier = ">=2.3" },
+    { name = "networkwrangler", marker = "extra == 'legacy'", git = "https://github.com/BayAreaMetro/NetworkWrangler?rev=c806951496126c6c5a3a37f5c325176aee91f31d" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "psutil", specifier = ">=5.9" },
     { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "pywin32", marker = "extra == 'legacy'", specifier = ">=304" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31" },
-    { name = "simpleparse", marker = "extra == 'legacy'", specifier = ">=2.2" },
     { name = "xlrd", marker = "extra == 'legacy'", specifier = ">=2.0" },
     { name = "xlutils", marker = "extra == 'legacy'", specifier = ">=2.0" },
     { name = "xlwt", marker = "extra == 'legacy'", specifier = ">=1.3" },

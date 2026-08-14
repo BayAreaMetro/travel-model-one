@@ -44,7 +44,9 @@ future: PBA50
 env:
   EN7: DISABLED                     # required: RunModel.bat 115-128 will not start without it
   PATH: "{env:TM1_GAWK_DIR};{env:PATH}"      # gawk, for BuildTransitNetworks.job
-  PYTHONPATH: "{env:TM1_NETWORKWRANGLER}"    # transitDwellAccess.py imports Wrangler
+  # No PYTHONPATH: NetworkWrangler is an ordinary dependency now (see pyproject.toml),
+  # and `command:` steps run under this environment's interpreter, so
+  # transitDwellAccess.py imports Wrangler from site-packages.
   # MAXITERATIONS: 3                # RunModel.bat 135-147 hard-codes these
   # TRNCONFIG: FAST                 # STANDARD makes transit iterate; not supported yet
 
