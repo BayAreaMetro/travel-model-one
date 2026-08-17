@@ -210,12 +210,12 @@ def run(config_path: str | Path = "configs/trip_distribution.yaml") -> None:
     ms = config.model_settings
     output_dir = ms.output_dir
     plots_dir = output_dir / "plots"
-    matrices_dir = output_dir / "matrices"
+    # matrices_dir = output_dir / "matrices"  # disabled: matrix outputs not written (too heavy for git)
 
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
     plots_dir.mkdir(exist_ok=True)
-    matrices_dir.mkdir(exist_ok=True)
+    # matrices_dir.mkdir(exist_ok=True)  # disabled: see above
 
     # Initialize logging
     _setup_logging(ms.verbosity, output_dir)
@@ -361,15 +361,18 @@ def run(config_path: str | Path = "configs/trip_distribution.yaml") -> None:
             )
 
     # Write matrix outputs for all successful runs
-    successful_trips = {
-        r["run_cfg"].name: all_trips[r["run_cfg"].name]
-        for r in run_results
-        if r["status"] == "OK"
-    }
-    if successful_trips:
-        zone_ids = pa.index.to_numpy()
-        write_trips_parquet(successful_trips, zone_ids, matrices_dir)
-        write_trips_omx(successful_trips, matrices_dir)
+    # Disabled: modeled trip matrices are not written. They were not useful
+    # downstream and are too heavy to keep in git. Re-enable by uncommenting
+    # the block below (and the matrices_dir setup near the top of run()).
+    # successful_trips = {
+    #     r["run_cfg"].name: all_trips[r["run_cfg"].name]
+    #     for r in run_results
+    #     if r["status"] == "OK"
+    # }
+    # if successful_trips:
+    #     zone_ids = pa.index.to_numpy()
+    #     write_trips_parquet(successful_trips, zone_ids, matrices_dir)
+    #     write_trips_omx(successful_trips, matrices_dir)
 
     # Build report data
     report = build_report_data(run_results=run_results, config=config)

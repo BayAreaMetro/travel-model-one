@@ -14,7 +14,7 @@ model_settings:
   gravity_max_rmse: 10.0             # convergence threshold (RMSE of col sums vs target A)
   optimizer_method: "Nelder-Mead"    # scipy.optimize.minimize method
   optimizer_max_iters: 500           # max optimizer function evaluations
-  atl_penalty_weight: 0.1            # weight of ATL penalty term in calibration loss (0.0 to disable)
+  atl_penalty_weight: 0.1            # weight of Average Trip Length (ATL) penalty term in calibration loss (0.0 to disable)
   gamma_b_bounds: [-3.0, -0.001]     # Based on NCHRP Report 365 - Chapter 12 (p. 146); widened from reported values to allow calibration across multiple truck classes.
   gamma_c_bounds: [-0.5, -0.001]     # Based on NCHRP Report 365 - Chapter 12 (p. 146); widened from reported values to allow calibration across multiple truck classes.
   verbosity: "INFO"                  # logging level: DEBUG, INFO, WARNING
