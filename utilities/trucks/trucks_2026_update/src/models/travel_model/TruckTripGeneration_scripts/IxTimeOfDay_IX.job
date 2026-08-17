@@ -5,7 +5,10 @@
 ; TP+ script to apply diurnal factors to the daily estimate of internal/external personal vehicle trips.  A separate 
 ; sketch process is used to generate the internal/external trip table, which is independent of land use patterns 
 ; and congestion in the current implementation. The internal/external trip table includes only passenger vehicles,
-; and does not include trucks.
+; and does not include trucks. However, since the underlying demand reflects total traffic, truck demand is carved 
+; out and modeled separately. For the TM1.7 truck model update, the truck share percentages used to allocate demand 
+; to the small, medium, and large truck classes were updated to match CSF2TDM internal-external flows. The very small
+; truck class retained the existing TM1.6 shares because no equivalent CSF2TDM vehicle class exists 
 ;
 ; The five time periods modeled are: (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 
 ; 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am the next day.
@@ -23,11 +26,12 @@
 ;              3 (sr3).
 ;
 ; Notes:  (1) Performance can not be improved with distributing to the cluster
+;         (2) Carve-out truck demand share estimation: utilities/trucks/trucks_2026_update/notebooks/IX-XI-II%20Trips.ipynb
 ;
 ; See also: (1) IxTollChoice.job, which applies a toll/no toll choice model for each vehicle class.
 ;
 ; version:  Travel Model One (version 0.1)
-; authors:  dto (2011 01 31); gde (2009)
+; authors:  jdc(2026 08 17); dto (2011 01 31); gde (2009)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
@@ -40,7 +44,8 @@ run pgm = matrix
 
    fileo mato[1] = nonres\ixDailyx4_truck.tpp, mo=1-4, name=vsm_daily, sml_daily, med_daily, lrg_daily
    fileo mato[2] = nonres\ixDailyx4_auto.tpp,  mo=5-8, name=ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
-
+ 
+   ; small, medium and large shares estimated to match XI-IX truck trips from CSF2TDM
    IX_EX_TRK_VSM_SHARE = 0.162  ; move this share to very small trucks
    IX_EX_TRK_SML_SHARE = 0.045  ; move this share to small trucks
    IX_EX_TRK_MED_SHARE = 0.029  ; move this share to medium trucks
