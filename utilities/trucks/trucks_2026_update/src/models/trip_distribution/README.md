@@ -22,7 +22,7 @@ Runs are independent. A failure in one run is caught, logged at `ERROR` level, a
 Run the model as a module from this directory (`utilities/trucks/trucks_2026_update`):
 
 ```bash
-python -m src.models.trip_distribution.run \
+python -m src.models.trip_distribution.calibrate \
   --config configs/trip_distribution.yaml
 ```
 
@@ -191,7 +191,7 @@ output_dir/
 │   ├── tlfd_comparison.png          Observed vs modeled TLFD per run
 │   ├── friction_curves.png          Gamma F(t) curves per run
 │   ├── calibration_loss.png         Optimizer convergence per run
-└── run.log             Full log of the run, including warnings and timing.
+└── calibrate.log       Full log of the run, including warnings and timing.
 ```
 
 ---
@@ -211,7 +211,7 @@ Per run, the workbook reports calibration diagnostics and comparison tables (tab
 
 ### Run-Level Warnings
 
-Written to `run.log` (and stdout) rather than raising:
+Written to `calibrate.log` (and stdout) rather than raising:
 
 - **Parameter at bound** — a calibrated `b` or `c` settled on a search bound. 
 - **P/A imbalance** — total productions and attractions for a run differ by more than 5%.

@@ -16,13 +16,9 @@ Usage
 -----
 CLI::
 
-    python -m src.models.trip_distribution.run \\
+    python -m src.models.trip_distribution.calibrate \\
         --config configs/trip_distribution.yaml
 
-Notebook::
-
-    from src.models.trip_distribution.run import run
-    run(config_path="configs/trip_distribution.yaml")
 
 Configuration
 -------------
@@ -85,15 +81,8 @@ All outputs written to output_dir declared in model_settings of the YAML.
         tlfd_comparison.png          Observed vs modeled TLFD per run
         friction_curves.png          Gamma F(t) curves per run
         calibration_loss.png         Optimizer convergence per run
-        pa_residuals_{sn}_{geo}.png  PA residuals by geography (if geo_agg_cols set)
-        od_scatter_{sn}.png          Observed vs modeled OD scatter (if target OD set)
-        od_residuals_{sn}_{geo}.png  OD residuals by geography (if both set)
 
-    matrices/
-        modeled_trips.parquet   Long format: origin, destination, {run_name}...
-        modeled_trips.omx       Wide format for Cube/TP+ compatibility
-
-    run.log               Full log of the run including warnings and timing
+    calibrate.log         Full log of the run including warnings and timing
 
 Zone Index Convention
 ---------------------
@@ -124,19 +113,19 @@ from src.models.trip_distribution.validation import build_report_data, render_ex
 
 
 def _setup_logging(verbosity: str, output_dir: Path) -> None:
-    """Configure the root logger to write to stdout and output_dir/run.log.
+    """Configure the root logger to write to stdout and output_dir/calibrate.log.
 
     Parameters
     ----------
     verbosity : str
         Logging level string: ``"DEBUG"``, ``"INFO"``, or ``"WARNING"``.
     output_dir : Path
-        Directory where ``run.log`` will be created (must already exist).
+        Directory where ``calibrate.log`` will be created (must already exist).
     """
     level = getattr(logging, verbosity.upper(), logging.INFO)
     handlers: list[logging.Handler] = [
         logging.StreamHandler(),
-        logging.FileHandler(output_dir / "run.log", mode="w"),
+        logging.FileHandler(output_dir / "calibrate.log", mode="w"),
     ]
     logging.basicConfig(level=level, format="%(message)s", handlers=handlers, force=True)
 
@@ -181,8 +170,8 @@ def _check_boundary_warnings(
         )
 
 
-def run(config_path: str | Path = "configs/trip_distribution.yaml") -> None:
-    """Run the full truck trip distribution pipeline.
+def calibrate(config_path: str | Path = "configs/trip_distribution.yaml") -> None:
+    """Run the full truck trip distribution calibration pipeline.
 
     Follows the initialization order required by the spec:
       1. Parse YAML → TripDistributionConfig
@@ -398,4 +387,4 @@ if __name__ == "__main__":
         help="Path to the YAML configuration file (default: configs/trip_distribution.yaml)",
     )
     args = parser.parse_args()
-    run(config_path=args.config)
+    calibrate(config_path=args.config)
