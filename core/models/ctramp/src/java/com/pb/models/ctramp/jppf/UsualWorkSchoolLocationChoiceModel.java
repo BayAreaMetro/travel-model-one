@@ -496,11 +496,11 @@ public class UsualWorkSchoolLocationChoiceModel implements Serializable {
 
 
                     Household household = householdArray[i];
-
+/*
                     long size = ObjectUtil.sizeOf( household );
                     if ( size > maxSize )
                         maxSize = size;
-                    
+*/                    
 
                     int hhId = household.getHhId();
                     int homeTaz = household.getHhTaz();
@@ -541,7 +541,7 @@ public class UsualWorkSchoolLocationChoiceModel implements Serializable {
 
             outStream.close();
 
-            logger.info( "max size for all Household objects after UWSL model is " + maxSize + " bytes." );
+//            logger.info( "max size for all Household objects after UWSL model is " + maxSize + " bytes." );
         }
 
     }
