@@ -304,7 +304,12 @@ steps:
               first: 4                # round 1 starts from zero prices
               subsequent: 2           # later rounds top up the previous round's
               # 4 + 2 + 2 chains to seven; raising it is a convergence run, not a parity run.
-            # sample_rate: 0.50       # overrides RunModel.bat's 0.15/0.30/0.50 ramp
+            # SampleRate is required, no default.
+            # sample_rate: 0.5         # Global rate
+            sample_rate:              # Per-round rate, like the RunModel.bat's values (lines 280, 304, 328).
+              1: 0.15
+              2: 0.30
+              3: 0.50
             components:               # set any to false to skip it
               UsualWorkAndSchoolLocationChoice: true
               AutoOwnership: true

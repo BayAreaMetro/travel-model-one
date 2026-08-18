@@ -47,7 +47,7 @@ Usage in scenario_config.yaml::
     simulate_ctramp:
       project_dir: "E:/Projects/2023_TM161_IPA_35_testrun"
       host_ip: "123.123.123.123"  # IP address of the machine running CTRAMP
-      sample_rate: 0.5            # optional; else RunModel.bat's per-round ramp
+      sample_rate: 0.5            # required: one rate, or {round: rate} for a ramp
       components:
         UsualWorkAndSchoolLocationChoice: true
         AutoOwnership: true
@@ -130,8 +130,68 @@ def components_to_flags(components: dict[str, bool]) -> dict[str, str]:
     return flags
 
 
-# Default sample rates per global iteration, matching legacy RunModel.bat.
-DEFAULT_SAMPLE_RATES: dict[int, float] = {1: 0.15, 2: 0.30, 3: 0.50}
+def _sample_rate_for(iteration: int, spec: object) -> float:
+    """Resolve this round's sample rate from ``sample_rate:``.
+
+    Required, and stated two ways: one number applies to every round, or a
+    mapping of round number to rate states a ramp::
+
+        sample_rate: 0.50           # every round
+        sample_rate: {1: 0.15, 2: 0.30, 3: 0.50}    # RunModel.bat's ramp
+
+    There is deliberately no default.  The rate decides how much of the
+    population the demand model simulates, so a run that falls back to one
+    silently is a run whose results nobody chose.
+    """
+    where = "steps.simulate_ctramp.sample_rate"
+
+    if spec is None:
+        msg = (
+            f"{where} is required, and has no default. Give one rate for every "
+            f"round (`sample_rate: 0.50`) or a rate per round "
+            f"(`sample_rate: {{1: 0.15, 2: 0.30, 3: 0.50}}`, RunModel.bat's ramp)."
+        )
+        raise ValueError(msg)
+
+    if isinstance(spec, dict):
+        ramp: dict[int, object] = {}
+        for key, value in spec.items():
+            try:
+                ramp[int(key)] = value
+            except (TypeError, ValueError):
+                msg = (
+                    f"{where} is keyed by round number, so {key!r} is not a usable "
+                    f"key. Write `{{1: 0.15, 2: 0.30, 3: 0.50}}`."
+                )
+                raise ValueError(msg) from None
+        if iteration not in ramp:
+            stated = ", ".join(str(r) for r in sorted(ramp)) or "none"
+            msg = (
+                f"{where} states no rate for round {iteration} (rounds stated: "
+                f"{stated}). Add one, or replace the ramp with a single rate that "
+                f"applies to every round."
+            )
+            raise ValueError(msg)
+        return _valid_sample_rate(ramp[iteration], f"{where}[{iteration}]")
+
+    return _valid_sample_rate(spec, where)
+
+
+def _valid_sample_rate(value: object, where: str) -> float:
+    """A sample rate is a number in (0, 1]; anything else is an error."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        msg = f"{where} must be a number between 0 and 1; got {value!r}."
+        # ValueError, not TypeError: every config problem in this module raises the
+        # same class, and the runner reports the message rather than the type.
+        raise ValueError(msg)  # noqa: TRY004
+    rate = float(value)
+    if not 0.0 < rate <= 1.0:
+        msg = (
+            f"{where} must be greater than 0 and at most 1 (1.0 simulates the whole "
+            f"population); got {rate}."
+        )
+        raise ValueError(msg)
+    return rate
 
 
 #: Shadow-price passes per global round, as ``RuntimeConfiguration.py`` sets them.
@@ -859,8 +919,9 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     """Run CTRAMP with the component flags specified in scenario config.
 
     One call runs one round.  The runner owns the feedback loop and supplies the
-    round number, which sets the sample rate (:data:`DEFAULT_SAMPLE_RATES`) and the
-    shadow-price chain (:func:`shadow_pricing_flags`).
+    round number, which selects this round's sample rate
+    (:func:`_sample_rate_for`) and shadow-price chain
+    (:func:`shadow_pricing_flags`).
 
     Config structure::
 
@@ -871,7 +932,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
                 - simulate_ctramp:
                     project_dir: "E:/Projects/..."
                     host_ip: "localhost"
-                    sample_rate: 0.5           # optional; else the per-round ramp
+                    sample_rate: {1: 0.15, 2: 0.30, 3: 0.50}   # required
                     shadow_pricing: true       # set false to disable
                     seed: 0
                     components:
@@ -903,8 +964,10 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
 
     iteration = int(kwargs.get("iteration") or step_cfg.get("iteration") or 1)
 
-    # Per-iteration sample rate: explicit value overrides the default ramp.
-    explicit_rate = step_cfg.get("sample_rate")
+    # Resolved before anything expensive happens, so a config that cannot state
+    # this round's rate fails at the top of the step rather than after the JVMs
+    # are up.
+    sample_rate = _sample_rate_for(iteration, step_cfg.get("sample_rate"))
 
     # The Java model treats "localhost" specially by starting an in-process
     # MatrixDataServer.  We always start the server externally (separate 14GB
@@ -954,7 +1017,6 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     # which require the looping infrastructure.
     interactive = _preflight_license()
 
-    sample_rate = explicit_rate or DEFAULT_SAMPLE_RATES.get(iteration, 0.50)
     sp_flags = shadow_pricing_flags(
         iteration,
         shadow_pricing=do_shadow_pricing,

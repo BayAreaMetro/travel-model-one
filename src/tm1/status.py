@@ -40,7 +40,6 @@ from tm1.runner import (
     _warmstart_block,
     resume_token,
 )
-from tm1.steps.simulate_ctramp import DEFAULT_SAMPLE_RATES
 
 #: One record in a run log, per ``tm1.FILE_FORMAT``: timestamp, level, logger,
 #: message.  Anything else (a Cube traceback, a wrapped line) is not an event.
@@ -102,6 +101,9 @@ class Sections:
     loop: list[str] = field(default_factory=list)
     summaries: list[str] = field(default_factory=list)
     rounds: int = 1
+    #: ``simulate_ctramp``'s sample rate per round, as the scenario states it.
+    #: Empty when the config does not say, which costs an estimate, not a crash.
+    sample_rates: dict[int, float] = field(default_factory=dict)
 
     def entries(self) -> list[tuple[str, int]]:
         """Every ``(step, round)`` the config plans, in execution order."""
@@ -127,12 +129,38 @@ def sections(steps_cfg: object) -> Sections:
         elif name == "iterate":
             found.rounds, body = _iterate_block(step_cfg, None)
             found.loop = [n for n, _ in body]
+            found.sample_rates = _sample_rates(body, found.rounds)
             seen_loop = True
         elif seen_loop:
             found.summaries.append(name)
         else:
             found.setup.append(name)
     return found
+
+
+def _sample_rates(body: list[tuple[str, object]], rounds: int) -> dict[int, float]:
+    """``simulate_ctramp``'s rate for each round, read off the scenario.
+
+    ``status`` is read-only and must survive a config the runner would reject,
+    so anything it cannot read as a rate is left out rather than raised on.  The
+    cost of leaving it out is a rougher estimate.
+    """
+    cfg = next(
+        (c for n, c in body if n == "simulate_ctramp" and isinstance(c, dict)), None
+    )
+    spec = cfg.get("sample_rate") if cfg else None
+
+    if isinstance(spec, (int, float)) and not isinstance(spec, bool):
+        return dict.fromkeys(range(1, rounds + 1), float(spec))
+
+    rates: dict[int, float] = {}
+    if isinstance(spec, dict):
+        for key, value in spec.items():
+            try:
+                rates[int(key)] = float(value)
+            except (TypeError, ValueError):
+                continue
+    return rates
 
 
 # --- what the log says happened ---------------------------------------------
@@ -470,23 +498,29 @@ def _estimate_remaining(plan: Sections, state: RunLog) -> float | None:
     reads as *nearly done* on a run that has barely started.
 
     Otherwise rough by construction, and a floor: a step never yet run contributes
-    nothing rather than a guess.  ``simulate_ctramp`` is scaled by the sample-rate
-    ramp, the one step whose cost changes between rounds by a known factor.
+    nothing rather than a guess.  ``simulate_ctramp`` is scaled by the scenario's
+    sample-rate ramp, the one step whose cost changes between rounds by a known
+    factor.  A round the ramp does not price is left unscaled.
     """
-    priced = {name: seconds for (name, _), seconds in state.done.items()}
-    base_rate = DEFAULT_SAMPLE_RATES.get(1, 0.50)
+    priced: dict[str, tuple[float, int]] = {}
+    for (name, rnd), seconds in state.done.items():
+        priced.setdefault(name, (seconds, rnd))
     remaining = 0.0
     known = False
 
     for name, rnd in plan.entries():
         if state.settled((name, rnd)) or (name, rnd) == state.open_step:
             continue
-        cost = priced.get(name)
-        if cost is None:
+        measured = priced.get(name)
+        if measured is None:
             continue
         known = True
+        cost, measured_round = measured
         if name == "simulate_ctramp":
-            cost *= DEFAULT_SAMPLE_RATES.get(rnd, 0.50) / base_rate
+            this = plan.sample_rates.get(rnd)
+            base = plan.sample_rates.get(measured_round)
+            if this and base:
+                cost *= this / base
         remaining += cost
     return remaining if known else None
 
