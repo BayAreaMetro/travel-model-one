@@ -45,35 +45,42 @@ run pgm = tripgen
    
    ; only apply the model for internal zones
    zones = @token_number_of_internal_zones@
+
+   ; Calculate regional total employment
+   REG_TOTEMP = 0
+
+   LOOP J=1, zones
+      REG_TOTEMP = REG_TOTEMP + ZI.1.TOTEMP(J)
+  ENDLOOP
    
    ; loop through the origin zones
    phase = iloop
    
       IF (I = 142)      ; Port of SF - Source: CSF2TDM, Node ID: 2655
-        medium_production = round(0.004 * zi.1.TOTEMP)
-        large_production = round(0.013 * zi.1.TOTEMP)
+        medium_production = round(0.000011 * REG_TOTEMP)
+        large_production = round(0.000035 * REG_TOTEMP)
       ELSEIF (I = 239)  ; SFO Airport - Source: CSF2TDM, Node ID: 6987
-        medium_production = round(0.007 * zi.1.TOTEMP)
-        large_production = round(0.018 * zi.1.TOTEMP)      
+        medium_production = round(0.000018 * REG_TOTEMP)
+        large_production = round(0.000047 * REG_TOTEMP)      
       ELSEIF (I = 313)  ; Port of Redwood City - Source: CSF2TDM, Node ID: 2656
-        medium_production = round(0.002 * zi.1.TOTEMP)
-        large_production = round(0.007 * zi.1.TOTEMP)  
+        medium_production = round(0.000004 * REG_TOTEMP)
+        large_production = round(0.000016 * REG_TOTEMP)  
       ELSEIF (I = 874)  ; OAK Airport - Source: CSF2TDM, Node ID: 6988
-        medium_production = round(0.001 * zi.1.TOTEMP)
-        large_production = round(0.007 * zi.1.TOTEMP)  
+        medium_production = round(0.000335 * REG_TOTEMP)
+        large_production = round(0.001639 * REG_TOTEMP)  
       ELSEIF (I = 965)  ; Port of Oakland - Source: ALACC Model, TAZ IDs:  2833, 2957, 2967, 3163, 3165, 3166, 3167
-        medium_production = round(0.456 * zi.1.TOTEMP)
-        large_production = round(2.231 * zi.1.TOTEMP)  
+        medium_production = round(0.456 * REG_TOTEMP)
+        large_production = round(2.231 * REG_TOTEMP)  
       ELSEIF (I = 1062)  ; Port of Richhmond - Source: CSF2TDM, Node ID: 2659
-        medium_production = round(0.023 * zi.1.TOTEMP)
-        large_production = round(0.058 * zi.1.TOTEMP)  
+        medium_production = round(0.000037 * REG_TOTEMP)
+        large_production = round(0.000094 * REG_TOTEMP)  
       ELSE
         medium_production=0
         large_production=0
       ENDIF
       
-      medium_attraction = round(0.00347 * zi.1.TOTEMP)
-      large_attraction  = round(0.00426 * zi.1.TOTEMP)
+      medium_attraction = medium_production
+      large_attraction  = large_production
       
       ; set the TP+ trip generation variables prior to balance phase
       p[1] = medium_production      
