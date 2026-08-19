@@ -45,16 +45,11 @@ run pgm = tripgen
    
    ; only apply the model for internal zones
    zones = @token_number_of_internal_zones@
-
-   ; Calculate regional total employment
-   REG_TOTEMP = 0
-
-   LOOP J=1, zones
-      REG_TOTEMP = REG_TOTEMP + ZI.1.TOTEMP(J)
-  ENDLOOP
    
    ; loop through the origin zones
    phase = iloop
+      ; regional employment 
+      REG_TOTEMP = ZI.1.TOTEMP[0]
    
       IF (I = 142)      ; Port of SF - Source: CSF2TDM, Node ID: 2655
         medium_production = round(0.000011 * REG_TOTEMP)
@@ -66,19 +61,19 @@ run pgm = tripgen
         medium_production = round(0.000004 * REG_TOTEMP)
         large_production = round(0.000016 * REG_TOTEMP)  
       ELSEIF (I = 874)  ; OAK Airport - Source: CSF2TDM, Node ID: 6988
+        medium_production = round(0.000001 * REG_TOTEMP)
+        large_production = round(0.000008 * REG_TOTEMP)  
+      ELSEIF (I = 965)  ; Port of Oakland - Source: ALACC Model, TAZ IDs:  2833, 2957, 2967, 3163, 3165, 3166, 3167
         medium_production = round(0.000335 * REG_TOTEMP)
         large_production = round(0.001639 * REG_TOTEMP)  
-      ELSEIF (I = 965)  ; Port of Oakland - Source: ALACC Model, TAZ IDs:  2833, 2957, 2967, 3163, 3165, 3166, 3167
-        medium_production = round(0.456 * REG_TOTEMP)
-        large_production = round(2.231 * REG_TOTEMP)  
       ELSEIF (I = 1062)  ; Port of Richhmond - Source: CSF2TDM, Node ID: 2659
         medium_production = round(0.000037 * REG_TOTEMP)
         large_production = round(0.000094 * REG_TOTEMP)  
       ELSE
         medium_production=0
         large_production=0
-      ENDIF
-      
+        ENDIF
+
       medium_attraction = medium_production
       large_attraction  = large_production
       
@@ -98,5 +93,5 @@ run pgm = tripgen
       a[2] = p[2][0] / a[2][0] * a[2]
    
    endphase
-      
+
 ENDRUN
