@@ -19,13 +19,19 @@ The project also takes a path, so it can live outside the repo::
 Ask where a run got to -- from another shell, during or after it::
 
     tm1 status base_2023_ctramp
+
+List the cases a project declares, checking every address resolves::
+
+    tm1 cases base_2023_ctramp
 """
 
 import argparse
 import sys
 from pathlib import Path
 
+from tm1 import cases as cases_mod
 from tm1 import setup_logging
+from tm1.config import load_config
 from tm1.runner import run_model
 from tm1.status import status
 
@@ -116,6 +122,21 @@ def cmd_run(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_cases(args: argparse.Namespace) -> None:
+    """Execute the 'cases' subcommand: expand cases.yaml and check every one."""
+    config_dir = _resolve_config_dir(_project_arg(args), _find_repo_root())
+    expansion = cases_mod.load(config_dir)
+    sys.stdout.write(f"\n{cases_mod.render(expansion)}\n")
+
+    problems = cases_mod.validate(load_config(config_dir), expansion)
+    if problems:
+        joined = "\n  ".join(problems)
+        sys.exit(
+            f"\n{len(problems)} address(es) do not resolve against "
+            f"config.yaml:\n  {joined}"
+        )
+
+
 def cmd_status(args: argparse.Namespace) -> None:
     """Execute the 'status' subcommand."""
     config_dir = _resolve_config_dir(_project_arg(args), _find_repo_root())
@@ -189,6 +210,12 @@ def main() -> None:
         help="Slack notification level (default: from project config, or 'minimal')",
     )
 
+    cases_parser = sub.add_parser(
+        "cases",
+        help="List the cases a project declares, and check every address",
+    )
+    _add_project_argument(cases_parser)
+
     status_parser = sub.add_parser(
         "status",
         help="Show where the newest run got to, and how to resume it",
@@ -199,6 +226,8 @@ def main() -> None:
 
     if args.command == "run":
         cmd_run(args)
+    elif args.command == "cases":
+        cmd_cases(args)
     elif args.command == "status":
         cmd_status(args)
     else:

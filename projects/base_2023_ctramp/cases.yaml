@@ -1,15 +1,30 @@
 # Cases for base_2023_ctramp.
 #
 # A case is a named set of overrides into config.yaml, addressed by where the
-# value lives.  The address must already exist; values replace rather than merge;
-# a case can never add, remove, or reorder steps.
+# value lives:
 #
-# Three ways to declare them -- `cases:` (explicit), `ladder:` (cumulative), and
-# `matrix:` (cross product) -- all expanding to the same thing.  This project has
-# one pipeline and one case, so only `cases:` appears.
+#   model_year: 2035                                  a top-level key
+#   env.EN7: ENABLED                                  inside a top-level mapping
+#   copy_inputs.input_landuse.from: "M:/.../landuse"  inside a step
+#   iterate.count: 1                                  the loop's own key
+#   warmstart.hwy_assign.cluster_nodes: 24            a step, in one block
 #
-# PROVISIONAL: the ID below is a placeholder until IDs are validated and the
-# naming convention is settled.  IDs are SERIES-TOKENS-YEAR, uppercase.
+# The address must already exist, values replace rather than merge, a step name
+# appearing in both `warmstart:` and `iterate:` must say which, and `steps` itself
+# is not addressable -- a case varies values, it never changes the pipeline.
+#
+# Three ways to declare them, all expanding to the same thing:
+#
+#   cases:    written out, one entry per run
+#   ladder:   cumulative -- rung k applies rungs 1..k, so the diff between
+#             adjacent rungs isolates the one intervention that was added
+#   matrix:   the cross product of named axes, minus `exclude:` combinations
+#
+# `tm1 cases base_2023_ctramp` prints what this file expands to and checks every
+# address against config.yaml.
+#
+# IDs are SERIES-TOKENS-YEAR, uppercase, and stable forever: the ID names the run
+# directory, so renaming a case makes it an unrun one.
 
 cases:
 

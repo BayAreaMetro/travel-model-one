@@ -97,6 +97,7 @@ import tm1.steps.external as external_step
 import tm1.steps.setup as setup_step
 import tm1.steps.simulate_ctramp as simulate_ctramp_step
 from tm1 import add_run_logfile, remove_run_logfile, slack
+from tm1 import cases as cases_mod
 from tm1.config import load_config, resolve_templates
 from tm1.slack import notify
 
@@ -185,6 +186,11 @@ _ITERATE_KEYS = ("count", "steps")
 #: Key letting a step *outside* the loop skip itself when its product is on disk.
 _SKIP_IF_EXISTS = "skip_if_exists"
 
+#: Key switching a step off entirely.  Default true, so a config need not say it.
+#: A step that has no cheap no-op sits in the pipeline disabled and is switched on
+#: by the case that wants it -- which keeps the step list the same for every case.
+_ENABLED = "enabled"
+
 
 def _normalize_steps(steps_cfg: object, where: str = "steps") -> list[tuple[str, dict]]:
     """Ordered ``(name, config)`` pairs from either shape of ``steps:``.
@@ -192,9 +198,16 @@ def _normalize_steps(steps_cfg: object, where: str = "steps") -> list[tuple[str,
     A mapping is the compact form.  A list of single-key mappings is the explicit
     form -- and the only one that can name the same step twice, which is how the
     warm start and the loop each carry their own copy of the assignment steps.
+
+    ``enabled: false`` drops a step here, and *only* here: :mod:`tm1.status` builds
+    its grid from this same function, so filtering anywhere else would make the
+    status view disagree with what actually ran.
     """
     if isinstance(steps_cfg, dict):
-        return [(str(name), cfg or {}) for name, cfg in steps_cfg.items()]
+        return [
+            (str(name), cfg or {}) for name, cfg in steps_cfg.items()
+            if _step_enabled(cfg)
+        ]
     if isinstance(steps_cfg, list):
         pairs: list[tuple[str, dict]] = []
         for item in steps_cfg:
@@ -205,10 +218,21 @@ def _normalize_steps(steps_cfg: object, where: str = "steps") -> list[tuple[str,
                 )
                 raise TypeError(msg)
             name, cfg = next(iter(item.items()))
-            pairs.append((str(name), cfg or {}))
+            if _step_enabled(cfg):
+                pairs.append((str(name), cfg or {}))
         return pairs
     msg = f"`{where}` must be a mapping or a list of `name: {{config}}` entries."
     raise TypeError(msg)
+
+
+def _step_enabled(step_cfg: object) -> bool:
+    """Whether a step runs.  Only a literal ``enabled: false`` switches it off.
+
+    Checked against dicts alone, so ``warmstart:`` (a list) and ``iterate:`` (whose
+    keys are already restricted) cannot be disabled wholesale -- a case varies what
+    the pipeline does, not whether half of it exists.
+    """
+    return not (isinstance(step_cfg, dict) and step_cfg.get(_ENABLED) is False)
 
 
 def _iteration_plan(
@@ -791,6 +815,22 @@ def _load_step(step_name: str, step_cfg: dict | None, config_dir: Path) -> Calla
     return func
 
 
+def _checked_config(config_dir: Path) -> dict:
+    """The project config, refused if any case fails to resolve against it.
+
+    Checked against the *unresolved* config, which is where addresses are written,
+    and reported all at once rather than one failure per attempt: finding case 27's
+    typo fifteen hours in is the failure this exists to prevent.
+    """
+    raw = load_config(config_dir)
+    problems = cases_mod.validate(raw, cases_mod.load(config_dir))
+    if problems:
+        joined = "\n  ".join(problems)
+        msg = f"cases.yaml does not resolve against config.yaml:\n  {joined}"
+        raise ValueError(msg)
+    return raw
+
+
 def run_model(
     config_dir: Path,
     steps: list[str] | None = None,
@@ -814,7 +854,7 @@ def run_model(
     config_dir = Path(config_dir).resolve()
     label = f"projects/{config_dir.name}"
 
-    cfg = resolve_templates(load_config(config_dir))
+    cfg = resolve_templates(_checked_config(config_dir))
 
     _resolve_slack_level(cfg, slack_level)
 

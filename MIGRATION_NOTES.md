@@ -169,9 +169,14 @@ tm1 run base_2023_ctramp --slack verbose
 
 Flags: `--steps`, `--iterations`, `--resume-at`, `--until`, `--slack {off,minimal,verbose}`.
 
-**Not implemented** — running many cases of one project, across machines. `cases.yaml`
-will declare them (explicit, ladder, or matrix); each machine runs the same
-`tm1 run <project>`, and a per-case lock file in a shared index decides who takes what.
+`cases.yaml` declares the runs a project defines -- explicit, ladder (cumulative)
+or matrix (cross product) -- each a set of overrides addressed by where the value
+lives in `config.yaml`. `tm1 cases <project>` expands them and checks every address;
+a case that does not resolve stops a run before it starts.
+
+**Not implemented** — selecting a case to run, and running many across machines.
+The intent is that each machine runs the same `tm1 run <project>` and a per-case
+lock file in a shared index decides who takes what.
 
 ---
 

@@ -135,9 +135,10 @@ whatever stale matrices happened to be lying around.
 ### Creating a New Project
 
 1. Copy `projects/base_2023_ctramp/config.yaml` and `cases.yaml` to `projects/<name>/`
-2. Update the `copy_inputs` sources and `run_dir` for your environment
+2. Update the `copy_inputs` sources for your environment
 3. Adjust the `steps:` block — iterations, sample rate, threads, model components
-4. Run with `tm1 run <name>`
+4. Declare the runs in `cases.yaml`; `tm1 cases <name>` checks every address
+5. Run with `tm1 run <name>`
 
 ### Run Logs
 
