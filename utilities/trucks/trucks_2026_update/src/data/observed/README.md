@@ -45,6 +45,7 @@ This schema is the contract of the whole pipeline — it is what every source pr
 | `truck_type_2` | str | Coarser class used to compare against model assignment output: `SM` (small/medium) or `HV` (heavy). |
 | `type` | str | Always `observed` (distinguishes from modeled data in downstream joins). |
 | `source` | str | Provenance: `caltrans_2018` or `bata_2023`. |
+| `quality_flag`| str| Either `good`, `fair` or `poor ` depending on the observed sample size. |
 | `volume` | float | Mean daily truck volume for that location / TOD / truck type. |
 
 ### Shared Conventions
