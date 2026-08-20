@@ -164,10 +164,10 @@ tm1 run base_2023_ctramp                        # the whole pipeline
 tm1 run base_2023_ctramp --steps assignment     # one step
 tm1 run base_2023_ctramp --iterations 3         # override iterate.count
 tm1 run E:/runs/one_off                         # a project outside the repo
-tm1 run base_2023_ctramp --force --slack verbose
+tm1 run base_2023_ctramp --slack verbose
 ```
 
-Flags: `--steps`, `--iterations`, `--force`, `--slack {off,minimal,verbose}`.
+Flags: `--steps`, `--iterations`, `--resume-at`, `--until`, `--slack {off,minimal,verbose}`.
 
 **Not implemented** — running many cases of one project, across machines. `cases.yaml`
 will declare them (explicit, ladder, or matrix); each machine runs the same

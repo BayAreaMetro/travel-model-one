@@ -5,8 +5,8 @@
 # `warmstart:` and `iterate:` are the only nesting, and they are the two blocks that repeat
 # or pin a round.
 #
-# Needs Cube Voyager + licence.  Set reference_run and run_dir; copy_inputs fetches the
-# rest, so a run is self-contained and never writes into the reference run.
+# Needs Cube Voyager + licence.  Set run_dir; copy_inputs assembles everything else from
+# the sources named below, so a run is self-contained and reads no other run.
 
 slack: "off"
 
@@ -17,8 +17,14 @@ logging:
 # ── Machine-specific — set these in .env, not here ──────────────────────────────────────
 # {env:NAME} reads the environment, which tm1 populates from .env at the repo root.
 # Copy .env.example to .env and fill it in; an unset variable is an error naming it.
-# Nothing below this block differs between machines, which is the point.
-reference_run: "{env:TM1_REFERENCE_RUN}"    # inputs are copied FROM here; never written to
+# Only ROOTS belong here -- a drive letter or UNC share.  The rest of every path is
+# written out below where it can be read and reviewed: which network, which land use,
+# which previous run.  Burying that in .env is what made a config unreadable.
+# The MTC model data share.  A drive letter on machines that have it mapped, the UNC
+# path where the mapping is stale -- which is the only part of these paths that is
+# machine-specific.  M: is \\models.ad.mtc.ca.gov\data\models.
+m_drive: "{env:TM1_M_DRIVE}"
+
 run_dir: "{env:TM1_PROJ_DIR}"              # where this run happens
 # TM1_PROJ_DIR keeps its old name for now: renaming it would break every machine's
 # .env at once.  It becomes TM1_RUNS_ROOT when run directories move under a root.
@@ -83,26 +89,122 @@ steps:
 
   # ── Setup · stage every input the model reads (RunModel.bat steps 1-3) ────────────────
 
-  # RunModel.bat 156-165.  Cube jobs do not create their own output directories, and
-  # skims/, popsyn/ and database/ have no staged inputs.
+  # RunModel.bat 156-165, plus metrics/.  Cube jobs do not create their own output
+  # directories, and skims/, popsyn/, database/ and metrics/ have no staged inputs.
+  #
+  # Every directory a run writes into is named here, so where one comes from is a
+  # question the config answers.  metrics/ is the departure from the .bat's ten: the
+  # legacy leaves it to whichever summary script runs first, which is the kind of
+  # side effect you have to go reading code to find.  Per-round directories
+  # (hwy/iter{N}, trn/TransitAssignment.iter{N}) are not listed -- N is not known
+  # until the round runs, so their steps create them.
   - make_directories:
       module: "tm1.steps.staging:make_directories"
-      dirs: [hwy, trn, skims, landuse, popsyn, nonres, main, logs, database, logsums]
+      dirs: [hwy, trn, skims, landuse, popsyn, nonres, main, logs, database, logsums, metrics]
 
   # Entries run in the order written; later ones may read what earlier ones wrote.
   # Directory entries merge file by file and never overwrite.
   #
   # Nothing the model produces is staged -- no skims, accessibility, popsyn or
   # taxi_tnc_occ_factors -- so a failure in the steps that build them cannot hide.
+  # ── Stage every input the model reads ────────────────────────────────────────────────
+  #
+  # SetUpModel.bat step 3, then RunModel.bat 172-178, in one step.  Entries run in the
+  # order written, so the INPUT/ ones below are staged before the working directories
+  # that read them.  INPUT/ is kept as the run's own record of what went into it.
+  #
+  # Nothing is overwritten unless an entry says `overwrite: true`.
   - copy_inputs:
-      # 1. The pristine inputs.  Staged inside run_dir because the legacy scripts read
-      #    INPUT/ by relative path: filterUnconnectedHouseholds reads INPUT/popsyn,
-      #    updateTelecommute_forEN7 reads INPUT/landuse and INPUT/params.properties.
-      input:
-        from: "{reference_run}/INPUT"
-        to: "{run_dir}/INPUT"
 
-      # 2. RunModel.bat 172-178, out of INPUT/ into the working directories.
+      # 1. INPUT/ from its real sources.  Each `from:` is the variable of the same
+      #    meaning in SetUpModel.bat: INPUT_NETWORK, INPUT_POPLU, NONRES_INPUT_DIR,
+      #    LOGSUMS_INPUT_DIR, METRICS_INPUT_DIR, PREV_RUN_DIR, PARAMS.
+
+      input_hwy:                        # INPUT_NETWORK/hwy
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/hwy"
+        to: "{run_dir}/INPUT/hwy"
+      input_trn:                        # INPUT_NETWORK/trn
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/trn"
+        to: "{run_dir}/INPUT/trn"
+
+      input_popsyn:                     # INPUT_POPLU/popsyn
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/popsyn"
+        to: "{run_dir}/INPUT/popsyn"
+      input_landuse:                    # INPUT_POPLU/landuse
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/landuse"
+        to: "{run_dir}/INPUT/landuse"
+      input_telecommute_max_rate:       # from this checkout, not the M drive
+        from: "utilities/telecommute/telecommute_max_rate_county.csv"
+        to: "{run_dir}/INPUT/landuse/telecommute_max_rate_county.csv"
+
+      input_nonres:
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+        to: "{run_dir}/INPUT/nonres"
+      input_logsums:
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
+        to: "{run_dir}/INPUT/logsums"
+      input_metrics:
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
+        to: "{run_dir}/INPUT/metrics"
+
+      # The air passenger tables are per model year: SetUpModel.bat picks the year's
+      # file and drops the prefix.  A different year is five `from:` values, which is
+      # what makes this a config line rather than an `if MODEL_YEAR ==` branch.
+      input_airpax_ea:
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxEA.tpp"
+        to: "{run_dir}/INPUT/nonres/tripsAirPaxEA.tpp"
+        overwrite: true                 # lands on top of input_nonres above
+      input_airpax_am:
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxAM.tpp"
+        to: "{run_dir}/INPUT/nonres/tripsAirPaxAM.tpp"
+        overwrite: true
+      input_airpax_md:
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxMD.tpp"
+        to: "{run_dir}/INPUT/nonres/tripsAirPaxMD.tpp"
+        overwrite: true
+      input_airpax_pm:
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxPM.tpp"
+        to: "{run_dir}/INPUT/nonres/tripsAirPaxPM.tpp"
+        overwrite: true
+      input_airpax_ev:
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxEV.tpp"
+        to: "{run_dir}/INPUT/nonres/tripsAirPaxEV.tpp"
+        overwrite: true
+
+      # The demand iteration 0 assigns, from the previous run's published output.
+      # Only its trip tables; `exclude:` is SetUpModel.bat's two `del` lines, done by
+      # never copying rather than by deleting afterwards.
+      input_warmstart_main:             # PREV_RUN_DIR/OUTPUT/main
+        from: "{m_drive}/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35/OUTPUT/main"
+        to: "{run_dir}/INPUT/warmstart/main"
+        include: ["*.tpp"]
+      input_warmstart_nonres:           # PREV_RUN_DIR/OUTPUT/nonres
+        from: "{m_drive}/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35/OUTPUT/nonres"
+        to: "{run_dir}/INPUT/warmstart/nonres"
+        include: ["*.tpp"]
+        exclude: ["ixDaily2015.tpp", "ixDailyx4.tpp"]
+
+      input_params:                     # PARAMS -- from this checkout
+        from: "utilities/RTP/config_RTP2025/params_2023.properties"
+        to: "{run_dir}/INPUT/params.properties"
+
+      # 2. The model itself, from this checkout.  SetUpModel.bat copied these from
+      #    GITHUB_DIR; the repo is the source, so the run carries this branch's code.
+      ctramp_model:
+        from: "model-files/model"
+        to: "{run_dir}/CTRAMP/model"
+      ctramp_runtime:
+        from: "model-files/runtime"
+        to: "{run_dir}/CTRAMP/runtime"
+      ctramp_scripts:
+        from: "model-files/scripts"
+        to: "{run_dir}/CTRAMP/scripts"
+      ctramp_metrics:
+        from: "utilities/RTP/metrics"
+        to: "{run_dir}/CTRAMP/scripts/metrics"
+
+      # 3. INPUT/ -> the working directories (RunModel.bat 172-178).  popsyn is absent
+      #    on purpose: filterUnconnectedHouseholds.py writes it.
       hwy:
         from: "{run_dir}/INPUT/hwy"
         to: "{run_dir}/hwy"
@@ -115,37 +217,16 @@ steps:
       nonres:
         from: "{run_dir}/INPUT/nonres"
         to: "{run_dir}/nonres"
-      warmstart_main:                 # the demand the warm start assigns
+      warmstart_main:                   # the demand the warm start assigns
         from: "{run_dir}/INPUT/warmstart/main"
         to: "{run_dir}/main"
-      warmstart_nonres:               # merges into nonres/ alongside the entry above
+      warmstart_nonres:                 # merges into nonres/ alongside the entry above
         from: "{run_dir}/INPUT/warmstart/nonres"
         to: "{run_dir}/nonres"
       logsums:
         from: "{run_dir}/INPUT/logsums"
         to: "{run_dir}/logsums"
 
-      # 3. The model itself -- code and UECs, not inputs, and not in INPUT/.  A legacy run
-      #    has these because the project directory *is* a copy of the model template.
-      ctramp_model:
-        from: "{reference_run}/CTRAMP/model"
-        to: "{run_dir}/CTRAMP/model"
-      ctramp_runtime:
-        from: "{reference_run}/CTRAMP/runtime"
-        to: "{run_dir}/CTRAMP/runtime"
-      ctramp_scripts:
-        from: "{reference_run}/CTRAMP/scripts"
-        to: "{run_dir}/CTRAMP/scripts"
-
-      # Unused: round 1 clears ShadowPrice.Input.File, so prices start from zero.
-      # Kept for a future converged file -- see simulate_ctramp.shadow_price_run_notes.
-      # shadow_prices:
-      #   from: "{reference_run}/main/ShadowPricing_5.csv"
-      #   to: "{run_dir}/main/ShadowPricing_5.csv"
-
-  # RunModel.bat 190's RuntimeConfiguration.py, native.  Stamps params.properties into
-  # mtcTourBased.properties, accessibilities.properties, hwyParam.block, trnParam.block
-  # and the UEC workbooks, and writes taxi_tnc_occ_factors.csv.
   - configure_ctramp:
       run_dir: "{run_dir}"
       params: "{run_dir}/INPUT/params.properties"

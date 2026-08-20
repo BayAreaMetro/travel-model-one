@@ -809,7 +809,7 @@ def run_model(
         "false", "minimal", or "verbose".
     **kwargs
         Passed through to each step's ``run()`` function.
-        Common: ``base_model_dir``, ``force``.
+        Common: ``base_model_dir``.
     """
     config_dir = Path(config_dir).resolve()
     label = f"projects/{config_dir.name}"

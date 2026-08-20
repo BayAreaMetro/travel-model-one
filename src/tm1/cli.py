@@ -5,7 +5,7 @@ Usage::
     tm1 run base_2023_ctramp
     tm1 run base_2023_ctramp --steps setup
     tm1 run base_2023_ctramp --iterations 3
-    tm1 run base_2023_ctramp --force --slack verbose
+    tm1 run base_2023_ctramp --slack verbose
 
 Restart a failed run at the step that died, rather than from the beginning::
 
@@ -110,7 +110,6 @@ def cmd_run(args: argparse.Namespace) -> None:
         steps=args.steps or None,
         slack_level=args.slack,
         base_model_dir=repo_root,
-        force=args.force,
         iterations=args.iterations,
         resume_at=args.resume_at,
         until=args.until,
@@ -182,11 +181,6 @@ def main() -> None:
             "(e.g. 0:publish_networks for the end of the warm start) when the step "
             "runs in more than one"
         ),
-    )
-    run_parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Force rebuild of data files during setup",
     )
     run_parser.add_argument(
         "--slack",

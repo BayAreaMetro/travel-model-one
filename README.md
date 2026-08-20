@@ -37,7 +37,7 @@ full phase plan and current status of each piece.
 |-------------------------------|-----------------------------------------|
 | `RunModel.bat`                | `tm1 run base_2023_ctramp`              |
 | Hand-edited properties files  | `config.yaml` per project               |
-| Paths edited in-place per run | Templated (`{run_dir}`, `{reference_run}`) |
+| Paths edited in-place per run | Templated (`{run_dir}`, `{m_drive}`)      |
 
 ### Scope
 
@@ -53,10 +53,9 @@ cover two phases of `RunModel.bat`:
 | Preprocess | `SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py` |
 | Post-processing | `SkimsDatabase`, `net2csv`, EMFAC, logsums, core summaries, metrics, `ExtractKeyFiles` |
 
-Because preprocess is absent, a project currently seeds `hwy/` from a completed reference
-run rather than building the period networks from `freeflow.net`. Closing both gaps — and
-sourcing from the reference run's pristine `INPUT/` — is phase 4; see
-[`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
+Because preprocess is absent, a project currently stages `hwy/` from a network directory
+on M: rather than building the period networks from `freeflow.net`. Closing that gap is
+phase 4; see [`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
 
 Requires Cube Voyager and a licence, as before.
 
@@ -136,7 +135,7 @@ whatever stale matrices happened to be lying around.
 ### Creating a New Project
 
 1. Copy `projects/base_2023_ctramp/config.yaml` and `cases.yaml` to `projects/<name>/`
-2. Update `reference_run` and `run_dir` for your environment
+2. Update the `copy_inputs` sources and `run_dir` for your environment
 3. Adjust the `steps:` block — iterations, sample rate, threads, model components
 4. Run with `tm1 run <name>`
 
