@@ -13,3 +13,10 @@ CONVERTMAT FROM='data\external\mtc\2023_TM161_IPA_35\nonres\TripsTrkEAx.tpp' TO=
 
 ; CSF2TDM Truck OD matrices
 CONVERTMAT FROM='data\external\caltrans\Year2020\FFM\Trips\TRIPS_FFM_2020.mat' TO='data\interim\cube_io\statewide_od_matrices\TRIPS_FFM_2020.omx' FORMAT=OMX COMPRESSION=4
+
+; MTC Skims
+CONVERTMAT FROM='data\external\mtc\2023_TM161_IPA_35\skims\COM_HWYSKIMAE.tpp' TO='data\interim\cube_io\mtc_skims\COM_HWYSKIMEA.tpp' FORMAT=OMX COMPRESSION=4
+CONVERTMAT FROM='data\external\mtc\2023_TM161_IPA_35\skims\COM_HWYSKIMAM.tpp' TO='data\interim\cube_io\mtc_skims\COM_HWYSKIMAM.tpp' FORMAT=OMX COMPRESSION=4
+CONVERTMAT FROM='data\external\mtc\2023_TM161_IPA_35\skims\COM_HWYSKIMMD.tpp' TO='data\interim\cube_io\mtc_skims\COM_HWYSKIMMD.tpp' FORMAT=OMX COMPRESSION=4
+CONVERTMAT FROM='data\external\mtc\2023_TM161_IPA_35\skims\COM_HWYSKIMPM.tpp' TO='data\interim\cube_io\mtc_skims\COM_HWYSKIMPM.tpp' FORMAT=OMX COMPRESSION=4
+CONVERTMAT FROM='data\external\mtc\2023_TM161_IPA_35\skims\COM_HWYSKIMEV.tpp' TO='data\interim\cube_io\mtc_skims\COM_HWYSKIMEV.tpp' FORMAT=OMX COMPRESSION=4
