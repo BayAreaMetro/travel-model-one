@@ -94,7 +94,7 @@ def main() -> None:
     -------
     All outputs are written to:
 
-        data/processed/trip_distribution_inputs/
+        data/interim/trip_distribution_inputs/
 
     Files produced:
         * mtc_blended_skims.omx
@@ -111,7 +111,7 @@ def main() -> None:
     """
     
     internal_tazs = 1454 
-    output_dir = Path("data/processed/trip_distribution_inputs")
+    output_dir = Path("data/interim/trip_distribution_inputs")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # --------------

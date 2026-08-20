@@ -16,22 +16,22 @@ trip_dist_configs = {
     "Very Small": {
         "distance": "distanceVSM", 
         "trips": "verySmall",
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_vstrucks.csv", 
+        "observed_path": "data/interim/trip_distribution_inputs/observed_frequency_distribution_blended_distance_vstrucks.csv", 
         }, 
     "Small": {
         "distance": "distanceSML", 
         "trips": "small", 
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_strucks.csv",
+        "observed_path": "data/interim/trip_distribution_inputs/observed_frequency_distribution_blended_distance_strucks.csv",
         }, 
     "Medium": {
         "distance": "distanceMED", 
         "trips": "medium", 
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_mtrucks.csv",
+        "observed_path": "data/interim/trip_distribution_inputs/observed_frequency_distribution_blended_distance_mtrucks.csv",
         }, 
     "Large": {
         "distance": "distanceLRG", 
         "trips": "large",
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_ctrucks.csv",
+        "observed_path": "data/interim/trip_distribution_inputs/observed_frequency_distribution_blended_distance_ctrucks.csv",
         }, 
     }
 

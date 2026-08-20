@@ -19,6 +19,12 @@ Runs are independent. A failure in one run is caught, logged at `ERROR` level, a
 
 ### How to Run
 
+> **Prerequisite:** before running the model, build its inputs with the [`src.data.trip_distribution.build_inputs`](../../data/trip_distribution) pipeline. It produces the PA table, blended skims, and observed TLFDs (in `data/interim/trip_distribution_inputs/`) that the `pa_path`, `skim_path`, and `tlfd_path` fields in the config point to:
+>
+> ```bash
+> python -m src.data.trip_distribution.build_inputs
+> ```
+
 Run the model as a module from this directory (`utilities/trucks/trucks_2026_update`):
 
 ```bash
