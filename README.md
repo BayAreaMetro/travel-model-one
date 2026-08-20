@@ -35,9 +35,9 @@ full phase plan and current status of each piece.
 
 | Legacy                        | New                                     |
 |-------------------------------|-----------------------------------------|
-| `RunModel.bat`                | `tm1 run --scenario base_2023_ctramp`   |
-| Hand-edited properties files  | `scenario_config.yaml` per scenario     |
-| Paths edited in-place per run | Templated (`{proj_dir}`, `{reference_run}`) |
+| `RunModel.bat`                | `tm1 run base_2023_ctramp`              |
+| Hand-edited properties files  | `config.yaml` per project               |
+| Paths edited in-place per run | Templated (`{run_dir}`, `{reference_run}`) |
 
 ### Scope
 
@@ -53,7 +53,7 @@ cover two phases of `RunModel.bat`:
 | Preprocess | `SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py` |
 | Post-processing | `SkimsDatabase`, `net2csv`, EMFAC, logsums, core summaries, metrics, `ExtractKeyFiles` |
 
-Because preprocess is absent, a scenario currently seeds `hwy/` from a completed reference
+Because preprocess is absent, a project currently seeds `hwy/` from a completed reference
 run rather than building the period networks from `freeflow.net`. Closing both gaps — and
 sourcing from the reference run's pristine `INPUT/` — is phase 4; see
 [`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
@@ -63,7 +63,7 @@ Requires Cube Voyager and a licence, as before.
 ### Repository Layout
 
 ```
-scenarios/{name}/     # Scenario config + any scenario-specific step code
+projects/{name}/      # config.yaml + cases.yaml + any project-specific step code
 src/tm1/              # Python package: CLI, step orchestrator, model steps
 default-configs/      # Shared model configs — scaffolded, populated in phase 5
 model-files/, core/   # Legacy CT-RAMP/Cube assets, unchanged, still in production
@@ -82,16 +82,16 @@ uv sync
 tm1 --help
 ```
 
-### Running a Scenario
+### Running a Project
 
 ```bash
-tm1 run --scenario base_2023_ctramp
+tm1 run base_2023_ctramp
 
 # a single step
-tm1 run --scenario base_2023_ctramp --steps simulate_ctramp
+tm1 run base_2023_ctramp --steps simulate_ctramp
 
-# a scenario kept outside the repo
-tm1 run --scenario E:/runs/my_scenario
+# a project kept outside the repo
+tm1 run E:/runs/my_project
 ```
 
 ### Restarting a Failed Run
@@ -101,8 +101,8 @@ instead of from the beginning. **The named step runs** — everything before it 
 skipped:
 
 ```bash
-tm1 run --scenario base_2023_ctramp --resume-at assignment
-tm1 run --scenario base_2023_ctramp --resume-at 2:assignment   # iteration 2's
+tm1 run base_2023_ctramp --resume-at assignment
+tm1 run base_2023_ctramp --resume-at 2:assignment   # iteration 2's
 ```
 
 The `N:` prefix is needed only when a step runs more than once — that is, inside
@@ -115,7 +115,7 @@ You rarely type it: a failure prints the exact command.
 --- Step: assignment ---
 ERROR  Cube job HwyAssign.job failed (exit=2, engine ReturnCode=2)
        Full Cube log: E:/Tests/base_2023_ctramp/_cube_HwyAssign_18004_1785277879.log
-       Resume with: tm1 run --scenario base_2023_ctramp --resume-at 2:assignment
+       Resume with: tm1 run base_2023_ctramp --resume-at 2:assignment
 ```
 
 And the resumed run states what it is doing before doing any of it:
@@ -133,16 +133,16 @@ refuses to resume into an empty project directory, since "resume" presupposes a
 previous run; without that check it would skip staging and demand, then assign
 whatever stale matrices happened to be lying around.
 
-### Creating a New Scenario
+### Creating a New Project
 
-1. Copy `scenarios/base_2023_ctramp/scenario_config.yaml` to `scenarios/<name>/`
-2. Update `reference_run` and `proj_dir` for your environment
+1. Copy `projects/base_2023_ctramp/config.yaml` and `cases.yaml` to `projects/<name>/`
+2. Update `reference_run` and `run_dir` for your environment
 3. Adjust the `steps:` block — iterations, sample rate, threads, model components
-4. Run with `tm1 run --scenario <name>`
+4. Run with `tm1 run <name>`
 
 ### Run Logs
 
-Every run writes a timestamped log to `{proj_dir}/logs/`:
+Every run writes a timestamped log to `{run_dir}/logs/`:
 
 ```
 logs/tm1_20260728_161042_18004.log
@@ -155,12 +155,12 @@ full traceback if a step fails. The console stays at INFO; the file records DEBU
 The name carries a timestamp and pid, so concurrent runs and repeat attempts never
 write into each other's log — a failed run's log survives the next attempt.
 
-Optional, in `scenario_config.yaml`:
+Optional, in `config.yaml`:
 
 ```yaml
 logging:
   level: DEBUG            # what reaches the file; console stays at INFO
-  dir: "{proj_dir}/logs"  # override the location
+  dir: "{run_dir}/logs"  # override the location
 ```
 
 This replaces `RunModel.bat`'s `echo ... >> logs\feedback.rpt`, which recorded
@@ -173,7 +173,7 @@ order written. So a step placed *before* `simulate_ctramp` is pre-processing, an
 one placed *after* `assignment` is post-processing. There is no separate "hook"
 concept; position is the whole mechanism.
 
-Point a step at your own code with `script:` (a path, relative to the scenario
+Point a step at your own code with `script:` (a path, relative to the project
 directory) or `module:` (an importable dotted path):
 
 ```yaml
@@ -197,18 +197,18 @@ Naming the function after a colon lets one file hold several steps. Without it,
 A step is any function with this signature:
 
 ```python
-def clean_inputs(scenario_dir, cfg, **kwargs):
+def clean_inputs(config_dir, cfg, **kwargs):
     """Return "skipped" to record a no-op, or None."""
     settings = cfg["steps"]["clean_inputs"]    # your own keys
-    proj_dir = cfg["proj_dir"]                 # {templates} already expanded
+    run_dir = cfg["run_dir"]                 # {templates} already expanded
 ```
 
-- `cfg` is the fully resolved config — `{proj_dir}` and friends already expanded
+- `cfg` is the fully resolved config — `{run_dir}` and friends already expanded
 - `cfg` is shared, so a step may modify it to pass values to later steps
 - Custom steps work with `--steps <name>` like any other
 - Built-in step names cannot be redefined; pick a different name
 
-`scenarios/base_2023_ctramp/hooks.py` is a worked example: `vmt_vht_metrics` reads
+`projects/base_2023_ctramp/hooks.py` is a worked example: `vmt_vht_metrics` reads
 the loaded network the feedback block writes and summarises VMT, VHT and implied
 congested speed by facility type — a reduced form of
 `utilities/RTP/metrics/hwynet.py`. It aggregates rather than copies, which is the

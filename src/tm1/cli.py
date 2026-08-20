@@ -2,23 +2,23 @@
 
 Usage::
 
-    tm1 run --scenario base_2023_ctramp
-    tm1 run --scenario base_2023_ctramp --steps setup
-    tm1 run --scenario base_2023_ctramp --iterations 3
-    tm1 run --scenario base_2023_ctramp --force --slack verbose
+    tm1 run base_2023_ctramp
+    tm1 run base_2023_ctramp --steps setup
+    tm1 run base_2023_ctramp --iterations 3
+    tm1 run base_2023_ctramp --force --slack verbose
 
 Restart a failed run at the step that died, rather than from the beginning::
 
-    tm1 run --scenario base_2023_ctramp --resume-at assignment
-    tm1 run --scenario base_2023_ctramp --resume-at 2:assignment
+    tm1 run base_2023_ctramp --resume-at assignment
+    tm1 run base_2023_ctramp --resume-at 2:assignment
 
-``--scenario`` also takes a path, so a scenario can live outside the repo::
+The project also takes a path, so it can live outside the repo::
 
-    tm1 run --scenario E:/runs/my_scenario
+    tm1 run E:/runs/my_project
 
 Ask where a run got to -- from another shell, during or after it::
 
-    tm1 status --scenario base_2023_ctramp
+    tm1 status base_2023_ctramp
 """
 
 import argparse
@@ -29,13 +29,19 @@ from tm1 import setup_logging
 from tm1.runner import run_model
 from tm1.status import status
 
+#: The directory holding projects, relative to the repo root.
+PROJECTS_DIR = "projects"
+
+#: The file that identifies a project directory.
+CONFIG_NAME = "config.yaml"
+
 
 def _find_repo_root() -> Path:
     """Locate the repo root (the directory holding pyproject.toml).
 
     Walks up from cwd first, then falls back to the installed package's own
     location, so ``tm1 run`` works from outside the repo -- e.g. when pointing
-    ``--scenario`` at a scenario directory kept elsewhere.
+    at a project directory kept elsewhere.
     """
     p = Path.cwd().resolve()
     for parent in [p, *p.parents]:
@@ -49,42 +55,58 @@ def _find_repo_root() -> Path:
     msg = (
         "Could not find the repo root (no pyproject.toml above the working "
         "directory or the installed package). Run from inside the repo, or pass "
-        "--scenario as a full path to a scenario directory."
+        "the project as a full path to a project directory."
     )
     raise FileNotFoundError(msg)
 
 
-def _resolve_scenario_dir(scenario: str, repo_root: Path) -> Path:
-    """Resolve ``--scenario`` as either a path or a name under ``scenarios/``.
+def _resolve_config_dir(project: str, repo_root: Path) -> Path:
+    """Resolve *project* as either a path or a name under ``projects/``.
 
-    A path lets scenarios live outside the repo (private configs, scratch runs)
+    A path lets projects live outside the repo (private configs, scratch runs)
     without needing a bespoke launcher script.
     """
-    as_path = Path(scenario).expanduser()
-    if (as_path / "scenario_config.yaml").is_file():
+    as_path = Path(project).expanduser()
+    if (as_path / CONFIG_NAME).is_file():
         return as_path.resolve()
 
-    named = repo_root / "scenarios" / scenario
-    if (named / "scenario_config.yaml").is_file():
+    named = repo_root / PROJECTS_DIR / project
+    if (named / CONFIG_NAME).is_file():
         return named
 
     available = sorted(
-        d.name for d in (repo_root / "scenarios").glob("*")
-        if (d / "scenario_config.yaml").is_file()
+        d.name for d in (repo_root / PROJECTS_DIR).glob("*")
+        if (d / CONFIG_NAME).is_file()
     )
     msg = (
-        f"No scenario_config.yaml for {scenario!r} (looked in {as_path} and "
+        f"No {CONFIG_NAME} for {project!r} (looked in {as_path} and "
         f"{named}).\nAvailable in this repo: {', '.join(available) or '(none)'}"
     )
     sys.exit(msg)
 
 
+def _project_arg(args: argparse.Namespace) -> str:
+    """The project named positionally, or by the deprecated ``--scenario``."""
+    project = args.project or args.scenario
+    if not project:
+        sys.exit(
+            "No project given. Pass a name under projects/ (e.g. "
+            "`tm1 run base_2023_ctramp`) or a path to a project directory."
+        )
+    if args.scenario:
+        sys.stderr.write(
+            "warning: --scenario is deprecated; pass the project positionally, "
+            f"e.g. `tm1 {args.command} {project}`\n"
+        )
+    return str(project)
+
+
 def cmd_run(args: argparse.Namespace) -> None:
     """Execute the 'run' subcommand."""
     repo_root = _find_repo_root()
-    scenario_dir = _resolve_scenario_dir(args.scenario, repo_root)
+    config_dir = _resolve_config_dir(_project_arg(args), repo_root)
     run_model(
-        scenario_dir=scenario_dir,
+        config_dir=config_dir,
         steps=args.steps or None,
         slack_level=args.slack,
         base_model_dir=repo_root,
@@ -97,10 +119,25 @@ def cmd_run(args: argparse.Namespace) -> None:
 
 def cmd_status(args: argparse.Namespace) -> None:
     """Execute the 'status' subcommand."""
-    scenario_dir = _resolve_scenario_dir(args.scenario, _find_repo_root())
+    config_dir = _resolve_config_dir(_project_arg(args), _find_repo_root())
     # Written to stdout rather than logged: it is a report, not a run event, and
     # it must not land in the run log of a run happening in another shell.
-    sys.stdout.write(status(scenario_dir) + "\n")
+    sys.stdout.write(status(config_dir) + "\n")
+
+
+def _add_project_argument(parser: argparse.ArgumentParser) -> None:
+    """The project selector: positional, with the old flag kept as an alias."""
+    parser.add_argument(
+        "project",
+        nargs="?",
+        help=(
+            f"Project name (folder under {PROJECTS_DIR}/, e.g. base_2023_ctramp) "
+            f"or a path to any directory containing a {CONFIG_NAME}"
+        ),
+    )
+    # Deprecated: the interface this PR is replacing. Kept so instructions
+    # already circulating keep working; delete once nobody is running them.
+    parser.add_argument("--scenario", default=None, help=argparse.SUPPRESS)
 
 
 def main() -> None:
@@ -110,15 +147,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="tm1", description="Travel Model One CLI")
     sub = parser.add_subparsers(dest="command")
 
-    run_parser = sub.add_parser("run", help="Run scenario pipeline (or selected steps)")
-    run_parser.add_argument(
-        "--scenario",
-        required=True,
-        help=(
-            "Scenario name (folder under scenarios/, e.g. base_2023_ctramp) "
-            "or a path to any directory containing a scenario_config.yaml"
-        ),
-    )
+    run_parser = sub.add_parser("run", help="Run project pipeline (or selected steps)")
+    _add_project_argument(run_parser)
     run_parser.add_argument(
         "--steps",
         nargs="+",
@@ -162,18 +192,14 @@ def main() -> None:
         "--slack",
         choices=["off", "minimal", "verbose"],
         default=None,
-        help="Slack notification level (default: from scenario config, or 'minimal')",
+        help="Slack notification level (default: from project config, or 'minimal')",
     )
 
     status_parser = sub.add_parser(
         "status",
         help="Show where the newest run got to, and how to resume it",
     )
-    status_parser.add_argument(
-        "--scenario",
-        required=True,
-        help="Scenario name or path, the same as `tm1 run --scenario`",
-    )
+    _add_project_argument(status_parser)
 
     args = parser.parse_args()
 

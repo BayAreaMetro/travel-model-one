@@ -5,23 +5,25 @@
 # `warmstart:` and `iterate:` are the only nesting, and they are the two blocks that repeat
 # or pin a round.
 #
-# Needs Cube Voyager + licence.  Set reference_run and proj_dir; copy_inputs fetches the
+# Needs Cube Voyager + licence.  Set reference_run and run_dir; copy_inputs fetches the
 # rest, so a run is self-contained and never writes into the reference run.
 
 slack: "off"
 
 logging:
   level: DEBUG                      # what reaches the run log; console stays at INFO
-  # dir: "{proj_dir}/logs"
+  # dir: "{run_dir}/logs"
 
 # ── Machine-specific — set these in .env, not here ──────────────────────────────────────
 # {env:NAME} reads the environment, which tm1 populates from .env at the repo root.
 # Copy .env.example to .env and fill it in; an unset variable is an error naming it.
 # Nothing below this block differs between machines, which is the point.
 reference_run: "{env:TM1_REFERENCE_RUN}"    # inputs are copied FROM here; never written to
-proj_dir: "{env:TM1_PROJ_DIR}"              # where the run happens
+run_dir: "{env:TM1_PROJ_DIR}"              # where this run happens
+# TM1_PROJ_DIR keeps its old name for now: renaming it would break every machine's
+# .env at once.  It becomes TM1_RUNS_ROOT when run directories move under a root.
 
-# ── Scenario identity ───────────────────────────────────────────────────────────────────
+# ── Model identity ──────────────────────────────────────────────────────────────────────
 # Legacy names: the Cube jobs read them as %MODEL_YEAR% / %FUTURE%.  RunModel.bat slices
 # both out of the project folder name ("2023_TM161_IPA_35" -> 2023, IPA -> PBA50); stating
 # them here means results no longer depend on how a directory is spelled.
@@ -31,7 +33,7 @@ proj_dir: "{env:TM1_PROJ_DIR}"              # where the run happens
 #   future      a planning-scenario family, not a year.  IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/
 #               TRR all map to PBA50, the only one implemented.
 #
-# Scenario-level because the pre-process needs them too, before any assignment exists.
+# Project-level because the pre-process needs them too, before any assignment exists.
 model_year: 2023
 future: PBA50
 
@@ -50,16 +52,16 @@ env:
   # MAXITERATIONS: 3                # RunModel.bat 135-147 hard-codes these
   # TRNCONFIG: FAST                 # STANDARD makes transit iterate; not supported yet
 
-ctramp_output_dir: "{proj_dir}/main"
+ctramp_output_dir: "{run_dir}/main"
 
 # ════════════════════════════════════════════════════════════════════════════════════════
 # PIPELINE
 #
 # Four ways to declare a step:
-#   job:      a Cube .job, run through Cube        \  spawned; paths relative to proj_dir
+#   job:      a Cube .job, run through Cube        \  spawned; paths relative to run_dir
 #   command:  any other program, spawned            /
 #   module:   importable dotted path                \  imported and called with the config
-#   script:   a .py in this scenario directory      /
+#   script:   a .py in this project directory       /
 #
 # Two entries nest, and they decide every step's round:
 #   warmstart:  runs its steps once, at iteration 0 — RunModel.bat's `set ITER=0`
@@ -93,60 +95,60 @@ steps:
   # Nothing the model produces is staged -- no skims, accessibility, popsyn or
   # taxi_tnc_occ_factors -- so a failure in the steps that build them cannot hide.
   - copy_inputs:
-      # 1. The pristine inputs.  Staged inside proj_dir because the legacy scripts read
+      # 1. The pristine inputs.  Staged inside run_dir because the legacy scripts read
       #    INPUT/ by relative path: filterUnconnectedHouseholds reads INPUT/popsyn,
       #    updateTelecommute_forEN7 reads INPUT/landuse and INPUT/params.properties.
       input:
         from: "{reference_run}/INPUT"
-        to: "{proj_dir}/INPUT"
+        to: "{run_dir}/INPUT"
 
       # 2. RunModel.bat 172-178, out of INPUT/ into the working directories.
       hwy:
-        from: "{proj_dir}/INPUT/hwy"
-        to: "{proj_dir}/hwy"
+        from: "{run_dir}/INPUT/hwy"
+        to: "{run_dir}/hwy"
       trn:
-        from: "{proj_dir}/INPUT/trn"
-        to: "{proj_dir}/trn"
+        from: "{run_dir}/INPUT/trn"
+        to: "{run_dir}/trn"
       landuse:
-        from: "{proj_dir}/INPUT/landuse"
-        to: "{proj_dir}/landuse"
+        from: "{run_dir}/INPUT/landuse"
+        to: "{run_dir}/landuse"
       nonres:
-        from: "{proj_dir}/INPUT/nonres"
-        to: "{proj_dir}/nonres"
+        from: "{run_dir}/INPUT/nonres"
+        to: "{run_dir}/nonres"
       warmstart_main:                 # the demand the warm start assigns
-        from: "{proj_dir}/INPUT/warmstart/main"
-        to: "{proj_dir}/main"
+        from: "{run_dir}/INPUT/warmstart/main"
+        to: "{run_dir}/main"
       warmstart_nonres:               # merges into nonres/ alongside the entry above
-        from: "{proj_dir}/INPUT/warmstart/nonres"
-        to: "{proj_dir}/nonres"
+        from: "{run_dir}/INPUT/warmstart/nonres"
+        to: "{run_dir}/nonres"
       logsums:
-        from: "{proj_dir}/INPUT/logsums"
-        to: "{proj_dir}/logsums"
+        from: "{run_dir}/INPUT/logsums"
+        to: "{run_dir}/logsums"
 
       # 3. The model itself -- code and UECs, not inputs, and not in INPUT/.  A legacy run
       #    has these because the project directory *is* a copy of the model template.
       ctramp_model:
         from: "{reference_run}/CTRAMP/model"
-        to: "{proj_dir}/CTRAMP/model"
+        to: "{run_dir}/CTRAMP/model"
       ctramp_runtime:
         from: "{reference_run}/CTRAMP/runtime"
-        to: "{proj_dir}/CTRAMP/runtime"
+        to: "{run_dir}/CTRAMP/runtime"
       ctramp_scripts:
         from: "{reference_run}/CTRAMP/scripts"
-        to: "{proj_dir}/CTRAMP/scripts"
+        to: "{run_dir}/CTRAMP/scripts"
 
       # Unused: round 1 clears ShadowPrice.Input.File, so prices start from zero.
       # Kept for a future converged file -- see simulate_ctramp.shadow_price_run_notes.
       # shadow_prices:
       #   from: "{reference_run}/main/ShadowPricing_5.csv"
-      #   to: "{proj_dir}/main/ShadowPricing_5.csv"
+      #   to: "{run_dir}/main/ShadowPricing_5.csv"
 
   # RunModel.bat 190's RuntimeConfiguration.py, native.  Stamps params.properties into
   # mtcTourBased.properties, accessibilities.properties, hwyParam.block, trnParam.block
   # and the UEC workbooks, and writes taxi_tnc_occ_factors.csv.
   - configure_ctramp:
-      proj_dir: "{proj_dir}"
-      params: "{proj_dir}/INPUT/params.properties"
+      run_dir: "{run_dir}"
+      params: "{run_dir}/INPUT/params.properties"
       # num.acc.threads, read by the Java accessibility calculator that RunLogsums.bat
       # runs.  This pipeline does not run it -- Accessibility.job is pure Cube -- so the
       # value is set for faithfulness only, and nothing here consumes it.
@@ -202,7 +204,7 @@ steps:
           skip_if_exists: "hwy/iter0/LOADEA.net"   # its LOAD nets, after the move below
 
       # trnAssign.bat, unrolled.  These run from trn/TransitAssignment.iter0; their cluster
-      # still talks in proj_dir/commpath rather than under it.
+      # still talks in run_dir/commpath rather than under it.
       - stage_transit_lines:
           module: "tm1.steps.staging:stage_transit_lines"
       - prep_hwy_net:
@@ -294,8 +296,7 @@ steps:
         # CT-RAMP.  RunIteration.bat also calls RuntimeConfiguration.py --iter here; it
         # sets only the shadow-price properties, which simulate_ctramp writes itself.
         - simulate_ctramp:
-            project_dir: "{proj_dir}"
-            runtime_dir: "{proj_dir}/CTRAMP/runtime"
+            runtime_dir: "{run_dir}/CTRAMP/runtime"
             host_ip: "localhost"
             threads: 24               # processing.threads per JPPF node, as the .bat sets it
             seed: 0

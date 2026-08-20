@@ -67,7 +67,7 @@ def test_steps_around_the_loop_take_the_first_and_last_rounds() -> None:
 
 
 def test_iterations_override_replaces_the_count() -> None:
-    """`--iterations N` shortens a run without editing the scenario."""
+    """`--iterations N` shortens a run without editing the project config."""
     cfg = {"iterate": {"count": 3, "steps": {"assignment": {}}}}
 
     assert _rounds(_plan(cfg, override=1), "assignment") == [1]
@@ -265,11 +265,11 @@ def test_iterate_must_be_a_block() -> None:
 # --- skip_if_exists: the declared product gate -------------------------------
 
 
-def test_skip_target_resolves_against_proj_dir(tmp_path: Path) -> None:
-    """Relative paths mean proj_dir, where every model artifact lives."""
+def test_skip_target_resolves_against_run_dir(tmp_path: Path) -> None:
+    """Relative paths mean run_dir, where every model artifact lives."""
     (tmp_path / "popsyn").mkdir()
     (tmp_path / "popsyn" / "hhFile.csv").write_text("done")
-    cfg = {"proj_dir": str(tmp_path)}
+    cfg = {"run_dir": str(tmp_path)}
 
     hit = _skip_target({"skip_if_exists": "popsyn/hhFile.csv"}, cfg)
 
@@ -278,14 +278,14 @@ def test_skip_target_resolves_against_proj_dir(tmp_path: Path) -> None:
 
 def test_skip_target_is_none_when_the_product_is_absent(tmp_path: Path) -> None:
     """No file, no skip: the step runs and builds it."""
-    cfg = {"proj_dir": str(tmp_path)}
+    cfg = {"run_dir": str(tmp_path)}
 
     assert _skip_target({"skip_if_exists": "popsyn/hhFile.csv"}, cfg) is None
 
 
 def test_a_step_without_the_key_never_skips(tmp_path: Path) -> None:
     """skip_if_exists is opt-in; an undeclared step always runs."""
-    assert _skip_target({}, {"proj_dir": str(tmp_path)}) is None
+    assert _skip_target({}, {"run_dir": str(tmp_path)}) is None
 
 
 # --- selecting a slice of the plan -----------------------------------------

@@ -32,7 +32,7 @@ def _job(scripts_dir: Path, *parts: str) -> Path:
 
 
 def run_highway_assignment(
-    proj_dir: str | Path,
+    run_dir: str | Path,
     *,
     cluster_nodes: int = _NODES_ASSIGN,
     timeout: float = 14400,
@@ -47,16 +47,16 @@ def run_highway_assignment(
     ``HwyAssign_smoke.job`` for quick mechanics checks).  ``cluster_nodes`` must
     match the intrastep node range in ``HwyIntraStep.block``.
     """
-    proj_dir = Path(proj_dir)
-    scripts = proj_dir / "CTRAMP" / "scripts"
+    run_dir = Path(run_dir)
+    scripts = run_dir / "CTRAMP" / "scripts"
     run_cube_job(
-        _job(scripts, "assign", assign_job), proj_dir,
+        _job(scripts, "assign", assign_job), run_dir,
         cluster_nodes=cluster_nodes, timeout=timeout,
     )
 
 
 def run_highway_feedback(
-    proj_dir: str | Path,
+    run_dir: str | Path,
     iteration: int,
     *,
     prev_iteration: int | None = None,
@@ -81,9 +81,9 @@ def run_highway_feedback(
         MSA weights for this and the previous iteration's volumes (defaults to the
         legacy ramp ``1/iteration`` / ``1 - 1/iteration``).
     """
-    proj_dir = Path(proj_dir)
-    scripts = proj_dir / "CTRAMP" / "scripts"
-    hwy = proj_dir / "hwy"
+    run_dir = Path(run_dir)
+    scripts = run_dir / "CTRAMP" / "scripts"
+    hwy = run_dir / "hwy"
     prev_iteration = max(0, iteration - 1) if prev_iteration is None else prev_iteration
     if wgt is None:
         wgt = 1.0 / iteration
@@ -106,17 +106,17 @@ def run_highway_feedback(
         "PREV_ITER": prev_iteration,
         "WGT": f"{wgt:.4f}",
         "PREV_WGT": f"{prev_wgt:.4f}",
-        "COMMPATH": str(proj_dir / "commpath"),
+        "COMMPATH": str(run_dir / "commpath"),
     }
 
     run_cube_job(_job(scripts, "feedback", "RenameAssignmentVariables.job"),
-                 proj_dir, env_extra=env)
+                 run_dir, env_extra=env)
 
     if iteration > 1:
         run_cube_job(_job(scripts, "feedback", "AverageNetworkVolumes.job"),
-                     proj_dir, env_extra=env)
+                     run_dir, env_extra=env)
         run_cube_job(_job(scripts, "feedback", "CalculateSpeeds.job"),
-                     proj_dir, env_extra=env, cluster_nodes=_NODES_PERIOD)
+                     run_dir, env_extra=env, cluster_nodes=_NODES_PERIOD)
     else:
         # First iteration: the renamed loaded network IS the averaged network.
         for per in PERIODS:
@@ -124,9 +124,9 @@ def run_highway_feedback(
                          iterdir / f"avgLOAD{per}.net")
 
     run_cube_job(_job(scripts, "feedback", "TestNetworkConvergence.job"),
-                 proj_dir, env_extra=env)
+                 run_dir, env_extra=env)
     run_cube_job(_job(scripts, "feedback", "MergeNetworks.job"),
-                 proj_dir, env_extra=env)
+                 run_dir, env_extra=env)
 
     # Publish the averaged networks for the next iteration's skims/assignment.
     for per in PERIODS:
@@ -135,16 +135,16 @@ def run_highway_feedback(
 
 
 def run_highway_skims(
-    proj_dir: str | Path,
+    run_dir: str | Path,
     *,
     cluster_nodes: int = _NODES_PERIOD,
     timeout: float = 3600,
 ) -> None:
     """Build highway skims from the averaged networks (``HwySkims.job``, as-is)."""
-    proj_dir = Path(proj_dir)
-    scripts = proj_dir / "CTRAMP" / "scripts"
+    run_dir = Path(run_dir)
+    scripts = run_dir / "CTRAMP" / "scripts"
     run_cube_job(
-        _job(scripts, "skims", "HwySkims.job"), proj_dir,
+        _job(scripts, "skims", "HwySkims.job"), run_dir,
         cluster_nodes=cluster_nodes, timeout=timeout,
     )
 

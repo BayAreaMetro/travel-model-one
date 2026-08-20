@@ -1,11 +1,11 @@
-"""Tests for scenario config loading -- specifically `{env:NAME}`.
+"""Tests for project config loading -- specifically `{env:NAME}`.
 
-This is what keeps `scenario_config.yaml` machine-independent: every path that
+This is what keeps `config.yaml` machine-independent: every path that
 differs between machines is named in the config and set in `.env`, so moving a
-scenario to another box is an `.env` edit rather than a YAML edit.
+project to another box is an `.env` edit rather than a YAML edit.
 
 The behaviour worth pinning is that an unset variable is an *error*.  Expanding
-it to an empty string would make `proj_dir: ""` mean the current working
+it to an empty string would make `run_dir: ""` mean the current working
 directory, and a fifteen-hour run would happily write itself there.
 """
 
@@ -49,7 +49,7 @@ def test_an_unset_variable_is_an_error_naming_it(monkeypatch) -> None:  # noqa: 
     monkeypatch.delenv("TM1_NOT_SET", raising=False)
 
     with pytest.raises(ValueError, match="TM1_NOT_SET is not set"):
-        expand_env({"proj_dir": "{env:TM1_NOT_SET}"})
+        expand_env({"run_dir": "{env:TM1_NOT_SET}"})
 
 
 def test_the_error_says_where_to_set_it(monkeypatch) -> None:  # noqa: ANN001
@@ -61,28 +61,28 @@ def test_the_error_says_where_to_set_it(monkeypatch) -> None:  # noqa: ANN001
 
 
 def test_env_expands_before_key_interpolation(monkeypatch) -> None:  # noqa: ANN001
-    """`proj_dir` comes from .env, and other keys interpolate `{proj_dir}`.
+    """`run_dir` comes from .env, and other keys interpolate `{run_dir}`.
 
-    So the environment pass has to run first, or `{proj_dir}` resolves to the
+    So the environment pass has to run first, or `{run_dir}` resolves to the
     literal `{env:TM1_PROJ_DIR}` and every derived path is nonsense.
     """
     monkeypatch.setenv("TM1_PROJ_DIR", "E:/Tests/run")
     cfg = {
-        "proj_dir": "{env:TM1_PROJ_DIR}",
-        "ctramp_output_dir": "{proj_dir}/main",
-        "logging": {"dir": "{proj_dir}/logs"},
+        "run_dir": "{env:TM1_PROJ_DIR}",
+        "ctramp_output_dir": "{run_dir}/main",
+        "logging": {"dir": "{run_dir}/logs"},
     }
 
     resolved = resolve_templates(cfg)
 
-    assert resolved["proj_dir"] == "E:/Tests/run"
+    assert resolved["run_dir"] == "E:/Tests/run"
     assert resolved["ctramp_output_dir"] == "E:/Tests/run/main"
     assert resolved["logging"]["dir"] == "E:/Tests/run/logs"
 
 
 def test_a_config_with_no_env_references_is_unchanged() -> None:
     """The mechanism is opt-in; a fully literal config still loads."""
-    cfg = {"proj_dir": "E:/Tests/run", "ctramp_output_dir": "{proj_dir}/main"}
+    cfg = {"run_dir": "E:/Tests/run", "ctramp_output_dir": "{run_dir}/main"}
 
     resolved = resolve_templates(cfg)
 

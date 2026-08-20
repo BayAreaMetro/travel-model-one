@@ -16,7 +16,7 @@ anything else is executed directly.
 
 .. warning:: **Prefer ``script:`` / ``module:`` for code you write yourself.**
 
-    Those import your module and call ``run(scenario_dir, cfg, **kwargs)``, so a
+    Those import your module and call ``run(config_dir, cfg, **kwargs)``, so a
     step gets the resolved config, can pass computed values to later steps, and can
     return the ``"skipped"`` sentinel.  A subprocess gets none of that: it sees only
     argv and the environment, and its only channel back is an exit code.
@@ -32,7 +32,7 @@ input generator.  Running them unmodified, from where they already live, is what
 lets the harness claim parity -- it drives the legacy corpus rather than
 reimplementing it, and phase 4 then replaces them one at a time.
 
-Paths resolve against ``proj_dir``, not the scenario directory, and ``cwd`` is fixed
+Paths resolve against ``run_dir``, not the project directory, and ``cwd`` is fixed
 there rather than configurable.  Every legacy script assumes the directory
 ``RunModel.bat`` gave it; run from anywhere else, its bare relative paths resolve
 against the wrong tree and it fails obscurely -- or worse, quietly reads the wrong
@@ -45,11 +45,11 @@ latter is how a config *extends* a variable rather than replacing it --
 environment would otherwise lose.  Both work in ``args:``, ``env:``, ``cwd:`` and
 ``commpath:``.
 
-``cwd:`` moves a step's working directory, relative to ``proj_dir``.  The transit
+``cwd:`` moves a step's working directory, relative to ``run_dir``.  The transit
 jobs are why it exists: ``trnAssign.bat`` runs them from
 ``trn/TransitAssignment.iter{N}`` and they write relative to it.  ``commpath:``
 goes with it -- Cube's cluster directory defaults to ``<cwd>/commpath``, so a job
-run outside ``proj_dir`` has to say where its nodes should talk.
+run outside ``run_dir`` has to say where its nodes should talk.
 
 A step's round is decided by the block it is written in -- ``warmstart:`` runs at
 iteration 0, ``RunModel.bat``'s ``set ITER=0``, and ``iterate:`` numbers its own
@@ -80,7 +80,7 @@ then write down what is left.
 Legacy artifacts take their parameters from the *environment*, not from arguments:
 ``HwyAssign.job`` reads ``%ITER%``, the feedback jobs read ``%WGT%``,
 ``IxForecasts_horizon.job`` reads ``%MODEL_YEAR%`` and ``%FUTURE%``.
-:func:`model_environment` reproduces what the ``.bat`` set; a scenario adds the rest
+:func:`model_environment` reproduces what the ``.bat`` set; a project adds the rest
 in an ``env:`` block::
 
     env:
@@ -123,7 +123,7 @@ DEFAULT_TIMEOUT = 7200
 #: disk; this is what lands in the run log, where it is actually read.
 _TAIL_LINES = 40
 
-#: Values ``RunModel.bat`` hard-codes for the whole run (lines 135-147).  Scenario
+#: Values ``RunModel.bat`` hard-codes for the whole run (lines 135-147).  Project
 #: defaults, overridable through ``env:``.
 #:
 #: ``COMPLEXMODES_*`` are a single space, not empty -- the ``.bat`` says so
@@ -161,31 +161,31 @@ PER_ITERATION: dict[int, dict[str, str]] = {
         "SAMPLESHARE": "0.50", "SEED": "0"},
 }
 
-#: Scenario config key -> environment variable, for values the harness already
+#: Project config key -> environment variable, for values the harness already
 #: states explicitly instead of slicing out of a directory name.
 _FROM_CONFIG: dict[str, str] = {"model_year": "MODEL_YEAR", "future": "FUTURE"}
 
-#: Scenario-wide environment block.  A step's own ``env:`` layers on top of it,
+#: Project-wide environment block.  A step's own ``env:`` layers on top of it,
 #: so the same key name means the same thing at both scopes.
 ENV_BLOCK = "env"
 
 
 def _resolve_target(
-    target: str, proj_dir: Path, scenario_dir: Path, step_name: str, key: str
+    target: str, run_dir: Path, config_dir: Path, step_name: str, key: str
 ) -> Path:
-    """Locate the program, relative to ``proj_dir`` unless absolute."""
+    """Locate the program, relative to ``run_dir`` unless absolute."""
     path = Path(str(target)).expanduser()
     if not path.is_absolute():
-        path = proj_dir / path
+        path = run_dir / path
     if path.is_file():
         return path
 
-    # Almost always someone reaching for the wrong key: the scenario directory is
+    # Almost always someone reaching for the wrong key: the project directory is
     # where a step's *own* code lives, and own code should be called, not spawned.
-    if (scenario_dir / str(target)).is_file():
+    if (config_dir / str(target)).is_file():
         msg = (
-            f"Step {step_name!r}: {key}: {target!r} was not found under proj_dir "
-            f"({proj_dir}), but it does exist in the scenario directory. Code you "
+            f"Step {step_name!r}: {key}: {target!r} was not found under run_dir "
+            f"({run_dir}), but it does exist in the project directory. Code you "
             f"wrote yourself should use 'script:' instead -- it is imported and "
             f"called with the resolved config, rather than spawned with only argv "
             f"and an environment. {key!r} is for programs the harness cannot call "
@@ -195,7 +195,7 @@ def _resolve_target(
 
     msg = (
         f"Step {step_name!r}: {key} not found: {path}. Paths are relative to "
-        f"proj_dir ({proj_dir}), because that is the directory RunModel.bat ran "
+        f"run_dir ({run_dir}), because that is the directory RunModel.bat ran "
         f"its artifacts from and every one of them assumes it."
     )
     raise FileNotFoundError(msg)
@@ -228,16 +228,16 @@ def model_environment(cfg: dict, iteration: object = None) -> dict[str, str]:
     reads ``%MODEL_YEAR%`` and ``%FUTURE%``, the feedback jobs read ``%WGT%``.  The
     ``.bat`` set these by assignment before each block; this reproduces them.
 
-    Precedence, lowest first: :data:`_BAT_DEFAULTS`, values the scenario already
+    Precedence, lowest first: :data:`_BAT_DEFAULTS`, values the project already
     states explicitly (``model_year``/``future``), the :data:`PER_ITERATION` row,
-    then the scenario's ``env:`` block.
+    then the project's ``env:`` block.
 
     ``env:`` winning last makes it a real escape hatch -- and a way to depart
     from ``RunModel.bat`` silently.  Overriding a per-iteration value is a
     deliberate break with parity, not a configuration tweak.
     """
     env = dict(_BAT_DEFAULTS)
-    env["MODEL_DIR"] = str(Path(cfg["proj_dir"]))
+    env["MODEL_DIR"] = str(Path(cfg["run_dir"]))
 
     for key, name in _FROM_CONFIG.items():
         if cfg.get(key) is not None:
@@ -267,7 +267,7 @@ def model_environment(cfg: dict, iteration: object = None) -> dict[str, str]:
         msg = (
             f"Legacy steps need EN7 in the environment: RunModel.bat refuses to "
             f"start without it (lines 115-128), and updateTelecommute_forEN7.py "
-            f"reads it directly. Set it under {ENV_BLOCK}: in the scenario config "
+            f"reads it directly. Set it under {ENV_BLOCK}: in the project config "
             f"-- 'ENABLED' or 'DISABLED'. It is deliberately not defaulted, because "
             f"guessing it silently changes what the model does."
         )
@@ -284,9 +284,9 @@ def _step_env(cfg: dict, step_cfg: dict, values: dict[str, object]) -> dict[str,
     return env
 
 
-def _write_output(proj_dir: Path, step_name: str, text: str) -> Path:
+def _write_output(run_dir: Path, step_name: str, text: str) -> Path:
     """Persist a program's captured output, mirroring how Cube jobs keep theirs."""
-    logs = proj_dir / "logs"
+    logs = run_dir / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     path = logs / f"{step_name}.log"
     path.write_text(text, encoding="utf-8", errors="replace")
@@ -306,8 +306,8 @@ def _argv(program: Path, args: list[str]) -> list[str]:
     return [str(program), *args]
 
 
-def _working_dir(step_cfg: dict, proj_dir: Path, values: dict) -> Path:
-    """Where the program runs.  ``proj_dir`` unless the step says otherwise.
+def _working_dir(step_cfg: dict, run_dir: Path, values: dict) -> Path:
+    """Where the program runs.  ``run_dir`` unless the step says otherwise.
 
     The transit jobs are the reason this is configurable at all: ``trnAssign.bat``
     runs them from ``trn/TransitAssignment.iter{N}``, and they write their outputs
@@ -315,25 +315,25 @@ def _working_dir(step_cfg: dict, proj_dir: Path, values: dict) -> Path:
     """
     declared = step_cfg.get("cwd")
     if not declared:
-        return proj_dir
+        return run_dir
     path = Path(_substitute(declared, values)).expanduser()
-    return path if path.is_absolute() else proj_dir / path
+    return path if path.is_absolute() else run_dir / path
 
 
 def _run_job(
-    step_name: str, step_cfg: dict, proj_dir: Path, scenario_dir: Path,
+    step_name: str, step_cfg: dict, run_dir: Path, config_dir: Path,
     env: dict[str, str], values: dict,
 ) -> None:
     """Run one Cube ``.job`` through the existing Cube runner."""
     job = _resolve_target(
-        step_cfg[JOB_KEY], proj_dir, scenario_dir, step_name, JOB_KEY
+        step_cfg[JOB_KEY], run_dir, config_dir, step_name, JOB_KEY
     )
     cluster_nodes = step_cfg.get("cluster_nodes")
-    cwd = _working_dir(step_cfg, proj_dir, values)
+    cwd = _working_dir(step_cfg, run_dir, values)
     cwd.mkdir(parents=True, exist_ok=True)
 
     # Cube's cluster communication directory defaults to <cwd>/commpath.  A job run
-    # outside proj_dir needs it stated, or its nodes talk in the wrong place.
+    # outside run_dir needs it stated, or its nodes talk in the wrong place.
     commpath = step_cfg.get("commpath")
 
     log.info("%s: %s", step_name, job.name)
@@ -341,24 +341,24 @@ def _run_job(
         job, cwd,
         env_extra=dict(env),
         cluster_nodes=int(cluster_nodes) if cluster_nodes else None,
-        commpath=proj_dir / _substitute(commpath, values) if commpath else None,
+        commpath=run_dir / _substitute(commpath, values) if commpath else None,
         timeout=float(step_cfg.get("timeout", DEFAULT_TIMEOUT)),
     )
 
 
 def _run_command(
-    step_name: str, step_cfg: dict, proj_dir: Path, scenario_dir: Path,
+    step_name: str, step_cfg: dict, run_dir: Path, config_dir: Path,
     env: dict[str, str], values: dict,
 ) -> None:
     """Spawn one program, with the argv, cwd and environment ``RunModel.bat`` gave it."""
     program = _resolve_target(
-        step_cfg[COMMAND_KEY], proj_dir, scenario_dir, step_name, COMMAND_KEY
+        step_cfg[COMMAND_KEY], run_dir, config_dir, step_name, COMMAND_KEY
     )
     args = [_substitute(a, values) for a in (step_cfg.get("args") or [])]
     # Inherited, not replaced: legacy scripts need PATH, SystemRoot and the rest of
     # a working Windows environment as much as they need ITER.
     full_env = {**os.environ, **env}
-    cwd = _working_dir(step_cfg, proj_dir, values)
+    cwd = _working_dir(step_cfg, run_dir, values)
     cwd.mkdir(parents=True, exist_ok=True)
 
     argv = _argv(program, args)
@@ -369,7 +369,7 @@ def _run_command(
         timeout=float(step_cfg.get("timeout", DEFAULT_TIMEOUT)), check=False,
     )
     output = (result.stdout or "") + (result.stderr or "")
-    logfile = _write_output(proj_dir, step_name, output)
+    logfile = _write_output(run_dir, step_name, output)
 
     # RunModel.bat guards every legacy script with `if ERRORLEVEL 1 goto done`, so
     # any non-zero status is fatal -- unlike runtpp, which it checks against 2.
@@ -386,7 +386,7 @@ def _run_command(
 
 
 def _verify_outputs(
-    step_name: str, step_cfg: dict, proj_dir: Path, values: dict
+    step_name: str, step_cfg: dict, run_dir: Path, values: dict
 ) -> None:
     """Check the artifacts a step declared under ``verify:``.
 
@@ -413,7 +413,7 @@ def _verify_outputs(
     missing = []
     for entry in expected:
         path = Path(entry).expanduser()
-        path = path if path.is_absolute() else proj_dir / path
+        path = path if path.is_absolute() else run_dir / path
         if not path.is_file() or path.stat().st_size == 0:
             missing.append(path)
 
@@ -422,7 +422,7 @@ def _verify_outputs(
         msg = (
             f"Step {step_name!r} returned cleanly but did not produce what it "
             f"declares under {VERIFY_KEY}:\n  {names}\n"
-            f"The step's own log is in {proj_dir / 'logs'}; the fault is here, not "
+            f"The step's own log is in {run_dir / 'logs'}; the fault is here, not "
             f"in whatever reads these next."
         )
         raise FileNotFoundError(msg)
@@ -432,7 +432,7 @@ def _verify_outputs(
 
 
 def make_step(step_name: str, step_cfg: dict) -> Callable[..., str | None]:
-    """Build the ``run(scenario_dir, cfg, **kwargs)`` callable for an external step.
+    """Build the ``run(config_dir, cfg, **kwargs)`` callable for an external step.
 
     Resolution happens at call time, not here, so a missing program is reported when
     the step actually runs rather than when the plan is assembled -- steps routinely
@@ -447,8 +447,8 @@ def make_step(step_name: str, step_cfg: dict) -> Callable[..., str | None]:
         raise ValueError(msg)
     key = declared[0]
 
-    def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:
-        proj_dir = Path(cfg["proj_dir"])
+    def run(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:
+        run_dir = Path(cfg["run_dir"])
         # The runner supplies the round, from the block this step is written in.
         # The step_cfg lookup is for direct calls -- a config that states its own
         # `iteration:` is refused by the runner before it gets here.
@@ -456,12 +456,12 @@ def make_step(step_name: str, step_cfg: dict) -> Callable[..., str | None]:
         values = {"iteration": iteration}
         env = _step_env(cfg, step_cfg, values)
         if key == JOB_KEY:
-            _run_job(step_name, step_cfg, proj_dir, Path(scenario_dir), env, values)
+            _run_job(step_name, step_cfg, run_dir, Path(config_dir), env, values)
         else:
             _run_command(
-                step_name, step_cfg, proj_dir, Path(scenario_dir), env, values
+                step_name, step_cfg, run_dir, Path(config_dir), env, values
             )
-        _verify_outputs(step_name, step_cfg, proj_dir, values)
+        _verify_outputs(step_name, step_cfg, run_dir, values)
         return None
 
     run.__name__ = step_name

@@ -47,13 +47,13 @@ def _iteration(cfg: dict, kwargs: dict) -> int:
 
 def _iter_dir(cfg: dict, kwargs: dict) -> tuple[Path, Path]:
     """``(hwy/, hwy/iter{N}/)`` for this round, creating the latter."""
-    hwy = Path(cfg["proj_dir"]) / "hwy"
+    hwy = Path(cfg["run_dir"]) / "hwy"
     iter_dir = hwy / f"iter{_iteration(cfg, kwargs)}"
     iter_dir.mkdir(parents=True, exist_ok=True)
     return hwy, iter_dir
 
 
-def make_directories(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+def make_directories(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Create the working directories, ``RunModel.bat`` 156-165.
 
     Native steps create what they write, so this looks redundant -- but a Cube job
@@ -73,25 +73,25 @@ def make_directories(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | N
         )
         raise ValueError(msg)
 
-    proj_dir = Path(cfg["proj_dir"])
-    made = [n for n in names if not (proj_dir / str(n)).is_dir()]
+    run_dir = Path(cfg["run_dir"])
+    made = [n for n in names if not (run_dir / str(n)).is_dir()]
     for name in names:
-        (proj_dir / str(name)).mkdir(parents=True, exist_ok=True)
+        (run_dir / str(name)).mkdir(parents=True, exist_ok=True)
 
-    log.info("Directories ready in %s (%d created)", proj_dir, len(made))
+    log.info("Directories ready in %s (%d created)", run_dir, len(made))
     return None
 
 
-def stage_transit_lines(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+def stage_transit_lines(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Seed this round's transit assignment directory with its line files.
 
     ``trnAssign.bat`` 43-63.  Every global iteration starts from the period files
     built at model setup -- faithful for the ``FAST`` configuration, where transit
     does a single pass and never carries lines forward from its own previous round.
     """
-    proj_dir = Path(cfg["proj_dir"])
+    run_dir = Path(cfg["run_dir"])
     iteration = _iteration(cfg, kwargs)
-    trn = proj_dir / "trn"
+    trn = run_dir / "trn"
     ta_dir = trn / f"TransitAssignment.iter{iteration}"
     ta_dir.mkdir(parents=True, exist_ok=True)
 
@@ -112,7 +112,7 @@ def stage_transit_lines(scenario_dir: Path, cfg: dict, **kwargs: object) -> str 
     return None
 
 
-def copy_transit_skims(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+def copy_transit_skims(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Lift this round's transit skims out of the iteration directory, into ``skims/``.
 
     ``trnAssign.bat:231-235``.  ``TransitSkims.job`` writes
@@ -132,10 +132,10 @@ def copy_transit_skims(scenario_dir: Path, cfg: dict, **kwargs: object) -> str |
     The ``.bat`` copies ``%LASTITER_{period}%``, the last sub-iteration reached,
     so this takes the highest one present per skim rather than assuming a number.
     """
-    proj_dir = Path(cfg["proj_dir"])
+    run_dir = Path(cfg["run_dir"])
     iteration = _iteration(cfg, kwargs)
-    ta_dir = proj_dir / "trn" / f"TransitAssignment.iter{iteration}"
-    skims = proj_dir / "skims"
+    ta_dir = run_dir / "trn" / f"TransitAssignment.iter{iteration}"
+    skims = run_dir / "skims"
     skims.mkdir(parents=True, exist_ok=True)
 
     # base name -> (sub-iteration, file), keeping the highest sub-iteration.
@@ -168,7 +168,7 @@ def copy_transit_skims(scenario_dir: Path, cfg: dict, **kwargs: object) -> str |
     return None
 
 
-def stage_loaded_networks(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+def stage_loaded_networks(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Move this round's assignment output into its iteration directory.
 
     ``RunIteration.bat`` 159-164.  ``HwyAssign`` writes ``hwy/LOAD{P}.net``; the
@@ -190,7 +190,7 @@ def stage_loaded_networks(scenario_dir: Path, cfg: dict, **kwargs: object) -> st
     return None
 
 
-def seed_average_networks(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+def seed_average_networks(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Start the running average from this round's assignment.
 
     ``RunIteration.bat`` 177-181, the ``ELSE`` branch of ``IF %ITER% GTR 1``.  The
@@ -217,7 +217,7 @@ def seed_average_networks(scenario_dir: Path, cfg: dict, **kwargs: object) -> st
     return None
 
 
-def publish_networks(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+def publish_networks(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Publish this round's averaged networks, and drop the intermediates.
 
     ``RunIteration.bat`` 193-200.  ``hwy/avgLOAD{P}.net`` is what the *next* round

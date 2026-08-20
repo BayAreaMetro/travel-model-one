@@ -67,18 +67,18 @@ _NONRES_CLUSTERED: frozenset[str] = frozenset({
 })
 
 
-def run_skims(proj_dir: str | Path, *, accessibility: bool = True) -> None:
+def run_skims(run_dir: str | Path, *, accessibility: bool = True) -> None:
     """``RunIteration.bat`` step 1 -- highway skims, then accessibility."""
-    proj_dir = Path(proj_dir)
-    scripts = proj_dir / "CTRAMP" / "scripts"
-    run_highway_skims(proj_dir)
+    run_dir = Path(run_dir)
+    scripts = run_dir / "CTRAMP" / "scripts"
+    run_highway_skims(run_dir)
     if accessibility:
-        run_cube_job(_job(scripts, "skims", "Accessibility.job"), proj_dir,
+        run_cube_job(_job(scripts, "skims", "Accessibility.job"), run_dir,
                      cluster_nodes=_NODES_PERIOD)
 
 
 def run_nonres(
-    proj_dir: str | Path,
+    run_dir: str | Path,
     *,
     model_year: int,
     future: str,
@@ -92,12 +92,12 @@ def run_nonres(
     passed explicitly here instead, so a run does not depend on how its output
     directory happens to be named.
     """
-    proj_dir = Path(proj_dir)
-    scripts = proj_dir / "CTRAMP" / "scripts"
+    run_dir = Path(run_dir)
+    scripts = run_dir / "CTRAMP" / "scripts"
     env = {"MODEL_YEAR": model_year, "FUTURE": future}
     for name in jobs:
         run_cube_job(
-            _job(scripts, "nonres", name), proj_dir, env_extra=env,
+            _job(scripts, "nonres", name), run_dir, env_extra=env,
             cluster_nodes=_NODES_PERIOD if name in _NONRES_CLUSTERED else None,
         )
 
@@ -125,7 +125,7 @@ def _verify_demand(demand: str) -> None:
 
 
 def run_prep_assign(
-    proj_dir: str | Path, iteration: int, sampleshare: float, demand: str,
+    run_dir: str | Path, iteration: int, sampleshare: float, demand: str,
 ) -> None:
     """Fold the CT-RAMP trip lists into ``main/trips{PERIOD}.tpp``.
 
@@ -143,10 +143,10 @@ def run_prep_assign(
     period-looped jobs.  Without one Cube silently falls back to running all five
     periods serially in the master -- correct output, ~5x the wall time.
     """
-    proj_dir = Path(proj_dir)
-    scripts = proj_dir / "CTRAMP" / "scripts"
+    run_dir = Path(run_dir)
+    scripts = run_dir / "CTRAMP" / "scripts"
     run_cube_job(
-        _job(scripts, "assign", "PrepAssign.job"), proj_dir,
+        _job(scripts, "assign", "PrepAssign.job"), run_dir,
         env_extra={"ITER": iteration, "SAMPLESHARE": sampleshare},
         cluster_nodes=_NODES_PERIOD,
     )
@@ -154,7 +154,7 @@ def run_prep_assign(
 
 
 def run_iteration(  # noqa: PLR0913
-    proj_dir: str | Path,
+    run_dir: str | Path,
     iteration: int,
     *,
     model_year: int,
@@ -206,19 +206,19 @@ def run_iteration(  # noqa: PLR0913
     establishes the *sequencing* works; it does not establish numerical parity --
     the resulting skims have not been compared against the reference run.
     """
-    proj_dir = Path(proj_dir)
+    run_dir = Path(run_dir)
     log.info("=== CT-RAMP assignment iteration %d ===", iteration)
 
     if do_nonres:
-        run_nonres(proj_dir, model_year=model_year, future=future)
+        run_nonres(run_dir, model_year=model_year, future=future)
 
-    run_prep_assign(proj_dir, iteration, sampleshare, demand)
-    run_highway_assignment(proj_dir, cluster_nodes=cluster_nodes)
+    run_prep_assign(run_dir, iteration, sampleshare, demand)
+    run_highway_assignment(run_dir, cluster_nodes=cluster_nodes)
 
     if do_transit:
-        run_transit(proj_dir, iteration, cluster_nodes=transit_nodes)
+        run_transit(run_dir, iteration, cluster_nodes=transit_nodes)
 
-    run_highway_feedback(proj_dir, iteration)
+    run_highway_feedback(run_dir, iteration)
 
     if build_skims:
-        run_skims(proj_dir)
+        run_skims(run_dir)

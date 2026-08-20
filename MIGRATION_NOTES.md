@@ -14,14 +14,14 @@ production until its own phase lands and passes its own gate.
 
 | # | Phase | Scope | ~files | Status |
 |---|---|---|---|---|
-| 1 | Runtime harness | `tm1` CLI, runner, scenario config chain; flat steps + scenario-supplied steps; `copy_inputs` / `simulate_ctramp` / `assignment`; `base_2023_ctramp`; target-layout scaffold | ~40 | **in progress** |
+| 1 | Runtime harness | `tm1` CLI, runner, project config chain; flat steps + project-supplied steps; `copy_inputs` / `simulate_ctramp` / `assignment`; `base_2023_ctramp`; target-layout scaffold | ~40 | **in progress** |
 | 2 | Cube matrix I/O | `cubeio` — pure-Python TPP ↔ OMX, no Cube install; bit-exact golden tests | ~30 | ready |
 | 3 | Calibration reporting | HTML calibration/validation report system (needs #2 to read `.tpp` skims) | ~37 | ready |
 | 4 | Model parity | the rest of `RunModel.bat`, ported for *equivalent results* rather than in kind (see [Port the intent, not the mechanism](#port-the-intent-not-the-mechanism)): preprocess (`SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py`), inputs from the reference run's pristine `INPUT/`, then post-processing (EMFAC, logsums, core summaries, metrics) — dropping the steps that exist only to move data between Cube, R and batch | — | not started |
-| 5 | ActivitySim swap-in | config corpus + scenarios + ActivitySim/PopulationSim steps + Cube harness and the ActivitySim↔Cube demand bridge | ~200 | pending full PBA50 review |
+| 5 | ActivitySim swap-in | config corpus + projects + ActivitySim/PopulationSim steps + Cube harness and the ActivitySim↔Cube demand bridge | ~200 | pending full PBA50 review |
 | 6 | Assignment backend | AequilibraE engine, params, parity validation | ~25 | prototype — needs buy-in |
 | 7 | Housekeeping | legacy triage of `core/`, `model-files/`, `utilities/` (see [Diffs from legacy → target](#diffs-from-legacy--target)) | — | not started |
-| 8 | Documentation | published docs for the Python stack -- CLI, scenario config, step contract, migration status; replaces the wiki pages that describe the `.bat` workflow | — | not started |
+| 8 | Documentation | published docs for the Python stack -- CLI, project config, step contract, migration status; replaces the wiki pages that describe the `.bat` workflow | — | not started |
 | 9 | Beyond | network enhancements, etc. | — | not scoped |
 
 ### One variable at a time
@@ -103,7 +103,7 @@ So phase 4 targets *parity of results*, not of file layout. Where a step exists 
 between tools, the port should reproduce the result rather than the step — and say so, with
 the before and after, so reviewers can check the reasoning rather than the diff.
 
-`scenarios/base_2023_ctramp/hooks.py` is the small worked example of the target shape: it
+`projects/base_2023_ctramp/hooks.py` is the small worked example of the target shape: it
 reads an output the pipeline already writes and aggregates it to a few rows, rather than
 copying anything.
 
@@ -124,7 +124,7 @@ travel-model-one/
 ```text
 travel-model-one/
 |-- default-configs/   base configs, specs, lookup tables, default assets (activity/ assignment/ population/)
-|-- scenarios/     scenario overrides only (base_2023_activitysim, base_2023_ctramp, ...)
+|-- projects/      config.yaml + cases.yaml per project (base_2023_activitysim, base_2023_ctramp, ...)
 |-- scripts/       run/prep/export entrypoints + migration_validation/{activitysim,assignment}
 `-- src/           shared Python: cubeio/, tm1/ (steps, assignment/{cube,aeq})
 ```
@@ -136,11 +136,11 @@ travel-model-one/
 - `model-files/runtime/` → split between `default-configs/` and `scripts/`.
 - `model-files/scripts/` → move into `scripts/` or `src/`.
 - `utilities/` → cherry-pick only maintained pieces into `scripts/` or `src/`.
-- `utilities/RTP/config_RTP2025/` → `scenarios/RTP2025/`.
+- `utilities/RTP/config_RTP2025/` → `projects/RTP2025/`.
 
 ### Working principle
 
-Separate (1) base model assets, (2) scenario deltas, (3) operational scripts, (4) shared code.
+Separate (1) base model assets, (2) project/case deltas, (3) operational scripts, (4) shared code.
 That keeps the repo reasonable to reason about and makes eventual deletions obvious.
 
 ### What dies (eventually)
@@ -149,38 +149,29 @@ That keeps the repo reasonable to reason about and makes eventual deletions obvi
 - JPPF/Java startup, `PrepAssign.job`, `core/` Java code
 - All `.job` files (Cube skims, assignment, nonres, preprocessing) — once `backend=aeq` fully
   replaces the Cube launcher
-- Anything not in `default-configs/`, `scenarios/`, `scripts/`, or `src/`
+- Anything not in `default-configs/`, `projects/`, `scripts/`, or `src/`
 
 ---
 
 ## CLI
 
 Installed via `pyproject.toml` → `tm1` command. This is the only entry point; there is
-no launcher script to keep in sync. `--scenario` takes a name under `scenarios/` or a
-path, so a scenario can live outside the repo.
+no launcher script to keep in sync. The project argument takes a name under `projects/`
+or a path, so a project can live outside the repo.
 
 ```
-tm1 run --scenario base_2023_ctramp                        # the whole pipeline
-tm1 run --scenario base_2023_ctramp --steps assignment     # one step
-tm1 run --scenario base_2023_ctramp --iterations 3         # override iterate.count
-tm1 run --scenario E:/runs/one_off                         # a scenario outside the repo
-tm1 run --scenario base_2023_ctramp --force --slack verbose
+tm1 run base_2023_ctramp                        # the whole pipeline
+tm1 run base_2023_ctramp --steps assignment     # one step
+tm1 run base_2023_ctramp --iterations 3         # override iterate.count
+tm1 run E:/runs/one_off                         # a project outside the repo
+tm1 run base_2023_ctramp --force --slack verbose
 ```
 
 Flags: `--steps`, `--iterations`, `--force`, `--slack {off,minimal,verbose}`.
 
-**Not implemented** — a batch runner over several scenarios, sketched here as intent
-rather than documentation:
-
-```yaml
-# scenarios/scenario_batches.yaml
-scenarios:
-  - scenarios/base_2023_activitysim
-  - scenarios/foo_2025
-  - scenarios/bar_2050
-common_overrides:
-  iterations: 3
-```
+**Not implemented** — running many cases of one project, across machines. `cases.yaml`
+will declare them (explicit, ladder, or matrix); each machine runs the same
+`tm1 run <project>`, and a per-case lock file in a shared index decides who takes what.
 
 ---
 
@@ -199,10 +190,10 @@ scripts `RunIteration.bat` calls, in the same order.
 Also lays down the target directory structure as empty, README-only placeholders, so the
 layout can be argued over while it is still free to change.
 
-Scenario-specific pre/post-processing scripts (currently scattered across `utilities/` and
+Project-specific pre/post-processing scripts (currently scattered across `utilities/` and
 `model-files/scripts/`) now have a home: any step can point at Python via `script:` or
 `module:`, and where it sits under `steps:` decides whether it runs before or after the
-model. `scenarios/base_2023_ctramp/hooks.py` ports the runnable subset of
+model. `projects/base_2023_ctramp/hooks.py` ports the runnable subset of
 `utilities/RTP/ExtractKeyFiles.bat` as a worked example. Which of the remaining legacy
 scripts are worth carrying forward is phase 7's triage.
 
@@ -262,7 +253,7 @@ pages describe the `.bat` workflow: edit a properties file, name the project fol
 `RunModel.bat` can slice a year out of it, run the batch chain.  None of that is how the
 Python stack works, and the README cannot carry the whole story.
 
-What needs writing: the CLI, the scenario config format (steps, `iterate`, custom steps
+What needs writing: the CLI, the project config format (steps, `iterate`, custom steps
 via `script:`/`module:`), the step contract for people adding their own, how to read a run
 log, and where the migration has got to.  Plus a decision on where it lives -- a generated
 site (mkdocs, published from this repo so it versions with the code) or the existing wiki,
@@ -281,7 +272,7 @@ Network enhancements and whatever else follows once the core migration is done. 
 
 ## Pipeline configuration conventions
 
-The scenario YAML is the interface most people will touch, and phase 1 fixes its shape.
+The project YAML is the interface most people will touch, and phase 1 fixes its shape.
 Stated here so later phases extend it rather than inventing alternatives.
 
 ### Steps are a flat, ordered mapping
@@ -314,11 +305,11 @@ summarise a finished run.
 This is not a return to the `setup.copy_inputs` grouping: that was an arbitrary category,
 whereas a loop body is a real construct with real semantics.
 
-### Scenario-supplied steps
+### Project-supplied steps
 
 ```yaml
   vmt_vht_metrics:
-    script: "hooks.py:vmt_vht_metrics"     # path, relative to the scenario directory
+    script: "hooks.py:vmt_vht_metrics"     # path, relative to the project directory
   trip_length_report:
     module: "mtc_local.reports:trip_lengths"   # importable dotted path
 ```
@@ -334,7 +325,7 @@ A step declares the artifact it consumes, never the step that produced it:
 
 ```yaml
   assignment:
-    demand: "{proj_dir}/main/trips{PERIOD}.tpp"
+    demand: "{run_dir}/main/trips{PERIOD}.tpp"
 ```
 
 `PrepAssign.job` writes that file today, but nothing in the assignment step knows so.
@@ -345,7 +336,7 @@ engine with an unrelated error.
 
 `{PERIOD}` expands to `EA`/`AM`/`MD`/`PM`/`EV`. `resolve_templates` substitutes with
 `str.replace`, so placeholders it has no value for pass through untouched — which is why
-`{proj_dir}` resolves at config load while `{PERIOD}` survives to the backend.
+`{run_dir}` resolves at config load while `{PERIOD}` survives to the backend.
 
 ### `backend:` value, or a separate step name?
 
@@ -374,11 +365,11 @@ reimplementation of CT-RAMP's design, so on similarity grounds demand could be g
 Nor is it permanence: an engine that wins a bake-off eventually deletes its rivals, exactly
 as CT-RAMP is being deleted. What holds is *where the choice is made*:
 
-- **Assignment is chosen within a scenario.** Same demand, same network, same inputs,
+- **Assignment is chosen within a project.** Same demand, same network, same inputs,
   different solver — which is precisely the comparison that decides which engine to adopt.
   One step name means the two runs being compared differ only in the solver, and not in the
   shape of the pipeline or its `--resume-at` points.
-- **Demand is chosen between scenarios.** There is no useful run in which the demand engine
+- **Demand is chosen between projects.** There is no useful run in which the demand engine
   changes and everything else holds; `base_2023_ctramp` and `base_2023_activitysim` are
   separate directories for that reason.
 
@@ -390,7 +381,7 @@ choice defers rather than forecloses.
 Later phases can add freely: **new keys** in any step config, **new top-level blocks**,
 **new built-in step names**, **new `backend:` entries**.
 
-Avoid, because scenarios would have to be rewritten: renaming `assignment` to
+Avoid, because projects would have to be rewritten: renaming `assignment` to
 per-engine steps, changing `iterate`'s shape, or moving a step's config somewhere other
 than under its own name — for instance nesting assignment under a demand step, which the
 ActivitySim path did before phase 1 unified the two.

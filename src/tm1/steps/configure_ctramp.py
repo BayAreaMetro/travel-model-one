@@ -4,7 +4,7 @@ Native replacement for the *pre-run* path of
 ``model-files/scripts/preprocess/RuntimeConfiguration.py`` (the invocation with
 neither ``--iter`` nor ``--logsums``, ``RunModel.bat`` line 190).  The legacy
 script ships templates full of ``xx.xx`` / ``set_by_RuntimeConfiguration.py``
-placeholders and stamps the scenario's real values over them; nothing
+placeholders and stamps the project's real values over them; nothing
 downstream works until it has run.
 
 Six pieces are ported, matching the legacy call order:
@@ -49,12 +49,12 @@ itself already patched.)
 Config::
 
     configure_ctramp:
-      proj_dir: "{proj_dir}"
-      params: "{proj_dir}/INPUT/params.properties"
+      run_dir: "{run_dir}"
+      params: "{run_dir}/INPUT/params.properties"
       acc_threads: 48
       intrastep_processes: 48
 
-``model_year`` comes from the scenario unless a step key overrides it; both
+``model_year`` comes from the project unless a step key overrides it; both
 machine-size keys are optional and skipped when absent.
 
 .. warning:: CT-RAMP-ERA STEP -- DELETE WHOLE, DO NOT PORT.
@@ -176,7 +176,7 @@ _OCC_ROWS: tuple[tuple[int, tuple[str, str, str]], ...] = (
 #: tolls.csv stores cordon tolls in dollars, tazData.csv in cents.
 _CENTS_PER_DOLLAR = 100.0
 
-_REQUIRED_KEYS = ("proj_dir", "params", "model_year")
+_REQUIRED_KEYS = ("run_dir", "params", "model_year")
 
 
 class ConfigurationError(RuntimeError):
@@ -343,7 +343,7 @@ def config_freeparking(model_dir: Path, contents: str) -> None:
     )
 
 
-def config_machine_size(proj_dir: Path, step_cfg: dict) -> None:
+def config_machine_size(run_dir: Path, step_cfg: dict) -> None:
     """How much of this machine the model may use.
 
     The legacy ``config_distribution`` chose these by ``socket.gethostname()`` from a
@@ -367,14 +367,14 @@ def config_machine_size(proj_dir: Path, step_cfg: dict) -> None:
     acc_threads = step_cfg.get("acc_threads")
     if acc_threads is not None:
         patch_keys(
-            proj_dir / "CTRAMP" / "runtime" / "accessibilities.properties",
+            run_dir / "CTRAMP" / "runtime" / "accessibilities.properties",
             {"num.acc.threads": f"{int(acc_threads):d}"},
         )
 
     processes = step_cfg.get("intrastep_processes")
     if processes is None:
         return
-    block = proj_dir / "CTRAMP" / "scripts" / "block"
+    block = run_dir / "CTRAMP" / "scripts" / "block"
     source = block / f"HwyIntraStep_{int(processes)}.block"
     if not source.is_file():
         available = sorted(p.stem.split("_")[-1] for p in block.glob("HwyIntraStep_*.block"))
@@ -390,7 +390,7 @@ def config_machine_size(proj_dir: Path, step_cfg: dict) -> None:
 
 
 def run(
-    scenario_dir: Path,  # noqa: ARG001
+    config_dir: Path,  # noqa: ARG001
     cfg: dict,
     **kwargs: object,
 ) -> str | None:
@@ -401,19 +401,19 @@ def run(
         msg = f"configure_ctramp config is missing keys: {', '.join(missing)}"
         raise KeyError(msg)
 
-    proj_dir = Path(step_cfg.get("proj_dir") or cfg["proj_dir"])
+    run_dir = Path(step_cfg.get("run_dir") or cfg["run_dir"])
     params = Path(step_cfg["params"])
-    # Scenario-level by default -- the pre-process is not the only reader.
+    # Project-level by default -- the pre-process is not the only reader.
     model_year = int(step_cfg.get("model_year", cfg.get("model_year")))
 
     contents = params.read_text(encoding="utf-8")
     log.info("Read %d characters from %s", len(contents), params)
 
-    runtime = proj_dir / "CTRAMP" / "runtime"
-    block = proj_dir / "CTRAMP" / "scripts" / "block"
-    model = proj_dir / "CTRAMP" / "model"
+    runtime = run_dir / "CTRAMP" / "runtime"
+    block = run_dir / "CTRAMP" / "scripts" / "block"
+    model = run_dir / "CTRAMP" / "model"
 
-    check_tazdata(proj_dir / "landuse" / "tazData.csv", proj_dir / "hwy" / "tolls.csv")
+    check_tazdata(run_dir / "landuse" / "tazData.csv", run_dir / "hwy" / "tolls.csv")
 
     # mtcTourBased.properties: mobility parameters + the auto operating cost.
     auto_op_cost = float(get_property(contents, "AutoOpCost"))
@@ -429,9 +429,9 @@ def run(
     patch_keys(block / "hwyParam.block", _substitutions(contents, _HWY_PARAM_KEYS))
     patch_keys(block / "trnParam.block", _substitutions(contents, _TRN_PARAM_KEYS))
 
-    write_occupancy_factors(contents, proj_dir / "taxi_tnc_occ_factors.csv")
+    write_occupancy_factors(contents, run_dir / "taxi_tnc_occ_factors.csv")
 
     config_uec(model, auto_op_cost)
     config_freeparking(model, contents)
-    config_machine_size(proj_dir, step_cfg)
+    config_machine_size(run_dir, step_cfg)
     return None

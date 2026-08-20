@@ -12,13 +12,14 @@ from pathlib import Path
 import pytest
 import yaml
 
+from tm1.runner import _sample_str
 from tm1.steps.simulate_ctramp import _sample_rate_for
 
 #: RunModel.bat's ramp, lines 280, 304 and 328.
 LEGACY_RAMP = {1: 0.15, 2: 0.30, 3: 0.50}
 
-SCENARIO = (
-    Path(__file__).parents[1] / "scenarios" / "base_2023_ctramp" / "scenario_config.yaml"
+PROJECT_CONFIG = (
+    Path(__file__).parents[1] / "projects" / "base_2023_ctramp" / "config.yaml"
 )
 
 
@@ -81,11 +82,22 @@ def test_a_ramp_key_that_is_not_a_round_number_is_an_error() -> None:
         _sample_rate_for(1, {"first": 0.15})
 
 
-def test_the_shipped_scenario_states_the_legacy_ramp() -> None:
+def test_the_shipped_project_states_the_legacy_ramp() -> None:
     """Parity depends on these three values; assert them rather than trust them."""
-    cfg = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+    cfg = yaml.safe_load(PROJECT_CONFIG.read_text(encoding="utf-8"))
     loop = next(
         s["iterate"] for s in cfg["steps"] if isinstance(s, dict) and "iterate" in s
     )
     sim = next(s["simulate_ctramp"] for s in loop["steps"] if "simulate_ctramp" in s)
     assert {int(k): v for k, v in sim["sample_rate"].items()} == LEGACY_RAMP
+
+
+def test_start_notification_renders_the_ramp() -> None:
+    """The ramp reaches the start notification as a mapping, not a number.
+
+    Formatting it as one raised before the run log opened, so every run of the
+    shipped config died with a bare TypeError instead of starting.
+    """
+    assert _sample_str(LEGACY_RAMP) == "15% -> 30% -> 50%"
+    assert _sample_str(0.5) == "50%"
+    assert _sample_str(None) == "per-iteration ramp"

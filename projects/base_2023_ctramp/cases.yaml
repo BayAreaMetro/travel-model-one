@@ -1,0 +1,20 @@
+# Cases for base_2023_ctramp.
+#
+# A case is a named set of overrides into config.yaml, addressed by where the
+# value lives.  The address must already exist; values replace rather than merge;
+# a case can never add, remove, or reorder steps.
+#
+# Three ways to declare them -- `cases:` (explicit), `ladder:` (cumulative), and
+# `matrix:` (cross product) -- all expanding to the same thing.  This project has
+# one pipeline and one case, so only `cases:` appears.
+#
+# PROVISIONAL: the ID below is a placeholder until IDs are validated and the
+# naming convention is settled.  IDs are SERIES-TOKENS-YEAR, uppercase.
+
+cases:
+
+  # No overrides: config.yaml exactly as written.
+  BASE-2023:
+    description: >
+      CT-RAMP + Cube base year 2023, RunModel.bat parity.  Adopted networks and
+      land use, no strategies applied.

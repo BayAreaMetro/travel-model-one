@@ -1,12 +1,12 @@
-"""Scenario-specific pipeline steps for base_2023_ctramp.
+"""Project-specific pipeline steps for base_2023_ctramp.
 
-Anything in here is ordinary Python, wired in from ``scenario_config.yaml``::
+Anything in here is ordinary Python, wired in from ``config.yaml``::
 
     steps:
       vmt_vht_metrics:
         script: "hooks.py:vmt_vht_metrics"
 
-A step is any function taking ``(scenario_dir, cfg, **kwargs)`` -- the same
+A step is any function taking ``(config_dir, cfg, **kwargs)`` -- the same
 contract the built-in steps use.  Where it appears under ``steps:`` decides when
 it runs: before ``simulate_ctramp`` makes it pre-processing, after ``assignment``
 makes it post-processing.  Return ``"skipped"`` to record a no-op.
@@ -30,7 +30,7 @@ _DUMMY_FT = 6
 
 
 def vmt_vht_metrics(
-    scenario_dir: Path,  # noqa: ARG001
+    config_dir: Path,  # noqa: ARG001
     cfg: dict,
     **kwargs: object,
 ) -> str | None:
@@ -47,13 +47,13 @@ def vmt_vht_metrics(
     Deliberately aggregates rather than copies: the input is ~10 MB and the
     output is a handful of rows, so nothing is duplicated on disk.
     """
-    proj_dir = Path(cfg["proj_dir"])
+    run_dir = Path(cfg["run_dir"])
     # The runner supplies this step's round -- for a step after the loop, the
     # final one.  Reading it out of `steps:` is what a step must NOT do now that
     # a name can appear in several rounds.
     iteration = int(kwargs.get("iteration") or 1)
 
-    loaded = proj_dir / "hwy" / f"iter{iteration}" / "avgload5period.csv"
+    loaded = run_dir / "hwy" / f"iter{iteration}" / "avgload5period.csv"
     if not loaded.is_file():
         log.warning("vmt_vht_metrics: %s not found; did the feedback block run?", loaded)
         return "skipped"
@@ -84,7 +84,7 @@ def vmt_vht_metrics(
     # Congested speed implied by the assignment, the headline check on a run.
     summary["avg_speed_mph"] = (summary["vmt"] / summary["vht"]).round(1)
 
-    out_dir = proj_dir / "metrics"
+    out_dir = run_dir / "metrics"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "vmt_vht_metrics.csv"
     summary.to_csv(out_path, index=False)

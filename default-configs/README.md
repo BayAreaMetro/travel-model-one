@@ -1,7 +1,7 @@
 # default-configs
 
 Shared model configuration: specs, coefficient tables, lookup tables and default assets that
-every scenario inherits from. Scenarios in [`../scenarios/`](../scenarios/) hold only their
+every project inherits from. Projects in [`../projects/`](../projects/) hold only their
 *deltas* against what lives here.
 
 **No data files.** Inputs (networks, land use, populations, skims) are fetched or referenced

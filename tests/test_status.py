@@ -147,7 +147,7 @@ def test_a_completed_run_is_recognised(tmp_path: Path) -> None:
     state = read_log(_log(tmp_path, [
         (0, "--- Step: net2csv (iteration 3) ---"),
         (1, "--- Done: net2csv (1.0m) ---"),
-        (1, "=== Finished scenarios/base in 15h43m ==="),
+        (1, "=== Finished projects/base in 15h43m ==="),
     ]))
 
     assert state.finished
@@ -166,7 +166,7 @@ def test_cube_tracebacks_are_not_events(tmp_path: Path) -> None:
 
 
 def test_logs_accumulate_across_runs(tmp_path: Path) -> None:
-    """A resumed run continues an earlier one; proj_dir is the shared record.
+    """A resumed run continues an earlier one; run_dir is the shared record.
 
     Reading only the newest log would report a one-step patch run as though
     nothing else had ever happened, then offer to resume from step one.
@@ -255,7 +255,7 @@ def test_the_command_line_is_printed_verbatim(tmp_path: Path) -> None:
     out = render("base_2023_ctramp", _plan(), state, tmp_path)
 
     assert (
-        "tm1 run --scenario base_2023_ctramp --resume-at 2:simulate_ctramp" in out
+        "tm1 run base_2023_ctramp --resume-at 2:simulate_ctramp" in out
     )
 
 
@@ -321,7 +321,7 @@ def test_an_unreadable_log_name_gives_no_verdict(tmp_path: Path) -> None:
 
 
 def test_a_live_run_is_never_offered_a_resume_command(tmp_path: Path) -> None:
-    """Two runs writing one proj_dir corrupt each other's networks.
+    """Two runs writing one run_dir corrupt each other's networks.
 
     So a copy-pasteable resume line must not appear beside a running model.
     """
@@ -374,7 +374,7 @@ def test_age_is_reported_in_days_once_it_passes_one() -> None:
 
 
 def test_repeated_runs_are_counted_from_the_first(tmp_path: Path) -> None:
-    """A proj_dir worked on over several days should say so, not look like one run."""
+    """A run_dir worked on over several days should say so, not look like one run."""
     _log(tmp_path, [(0, "--- Step: copy_inputs (iteration 1) ---")])
     (tmp_path / "logs" / "tm1_20260812_090000_200.log").write_text(
         "2026-08-12 09:00:00  INFO     tm1.runner"
@@ -537,12 +537,12 @@ def test_a_complete_run_says_so_instead_of_estimating(tmp_path: Path) -> None:
 
 
 def test_status_says_so_when_nothing_has_run(tmp_path: Path) -> None:
-    """A missing proj_dir is the normal state before the first run, not an error."""
-    scenario = tmp_path / "scen"
-    scenario.mkdir()
-    (scenario / "scenario_config.yaml").write_text(
-        f'proj_dir: "{(tmp_path / "nope").as_posix()}"\nsteps:\n  - copy_inputs: {{}}\n',
+    """A missing run_dir is the normal state before the first run, not an error."""
+    project = tmp_path / "proj"
+    project.mkdir()
+    (project / "config.yaml").write_text(
+        f'run_dir: "{(tmp_path / "nope").as_posix()}"\nsteps:\n  - copy_inputs: {{}}\n',
         encoding="utf-8",
     )
 
-    assert "nothing run yet" in status(scenario)
+    assert "nothing run yet" in status(project)

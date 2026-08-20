@@ -4,7 +4,7 @@ These steps move and copy real files, so the tests do too -- there is nothing to
 mock, and the failure mode being guarded against is a network landing in the wrong
 directory, which only a real filesystem shows.
 
-Each function is registered under whatever name the scenario gives it, so every
+Each function is registered under whatever name the project gives it, so every
 call passes ``step_name`` the way the runner does.
 """
 
@@ -26,14 +26,14 @@ def proj(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def _cfg(proj_dir: Path, name: str, **step_cfg: object) -> dict:
-    return {"proj_dir": str(proj_dir), "steps": {name: step_cfg}}
+def _cfg(run_dir: Path, name: str, **step_cfg: object) -> dict:
+    return {"run_dir": str(run_dir), "steps": {name: step_cfg}}
 
 
-def _call(fn: Callable, proj_dir: Path, name: str, **kwargs: object) -> object:
+def _call(fn: Callable, run_dir: Path, name: str, **kwargs: object) -> object:
     """Invoke a staging step the way the runner does."""
     step_cfg = {k: v for k, v in kwargs.items() if k == "iteration"}
-    return fn(proj_dir, _cfg(proj_dir, name, **step_cfg), step_name=name, **kwargs)
+    return fn(run_dir, _cfg(run_dir, name, **step_cfg), step_name=name, **kwargs)
 
 
 # --- stage_loaded_networks -------------------------------------------------

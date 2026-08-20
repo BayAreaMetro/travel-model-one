@@ -71,7 +71,7 @@ def test_disabling_shadow_pricing_stops_at_one_iteration() -> None:
 
 
 def test_passes_override_the_ladder_for_a_convergence_run() -> None:
-    """The knob a convergence scenario turns; the chain stays put."""
+    """The knob a convergence case turns; the chain stays put."""
     passes = {"first": 30, "subsequent": 30}
 
     assert shadow_pricing_flags(1, passes=passes)[MAX_ITER] == "30"
@@ -101,7 +101,7 @@ def test_a_misspelled_key_is_refused() -> None:
 
 
 def test_disabling_beats_the_override() -> None:
-    """`shadow_pricing: false` means off, whatever else the scenario says."""
+    """`shadow_pricing: false` means off, whatever else the project says."""
     flags = shadow_pricing_flags(1, shadow_pricing=False, passes={"first": 30})
 
     assert flags[MAX_ITER] == "1"

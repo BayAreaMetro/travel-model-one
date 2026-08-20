@@ -14,8 +14,8 @@ assignment::
         steps:
           simulate_ctramp: {...}
           assignment:
-            proj_dir: "{proj_dir}"
-            demand: "{proj_dir}/main/trips{PERIOD}.tpp"   # optional; this is the default
+            run_dir: "{run_dir}"
+            demand: "{run_dir}/main/trips{PERIOD}.tpp"   # optional; this is the default
             model_year: 2023     # see below -- both are legacy names
             future: PBA50
             do_nonres: true      # internal/external, truck, air, HSR models
@@ -27,7 +27,7 @@ assignment::
 ``demand`` names the artifact this step consumes, rather than the step that
 produced it: the demand model and the assignment engine meet at a named file
 instead of at each other's internals.  ``{PERIOD}`` expands to each of
-``EA/AM/MD/PM/EV``; ``{proj_dir}`` is already expanded by ``resolve_templates``
+``EA/AM/MD/PM/EV``; ``{run_dir}`` is already expanded by ``resolve_templates``
 before the step sees it.  Declaring it also makes a silent ``PrepAssign.job``
 failure loud -- see :func:`~tm1.assignment.cube.ctramp.run_prep_assign`.
 
@@ -65,11 +65,11 @@ from tm1.config import step_config
 
 log = logging.getLogger(__name__)
 
-#: Where assignment reads its demand when the scenario does not say.  CT-RAMP's
+#: Where assignment reads its demand when the project does not say.  CT-RAMP's
 #: ``PrepAssign.job`` writes here, so this is the conventional location rather than
 #: a choice; naming it makes the seam explicit and lets a different demand model
 #: point the engine somewhere else without either knowing about the other.
-_DEFAULT_DEMAND = "{proj_dir}/main/trips{PERIOD}.tpp"
+_DEFAULT_DEMAND = "{run_dir}/main/trips{PERIOD}.tpp"
 
 
 def _resolve_iteration(cfg: dict, step_cfg: dict, kwargs: dict) -> int:  # noqa: ARG001
@@ -105,16 +105,16 @@ def _resolve_sampleshare(cfg: dict, step_cfg: dict, iteration: int) -> float:
     return {1: 0.15, 2: 0.30}.get(iteration, 0.50)
 
 
-def _resolve_demand(proj_dir: Path, step_cfg: dict) -> str:
+def _resolve_demand(run_dir: Path, step_cfg: dict) -> str:
     """The demand artifact this assignment consumes, as a per-period path pattern.
 
     ``{PERIOD}`` is deliberately left unexpanded -- the backend substitutes it once
     per time period.  ``resolve_templates`` uses ``str.replace``, so it passes over
-    placeholders it has no value for; only ``{proj_dir}`` is expanded by the time
+    placeholders it has no value for; only ``{run_dir}`` is expanded by the time
     this runs.
     """
     pattern = str(step_cfg.get("demand") or _DEFAULT_DEMAND)
-    pattern = pattern.replace("{proj_dir}", str(proj_dir))
+    pattern = pattern.replace("{run_dir}", str(run_dir))
     if "{PERIOD}" not in pattern:
         msg = (
             f"assignment `demand` must contain '{{PERIOD}}' -- assignment reads one "
@@ -125,34 +125,34 @@ def _resolve_demand(proj_dir: Path, step_cfg: dict) -> str:
 
 
 def _run_cube(
-    proj_dir: Path, iteration: int, sampleshare: float, demand: str, step_cfg: dict,
+    run_dir: Path, iteration: int, sampleshare: float, demand: str, step_cfg: dict,
 ) -> None:
     """Cube Voyager: ``RunIteration.bat``'s sequence, every ``.job`` unmodified."""
-    scripts = proj_dir / "CTRAMP" / "scripts"
+    scripts = run_dir / "CTRAMP" / "scripts"
     if not scripts.is_dir():
         msg = (
             f"Cube job scripts not found at {scripts}. The assignment step needs "
             f"CTRAMP/scripts, hwy/ and nonres/ copied into the project directory -- "
-            f"see copy_inputs in the scenario config."
+            f"see copy_inputs in the project config."
         )
         raise FileNotFoundError(msg)
 
-    # Defaulted from the scenario by `run` before dispatch, so a step key is only
+    # Defaulted from the project by `run` before dispatch, so a step key is only
     # needed to override the run-wide value.
     model_year = step_cfg.get("model_year")
     future = step_cfg.get("future")
     if model_year is None or future is None:
         msg = (
-            "Scenario needs `model_year` and `future` at the top level -- the "
+            "The project config needs `model_year` and `future` at the top level -- the "
             "non-residential models branch on them (IxForecasts_horizon.job), and "
             "the Cube jobs read them as %MODEL_YEAR% / %FUTURE%. RunModel.bat "
             "derives them from the project folder name; set them explicitly in the "
-            "scenario config instead."
+            "project config instead."
         )
         raise ValueError(msg)
 
     run_iteration(
-        proj_dir,
+        run_dir,
         iteration,
         model_year=int(model_year),
         future=str(future),
@@ -183,24 +183,24 @@ _BACKENDS: dict[str, Callable[[Path, int, float, str, dict], None]] = {
 }
 
 
-def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+def run(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Run one assignment + feedback pass for the current iteration."""
     step_cfg = step_config(cfg, "assignment", kwargs)
 
     # `model_year` and `future` describe the run, not this step: the pre-process
     # reads them too (HsrTripGeneration.job wants %MODEL_YEAR% before any assignment
-    # exists).  Defaulted from the scenario here so every backend sees them without
+    # exists).  Defaulted from the project here so every backend sees them without
     # widening the `_BACKENDS` signature; a step key still wins.
     step_cfg = {
         **{k: cfg[k] for k in ("model_year", "future") if cfg.get(k) is not None},
         **step_cfg,
     }
 
-    proj_dir = step_cfg.get("proj_dir") or cfg.get("proj_dir")
-    if not proj_dir:
-        msg = "assignment step needs `proj_dir` (or a top-level proj_dir)"
+    run_dir = step_cfg.get("run_dir") or cfg.get("run_dir")
+    if not run_dir:
+        msg = "assignment step needs `run_dir` (or a top-level run_dir)"
         raise ValueError(msg)
-    proj_dir = Path(proj_dir)
+    run_dir = Path(run_dir)
 
     backend = str(step_cfg.get("backend", "cube")).lower()
     if backend not in _BACKENDS:
@@ -216,8 +216,8 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa:
 
     iteration = _resolve_iteration(cfg, step_cfg, kwargs)
     sampleshare = _resolve_sampleshare(cfg, step_cfg, iteration)
-    demand = _resolve_demand(proj_dir, step_cfg)
+    demand = _resolve_demand(run_dir, step_cfg)
 
     log.info("Assignment iteration %d via backend %r, demand %s", iteration, backend, demand)
-    _BACKENDS[backend](proj_dir, iteration, sampleshare, demand, step_cfg)
+    _BACKENDS[backend](run_dir, iteration, sampleshare, demand, step_cfg)
     return None

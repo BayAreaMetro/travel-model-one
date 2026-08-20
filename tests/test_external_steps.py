@@ -45,10 +45,10 @@ def proj(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def _cfg(proj_dir: Path, name: str, step_cfg: dict, **extra: object) -> dict:
-    """A resolved config. ``EN7`` is required, so every scenario must state it."""
+def _cfg(run_dir: Path, name: str, step_cfg: dict, **extra: object) -> dict:
+    """A resolved config. ``EN7`` is required, so every project must state it."""
     cfg = {
-        "proj_dir": str(proj_dir),
+        "run_dir": str(run_dir),
         "steps": {name: step_cfg},
         "env": {"EN7": "DISABLED"},
     }
@@ -56,9 +56,9 @@ def _cfg(proj_dir: Path, name: str, step_cfg: dict, **extra: object) -> dict:
     return cfg
 
 
-def _write_script(proj_dir: Path, name: str, body: str) -> str:
+def _write_script(run_dir: Path, name: str, body: str) -> str:
     rel = Path("CTRAMP") / "scripts" / name
-    (proj_dir / rel).write_text(body)
+    (run_dir / rel).write_text(body)
     return rel.as_posix()
 
 
@@ -66,7 +66,7 @@ def _write_script(proj_dir: Path, name: str, body: str) -> str:
 
 
 def test_command_runs_with_argv_and_project_cwd(proj: Path) -> None:
-    """Argv passes through and cwd is proj_dir -- what every legacy script assumes."""
+    """Argv passes through and cwd is run_dir -- what every legacy script assumes."""
     rel = _write_script(proj, "probe.py", _PROBE)
     step = {"command": rel, "args": ["hwy/tolls.csv", "hwy/tolls.dbf"],
             "env": {"PROBE_OUT": str(proj)}}
@@ -125,11 +125,11 @@ def test_command_output_is_kept_on_disk(proj: Path) -> None:
     assert "something went wrong" in (proj / "logs" / "boom.log").read_text()
 
 
-def test_missing_command_names_proj_dir(proj: Path) -> None:
+def test_missing_command_names_run_dir(proj: Path) -> None:
     """The error says which directory paths resolve against, since that is the trap."""
     step = {"command": "CTRAMP/scripts/absent.py"}
 
-    with pytest.raises(FileNotFoundError, match="relative to proj_dir"):
+    with pytest.raises(FileNotFoundError, match="relative to run_dir"):
         external.make_step("absent", step)(proj, _cfg(proj, "absent", step))
 
 
@@ -150,15 +150,15 @@ def test_non_python_program_runs_itself(proj: Path) -> None:
     assert marker.read_text() == "ok"
 
 
-def test_pointing_command_at_scenario_code_names_script(proj: Path, tmp_path: Path) -> None:
+def test_pointing_command_at_project_code_names_script(proj: Path, tmp_path: Path) -> None:
     """The likely mistake: your own hook, reached for with the wrong key."""
-    scenario_dir = tmp_path / "scenario"
-    scenario_dir.mkdir()
-    (scenario_dir / "hooks.py").write_text("def run(*a, **k): pass\n")
+    config_dir = tmp_path / "project"
+    config_dir.mkdir()
+    (config_dir / "hooks.py").write_text("def run(*a, **k): pass\n")
     step = {"command": "hooks.py"}
 
     with pytest.raises(ValueError, match="should use 'script:'"):
-        external.make_step("hook", step)(scenario_dir, _cfg(proj, "hook", step))
+        external.make_step("hook", step)(config_dir, _cfg(proj, "hook", step))
 
 
 # --- job: -----------------------------------------------------------------
@@ -167,7 +167,7 @@ def test_pointing_command_at_scenario_code_names_script(proj: Path, tmp_path: Pa
 def test_job_step_passes_path_cwd_and_env(
     proj: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The Cube runner gets the resolved job, proj_dir as cwd, and the step's env."""
+    """The Cube runner gets the resolved job, run_dir as cwd, and the step's env."""
     calls: list[tuple] = []
 
     def record(job: str | Path, cwd: str | Path, **kw: object) -> int:
@@ -228,7 +228,7 @@ def test_cwd_moves_the_working_directory(proj: Path) -> None:
 def test_commpath_is_resolved_against_the_project(
     proj: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A job outside proj_dir must say where its cluster nodes talk."""
+    """A job outside run_dir must say where its cluster nodes talk."""
     calls: list[dict] = []
 
     def record(job: str | Path, cwd: str | Path, **kw: object) -> int:  # noqa: ARG001
@@ -326,7 +326,7 @@ def test_iteration_beyond_the_bat_is_refused_not_extrapolated(proj: Path) -> Non
         external.model_environment(_cfg(proj, "x", {}), 4)
 
 
-def test_model_year_and_future_come_from_the_scenario(proj: Path) -> None:
+def test_model_year_and_future_come_from_the_project(proj: Path) -> None:
     """No longer sliced out of the project folder name, as RunModel.bat did."""
     cfg = _cfg(proj, "x", {}, model_year=2023, future="PBA50")
 
@@ -338,7 +338,7 @@ def test_model_year_and_future_come_from_the_scenario(proj: Path) -> None:
 
 def test_en7_is_required_never_defaulted(proj: Path) -> None:
     """RunModel.bat 115-128 refuses to start without it; guessing changes results."""
-    cfg = {"proj_dir": str(proj), "steps": {}}
+    cfg = {"run_dir": str(proj), "steps": {}}
 
     with pytest.raises(ValueError, match="EN7"):
         external.model_environment(cfg)

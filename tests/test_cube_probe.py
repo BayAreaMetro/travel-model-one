@@ -80,12 +80,12 @@ def test_owns_matches_across_separator_and_case(arg: str) -> None:
 @pytest.mark.parametrize(
     "arg",
     [
-        r"E:\Tests\other_scenario\CTRAMP\scripts\assign\HwyAssign.job",
+        r"E:\Tests\other_project\CTRAMP\scripts\assign\HwyAssign.job",
         r"E:\Tests\base_2023_ctramp_v2\commpath\CTRAMP1.script",
     ],
 )
 def test_owns_rejects_another_run(arg: str) -> None:
-    """A second scenario on the same machine must never be counted or acted on."""
+    """A second project on the same machine must never be counted or acted on."""
     assert not _owns([arg], PROJ)
 
 

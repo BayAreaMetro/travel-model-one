@@ -14,7 +14,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # What the legacy RunModel.bat scripts need, and nothing else does.  Every entry
-# exists to run one `command:` step in the CT-RAMP scenario:
+# exists to run one `command:` step in the CT-RAMP project:
 #
 #   dbfpy3           csvToDbf.py            hwy/tolls.csv -> the .dbf Cube's LOOKUPI reads
 #   NetworkWrangler  transitDwellAccess.py  `from Wrangler import ...`; pulls simpleparse,
@@ -28,7 +28,7 @@ dependencies = [
 # level, so only `pip install -e` off a clone ever worked.
 #
 # Phase 4 replaces those scripts with native steps, and this whole extra goes with
-# them -- it is complete when no `command:` in any scenario points into CTRAMP/scripts.
+# them -- it is complete when no `command:` in any project points into CTRAMP/scripts.
 legacy = [
     "dbfpy3>=2.3",
     "NetworkWrangler @ git+https://github.com/BayAreaMetro/NetworkWrangler@c806951496126c6c5a3a37f5c325176aee91f31d",
@@ -88,4 +88,4 @@ exclude = ["*.html", "uv.lock", "renv", "utilities", "core", "model-files"]
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = ["T201", "INP001", "D103", "PLR0915"]  # print(), not packages, no docstrings, long mains OK in standalone scripts
 "tests/**" = ["T201", "S101", "INP001"]  # Allow print(), assert; not packages
-"scenarios/**" = ["T201", "INP001"]  # Scenario step scripts: print() OK, loaded by path not imported as packages
+"projects/**" = ["T201", "INP001"]  # Project step scripts: print() OK, loaded by path not imported as packages

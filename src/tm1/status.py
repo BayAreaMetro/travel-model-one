@@ -1,6 +1,6 @@
 """``tm1 status`` -- where the last run got to, and how to pick it up.
 
-Read-only.  It opens the newest run log under ``{proj_dir}/logs`` and the scenario
+Read-only.  It opens the newest run log under ``{run_dir}/logs`` and the project
 config, and writes nothing: it can be run against a live run from a second shell
 without touching it.
 
@@ -63,7 +63,7 @@ _SELF_SKIPPED = re.compile(r"--- Skipped: (\S+) ---")
 _FAILED = re.compile(r"^Step (\S+) failed: ")
 _FINISHED = re.compile(r"^=== Finished .* in (\S+) ===")
 
-#: A step open this long with nothing written anywhere in proj_dir reads as a
+#: A step open this long with nothing written anywhere in run_dir reads as a
 #: dead run rather than a slow one.  Only consulted when the harness process
 #: cannot be identified: it is wrong in both directions.  ``HwyAssign`` runs for
 #: 35 minutes and writes its ``.net`` files at the end, so a healthy job looks
@@ -101,7 +101,7 @@ class Sections:
     loop: list[str] = field(default_factory=list)
     summaries: list[str] = field(default_factory=list)
     rounds: int = 1
-    #: ``simulate_ctramp``'s sample rate per round, as the scenario states it.
+    #: ``simulate_ctramp``'s sample rate per round, as the project states it.
     #: Empty when the config does not say, which costs an estimate, not a crash.
     sample_rates: dict[int, float] = field(default_factory=dict)
 
@@ -139,7 +139,7 @@ def sections(steps_cfg: object) -> Sections:
 
 
 def _sample_rates(body: list[tuple[str, object]], rounds: int) -> dict[int, float]:
-    """``simulate_ctramp``'s rate for each round, read off the scenario.
+    """``simulate_ctramp``'s rate for each round, read off the project config.
 
     ``status`` is read-only and must survive a config the runner would reject,
     so anything it cannot read as a rate is left out rather than raised on.  The
@@ -227,13 +227,13 @@ class RunLog:
         self.open_step = None
 
 
-def newest_log(proj_dir: Path) -> Path | None:
+def newest_log(run_dir: Path) -> Path | None:
     """The most recent run log, by the timestamp in its name.
 
     Names sort chronologically (``tm1_YYYYmmdd_HHMMSS_pid.log``), so this needs no
     stat call and is not confused by a file copied later than it was written.
     """
-    logs = sorted((proj_dir / "logs").glob("tm1_*.log"))
+    logs = sorted((run_dir / "logs").glob("tm1_*.log"))
     return logs[-1] if logs else None
 
 
@@ -271,7 +271,7 @@ def read_log(path: Path) -> RunLog:
     return _fold(path, RunLog(path=path))
 
 
-def read_logs(proj_dir: Path) -> RunLog | None:
+def read_logs(run_dir: Path) -> RunLog | None:
     """Replay every run log for this project directory, oldest first.
 
     A project directory accumulates: a resumed run continues where an earlier one
@@ -280,7 +280,7 @@ def read_logs(proj_dir: Path) -> RunLog | None:
     though nothing else had ever happened -- and then offer to resume from step
     one, which is the one answer this command must never give.
     """
-    logs = sorted((proj_dir / "logs").glob("tm1_*.log"))
+    logs = sorted((run_dir / "logs").glob("tm1_*.log"))
     if not logs:
         return None
     state = RunLog(path=logs[-1])
@@ -376,13 +376,13 @@ def _cube_cmdline(proc: psutil.Process) -> list[str] | None:
         return None
 
 
-def _owns(cmdline: Iterable[str], proj_dir: Path) -> bool:
-    r"""True if this Cube process is working for ``proj_dir``.
+def _owns(cmdline: Iterable[str], run_dir: Path) -> bool:
+    r"""True if this Cube process is working for ``run_dir``.
 
     Every Cube process a run starts names the project directory in its argv --
     the master through the ``.job`` path, each node through its
     ``commpath\\CTRAMP<n>.script``.  That is what separates this run's processes
-    from a second scenario's on the same machine, so the harness never reports
+    from a second project's on the same machine, so the harness never reports
     on, and a caller never acts on, someone else's run.
 
     Compared with separators folded and case ignored: the config writes forward
@@ -390,7 +390,7 @@ def _owns(cmdline: Iterable[str], proj_dir: Path) -> bool:
     The match must end on a path boundary -- a plain prefix test claims
     ``base_2023_ctramp_v2``'s processes as ``base_2023_ctramp``'s.
     """
-    want = str(proj_dir).replace("\\", "/").casefold().rstrip("/")
+    want = str(run_dir).replace("\\", "/").casefold().rstrip("/")
     for arg in cmdline:
         folded = arg.replace("\\", "/").casefold()
         if folded == want or folded.startswith(want + "/"):
@@ -401,7 +401,7 @@ def _owns(cmdline: Iterable[str], proj_dir: Path) -> bool:
 def _commpath_of(cmdline: Iterable[str]) -> Path | None:
     """The cluster directory a node argv points at, if this is a node.
 
-    Taken from the argv rather than assumed to be ``proj_dir/commpath``: a step
+    Taken from the argv rather than assumed to be ``run_dir/commpath``: a step
     may set ``commpath:`` itself, and the transit jobs run from a subdirectory
     while still pointing their cluster at the project root.
     """
@@ -412,11 +412,11 @@ def _commpath_of(cmdline: Iterable[str]) -> Path | None:
 
 
 def probe_cube(
-    proj_dir: Path,
+    run_dir: Path,
     procs: Iterable[psutil.Process] | None = None,
     sample: float = _CPU_SAMPLE,
 ) -> CubeProbe | None:
-    """Sample the Cube processes running for ``proj_dir``, or ``None`` if none are.
+    """Sample the Cube processes running for ``run_dir``, or ``None`` if none are.
 
     ``None`` covers both "this step is not a Cube job" -- CT-RAMP is Java, the
     ``command:`` steps are Python -- and "the Cube processes are gone".  The
@@ -427,7 +427,7 @@ def probe_cube(
     found: list[tuple[psutil.Process, list[str]]] = []
     for proc in procs if procs is not None else psutil.process_iter():
         cmdline = _cube_cmdline(proc)
-        if cmdline and _owns(cmdline, proj_dir):
+        if cmdline and _owns(cmdline, run_dir):
             found.append((proc, cmdline))
     if not found:
         return None
@@ -468,7 +468,7 @@ def _count_files(commpath: Path) -> int | None:
         return None
 
 
-def newest_write(proj_dir: Path) -> tuple[Path, float] | None:
+def newest_write(run_dir: Path) -> tuple[Path, float] | None:
     """The most recently written model file, and its age in seconds.
 
     The only evidence available that a quiet run is still alive: a Cube job or
@@ -476,7 +476,7 @@ def newest_write(proj_dir: Path) -> tuple[Path, float] | None:
     Logs are excluded -- they are written by the harness, not by the work.
     """
     newest, newest_mtime = None, 0.0
-    for path in proj_dir.rglob("*"):
+    for path in run_dir.rglob("*"):
         if "logs" in path.parts or not path.is_file():
             continue
         mtime = path.stat().st_mtime
@@ -498,7 +498,7 @@ def _estimate_remaining(plan: Sections, state: RunLog) -> float | None:
     reads as *nearly done* on a run that has barely started.
 
     Otherwise rough by construction, and a floor: a step never yet run contributes
-    nothing rather than a guess.  ``simulate_ctramp`` is scaled by the scenario's
+    nothing rather than a guess.  ``simulate_ctramp`` is scaled by the project's
     sample-rate ramp, the one step whose cost changes between rounds by a known
     factor.  A round the ramp does not price is left unscaled.
     """
@@ -690,14 +690,14 @@ def _next_key(plan: Sections, state: RunLog) -> tuple[str, int] | None:
     return next((k for k in plan.entries() if not state.settled(k)), None)
 
 
-def _last_write_line(proj_dir: Path) -> list[str]:
-    """The newest write under ``proj_dir``, as one indented line, if there is one."""
-    write = newest_write(proj_dir)
+def _last_write_line(run_dir: Path) -> list[str]:
+    """The newest write under ``run_dir``, as one indented line, if there is one."""
+    write = newest_write(run_dir)
     if write is None:
         return []
     path, age = write
     return [
-        f"          newest write {path.relative_to(proj_dir)}, {_fmt_elapsed(age)} ago"
+        f"          newest write {path.relative_to(run_dir)}, {_fmt_elapsed(age)} ago"
     ]
 
 
@@ -720,13 +720,13 @@ def _cube_lines(probe: CubeProbe | None) -> list[str]:
 
 
 def _footer(
-    scenario: str, plan: Sections, state: RunLog, proj_dir: Path, alive: bool | None
+    project: str, plan: Sections, state: RunLog, run_dir: Path, alive: bool | None
 ) -> list[str]:
     """What stopped the run, and the command that continues it.
 
     A live harness gets no resume command.  Printing a copy-pasteable one beside
     a running model invites starting a second one on top of it, and two runs
-    writing the same ``proj_dir`` corrupt each other's networks.
+    writing the same ``run_dir`` corrupt each other's networks.
     """
     resume = _next_key(plan, state)
     if resume is None:
@@ -738,10 +738,10 @@ def _footer(
             f"  RUNNING  {name} (round {rnd}), started "
             f"{_fmt_elapsed(_open_for(state))} ago, harness pid "
             f"{harness_pid(state.path)}",
-            *_last_write_line(proj_dir),
+            *_last_write_line(run_dir),
             # Only a live run is worth the two-second CPU sample, and only here
             # is the answer actionable.
-            *_cube_lines(probe_cube(proj_dir)),
+            *_cube_lines(probe_cube(run_dir)),
             "          nothing to do -- it is still going.",
         ]
 
@@ -755,21 +755,21 @@ def _footer(
             f"  OPEN    {name} (round {rnd}) started "
             f"{_fmt_elapsed(_open_for(state))} ago and never reported"
         )
-        lines += _last_write_line(proj_dir)
+        lines += _last_write_line(run_dir)
         lines.append(
             "          harness pid is gone -- resume:" if alive is False
             else "          if that is not moving, the run is gone -- resume:"
         )
 
     token = resume_token(plan.entries(), *resume)
-    return [*lines, "", f"  tm1 run --scenario {scenario} --resume-at {token}"]
+    return [*lines, "", f"  tm1 run {project} --resume-at {token}"]
 
 
 def render(
-    scenario: str,
+    project: str,
     plan: Sections,
     state: RunLog,
-    proj_dir: Path,
+    run_dir: Path,
     alive: bool | None = None,
 ) -> str:
     """The whole view, as one block of text.
@@ -778,7 +778,7 @@ def render(
     could not be established, which falls back to reading file mtimes.
     """
     planned = set(plan.entries())
-    lines = ["", _header(scenario, plan, state, alive), _provenance(state), ""]
+    lines = ["", _header(project, plan, state, alive), _provenance(state), ""]
 
     if plan.setup:
         lines += _block("setup (once)", plan.setup, [1], state, planned)
@@ -796,30 +796,30 @@ def render(
             "summaries (once)", plan.summaries, [plan.rounds], state, planned
         )
 
-    footer = _footer(scenario, plan, state, proj_dir, alive)
+    footer = _footer(project, plan, state, run_dir, alive)
     body = [*lines, *(["", *footer] if footer else []), ""]
     # Rows whose trailing cells are blank would otherwise carry the padding.
     return "\n".join(line.rstrip() for line in body)
 
 
-def status(scenario_dir: Path) -> str:
+def status(config_dir: Path) -> str:
     """Render the newest run's status, or say why there is nothing to show."""
-    scenario_dir = Path(scenario_dir).resolve()
-    resolved = resolve_templates(load_config(scenario_dir))
+    config_dir = Path(config_dir).resolve()
+    resolved = resolve_templates(load_config(config_dir))
     cfg: dict = resolved if isinstance(resolved, dict) else {}
-    proj_dir = Path(cfg["proj_dir"])
+    run_dir = Path(cfg["run_dir"])
 
-    if not proj_dir.is_dir():
-        return f"\n  {scenario_dir.name}: nothing run yet -- {proj_dir} does not exist.\n"
+    if not run_dir.is_dir():
+        return f"\n  {config_dir.name}: nothing run yet -- {run_dir} does not exist.\n"
 
-    state = read_logs(proj_dir)
+    state = read_logs(run_dir)
     if state is None:
-        return f"\n  {scenario_dir.name}: no run logs in {proj_dir / 'logs'}.\n"
+        return f"\n  {config_dir.name}: no run logs in {run_dir / 'logs'}.\n"
 
     return render(
-        scenario_dir.name,
+        config_dir.name,
         sections(cfg.get("steps") or []),
         state,
-        proj_dir,
+        run_dir,
         harness_alive(state),
     )

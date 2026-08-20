@@ -1,4 +1,4 @@
-"""Scenario configuration utilities for TM1."""
+"""Project configuration utilities for TM1."""
 
 import os
 import re
@@ -8,15 +8,15 @@ from pathlib import Path
 import yaml
 
 #: ``{env:NAME}`` -- a value from the environment, which ``tm1`` populates from
-#: ``.env`` at import.  This is how a scenario config stays machine-independent:
+#: ``.env`` at import.  This is how a project config stays machine-independent:
 #: every path that differs between machines is named here and set in ``.env``,
 #: leaving the YAML as the model recipe and nothing else.
 _ENV_REF = re.compile(r"\{env:([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
-def load_config(scenario_dir: Path) -> dict:
-    """Load scenario_config.yaml from *scenario_dir*."""
-    cfg_path = Path(scenario_dir) / "scenario_config.yaml"
+def load_config(config_dir: Path) -> dict:
+    """Load config.yaml from *config_dir*."""
+    cfg_path = Path(config_dir) / "config.yaml"
     if not cfg_path.exists():
         sys.exit(f"Config not found: {cfg_path}")
     with cfg_path.open(encoding="utf-8") as f:
@@ -24,7 +24,7 @@ def load_config(scenario_dir: Path) -> dict:
 
 
 def step_config(cfg: dict, name: str, kwargs: dict | None = None) -> dict:
-    """A step's own block from the scenario config.
+    """A step's own block from the project config.
 
     The runner hands each step the exact block it was launched from as
     ``kwargs["step_cfg"]`` — with ``steps:`` as a list the same name may appear
@@ -59,7 +59,7 @@ def expand_env(obj: str | dict | list | object) -> str | dict | list | object:
     """Replace every ``{env:NAME}`` with that environment variable, recursively.
 
     An unset variable is an **error**, not an empty string.  Silently expanding
-    ``proj_dir: "{env:TM1_PROJ_DIR}"`` to ``""`` would point a fifteen-hour run at
+    ``run_dir: "{env:TM1_PROJ_DIR}"`` to ``""`` would point a fifteen-hour run at
     the current working directory and succeed at it.
     """
     if isinstance(obj, str):
@@ -91,8 +91,8 @@ def resolve_templates(
 
     If *variables* is None, top-level string values in *obj* are used (assuming
     *obj* is a dict) -- and the environment pass runs first, so a key whose own
-    value comes from ``.env`` (``proj_dir``) is a real path by the time anything
-    interpolates ``{proj_dir}``.
+    value comes from ``.env`` (``run_dir``) is a real path by the time anything
+    interpolates ``{run_dir}``.
     """
     if variables is None:
         obj = expand_env(obj)

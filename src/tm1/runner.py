@@ -1,6 +1,6 @@
-"""Step orchestrator — runs steps declared in scenario_config.yaml.
+"""Step orchestrator — runs steps declared in config.yaml.
 
-Each step is a module (or any object) exposing ``run(scenario_dir, cfg, **kwargs)``.
+Each step is a module (or any object) exposing ``run(config_dir, cfg, **kwargs)``.
 Steps run in the order written.  ``steps:`` is a list of ``name: {config}`` entries
 (a mapping also works, but only the list form can name a step twice -- the warm
 start and the loop each carry their own copy of the assignment steps).  "What runs,
@@ -28,7 +28,7 @@ a rebuild.  The key is refused inside ``iterate:``: the loop is the part of the 
 that always re-runs, and its outputs land on the same paths every round, so an
 existence check cannot tell this round's product from the last one's.
 
-A scenario may add its own steps -- typically pre- or post-processing -- by
+A project may add its own steps -- typically pre- or post-processing -- by
 pointing at Python code::
 
     steps:
@@ -36,7 +36,7 @@ pointing at Python code::
       simulate_ctramp: {...}
       assignment: {...}
       vmt_vht_metrics:
-        script: "hooks.py:vmt_vht_metrics"     # path, relative to the scenario dir
+        script: "hooks.py:vmt_vht_metrics"     # path, relative to the project dir
       trip_length_report:
         module: "mtc_local.reports:trip_lengths"   # importable dotted path
 
@@ -54,7 +54,7 @@ A step may instead run a program the harness cannot call in-process — a Cube
 
     steps:
       set_tolls:
-        job: "CTRAMP/scripts/preprocess/SetTolls.job"    # relative to proj_dir
+        job: "CTRAMP/scripts/preprocess/SetTolls.job"    # relative to run_dir
       csv_to_dbf:
         command: "CTRAMP/scripts/preprocess/csvToDbf.py"
         args: ["hwy/tolls.csv", "hwy/tolls.dbf"]
@@ -64,15 +64,15 @@ and called with the resolved ``cfg``, so the step can pass values to later steps
 and return ``"skipped"``.  ``command:`` gets none of that -- only argv, an
 environment, and an exit code -- and exists for programs the harness does not own,
 today the legacy ``RunModel.bat`` corpus.  Pointing ``command:`` at something in the
-scenario directory is an error naming ``script:``, because that is where your own
+project directory is an error naming ``script:``, because that is where your own
 code lives.
 
 ``job:``/``command:`` are executed rather than imported, so they name no entrypoint
-and resolve against ``proj_dir`` rather than the scenario directory — that is the
+and resolve against ``run_dir`` rather than the project directory — that is the
 directory ``RunModel.bat`` ran its artifacts from, and every one of them assumes it.
 See :mod:`tm1.steps.external`.
 
-Built-in step names always win: a scenario can add steps but never redefine one.
+Built-in step names always win: a project can add steps but never redefine one.
 
 ``cfg`` is shared across steps, so a step *may* modify it to pass computed values
 downstream (a pre-processing step that resolves a path for the step after it, for
@@ -116,7 +116,7 @@ def _fmt_elapsed(seconds: float) -> str:
 
 #: Built-in steps, mapped to the callable that runs each one.  Values are plain
 #: callables so a single module can supply several steps, and so built-in and
-#: scenario-supplied steps resolve to exactly the same kind of thing.
+#: project-supplied steps resolve to exactly the same kind of thing.
 STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
     "configure_ctramp": configure_ctramp_step.run,
@@ -126,7 +126,7 @@ STEPS: dict[str, Callable] = {
 
 DEFAULT_STEPS = list(STEPS.keys())
 
-#: Keys a scenario uses to point a step at code the runner does not supply.
+#: Keys a project uses to point a step at code the runner does not supply.
 #: ``script``/``module`` are imported and called; ``job``/``command`` are spawned
 #: (see :mod:`tm1.steps.external`).  Order matters only for the error messages.
 _CUSTOM_KEYS = ("script", "module", *external_step.KEYS)
@@ -148,15 +148,15 @@ def _split_entrypoint(target: str) -> tuple[str, str]:
     return target, _DEFAULT_ENTRYPOINT
 
 
-def _load_script(path: Path, scenario_dir: Path) -> ModuleType:
+def _load_script(path: Path, config_dir: Path) -> ModuleType:
     """Import a ``.py`` file as a module, without putting its directory on sys.path.
 
-    The module is registered under a name qualified by the scenario, so two
-    scenarios that both ship a ``preprocess.py`` do not collide in
+    The module is registered under a name qualified by the project, so two
+    projects that both ship a ``preprocess.py`` do not collide in
     ``sys.modules``.
     """
     spec = importlib.util.spec_from_file_location(
-        f"tm1_scenario_{scenario_dir.name}_{path.stem}", path
+        f"tm1_project_{config_dir.name}_{path.stem}", path
     )
     if spec is None or spec.loader is None:
         msg = f"Could not load step script as a Python module: {path}"
@@ -411,14 +411,14 @@ def _skip_target(step_cfg: dict, cfg: dict) -> Path | None:
     ``skip_if_exists:`` is a statement in the config -- *this step's work is done
     when this file exists* -- and the check is exactly that, nothing inferred.
     Deleting the file forces a rebuild.  Relative paths resolve against
-    ``proj_dir``, where every model artifact lives.
+    ``run_dir``, where every model artifact lives.
     """
     declared = step_cfg.get(_SKIP_IF_EXISTS)
     if not declared:
         return None
     path = Path(str(declared)).expanduser()
     if not path.is_absolute():
-        path = Path(cfg["proj_dir"]) / path
+        path = Path(cfg["run_dir"]) / path
     return path if path.exists() else None
 
 
@@ -527,7 +527,7 @@ def _select_steps(
 def _apply_resume(
     plan: list[tuple[str, int]],
     resume_at: str | None,
-    proj_dir: str | Path | None = None,
+    run_dir: str | Path | None = None,
 ) -> list[tuple[str, int]]:
     """Drop everything before *resume_at*, which itself **runs**.
 
@@ -546,8 +546,8 @@ def _apply_resume(
     # "Resume" presupposes a previous run.  Without this, pointing it at an empty
     # project directory would skip staging and demand, then assign whatever stale
     # matrices happened to be lying around.
-    if proj_dir is not None:
-        p = Path(proj_dir)
+    if run_dir is not None:
+        p = Path(run_dir)
         if not p.is_dir() or not any(p.iterdir()):
             msg = (
                 f"--resume-at needs a project directory a previous run populated; "
@@ -586,7 +586,7 @@ def _apply_resume(
 
 
 def _resolve_slack_level(cfg: dict, slack_level: str | bool | None) -> None:
-    """CLI flag wins, then the scenario's `slack:` key, then "minimal"."""
+    """CLI flag wins, then the project's `slack:` key, then "minimal"."""
     if slack_level is not None:
         slack.level = "verbose" if slack_level is True else slack_level
         return
@@ -623,6 +623,21 @@ def _report_resume(
     log.info("  running %d: %s", len(plan), _fmt_plan(plan, n_iters))
 
 
+def _sample_str(sample_rate: object) -> str:
+    """The sample rate for the start notification, flat or per-round.
+
+    ``sample_rate:`` is either one number for every round or a mapping of round
+    to rate -- RunModel.bat's 0.15/0.30/0.50 ramp.  Formatting the mapping as a
+    number raises, which happened before the run log opened and so reported as a
+    bare TypeError rather than a config problem.
+    """
+    if sample_rate is None:
+        return "per-iteration ramp"
+    if isinstance(sample_rate, dict):
+        return " -> ".join(f"{rate:.0%}" for _, rate in sorted(sample_rate.items()))
+    return f"{sample_rate:.0%}"
+
+
 def _notify_start(
     label: str, steps: list[str], configs: dict[tuple[str, int], dict],
     n_iters: int, kwargs: dict,
@@ -640,7 +655,7 @@ def _notify_start(
         {},
     )
     sample_rate = kwargs.get("sample_rate") or sim_cfg.get("sample_rate")
-    sample_str = "per-iteration ramp" if sample_rate is None else f"{sample_rate:.0%}"
+    sample_str = _sample_str(sample_rate)
     notify(
         f":rabbit2: Starting {label}\n"
         f"  • steps: {', '.join(steps)}\n"
@@ -651,7 +666,7 @@ def _notify_start(
 
 
 def _start_run_log(cfg: dict, label: str, steps: list[str]) -> logging.Handler | None:
-    """Open a per-run log file under ``{proj_dir}/logs`` and record what is starting.
+    """Open a per-run log file under ``{run_dir}/logs`` and record what is starting.
 
     ``RunModel.bat`` appended a line to ``logs/feedback.rpt`` per milestone; this
     keeps the whole run instead -- every step boundary, every Cube job result and
@@ -659,14 +674,14 @@ def _start_run_log(cfg: dict, label: str, steps: list[str]) -> logging.Handler |
 
     The filename carries a timestamp so concurrent or repeated runs never write
     into each other's log, and so a failed run's log survives the next attempt.
-    Returns None when no ``proj_dir`` is configured, leaving console-only logging.
+    Returns None when no ``run_dir`` is configured, leaving console-only logging.
     """
-    proj_dir = cfg.get("proj_dir")
-    if not proj_dir:
+    run_dir = cfg.get("run_dir")
+    if not run_dir:
         return None
 
     log_cfg = cfg.get("logging", {}) or {}
-    log_dir = Path(log_cfg.get("dir") or Path(proj_dir) / "logs")
+    log_dir = Path(log_cfg.get("dir") or Path(run_dir) / "logs")
     stamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
 
     # pid separates concurrent runs on one machine; the counter separates runs
@@ -683,8 +698,8 @@ def _start_run_log(cfg: dict, label: str, steps: list[str]) -> logging.Handler |
     handler = add_run_logfile(path, level=level)
 
     log.info("Run log: %s", path)
-    log.debug("scenario=%s  steps=%s", label, ", ".join(steps))
-    log.debug("proj_dir=%s", proj_dir)
+    log.debug("project=%s  steps=%s", label, ", ".join(steps))
+    log.debug("run_dir=%s", run_dir)
     return handler
 
 
@@ -699,27 +714,27 @@ def _sole_custom_key(step_name: str, declared: list[str]) -> str:
         msg = (
             f"Unknown step: {step_name!r}. Built-in steps are "
             f"{', '.join(STEPS)}. To run your own code, give the step a "
-            f"'script:' (path relative to the scenario directory) or a "
+            f"'script:' (path relative to the project directory) or a "
             f"'module:' (importable dotted path) -- both imported and called. To "
             f"spawn a program the harness does not own, give it a 'job:' (Cube "
-            f".job) or a 'command:', both relative to proj_dir."
+            f".job) or a 'command:', both relative to run_dir."
         )
         raise ValueError(msg)
 
     return declared[0]
 
 
-def _load_step(step_name: str, step_cfg: dict | None, scenario_dir: Path) -> Callable:
+def _load_step(step_name: str, step_cfg: dict | None, config_dir: Path) -> Callable:
     """Resolve one step's config block to the callable that runs it.
 
     Takes the block itself rather than a name to look up, because a name may
     appear more than once in the plan -- the entry identifies the step.
 
     Built-in steps take precedence.  Anything else declares either native Python
-    (``script:``, a path relative to the scenario directory, or ``module:``, an
+    (``script:``, a path relative to the project directory, or ``module:``, an
     importable dotted path, each optionally naming a function after a colon) or a
     legacy artifact to run in place (``job:``/``command:``, relative to
-    ``proj_dir``).
+    ``run_dir``).
     """
     declared = (
         [k for k in _CUSTOM_KEYS if k in step_cfg] if isinstance(step_cfg, dict) else []
@@ -750,11 +765,11 @@ def _load_step(step_name: str, step_cfg: dict | None, scenario_dir: Path) -> Cal
     else:
         path = Path(target).expanduser()
         if not path.is_absolute():
-            path = scenario_dir / path
+            path = config_dir / path
         if not path.is_file():
             msg = f"Step {step_name!r}: script not found: {path}"
             raise FileNotFoundError(msg)
-        mod = _load_script(path, scenario_dir)
+        mod = _load_script(path, config_dir)
         target = str(path)
 
     source = f"{target}:{func_name}"
@@ -762,7 +777,7 @@ def _load_step(step_name: str, step_cfg: dict | None, scenario_dir: Path) -> Cal
         named = "" if func_name == _DEFAULT_ENTRYPOINT else f" (named by {step_name!r})"
         msg = (
             f"Step {step_name!r}: {target} defines no {func_name}(){named}. Steps "
-            f"need 'def {func_name}(scenario_dir, cfg, **kwargs)', the same "
+            f"need 'def {func_name}(config_dir, cfg, **kwargs)', the same "
             f"contract as the built-in steps."
         )
         raise AttributeError(msg)
@@ -777,17 +792,17 @@ def _load_step(step_name: str, step_cfg: dict | None, scenario_dir: Path) -> Cal
 
 
 def run_model(
-    scenario_dir: Path,
+    config_dir: Path,
     steps: list[str] | None = None,
     slack_level: str | bool | None = "minimal",
     **kwargs: object,
 ) -> None:
-    """Run a sequence of pipeline steps for a scenario.
+    """Run a sequence of pipeline steps for a project.
 
     Parameters
     ----------
-    scenario_dir : Path
-        Path to the scenario directory.
+    config_dir : Path
+        Path to the project directory.
     steps : list[str], optional
         Steps to run.  If None, uses step keys from config or DEFAULT_STEPS.
     slack_level : str
@@ -796,10 +811,10 @@ def run_model(
         Passed through to each step's ``run()`` function.
         Common: ``base_model_dir``, ``force``.
     """
-    scenario_dir = Path(scenario_dir).resolve()
-    label = f"scenarios/{scenario_dir.name}"
+    config_dir = Path(config_dir).resolve()
+    label = f"projects/{config_dir.name}"
 
-    cfg = resolve_templates(load_config(scenario_dir))
+    cfg = resolve_templates(load_config(config_dir))
 
     _resolve_slack_level(cfg, slack_level)
 
@@ -819,7 +834,7 @@ def run_model(
     try:
         n_iters = max((i for _, i in full_plan), default=1)
         plan = _select_steps(full_plan, steps)
-        plan = _apply_resume(plan, kwargs.get("resume_at"), cfg.get("proj_dir"))
+        plan = _apply_resume(plan, kwargs.get("resume_at"), cfg.get("run_dir"))
         plan = _apply_until(plan, kwargs.get("until"))
         _report_resume(full_plan, plan, n_iters)
         prev_iter = None
@@ -848,7 +863,7 @@ def run_model(
                 notify(f"[{label}] {name} skipped ({skip.name} exists)")
                 continue
 
-            run_step = _load_step(name, step_cfg, scenario_dir)
+            run_step = _load_step(name, step_cfg, config_dir)
 
             log.info("--- Step: %s (iteration %d) ---", name, iteration)
             t0_step = time.time()
@@ -858,7 +873,7 @@ def run_model(
                 # `step_cfg` is the entry's own block -- with `steps:` as a list a
                 # name may appear twice, so the entry, not the name, identifies it.
                 result = run_step(
-                    scenario_dir, cfg,
+                    config_dir, cfg,
                     **{
                         **kwargs,
                         "iteration": iteration,
@@ -875,8 +890,8 @@ def run_model(
                 log.exception("Step %s failed: %s", name, e)  # noqa: TRY401
                 # The failed step did not finish, so resuming includes it.
                 log.error(  # noqa: TRY400 -- traceback already logged above
-                    "Resume with: tm1 run --scenario %s --resume-at %s",
-                    scenario_dir.name,
+                    "Resume with: tm1 run %s --resume-at %s",
+                    config_dir.name,
                     resume_token(full_plan, name, iteration),
                 )
                 notify(f":exclamation: {label} failed at {name}: {e}")

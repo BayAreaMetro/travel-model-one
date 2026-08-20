@@ -42,10 +42,9 @@ Requires:
     - Pre-built skims (.tpp) and accessibility files
     - Population synthesis outputs (popsyn/hhFile.csv, personFile.csv)
 
-Usage in scenario_config.yaml::
+Usage in config.yaml::
 
     simulate_ctramp:
-      project_dir: "E:/Projects/2023_TM161_IPA_35_testrun"
       host_ip: "123.123.123.123"  # IP address of the machine running CTRAMP
       sample_rate: 0.5            # required: one rate, or {round: rate} for a ramp
       components:
@@ -195,7 +194,7 @@ def _valid_sample_rate(value: object, where: str) -> float:
 
 
 #: Shadow-price passes per global round, as ``RuntimeConfiguration.py`` sets them.
-#: A scenario overrides either key through ``shadow_price_passes:``; leaving it out
+#: A project overrides either key through ``shadow_price_passes:``; leaving it out
 #: reproduces the legacy ladder exactly.
 DEFAULT_SHADOW_PRICE_PASSES: dict[str, int] = {"first": 4, "subsequent": 2}
 
@@ -282,7 +281,7 @@ def shadow_price_run_notes() -> str:
     across a full run, which is known to be insufficient -- the tell is the spread
     of modeled-to-target fill ratios, which stays wide instead of settling flat.
 
-    Converging them is a *scenario*, not a step, because three things have to
+    Converging them is a *case*, not a step, because three things have to
     change together::
 
         simulate_ctramp:
@@ -309,7 +308,7 @@ def shadow_price_run_notes() -> str:
     return shadow_price_run_notes.__doc__ or ""
 
 
-def _popsyn_files(project_dir: Path) -> tuple[str, str]:
+def _popsyn_files(run_dir: Path) -> tuple[str, str]:
     """The synthetic-population filenames, found rather than assumed.
 
     ``RuntimeConfiguration.config_popsyn_files``: the files carry a version in
@@ -322,7 +321,7 @@ def _popsyn_files(project_dir: Path) -> tuple[str, str]:
     """
     found: list[str] = []
     for stem in ("hhFile", "personFile"):
-        matches = sorted((project_dir / "INPUT" / "popsyn").glob(f"{stem}.*"))
+        matches = sorted((run_dir / "INPUT" / "popsyn").glob(f"{stem}.*"))
         if len(matches) != 1:
             names = ", ".join(m.name for m in matches) or "none"
             msg = (
@@ -568,7 +567,7 @@ _SENTINEL_FILE = "ctramp_sentinel.txt"
 
 
 def _write_launcher_bat(
-    project_dir: Path,
+    run_dir: Path,
     runtime_dir: Path,
     host_ip: str,
     *,
@@ -583,11 +582,11 @@ def _write_launcher_bat(
     """
     cp = _classpath(runtime_dir)
     lib = _lib_path(runtime_dir)
-    sentinel = project_dir / _SENTINEL_FILE
+    sentinel = run_dir / _SENTINEL_FILE
 
     bat_content = textwrap.dedent(f"""\
         @echo off
-        cd /d "{project_dir}"
+        cd /d "{run_dir}"
         set CLASSPATH={cp}
         set PATH={lib};%PATH%
 
@@ -636,14 +635,14 @@ def _write_launcher_bat(
         taskkill /f /im java.exe >nul 2>&1
     """)
 
-    bat_path = project_dir / "_ctramp_launcher.bat"
+    bat_path = run_dir / "_ctramp_launcher.bat"
     bat_path.write_text(bat_content, encoding="utf-8")
     log.info("Wrote launcher bat: %s", bat_path)
     return bat_path
 
 
 def _run_via_schtasks(
-    project_dir: Path,
+    run_dir: Path,
     runtime_dir: Path,
     host_ip: str,
     *,
@@ -656,10 +655,10 @@ def _run_via_schtasks(
     Monitors progress by tailing log files. Blocks until completion.
     """
     bat_path = _write_launcher_bat(
-        project_dir, runtime_dir, host_ip,
+        run_dir, runtime_dir, host_ip,
         iteration=iteration, sample_rate=sample_rate, seed=seed,
     )
-    sentinel = project_dir / _SENTINEL_FILE
+    sentinel = run_dir / _SENTINEL_FILE
     sentinel.unlink(missing_ok=True)
 
     # Create scheduled task that runs interactively (/it)
@@ -683,7 +682,7 @@ def _run_via_schtasks(
     log.info("Launched CTRAMP via schtasks (interactive session)")
 
     # Monitor via log file and sentinel
-    logs_dir = project_dir / "logs"
+    logs_dir = run_dir / "logs"
     stop_event = threading.Event()
     monitor = threading.Thread(
         target=_monitor_logs, args=(logs_dir, stop_event), daemon=True,
@@ -733,14 +732,14 @@ def _run_via_schtasks(
 
 
 def start_infrastructure(
-    runtime_dir: Path, project_dir: Path, host_ip: str,
+    runtime_dir: Path, run_dir: Path, host_ip: str,
 ) -> list[subprocess.Popen]:
     """Start JPPF driver, JPPF node, HH manager, and Matrix manager."""
     cp = _classpath(runtime_dir)
     lib = _lib_path(runtime_dir)
     java_env = _env(cp, lib)
     popen_kw: dict = {
-        "cwd": str(project_dir),
+        "cwd": str(run_dir),
         "stdout": subprocess.DEVNULL,
         "stderr": subprocess.DEVNULL,
         "env": java_env,
@@ -848,7 +847,7 @@ def _monitor_logs(logs_dir: Path, stop: threading.Event) -> None:
 
 
 def run_model(
-    project_dir: Path,
+    run_dir: Path,
     runtime_dir: Path,
     *,
     iteration: int = 3,
@@ -887,7 +886,7 @@ def run_model(
     log.info("CTRAMP: iter=%d sample=%s seed=%d", iteration, sample_rate, seed)
 
     # Start background log monitor
-    logs_dir = project_dir / "logs"
+    logs_dir = run_dir / "logs"
     stop_event = threading.Event()
     monitor = threading.Thread(
         target=_monitor_logs, args=(logs_dir, stop_event), daemon=True,
@@ -895,7 +894,7 @@ def run_model(
     monitor.start()
 
     proc = subprocess.Popen(
-        cmd, cwd=str(project_dir), env=java_env,
+        cmd, cwd=str(run_dir), env=java_env,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         text=True, bufsize=1,
     )
@@ -915,8 +914,8 @@ def run_model(
 # ---------------------------------------------------------------------------
 
 
-def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
-    """Run CTRAMP with the component flags specified in scenario config.
+def run(config_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
+    """Run CTRAMP with the component flags specified in the project config.
 
     One call runs one round.  The runner owns the feedback loop and supplies the
     round number, which selects this round's sample rate
@@ -930,7 +929,6 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
               count: 3
               steps:
                 - simulate_ctramp:
-                    project_dir: "E:/Projects/..."
                     host_ip: "localhost"
                     sample_rate: {1: 0.15, 2: 0.30, 3: 0.50}   # required
                     shadow_pricing: true       # set false to disable
@@ -940,14 +938,16 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
                       ...
     """
     step_cfg = step_config(cfg, "simulate_ctramp", kwargs)
-    project_dir = Path(step_cfg["project_dir"])
-    runtime_dir = Path(step_cfg.get("runtime_dir", str(project_dir / "CTRAMP" / "runtime")))
+    # CT-RAMP's Project.Directory is this run's directory -- the same one every
+    # other step reads off the config, not a separate step key.
+    run_dir = Path(cfg["run_dir"])
+    runtime_dir = Path(step_cfg.get("runtime_dir", str(run_dir / "CTRAMP" / "runtime")))
     host_ip = step_cfg.get("host_ip", "localhost")
     seed = step_cfg.get("seed", 0)
     do_shadow_pricing = step_cfg.get("shadow_pricing", True)
 
     # One call runs one iteration.  The global feedback loop belongs to the
-    # runner (`iterations:` in the scenario config), because an iteration is
+    # runner (`iterations:` in the project config), because an iteration is
     # demand *plus* assignment -- exactly what RunIteration.bat runs, and what
     # this step alone cannot express.
     if "iterations" in step_cfg:
@@ -984,9 +984,9 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
     flags = components_to_flags(components)
 
     # Patch runtime configuration (replaces what RuntimeConfiguration.py did).
-    proj_dir_fwd = str(project_dir).replace("\\", "/").rstrip("/") + "/"
-    flags["Project.Directory"] = proj_dir_fwd
-    hh_file, person_file = _popsyn_files(project_dir)
+    run_dir_fwd = str(run_dir).replace("\\", "/").rstrip("/") + "/"
+    flags["Project.Directory"] = run_dir_fwd
+    hh_file, person_file = _popsyn_files(run_dir)
     flags["PopulationSynthesizer.InputToCTRAMP.HouseholdFile"] = hh_file
     flags["PopulationSynthesizer.InputToCTRAMP.PersonFile"] = person_file
     flags["RunModel.MatrixServerAddress"] = host_ip
@@ -1031,7 +1031,7 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
         # path handles multi-iteration runs one round at a time.
         try:
             _run_via_schtasks(
-                project_dir, runtime_dir, host_ip,
+                run_dir, runtime_dir, host_ip,
                 iteration=iteration, sample_rate=sample_rate, seed=seed,
             )
         finally:
@@ -1040,10 +1040,10 @@ def run(scenario_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG00
         # Interactive session: direct subprocess execution.  The JPPF cluster and
         # matrix server are started and torn down per iteration, matching
         # RunIteration.bat, which calls javaOnly_runMain/runNode0 inside each one.
-        procs = start_infrastructure(runtime_dir, project_dir, host_ip)
+        procs = start_infrastructure(runtime_dir, run_dir, host_ip)
         try:
             run_model(
-                project_dir, runtime_dir,
+                run_dir, runtime_dir,
                 iteration=iteration, sample_rate=sample_rate, seed=seed,
             )
         finally:

@@ -59,7 +59,7 @@ def _copy_tree(src: Path, dest: Path, *, glob: str | None, force: bool) -> int:
 
 
 def run(
-    scenario_dir: Path,  # noqa: ARG001
+    config_dir: Path,  # noqa: ARG001
     cfg: dict,
     **kwargs: object,
 ) -> str | None:
