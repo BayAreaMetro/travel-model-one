@@ -30,7 +30,7 @@ typical_weekday:
 
   # ── Axle count → truck type mapping ──────────────────────────────
 axle_to_truck_type_map:
-  struck: [2]  # 2 axle
+  # struck: [2]  # 2 axle
   mtruck: [3]  # 3 axle
   ctruck: [4, 5, 6, 7]  # 4+ axles
 
