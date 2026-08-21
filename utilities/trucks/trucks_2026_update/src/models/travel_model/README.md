@@ -1,4 +1,4 @@
-# Travel Model Runner (Truck Validation Harness)
+# Travel Model Runner (Truck Validation Tool)
 
 This module is a validation tool for the TM-1.x commercial vehicle models. It runs **one iteration** of the demand → assignment loop (not the usual three-iteration feedback), and only the **commercial vehicle (truck) models** plus the highway assignment. Everything else in the travel model is left untouched.
 
@@ -75,34 +75,4 @@ Each **replacement** is a `{source, destination}` pair:
 | `source` | Local file path **or** a GitHub URL (auto-detected and downloaded at run time — paste a permalink with a commit hash to pin it). |
 | `destination` | Path **relative to the scenario root**. |
 
-## Experiments
 
-The experiments run during the TM-1.7 truck update are captured as scenarios in the config.
-
-
-| Experiment | Trip Generation | Trip Distribution | Time of Day | IX/XI/XX Demand | Special Generators |
-|------------|-----------------|-------------------|-------------|-----------------|--------------------|
-| **TM-1.6** |  |  |  |  |  |
-| **TM-1.6_FIX_ROUNDING_ISSUE** |  |  |  |  |  |
-| **TM-1.6_FIXES** |  |  |  |  |  |
-| **TM-1.6_TRK_SW** |  |  |  |  |  |
-| **TM-1.7_GEN_REEST** |  |  |  |  |  |
-| **TM-1.7_GEN_NEWSPEC** |  |  |  |  |  |
-| **TM-1.7_GEN_IX** |  |  |  |  |  |
-| **TM-1.7_GEN_IX_NVF** |  |  |  |  |  |
-| **TM-1.7_Updates** |  |  |  |  |  |
-
-The CUBE scripts an experiment swaps in (`.bat` restart variants, `.job` model steps, and the friction-factor `.dat`) live in [`TruckTripGeneration_scripts/`](TruckTripGeneration_scripts/). The CUBE→Python output-conversion scripts used in step 4 — `.tpp`→`.omx` and `.net`→shapefile — live in [`cube_scripts/`](cube_scripts/).
-
-## Outputs
-
-#TODO: Reference BOX Link to this outputs 
-Per scenario, under `output_root/<name>/`:
-
-- `hwy/iter<ITER>/` — assigned networks for this run (`ITER=TEST` by default), kept separate from the base run's iterations.
-- Converted `.omx` matrices and `.shp` networks the evaluation reads.
-
-Per run, under the timestamped experiment directory:
-
-- `configurations_used.yaml` — the exact resolved config, for reproducibility.
-- Evaluation outputs (scatter plots, VMT comparison, Excel workbook, validation shapefile).

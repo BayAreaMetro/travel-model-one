@@ -68,7 +68,9 @@ Several data preparation and analysis pipelines were developed to support model 
 
 ## TM-1.7 – Truck Model Updates
 
-Outputs from the data pipelines are used to support the re-estimation and testing of freight model components.
+The updates summarized in this section represent the final set of truck model enhancements incorporated into TM-1.7. Model development involved a series of experiments designed to evaluate the performance and sensitivity of individual modifications, including changes to trip generation, trip distribution, time-of-day factors, IX/XI/XX demand adjustments, and special generator treatments.
+
+The results of these experiments were used to inform the final model specification documented below. Detailed descriptions of the experimental runs, model comparisons, and evaluation results are available in [Experiments](reports/experiments.md).
 
 
 | Model Component | Summary of Changes | Modified Scripts / Inputs | Supporting Evidence|
@@ -81,7 +83,7 @@ Outputs from the data pipelines are used to support the re-estimation and testin
 
 ---
 
-## Validation Results
+## Validation
 
 Validation focused on comparing modeled truck volumes against observed truck counts and evaluating the performance of the proposed TM1.7 freight model relative to the existing TM1.6 implementation.
 
@@ -92,7 +94,6 @@ Comparison of modeled versus observed truck counts using available Caltrans and 
 | Truck Class | TM1.6 | TM1.7 |
 |------------|:-----:|:-----:|
 | Heavy Trucks | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.6_HV.png?raw=true)| ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.7_GEN_IX_HV.png?raw=true)|
-| Very Small, Small, and Medium Trucks | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.6_SM.png?raw=true)| ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.7_GEN_IX_SM.png?raw=true)|
 
 
 
