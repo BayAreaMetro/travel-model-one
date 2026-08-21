@@ -1,119 +1,69 @@
-# Base 2023 CT-RAMP — RunModel.bat, driven by the Python runner instead of cmd.
+# CT-RAMP on 2023 inputs — RunModel.bat, driven by the Python runner instead of cmd.
+# Same model, same inputs, same results; only the orchestration changes.
 #
-# Same model, same inputs, same results: every legacy .job and .py runs unmodified, from
-# where it already lives.  Only the orchestration changes.  Steps run in the order written;
-# `warmstart:` and `iterate:` are the only nesting, and they are the two blocks that repeat
-# or pin a round.
-#
-# Needs Cube Voyager + licence.  Set run_dir; copy_inputs assembles everything else from
-# the sources named below, so a run is self-contained and reads no other run.
+# 2023 is the input vintage this project is built from -- the adopted networks and
+# land use it points at below.  A case may forecast forward from it (env.MODEL_YEAR),
+# so the year names where the project starts, not the only year it can produce.
+# What the keys mean: docs/running-a-model.md
 
-slack: "off"
+slack: "minimal"          # start, finish and failure only; "verbose" adds every step
 
 logging:
-  level: DEBUG                      # what reaches the run log; console stays at INFO
-  # dir: "{run_dir}/logs"
+  level: DEBUG            # what reaches the run log; console stays at INFO
 
-# ── Machine-specific — set these in .env, not here ──────────────────────────────────────
-# {env:NAME} reads the environment, which tm1 populates from .env at the repo root.
-# Copy .env.example to .env and fill it in; an unset variable is an error naming it.
-# Only ROOTS belong here -- a drive letter or UNC share.  The rest of every path is
-# written out below where it can be read and reviewed: which network, which land use,
-# which previous run.  Burying that in .env is what made a config unreadable.
-# The MTC model data share.  A drive letter on machines that have it mapped, the UNC
-# path where the mapping is stale -- which is the only part of these paths that is
-# machine-specific.  M: is \\models.ad.mtc.ca.gov\data\models.
-m_drive: "{env:TM1_M_DRIVE}"
+# The one shorthand this file defines; another would belong here beside it.  Only the
+# ROOT is machine-specific -- which network and which land use are spelled out below.
+m_drive: "{env:TM1_M_DRIVE}"        # M: = \\models.ad.mtc.ca.gov\data\models
 
-run_dir: "{env:TM1_PROJ_DIR}"              # where this run happens
-# TM1_PROJ_DIR keeps its old name for now: renaming it would break every machine's
-# .env at once.  It becomes TM1_RUNS_ROOT when run directories move under a root.
+# Injected per run -- usable below, not settable:
+#   run_dir = {env:TM1_RUNS_ROOT}/{project}/{case}-{NNN}, plus runs_root, project, case, run
+# {PERIOD} and {iteration} are expanded per step.
 
-# ── Model identity ──────────────────────────────────────────────────────────────────────
-# Legacy names: the Cube jobs read them as %MODEL_YEAR% / %FUTURE%.  RunModel.bat slices
-# both out of the project folder name ("2023_TM161_IPA_35" -> 2023, IPA -> PBA50); stating
-# them here means results no longer depend on how a directory is spelled.
-#
-#   model_year  forecast year.  IxForecasts_horizon.job has fixed tables for 2005/2015,
-#               a 2021 base, and extrapolates later years linearly from it.
-#   future      a planning-scenario family, not a year.  IPA/DBP/FBP/EIR/SEN/STP/NGF/TIP/
-#               TRR all map to PBA50, the only one implemented.
-#
-# Project-level because the pre-process needs them too, before any assignment exists.
-model_year: 2023
-future: PBA50
-
-# ── Environment the legacy jobs and scripts read ────────────────────────────────────────
-# They take parameters from the environment, not argv: HwyAssign reads %ITER%, the feedback
-# jobs read %WGT%.  This block is only part of it — ITER, PREV_ITER, WGT, PREV_WGT,
-# SAMPLESHARE and SEED come from the runner per round, transcribed from RunModel.bat's four
-# iteration blocks.  A step may add its own `env:`, layered on top.  Model parameters only;
-# secrets stay in the process environment (see SLACK_WEBHOOK_URL in tm1/slack.py).
+# The legacy jobs take parameters from the environment, not argv.  ITER, PREV_ITER, WGT,
+# PREV_WGT, SAMPLESHARE and SEED come from the runner per round; these are the rest.
+# RunModel.bat sliced MODEL_YEAR and FUTURE out of the folder name; stating them is the fix.
 env:
-  EN7: DISABLED                     # required: RunModel.bat 115-128 will not start without it
-  PATH: "{env:TM1_GAWK_DIR};{env:PATH}"      # gawk, for BuildTransitNetworks.job
-  # No PYTHONPATH: NetworkWrangler is an ordinary dependency now (see pyproject.toml),
-  # and `command:` steps run under this environment's interpreter, so
-  # transitDwellAccess.py imports Wrangler from site-packages.
-  # MAXITERATIONS: 3                # RunModel.bat 135-147 hard-codes these
-  # TRNCONFIG: FAST                 # STANDARD makes transit iterate; not supported yet
-
-ctramp_output_dir: "{run_dir}/main"
+  MODEL_YEAR: 2023        # IxForecasts_horizon.job grows external trips from a 2021 base;
+                          # HsrTripGeneration.job picks its table for the year
+  FUTURE: PBA50           # one branch in one job; PBA50 is the only value implemented
+  EN7: DISABLED           # required: RunModel.bat 115-128 will not start without it
+  PATH: "{env:TM1_GAWK_DIR};{env:PATH}"    # gawk, for BuildTransitNetworks.job
+  # MAXITERATIONS: 3      # RunModel.bat 135-147 hard-codes these
+  # TRNCONFIG: FAST       # STANDARD makes transit iterate; not supported yet
 
 # ════════════════════════════════════════════════════════════════════════════════════════
-# PIPELINE
-#
-# Four ways to declare a step:
-#   job:      a Cube .job, run through Cube        \  spawned; paths relative to run_dir
-#   command:  any other program, spawned            /
-#   module:   importable dotted path                \  imported and called with the config
-#   script:   a .py in this project directory       /
-#
-# Two entries nest, and they decide every step's round:
-#   warmstart:  runs its steps once, at iteration 0 — RunModel.bat's `set ITER=0`
-#   iterate:    repeats its steps `count` times, rounds 1..count
-# Anything written flat runs once, where it sits: round 1 before the loop, the final
-# round after it.  Nothing else sets a round; there is no per-step iteration key.
-#
-# A step outside `iterate:` may also declare:
-#   skip_if_exists: F   its work is done when F is on disk; delete F to force a rebuild
-#
-# A step may only declare skip_if_exists on a file that is ITS product and nobody
-# else's.  Naming one a later round overwrites makes the check answer a different
-# question -- "does round 3's output exist" -- and skip work that was never done.
-# Steps without the key always run: in the warm start below, the seconds-cheap file
-# shuffles redo their work harmlessly, and hwy_skims/accessibility rebuild because
-# their outputs are not round-specific (see the note there).
+# PIPELINE — steps run in the order written.  `warmstart:` and `iterate:` are the only
+# nesting, and they are what decides a step's round.  For the four ways to declare a step
+# (job / command / module / script) and the rules governing `skip_if_exists:`, see
+# docs/running-a-model.md.
 # ════════════════════════════════════════════════════════════════════════════════════════
 steps:
 
   # ── Setup · stage every input the model reads (RunModel.bat steps 1-3) ────────────────
 
-  # RunModel.bat 156-165, plus metrics/.  Cube jobs do not create their own output
-  # directories, and skims/, popsyn/, database/ and metrics/ have no staged inputs.
-  #
-  # Every directory a run writes into is named here, so where one comes from is a
-  # question the config answers.  metrics/ is the departure from the .bat's ten: the
-  # legacy leaves it to whichever summary script runs first, which is the kind of
-  # side effect you have to go reading code to find.  Per-round directories
-  # (hwy/iter{N}, trn/TransitAssignment.iter{N}) are not listed -- N is not known
-  # until the round runs, so their steps create them.
+  # RunModel.bat 156-165, plus metrics/ -- which the .bat leaves to whichever summary
+  # script runs first.  Cube jobs do not create their own output directories.
+  # Nesting is just a longer path.  Per-round directories (hwy/iter{N}) are absent
+  # because N is not known until the round runs, so their steps create them.
   - make_directories:
-      module: "tm1.steps.staging:make_directories"
-      dirs: [hwy, trn, skims, landuse, popsyn, nonres, main, logs, database, logsums, metrics]
+      dirs:
+        - "{run_dir}/hwy"
+        - "{run_dir}/trn"
+        - "{run_dir}/skims"
+        - "{run_dir}/landuse"
+        - "{run_dir}/popsyn"
+        - "{run_dir}/nonres"
+        - "{run_dir}/main"
+        - "{run_dir}/logs"
+        - "{run_dir}/database"
+        - "{run_dir}/logsums"
+        - "{run_dir}/metrics"
 
-  # Entries run in the order written; later ones may read what earlier ones wrote.
-  # Directory entries merge file by file and never overwrite.
-  #
-  # Nothing the model produces is staged -- no skims, accessibility, popsyn or
-  # taxi_tnc_occ_factors -- so a failure in the steps that build them cannot hide.
-  # ── Stage every input the model reads ────────────────────────────────────────────────
-  #
-  # SetUpModel.bat step 3, then RunModel.bat 172-178, in one step.  Entries run in the
-  # order written, so the INPUT/ ones below are staged before the working directories
-  # that read them.  INPUT/ is kept as the run's own record of what went into it.
-  #
-  # Nothing is overwritten unless an entry says `overwrite: true`.
+  # SetUpModel.bat step 3, then RunModel.bat 172-178, in one step.  Entries run in order,
+  # so INPUT/ is staged before the working directories that read it, and kept as the run's
+  # record of what went into it.  Directories merge file by file; nothing is overwritten
+  # unless an entry says so.  Nothing the model *produces* is staged, so a failure in the
+  # steps that build them cannot hide behind a stale file.
   - copy_inputs:
 
       # 1. INPUT/ from its real sources.  Each `from:` is the variable of the same
@@ -265,17 +215,12 @@ steps:
 
   # ── Warm start · iteration 0 ──────────────────────────────────────────────────────────
   # RunModel.bat's `set ITER=0` pass: assign the staged demand once, so round 1 has
-  # congested skims to read.  Everything CT-RAMP's first run needs is built here --
-  # highway skims, transit skims, accessibility, and the filtered synthetic population.
+  # congested skims to read.  Twelve names below repeat in `iterate:` -- same job,
+  # different round.
   #
-  # These steps run at iteration 0 because they are in this block; that is all `warmstart:`
-  # means.  Twelve of the names below also appear in `iterate:` -- same job, different
-  # round, its own config.
-  #
-  # Two departures from RunIteration.bat, both flagged in the parity plan (PR #103):
-  # hwy_skims/accessibility run at the END of iteration 0 and of every round (the .bat
-  # runs them at the head of rounds 1-3; same inputs either way, but the final round's
-  # network also gets skimmed), which is what lets find_no_access_zones and
+  # DEPARTURE from RunIteration.bat: hwy_skims/accessibility run at the END of each round
+  # rather than the head of rounds 1-3.  Same inputs either way, but the final round's
+  # network also gets skimmed, and it lets find_no_access_zones and
   # filter_unconnected_households run here instead of splitting round 1.
   - warmstart:
 
@@ -287,7 +232,6 @@ steps:
       # trnAssign.bat, unrolled.  These run from trn/TransitAssignment.iter0; their cluster
       # still talks in run_dir/commpath rather than under it.
       - stage_transit_lines:
-          module: "tm1.steps.staging:stage_transit_lines"
       - prep_hwy_net:
           job: "CTRAMP/scripts/skims/PrepHwyNet.job"
           cwd: "trn/TransitAssignment.iter{iteration}"
@@ -319,32 +263,25 @@ steps:
             PREVTRNASSIGNITER: "NEG1"
           skip_if_exists: "trn/TransitAssignment.iter0/trnskmam_drv_com_wlk.avg.iter0.tpp"
       - copy_transit_skims:           # trnAssign.bat copy-up: iteration dir -> skims/
-          module: "tm1.steps.staging:copy_transit_skims"
 
       # RunIteration.bat 159-200.  stage_loaded_networks moves hwy_assign's LOAD nets into
       # iter0/, so it shares hwy_assign's sentinel: if the nets were moved, both are done.
       - stage_loaded_networks:
-          module: "tm1.steps.staging:stage_loaded_networks"
           skip_if_exists: "hwy/iter0/LOADEA.net"
       - rename_assignment_variables:
           job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
       - seed_average_networks:        # no earlier round to average against: seed, don't average
-          module: "tm1.steps.staging:seed_average_networks"
       - test_network_convergence:
           job: "CTRAMP/scripts/feedback/TestNetworkConvergence.job"
       - merge_networks:
           job: "CTRAMP/scripts/feedback/MergeNetworks.job"
       - publish_networks:             # hwy/avgLOAD{P}.net -- what the next round's skims read
-          module: "tm1.steps.staging:publish_networks"
 
-      # No skip_if_exists on these two, unlike every other expensive step here.
-      # HwySkims.job writes skims\HWYSKM{PERIOD}.tpp and Accessibility.job writes
-      # skims\accessibility.csv -- no iteration in either path, so every loop round
-      # overwrites them.  An existence check would find round 3's skims and skip,
-      # leaving round 1 to read them instead of round 0's: a re-run that quietly
-      # differs from a fresh one.  The steps above can skip because their products
-      # (hwy/iter0/, trn/TransitAssignment.iter0/) are round 0's alone.  Rebuilding
-      # these costs ~4 minutes on a re-run.
+      # No skip_if_exists on these two, unlike every other expensive step here: their
+      # outputs carry no iteration in the path, so every round overwrites them.  An
+      # existence check would find round 3's skims and skip, leaving round 1 to read
+      # them instead of round 0's -- a re-run that quietly differs from a fresh one.
+      # Rebuilding costs ~4 minutes.
       - hwy_skims:
           job: "CTRAMP/scripts/skims/HwySkims.job"
           cluster_nodes: 5            # DistributeMultistep, one node per period
@@ -455,7 +392,6 @@ steps:
 
         # Transit assignment (trnAssign.bat).
         - stage_transit_lines:
-            module: "tm1.steps.staging:stage_transit_lines"
         - prep_hwy_net:
             job: "CTRAMP/scripts/skims/PrepHwyNet.job"
             cwd: "trn/TransitAssignment.iter{iteration}"
@@ -481,13 +417,11 @@ steps:
               TRNASSIGNITER: "0"
               PREVTRNASSIGNITER: "NEG1"
         - copy_transit_skims:
-            module: "tm1.steps.staging:copy_transit_skims"
 
         # Feedback.  AverageNetworkVolumes runs every round; the .bat skips it at
         # iteration 1 and copies instead, and PREV_ITER=0 makes the two equivalent --
         # see the parity plan, finding 5.
         - stage_loaded_networks:
-            module: "tm1.steps.staging:stage_loaded_networks"
         - rename_assignment_variables:
             job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
         - average_network_volumes:    # the warm start seeds instead -- no earlier round
@@ -500,7 +434,6 @@ steps:
         - merge_networks:
             job: "CTRAMP/scripts/feedback/MergeNetworks.job"
         - publish_networks:
-            module: "tm1.steps.staging:publish_networks"
 
         # Level of service for the NEXT round's demand -- and, in the final round, for
         # the skims database, which then reflects the finished network.
@@ -517,7 +450,7 @@ steps:
       job: "CTRAMP/scripts/metrics/net2csv_avgload5period.job"
 
   # Python-native, unlike every step above: `script:` imports and calls with the resolved
-  # config rather than spawning a subprocess.  This is the shape phase 4 converts the
-  # legacy steps into.  Position in the list decides pre- or post-processing.
+  # config rather than spawning a subprocess.  This is the shape #110 converts the legacy
+  # steps into.  Position in the list decides pre- or post-processing.
   - vmt_vht_metrics:
       script: "hooks.py:vmt_vht_metrics"

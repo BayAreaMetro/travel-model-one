@@ -24,16 +24,50 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-# Cube install dirs (from CTRAMP/runtime/SetPath.bat TPP_PATH). Prepended to PATH
-# so runtpp and the Voyager engine + DLLs resolve.
-_CUBE_DIRS = (
-    r"C:\Program Files\Citilabs\CubeVoyager",
-    r"C:\Program Files\Citilabs\VoyagerFileAPI",
-    r"C:\Program Files\Bentley\OpenPaths\CubeVoyager",
+# The three Cube files anything here needs.  Named individually rather than as
+# install directories to be searched: a directory has to be hunted through for the
+# file you actually wanted, and the hunt is the part that goes wrong when Bentley
+# moves something.  Point at the file and there is nothing to resolve.
+#
+#   runtpp.exe             the Voyager engine
+#   Cluster.exe            starts and stops the Cube Cluster nodes
+#   VoyagerFileAccess.dll  loaded by CT-RAMP's Java to read .tpp matrices
+#
+# Their directories are what goes on PATH and on Java's library path -- Cube loads
+# its sibling DLLs (tppdlibx.dll and friends) by name at runtime -- so those are
+# derived here rather than configured separately.
+#
+# Defaults are what the installers do, and they stay in code so importing this
+# module never requires a configured environment: `tm1 cases` and `tm1 status` have
+# to work on a machine with no Cube at all.  A Bentley OpenPaths install is not a
+# fourth setting -- it is `TM1_RUNTPP` pointing somewhere else.
+_CUBE_FILES: tuple[tuple[str, str], ...] = (
+    ("TM1_RUNTPP", r"C:\Program Files\Citilabs\CubeVoyager\runtpp.exe"),
+    ("TM1_CLUSTER", r"C:\Program Files\Citilabs\CubeVoyager\Cluster.exe"),
+    ("TM1_VOYAGER_DLL", r"C:\Program Files\Citilabs\VoyagerFileAPI\VoyagerFileAccess.dll"),
 )
-_RUNTPP = r"C:\Program Files\Citilabs\CubeVoyager\runtpp.exe"
-_CLUSTER = r"C:\Program Files\Citilabs\CubeVoyager\Cluster.exe"
+_RUNTPP, _CLUSTER, _VOYAGER_DLL = (
+    os.environ.get(var) or default for var, default in _CUBE_FILES
+)
+
+#: The directories those files live in, deduplicated and in order.
+_CUBE_DIRS = tuple(dict.fromkeys(str(Path(p).parent) for p in (_RUNTPP, _CLUSTER, _VOYAGER_DLL)))
+
 _CUBE_PATH = ";".join(d for d in _CUBE_DIRS if Path(d).is_dir())
+
+
+def install_dirs() -> tuple[str, ...]:
+    """The directories Cube's files live in, for PATH and Java's library path.
+
+    Public because CT-RAMP's Java needs the same ones. One source of truth: a Cube
+    that moves is a `.env` edit, not a hunt through the code for the other copy.
+    """
+    return _CUBE_DIRS
+
+
+def voyager_dll() -> Path:
+    """``VoyagerFileAccess.dll``, which CT-RAMP's Java loads to read ``.tpp``."""
+    return Path(_VOYAGER_DLL)
 
 # Windows STATUS_ACCESS_VIOLATION (0xC0000005) — runtpp emits this when it cannot
 # reach the Bentley license pipe at startup (signed and unsigned process-exit forms).

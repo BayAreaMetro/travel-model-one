@@ -5,7 +5,7 @@ the tests and run through the actual interpreter -- because the whole point of t
 step type is faithfulness to how ``RunModel.bat`` invoked things: argv, cwd,
 environment and exit-code handling.  Mocking the subprocess would test nothing.
 
-``job:`` is exercised with :func:`tm1.assignment.cube.runner.run_cube_job` patched,
+``job:`` is exercised with :func:`cube.job.run_cube_job` patched,
 since Cube is a licensed binary; what is verified is that the step hands it the
 right job path, cwd and environment.
 """
@@ -16,8 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from tm1.runner import _load_step
-from tm1.steps import external
+from tm1.steps import external, load_step
 
 #: Cluster size a period-looped Cube job needs, as the real jobs declare.
 CLUSTER_NODES = 5
@@ -327,8 +326,14 @@ def test_iteration_beyond_the_bat_is_refused_not_extrapolated(proj: Path) -> Non
 
 
 def test_model_year_and_future_come_from_the_project(proj: Path) -> None:
-    """No longer sliced out of the project folder name, as RunModel.bat did."""
-    cfg = _cfg(proj, "x", {}, model_year=2023, future="PBA50")
+    """No longer sliced out of the project folder name, as RunModel.bat did.
+
+    They ride in the project's ``env:`` block rather than through a separate mapping:
+    they are environment variables the Cube jobs read, the same as every other entry
+    there, and one path for them is one fewer thing to keep in step.
+    """
+    cfg = _cfg(proj, "x", {})
+    cfg["env"] = {**cfg.get("env", {}), "MODEL_YEAR": 2023, "FUTURE": "PBA50"}
 
     env = external.model_environment(cfg)
 
@@ -374,7 +379,7 @@ def test_command_receives_the_model_environment(proj: Path) -> None:
 
 
 def test_runner_resolves_both_external_keys(proj: Path) -> None:
-    """``_load_step`` returns a callable for either key without importing anything."""
+    """``load_step`` returns a callable for either key without importing anything."""
     _write_script(proj, "probe.py", _PROBE)
     _write_script(proj, "SetTolls.job", "; a Cube job\n")
     steps_cfg = {
@@ -383,25 +388,25 @@ def test_runner_resolves_both_external_keys(proj: Path) -> None:
     }
 
     for name, step_cfg in steps_cfg.items():
-        assert callable(_load_step(name, step_cfg, proj))
+        assert callable(load_step(name, step_cfg, proj))
 
 
 def test_declaring_two_kinds_of_step_is_rejected(proj: Path) -> None:
     """A step is one thing: a .job runs through Cube, a .py through the interpreter."""
     with pytest.raises(ValueError, match="use exactly one"):
-        _load_step("muddle", {"job": "a.job", "command": "b.py"}, proj)
+        load_step("muddle", {"job": "a.job", "command": "b.py"}, proj)
 
 
 def test_builtin_step_cannot_be_redefined_as_external(proj: Path) -> None:
     """Built-in names still win -- the new keys do not open a back door."""
     with pytest.raises(ValueError, match="built in"):
-        _load_step("assignment", {"job": "CTRAMP/scripts/HwyAssign.job"}, proj)
+        load_step("assignment", {"job": "CTRAMP/scripts/HwyAssign.job"}, proj)
 
 
 def test_unknown_step_error_mentions_the_external_keys(proj: Path) -> None:
     """The message has to teach all four ways to declare a step, not two."""
     with pytest.raises(ValueError, match="command"):
-        _load_step("mystery", {}, proj)
+        load_step("mystery", {}, proj)
 
 
 # --- verify: what a step says it produces ----------------------------------

@@ -35,7 +35,7 @@ full phase plan and current status of each piece.
 
 | Legacy                        | New                                     |
 |-------------------------------|-----------------------------------------|
-| `RunModel.bat`                | `tm1 run base_2023_ctramp`              |
+| `RunModel.bat`                | `tm1 run ctramp_2023`              |
 | Hand-edited properties files  | `config.yaml` per project               |
 | Paths edited in-place per run | Templated (`{run_dir}`, `{m_drive}`)      |
 
@@ -84,10 +84,10 @@ tm1 --help
 ### Running a Project
 
 ```bash
-tm1 run base_2023_ctramp
+tm1 run ctramp_2023
 
 # a single step
-tm1 run base_2023_ctramp --steps simulate_ctramp
+tm1 run ctramp_2023 --steps simulate_ctramp
 
 # a project kept outside the repo
 tm1 run E:/runs/my_project
@@ -100,8 +100,8 @@ instead of from the beginning. **The named step runs** — everything before it 
 skipped:
 
 ```bash
-tm1 run base_2023_ctramp --resume-at assignment
-tm1 run base_2023_ctramp --resume-at 2:assignment   # iteration 2's
+tm1 run ctramp_2023 --resume-at assignment
+tm1 run ctramp_2023 --resume-at 2:assignment   # iteration 2's
 ```
 
 The `N:` prefix is needed only when a step runs more than once — that is, inside
@@ -113,8 +113,8 @@ You rarely type it: a failure prints the exact command.
 ```
 --- Step: assignment ---
 ERROR  Cube job HwyAssign.job failed (exit=2, engine ReturnCode=2)
-       Full Cube log: E:/Tests/base_2023_ctramp/_cube_HwyAssign_18004_1785277879.log
-       Resume with: tm1 run base_2023_ctramp --resume-at 2:assignment
+       Full Cube log: E:/Tests/ctramp_2023/_cube_HwyAssign_18004_1785277879.log
+       Resume with: tm1 run ctramp_2023 --resume-at 2:assignment
 ```
 
 And the resumed run states what it is doing before doing any of it:
@@ -134,7 +134,7 @@ whatever stale matrices happened to be lying around.
 
 ### Creating a New Project
 
-1. Copy `projects/base_2023_ctramp/config.yaml` and `cases.yaml` to `projects/<name>/`
+1. Copy `projects/ctramp_2023/config.yaml` and `cases.yaml` to `projects/<name>/`
 2. Update the `copy_inputs` sources for your environment
 3. Adjust the `steps:` block — iterations, sample rate, threads, model components
 4. Declare the runs in `cases.yaml`; `tm1 cases <name>` checks every address
@@ -208,7 +208,7 @@ def clean_inputs(config_dir, cfg, **kwargs):
 - Custom steps work with `--steps <name>` like any other
 - Built-in step names cannot be redefined; pick a different name
 
-`projects/base_2023_ctramp/hooks.py` is a worked example: `vmt_vht_metrics` reads
+`projects/ctramp_2023/hooks.py` is a worked example: `vmt_vht_metrics` reads
 the loaded network the feedback block writes and summarises VMT, VHT and implied
 congested speed by facility type — a reduced form of
 `utilities/RTP/metrics/hwynet.py`. It aggregates rather than copies, which is the

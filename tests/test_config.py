@@ -11,7 +11,7 @@ directory, and a fifteen-hour run would happily write itself there.
 
 import pytest
 
-from tm1.config import expand_env, resolve_templates
+from tm1.project.config import expand_env, resolve_templates
 
 
 def test_an_env_reference_is_replaced_by_its_value(monkeypatch) -> None:  # noqa: ANN001

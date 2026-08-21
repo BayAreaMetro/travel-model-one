@@ -61,7 +61,7 @@ from pathlib import Path
 
 from tm1.assignment.cube.ctramp import run_iteration
 from tm1.assignment.cube.highway import PERIODS
-from tm1.config import step_config
+from tm1.project.config import step_config
 
 log = logging.getLogger(__name__)
 
@@ -187,12 +187,18 @@ def run(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: A
     """Run one assignment + feedback pass for the current iteration."""
     step_cfg = step_config(cfg, "assignment", kwargs)
 
-    # `model_year` and `future` describe the run, not this step: the pre-process
-    # reads them too (HsrTripGeneration.job wants %MODEL_YEAR% before any assignment
-    # exists).  Defaulted from the project here so every backend sees them without
-    # widening the `_BACKENDS` signature; a step key still wins.
+    # `MODEL_YEAR` and `FUTURE` describe the run, not this step: the pre-process reads
+    # them too (HsrTripGeneration.job wants %MODEL_YEAR% before any assignment exists).
+    # They live in the project's `env:` block because that is what they are -- variables
+    # the legacy jobs read from the environment.  Read from there here so every backend
+    # sees them without widening the `_BACKENDS` signature; a step key still wins.
+    project_env = cfg.get("env") or {}
     step_cfg = {
-        **{k: cfg[k] for k in ("model_year", "future") if cfg.get(k) is not None},
+        **{
+            key: project_env[name]
+            for key, name in (("model_year", "MODEL_YEAR"), ("future", "FUTURE"))
+            if project_env.get(name) is not None
+        },
         **step_cfg,
     }
 

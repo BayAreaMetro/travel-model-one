@@ -23,7 +23,7 @@ import logging
 import shutil
 from pathlib import Path
 
-from tm1.config import step_config
+from tm1.project.config import step_config
 
 log = logging.getLogger(__name__)
 

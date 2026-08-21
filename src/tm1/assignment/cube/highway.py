@@ -1,7 +1,7 @@
 """Faithful Cube Voyager highway assignment, skims and feedback.
 
 Drives the existing ``.job`` scripts as-is through
-:func:`~tm1.assignment.cube.runner.run_cube_job` -- the same scripts
+:func:`~cube.job.run_cube_job` -- the same scripts
 ``RunIteration.bat`` calls, in the same order, with the same cluster settings.
 
 Nothing here reads or writes matrix *content*, so this module has no dependency
@@ -14,7 +14,7 @@ import logging
 import shutil
 from pathlib import Path
 
-from tm1.assignment.cube.runner import run_cube_job
+from cube.job import run_cube_job
 
 log = logging.getLogger(__name__)
 

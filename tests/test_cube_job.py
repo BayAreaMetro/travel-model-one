@@ -1,4 +1,4 @@
-"""Tests for :func:`tm1.assignment.cube.runner.run_cube_job`.
+"""Tests for :func:`cube.job.run_cube_job`.
 
 Cube is a licensed binary, so ``runtpp`` is replaced with a fake
 ``subprocess.run``.  What is verified is the bookkeeping *around* the engine
@@ -18,8 +18,8 @@ from pathlib import Path
 
 import pytest
 
-from tm1.assignment.cube import runner
-from tm1.assignment.cube.runner import CubeJobError, run_cube_job
+import cube.job as runner
+from cube.job import CubeJobError, run_cube_job
 
 
 def _fake_runtpp(monkeypatch: pytest.MonkeyPatch, stdout: str, returncode: int = 0) -> None:

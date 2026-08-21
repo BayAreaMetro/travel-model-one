@@ -59,7 +59,7 @@ dev = [
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/tm1"]
+packages = ["src/tm1", "src/cube"]
 
 [tool.ruff]
 line-length = 100

@@ -12,11 +12,12 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tm1 import cases
-from tm1.cases import Case, apply_case, expand, resolve_address
+from tm1.project import cases, overrides
+from tm1.project.cases import Case, expand
+from tm1.project.overrides import apply_case, resolve_address
 
 PROJECT_CONFIG = (
-    Path(__file__).parents[1] / "projects" / "base_2023_ctramp" / "config.yaml"
+    Path(__file__).parents[1] / "projects" / "ctramp_2023" / "config.yaml"
 )
 
 #: Values the shipped config declares, and the ones a case overrides them with.
@@ -41,10 +42,24 @@ def cfg() -> dict:
 
 def test_a_top_level_key(cfg: dict) -> None:
     """The simplest override there is, and it must not mutate the shared config."""
-    out = apply_case(cfg, Case("A", overrides={"model_year": HORIZON_YEAR}))
+    out = apply_case(cfg, Case("A", overrides={"slack": "off"}))
 
-    assert out["model_year"] == HORIZON_YEAR
-    assert cfg["model_year"] == SHIPPED_YEAR, "the original must not be mutated"
+    assert out["slack"] == "off"
+    assert cfg["slack"] == "minimal", "the original must not be mutated"
+
+
+def test_the_forecast_year(cfg: dict) -> None:
+    """The commonest override there is.
+
+    `MODEL_YEAR` lives in `env:` because that is what it is -- a variable the Cube jobs
+    read from the environment -- so the address goes through the block rather than
+    naming a top-level key.
+    """
+    out = apply_case(cfg, Case("A", overrides={"env.MODEL_YEAR": HORIZON_YEAR}))
+
+    assert out["env"]["MODEL_YEAR"] == HORIZON_YEAR
+    assert out["env"]["EN7"] == "DISABLED", "its siblings must survive"
+    assert cfg["env"]["MODEL_YEAR"] == SHIPPED_YEAR, "the original must not be mutated"
 
 
 def test_inside_a_top_level_mapping_keeps_its_siblings(cfg: dict) -> None:
@@ -101,8 +116,8 @@ def test_a_bare_name_in_two_blocks_is_refused(cfg: dict) -> None:
 
 def test_an_unknown_address_names_the_closest_match(cfg: dict) -> None:
     """The typo that would otherwise run the default and say nothing."""
-    with pytest.raises(KeyError, match="model_year"):
-        resolve_address(cfg, "model_yaer")
+    with pytest.raises(KeyError, match="m_drive"):
+        resolve_address(cfg, "m_drve")
 
 
 def test_an_unknown_key_inside_a_step_names_the_closest_match(cfg: dict) -> None:
@@ -252,12 +267,12 @@ def test_an_unknown_pathway_is_refused_by_name() -> None:
 def test_validate_reports_every_case_not_just_the_first(cfg: dict) -> None:
     """A bundle is queued and left; finding case 27's typo at hour 40 is the point."""
     expansion = expand({"cases": {
-        "A-ONE": {"model_yaer": 2035},
+        "A-ONE": {"m_drve": "X:/"},
         "A-TWO": {"iterate.simulate_ctramp.sample_ratio": 0.5},
-        "A-GOOD": {"model_year": 2035},
+        "A-GOOD": {"env.MODEL_YEAR": 2035},
     }})
 
-    problems = cases.validate(cfg, expansion)
+    problems = overrides.validate(cfg, expansion)
 
     assert len(problems) == EXPECTED_PROBLEMS
     assert any(p.startswith("A-ONE") for p in problems)
@@ -269,7 +284,7 @@ def test_the_shipped_project_validates(cfg: dict) -> None:
     expansion = cases.load(PROJECT_CONFIG.parent)
 
     assert expansion.cases, "a project declares at least one case"
-    assert cases.validate(cfg, expansion) == []
+    assert overrides.validate(cfg, expansion) == []
 
 
 # --------------------------------------------------------------------------- #

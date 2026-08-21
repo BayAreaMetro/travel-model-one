@@ -18,14 +18,15 @@ from pathlib import Path
 import psutil
 import pytest
 
-from tm1.status import CubeProbe, _commpath_of, _cube_lines, _owns, probe_cube
+from cube.process import CubeProbe, _commpath_of, _owns, probe_cube
+from tm1.status.grid import _cube_lines
 
 #: Only the two fields the probe sums; psutil's own tuple is platform-shaped.
 CpuTimes = namedtuple("CpuTimes", "user system")  # noqa: PYI024
 
-PROJ = Path("E:/Tests/base_2023_ctramp")
-NODE = r"E:\Tests\base_2023_ctramp\commpath\CTRAMP7.script"
-MASTER = r"E:\Tests\base_2023_ctramp\CTRAMP\scripts\assign\HwyAssign.job"
+PROJ = Path("E:/Tests/ctramp_2023")
+NODE = r"E:\Tests\ctramp_2023\commpath\CTRAMP7.script"
+MASTER = r"E:\Tests\ctramp_2023\CTRAMP\scripts\assign\HwyAssign.job"
 
 
 class FakeProc:
@@ -71,7 +72,7 @@ def _cluster(cpu_step: float, nodes: int = 3) -> list[FakeProc]:
 # --- which processes belong to this run -------------------------------------
 
 
-@pytest.mark.parametrize("arg", [MASTER, NODE, "e:/tests/base_2023_ctramp/x.job"])
+@pytest.mark.parametrize("arg", [MASTER, NODE, "e:/tests/ctramp_2023/x.job"])
 def test_owns_matches_across_separator_and_case(arg: str) -> None:
     """The config writes forward slashes; Windows hands back backslashes."""
     assert _owns([arg], PROJ)
@@ -81,7 +82,7 @@ def test_owns_matches_across_separator_and_case(arg: str) -> None:
     "arg",
     [
         r"E:\Tests\other_project\CTRAMP\scripts\assign\HwyAssign.job",
-        r"E:\Tests\base_2023_ctramp_v2\commpath\CTRAMP1.script",
+        r"E:\Tests\ctramp_2023_v2\commpath\CTRAMP1.script",
     ],
 )
 def test_owns_rejects_another_run(arg: str) -> None:
@@ -92,7 +93,7 @@ def test_owns_rejects_another_run(arg: str) -> None:
 def test_commpath_comes_from_the_node_argv() -> None:
     """Read from argv, not assumed -- a step may set `commpath:` itself."""
     assert _commpath_of([r"C:\...\Voyager.exe", NODE]) == Path(
-        r"E:\Tests\base_2023_ctramp\commpath"
+        r"E:\Tests\ctramp_2023\commpath"
     )
     assert _commpath_of([r"C:\...\runtpp.exe", MASTER]) is None
 

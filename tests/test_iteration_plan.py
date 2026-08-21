@@ -16,17 +16,17 @@ from pathlib import Path
 
 import pytest
 
-from tm1.runner import (
-    _apply_resume,
-    _apply_until,
-    _iteration_plan,
-    _select_steps,
-    _skip_target,
+from tm1.run.iterations import (
+    apply_resume,
+    apply_until,
+    iteration_plan,
+    select_steps,
+    skip_target,
 )
 
 
 def _plan(steps_cfg: object, override: int | None = None) -> list[tuple[str, int]]:
-    plan, _ = _iteration_plan(steps_cfg, override)
+    plan, _ = iteration_plan(steps_cfg, override)
     return plan
 
 
@@ -118,7 +118,7 @@ def test_a_name_may_appear_outside_and_inside_the_loop() -> None:
 
 def test_each_entry_keeps_its_own_config() -> None:
     """Two entries with one name are different steps -- the entry identifies it."""
-    _, configs = _iteration_plan(_listform())
+    _, configs = iteration_plan(_listform())
 
     assert configs[("hwy_assign", 0)]["job"] == "warm.job"
     assert configs[("hwy_assign", 2)]["job"] == "loop.job"
@@ -146,7 +146,7 @@ def test_warmstart_keeps_its_written_order() -> None:
 
 def test_warmstart_steps_may_skip_on_their_products() -> None:
     """The point of the block: an expensive round-0 step is not redone on a rerun."""
-    _, configs = _iteration_plan(_listform())
+    _, configs = iteration_plan(_listform())
 
     assert configs[("hwy_assign", 0)]["skip_if_exists"] == "hwy/iter0/LOADEA.net"
 
@@ -271,7 +271,7 @@ def test_skip_target_resolves_against_run_dir(tmp_path: Path) -> None:
     (tmp_path / "popsyn" / "hhFile.csv").write_text("done")
     cfg = {"run_dir": str(tmp_path)}
 
-    hit = _skip_target({"skip_if_exists": "popsyn/hhFile.csv"}, cfg)
+    hit = skip_target({"skip_if_exists": "popsyn/hhFile.csv"}, cfg)
 
     assert hit == tmp_path / "popsyn" / "hhFile.csv"
 
@@ -280,12 +280,12 @@ def test_skip_target_is_none_when_the_product_is_absent(tmp_path: Path) -> None:
     """No file, no skip: the step runs and builds it."""
     cfg = {"run_dir": str(tmp_path)}
 
-    assert _skip_target({"skip_if_exists": "popsyn/hhFile.csv"}, cfg) is None
+    assert skip_target({"skip_if_exists": "popsyn/hhFile.csv"}, cfg) is None
 
 
 def test_a_step_without_the_key_never_skips(tmp_path: Path) -> None:
     """skip_if_exists is opt-in; an undeclared step always runs."""
-    assert _skip_target({}, {"run_dir": str(tmp_path)}) is None
+    assert skip_target({}, {"run_dir": str(tmp_path)}) is None
 
 
 # --- selecting a slice of the plan -----------------------------------------
@@ -306,7 +306,7 @@ def _pipeline() -> list:
 
 def test_until_stops_after_the_named_step() -> None:
     """The mirror of --resume-at: inclusive, so the named step itself runs."""
-    plan = _apply_until(_plan(_pipeline()), "0:hwy_assign")
+    plan = apply_until(_plan(_pipeline()), "0:hwy_assign")
 
     assert plan[-1] == ("hwy_assign", 0)
 
@@ -315,7 +315,7 @@ def test_until_composes_with_resume_at_to_name_a_slice() -> None:
     """Together they express any contiguous range without listing steps."""
     full = _plan(_pipeline())
 
-    sliced = _apply_until(_apply_resume(full, "2:simulate_ctramp"), "2:publish")
+    sliced = apply_until(apply_resume(full, "2:simulate_ctramp"), "2:publish")
 
     assert sliced == [("simulate_ctramp", 2), ("hwy_assign", 2), ("publish", 2)]
 
@@ -323,7 +323,7 @@ def test_until_composes_with_resume_at_to_name_a_slice() -> None:
 def test_until_refuses_an_ambiguous_bare_name() -> None:
     """Picking the wrong round costs hours of Cube, so it asks rather than guesses."""
     with pytest.raises(ValueError, match="ambiguous"):
-        _apply_until(_plan(_pipeline()), "hwy_assign")
+        apply_until(_plan(_pipeline()), "hwy_assign")
 
 
 def test_steps_filters_the_plan_and_keeps_real_round_numbers() -> None:
@@ -332,21 +332,21 @@ def test_steps_filters_the_plan_and_keeps_real_round_numbers() -> None:
     A warm-start step run as iteration 1 writes hwy/iter1/ from iteration-0
     demand -- succeeding, while producing nonsense.
     """
-    plan = _select_steps(_plan(_pipeline()), ["hwy_assign"])
+    plan = select_steps(_plan(_pipeline()), ["hwy_assign"])
 
     assert plan == [("hwy_assign", i) for i in (0, 1, 2, 3)]
 
 
 def test_steps_may_name_one_round() -> None:
     """`0:hwy_assign` picks the warm start's run and leaves the loop alone."""
-    plan = _select_steps(_plan(_pipeline()), ["0:hwy_assign"])
+    plan = select_steps(_plan(_pipeline()), ["0:hwy_assign"])
 
     assert plan == [("hwy_assign", 0)]
 
 
 def test_steps_keeps_plan_order_not_argument_order() -> None:
     """Order is the pipeline's, so a mistyped argument order cannot reorder a run."""
-    plan = _select_steps(_plan(_pipeline()), ["1:publish", "1:simulate_ctramp"])
+    plan = select_steps(_plan(_pipeline()), ["1:publish", "1:simulate_ctramp"])
 
     assert plan == [("simulate_ctramp", 1), ("publish", 1)]
 
@@ -354,4 +354,4 @@ def test_steps_keeps_plan_order_not_argument_order() -> None:
 def test_steps_naming_nothing_is_refused() -> None:
     """A typo should not quietly run nothing and report success."""
     with pytest.raises(ValueError, match="matches nothing"):
-        _select_steps(_plan(_pipeline()), ["no_such_step"])
+        select_steps(_plan(_pipeline()), ["no_such_step"])

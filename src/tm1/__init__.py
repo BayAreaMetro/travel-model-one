@@ -63,3 +63,24 @@ def remove_run_logfile(handler: logging.Handler | None) -> None:
         return
     logging.getLogger().removeHandler(handler)
     handler.close()
+
+
+#: One minute, and one hour, in seconds -- the two thresholds a duration is
+#: rendered against.
+_MINUTE = 60
+_HOUR = 3600
+
+
+def fmt_elapsed(seconds: float) -> str:
+    """A duration, as a person reads it: ``45s``, ``7.5m``, ``3h04m``.
+
+    Here rather than in the runner or in status because both render durations and
+    neither should import the other to do it.
+    """
+    if seconds < _MINUTE:
+        return f"{seconds:.0f}s"
+    if seconds < _HOUR:
+        return f"{seconds / _MINUTE:.1f}m"
+    hours = int(seconds // _HOUR)
+    minutes = int((seconds % _HOUR) // _MINUTE)
+    return f"{hours}h{minutes:02d}m"

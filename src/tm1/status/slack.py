@@ -1,10 +1,13 @@
-r"""Slack webhook notifications for TM1 model runs.
+"""Slack webhook notifications for TM1 model runs.
 
-Configuration (any one of these, checked in order):
-  1. ``SLACK_WEBHOOK_URL`` environment variable
-  2. MTC default file: ``M:\Software\Slack\TravelModel_SlackWebhook.txt``
+The webhook URL comes from one of two places, checked in order:
 
-If none are available, messages are logged but not sent.
+1. ``SLACK_WEBHOOK_URL`` -- the URL itself;
+2. ``TM1_SLACK_WEBHOOK_FILE`` -- a file holding it, for a shared team webhook
+   nobody wants to paste onto every machine.
+
+Both live in `.env`.  With neither, runs log their milestones and send nothing,
+which is a working configuration and not an error.
 """
 
 import logging
@@ -16,11 +19,19 @@ import requests
 
 log = logging.getLogger(__name__)
 
-_MTC_WEBHOOK_FILE = Path(
-    r"\\models.ad.mtc.ca.gov\data\models\Software\Slack\TravelModel_SlackWebhook.txt"
-)
+#: The file holding the webhook URL.  The **whole path** is configured, not a name
+#: under some assumed share: neither the share nor the file name is guaranteed to
+#: stay where it is, and a path this code cannot see is one nobody can fix from
+#: `.env`.
+_WEBHOOK_FILE_VAR = "TM1_SLACK_WEBHOOK_FILE"
 
-level = "verbose"  # "false", "minimal", or "verbose"
+
+def _webhook_file() -> Path | None:
+    """The file holding the webhook URL, or None when `.env` does not name one."""
+    configured = os.environ.get(_WEBHOOK_FILE_VAR)
+    return Path(configured) if configured else None
+
+level = "minimal"  # "off", "minimal" (start/stop/failure), or "verbose" (every step)
 
 
 def _get_webhook_url() -> str | None:
@@ -29,11 +40,12 @@ def _get_webhook_url() -> str | None:
     if url:
         return url.strip()
 
-    if _MTC_WEBHOOK_FILE.exists():
+    path = _webhook_file()
+    if path and path.exists():
         try:
-            return _MTC_WEBHOOK_FILE.read_text().strip()
+            return path.read_text().strip()
         except OSError:
-            log.warning("Cannot read webhook file: %s", _MTC_WEBHOOK_FILE)
+            log.warning("Cannot read webhook file: %s", path)
 
     return None
 

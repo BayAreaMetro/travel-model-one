@@ -98,8 +98,8 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
+from cube.job import run_cube_job
 from tm1.assignment.cube.highway import PERIODS
-from tm1.assignment.cube.runner import run_cube_job
 
 log = logging.getLogger(__name__)
 
@@ -160,10 +160,6 @@ PER_ITERATION: dict[int, dict[str, str]] = {
     3: {"PREV_ITER": "2", "WGT": "0.33", "PREV_WGT": "0.67",
         "SAMPLESHARE": "0.50", "SEED": "0"},
 }
-
-#: Project config key -> environment variable, for values the harness already
-#: states explicitly instead of slicing out of a directory name.
-_FROM_CONFIG: dict[str, str] = {"model_year": "MODEL_YEAR", "future": "FUTURE"}
 
 #: Project-wide environment block.  A step's own ``env:`` layers on top of it,
 #: so the same key name means the same thing at both scopes.
@@ -228,9 +224,9 @@ def model_environment(cfg: dict, iteration: object = None) -> dict[str, str]:
     reads ``%MODEL_YEAR%`` and ``%FUTURE%``, the feedback jobs read ``%WGT%``.  The
     ``.bat`` set these by assignment before each block; this reproduces them.
 
-    Precedence, lowest first: :data:`_BAT_DEFAULTS`, values the project already
-    states explicitly (``model_year``/``future``), the :data:`PER_ITERATION` row,
-    then the project's ``env:`` block.
+    Precedence, lowest first: :data:`_BAT_DEFAULTS`, the :data:`PER_ITERATION` row,
+    then the project's ``env:`` block -- which is where ``MODEL_YEAR`` and ``FUTURE``
+    now live, since they are environment variables like every other entry there.
 
     ``env:`` winning last makes it a real escape hatch -- and a way to depart
     from ``RunModel.bat`` silently.  Overriding a per-iteration value is a
@@ -238,10 +234,6 @@ def model_environment(cfg: dict, iteration: object = None) -> dict[str, str]:
     """
     env = dict(_BAT_DEFAULTS)
     env["MODEL_DIR"] = str(Path(cfg["run_dir"]))
-
-    for key, name in _FROM_CONFIG.items():
-        if cfg.get(key) is not None:
-            env[name] = str(cfg[key])
 
     if iteration is not None and str(iteration) != "":
         round_ = int(iteration)

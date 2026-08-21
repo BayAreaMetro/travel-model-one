@@ -13,21 +13,16 @@ from pathlib import Path
 import psutil
 import pytest
 
-from tm1.runner import _iteration_plan
-from tm1.status import (
+from tm1.run.iterations import iteration_plan
+from tm1.status import status
+from tm1.status.grid import Sections, _fmt_age, _grid_rows, _next_key, render, sections
+from tm1.status.read import (
     RunLog,
-    Sections,
-    _fmt_age,
-    _grid_rows,
-    _next_key,
     harness_alive,
     harness_pid,
     newest_log,
     read_log,
     read_logs,
-    render,
-    sections,
-    status,
 )
 
 #: Rounds the fixture config declares, asserted rather than written twice.
@@ -81,8 +76,8 @@ def test_sections_split_the_config_into_its_four_parts() -> None:
 
 
 def test_entries_reproduce_the_runners_execution_order() -> None:
-    """Same entries, same order as `_iteration_plan` -- the display cannot drift."""
-    plan, _ = _iteration_plan(STEPS)
+    """Same entries, same order as `iteration_plan` -- the display cannot drift."""
+    plan, _ = iteration_plan(STEPS)
 
     assert _plan().entries() == plan
 
@@ -252,10 +247,10 @@ def test_the_command_line_is_printed_verbatim(tmp_path: Path) -> None:
         (0, "--- Step: simulate_ctramp (iteration 2) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     assert (
-        "tm1 run base_2023_ctramp --resume-at 2:simulate_ctramp" in out
+        "tm1 run ctramp_2023 --resume-at 2:simulate_ctramp" in out
     )
 
 
@@ -263,7 +258,7 @@ def test_a_step_that_runs_once_needs_no_round_prefix(tmp_path: Path) -> None:
     """The shortest unambiguous form: `net2csv`, not `3:net2csv`."""
     state = read_log(_log(tmp_path, [(0, "--- Step: net2csv (iteration 3) ---")]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     assert "--resume-at net2csv" in out
 
@@ -329,7 +324,7 @@ def test_a_live_run_is_never_offered_a_resume_command(tmp_path: Path) -> None:
         (0, "--- Step: simulate_ctramp (iteration 2) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path, alive=True)
+    out = render("ctramp_2023", _plan(), state, tmp_path, alive=True)
 
     assert "--resume-at" not in out
     assert "RUNNING" in out
@@ -342,7 +337,7 @@ def test_a_dead_harness_is_stated_plainly(tmp_path: Path) -> None:
         (0, "--- Step: simulate_ctramp (iteration 2) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path, alive=False)
+    out = render("ctramp_2023", _plan(), state, tmp_path, alive=False)
 
     assert "harness is gone" in out
     assert "left" not in out
@@ -359,7 +354,7 @@ def test_the_last_activity_and_its_age_are_shown(tmp_path: Path) -> None:
         (2, "--- Done: copy_inputs (2.0m) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     assert "last activity 2026-08-11 06:02" in out
     assert "ago)" in out
@@ -383,7 +378,7 @@ def test_repeated_runs_are_counted_from_the_first(tmp_path: Path) -> None:
     )
 
     state = read_logs(tmp_path)
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     assert state.attempts == len(list((tmp_path / "logs").glob("*.log")))
     assert "2 runs since 2026-08-11" in out
@@ -410,7 +405,7 @@ def test_a_step_absent_from_a_round_is_blank_not_pending(tmp_path: Path) -> None
     """`-` means "has not run yet". Nothing planned must not look like that."""
     state = read_log(_log(tmp_path, [(0, "--- Step: net2csv (iteration 3) ---")]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
     row = next(ln for ln in out.splitlines() if "simulate_ctramp" in ln)
 
     # simulate_ctramp has no iteration-0 entry: three cells, not four.
@@ -430,7 +425,7 @@ def test_a_step_that_ran_outranks_the_same_step_skipped(tmp_path: Path) -> None:
         (31, "--- Done: hwy_assign (30.6m) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
     row = next(ln for ln in out.splitlines() if "hwy_assign" in ln)
 
     assert "30.0m" in row
@@ -441,7 +436,7 @@ def test_every_step_is_listed_by_name(tmp_path: Path) -> None:
     """Sections are not collapsed to counts: the point is per-step durations."""
     state = read_log(_log(tmp_path, [(0, "--- Step: copy_inputs (iteration 1) ---")]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     for name in ("copy_inputs", "hwy_skims", "simulate_ctramp", "net2csv"):
         assert any(ln.strip().startswith(name) for ln in out.splitlines()), name
@@ -451,7 +446,7 @@ def test_no_row_carries_trailing_whitespace(tmp_path: Path) -> None:
     """Blank trailing cells would otherwise pad the line, which breaks diffs."""
     state = read_log(_log(tmp_path, [(0, "--- Step: copy_inputs (iteration 1) ---")]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     assert all(ln == ln.rstrip() for ln in out.splitlines())
 
@@ -467,7 +462,7 @@ def test_output_is_plain_ascii(tmp_path: Path) -> None:
         (2, "--- Step: simulate_ctramp (iteration 1) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     assert out.isascii()
 
@@ -479,7 +474,7 @@ def test_the_grid_shows_one_column_per_round(tmp_path: Path) -> None:
         (60, "--- Done: simulate_ctramp (1h00m) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     assert "round 1" in out
     assert f"round {ROUNDS}" in out
@@ -500,7 +495,7 @@ def test_a_first_run_says_there_is_no_estimate_yet(tmp_path: Path) -> None:
         (2, "--- Step: hwy_assign (iteration 0) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path, alive=True)
+    out = render("ctramp_2023", _plan(), state, tmp_path, alive=True)
 
     assert "no estimate yet" in out
     assert "~0s left" not in out
@@ -513,7 +508,7 @@ def test_an_estimate_appears_once_a_step_has_a_precedent(tmp_path: Path) -> None
         (30, "--- Done: hwy_assign (30.0m) ---"),
     ]))
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path, alive=True)
+    out = render("ctramp_2023", _plan(), state, tmp_path, alive=True)
 
     assert "no estimate yet" not in out
     assert "left" in out
@@ -528,7 +523,7 @@ def test_a_complete_run_says_so_instead_of_estimating(tmp_path: Path) -> None:
     state = RunLog(path=tmp_path, elapsed=56580.0)
     state.done = dict.fromkeys(_plan().entries(), 1.0)
 
-    out = render("base_2023_ctramp", _plan(), state, tmp_path)
+    out = render("ctramp_2023", _plan(), state, tmp_path)
 
     assert "15h43m elapsed" in out
     assert "complete" in out
@@ -536,13 +531,20 @@ def test_a_complete_run_says_so_instead_of_estimating(tmp_path: Path) -> None:
     assert "--resume-at" not in out
 
 
-def test_status_says_so_when_nothing_has_run(tmp_path: Path) -> None:
-    """A missing run_dir is the normal state before the first run, not an error."""
+def test_status_says_so_when_nothing_has_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No run directory yet is the normal state before the first run, not an error.
+
+    And asking must not create one: a report that allocated a run directory would
+    change the thing it is reporting on.
+    """
+    monkeypatch.setenv("TM1_RUNS_ROOT", str(tmp_path / "runs"))
     project = tmp_path / "proj"
     project.mkdir()
     (project / "config.yaml").write_text(
-        f'run_dir: "{(tmp_path / "nope").as_posix()}"\nsteps:\n  - copy_inputs: {{}}\n',
-        encoding="utf-8",
+        "steps:\n  - copy_inputs: {}\n", encoding="utf-8",
     )
+    (project / "cases.yaml").write_text("cases:\n  BASE-2023:\n", encoding="utf-8")
 
     assert "nothing run yet" in status(project)

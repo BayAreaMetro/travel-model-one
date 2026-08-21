@@ -1,4 +1,4 @@
-"""Project-specific pipeline steps for base_2023_ctramp.
+"""Project-specific pipeline steps for ctramp_2023.
 
 Anything in here is ordinary Python, wired in from ``config.yaml``::
 

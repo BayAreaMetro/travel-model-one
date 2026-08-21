@@ -66,7 +66,8 @@ import threading
 import time
 from pathlib import Path
 
-from tm1.config import step_config
+from cube.job import install_dirs, voyager_dll
+from tm1.project.config import step_config
 
 log = logging.getLogger(__name__)
 
@@ -439,11 +440,10 @@ def _classpath(runtime_dir: Path) -> str:
 def _lib_path(runtime_dir: Path) -> str:
     """Build java.library.path: runtime dir + Cube Voyager DLL location."""
     paths = [str(runtime_dir)]
-    # Standard Cube Voyager install paths (contains tppdlibx.dll for .tpp IO)
+    # Cube's install dirs (they hold tppdlibx.dll for .tpp IO), from the one place
+    # that knows where Cube is -- see `cube.job` and TM1_CUBE_DIRS in .env.
     for candidate in [
-        Path(r"C:\Program Files\Citilabs\CubeVoyager"),
-        Path(r"C:\Program Files\Bentley\OpenPaths\CubeVoyager"),
-        Path(r"C:\Program Files\Citilabs\VoyagerFileAPI"),
+        *(Path(d) for d in install_dirs()),
         # Repo-bundled DLLs (VoyagerFileAccess.dll, tppioNative.dll)
         Path(__file__).resolve().parents[3] / "core" / "cmf" / "common-base" / "bin",
     ]:
@@ -479,9 +479,10 @@ def _ensure_native_dlls(runtime_dir: Path) -> None:
     if target.exists():
         return
 
-    # Find the DLL source — prefer VoyagerFileAPI install (matches MODEL3-C)
+    # Find the DLL source — the Cube install names it directly (see cube.job), then
+    # the repo-bundled copy.
     for candidate in [
-        Path(r"C:\Program Files\Citilabs\VoyagerFileAPI") / "VoyagerFileAccess.dll",
+        voyager_dll(),
         Path(__file__).resolve().parents[3] / "core" / "cmf" / "common-base" / "bin" / "VoyagerFileAccess.dll",
     ]:
         if candidate.exists():

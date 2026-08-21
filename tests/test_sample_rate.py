@@ -12,14 +12,14 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tm1.runner import _sample_str
+from tm1.run.model import _sample_str
 from tm1.steps.simulate_ctramp import _sample_rate_for
 
 #: RunModel.bat's ramp, lines 280, 304 and 328.
 LEGACY_RAMP = {1: 0.15, 2: 0.30, 3: 0.50}
 
 PROJECT_CONFIG = (
-    Path(__file__).parents[1] / "projects" / "base_2023_ctramp" / "config.yaml"
+    Path(__file__).parents[1] / "projects" / "ctramp_2023" / "config.yaml"
 )
 
 

@@ -2,15 +2,15 @@
 
 Usage::
 
-    tm1 run base_2023_ctramp
-    tm1 run base_2023_ctramp --steps setup
-    tm1 run base_2023_ctramp --iterations 3
-    tm1 run base_2023_ctramp --slack verbose
+    tm1 run ctramp_2023
+    tm1 run ctramp_2023 --steps setup
+    tm1 run ctramp_2023 --iterations 3
+    tm1 run ctramp_2023 --slack verbose
 
 Restart a failed run at the step that died, rather than from the beginning::
 
-    tm1 run base_2023_ctramp --resume-at assignment
-    tm1 run base_2023_ctramp --resume-at 2:assignment
+    tm1 run ctramp_2023 --resume-at assignment
+    tm1 run ctramp_2023 --resume-at 2:assignment
 
 The project also takes a path, so it can live outside the repo::
 
@@ -18,21 +18,26 @@ The project also takes a path, so it can live outside the repo::
 
 Ask where a run got to -- from another shell, during or after it::
 
-    tm1 status base_2023_ctramp
+    tm1 status ctramp_2023
 
 List the cases a project declares, checking every address resolves::
 
-    tm1 cases base_2023_ctramp
+    tm1 cases ctramp_2023
 """
 
 import argparse
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
-from tm1 import cases as cases_mod
+import yaml
+
 from tm1 import setup_logging
-from tm1.config import load_config
-from tm1.runner import run_model
+from tm1.project import cases as cases_mod
+from tm1.project.config import load_config, missing_env
+from tm1.project.overrides import validate as validate_cases
+from tm1.run.model import AlreadyCompleteError, run_model
+from tm1.run.prepare import RUNS_ROOT_VAR
 from tm1.status import status
 
 #: The directory holding projects, relative to the repo root.
@@ -97,7 +102,7 @@ def _project_arg(args: argparse.Namespace) -> str:
     if not project:
         sys.exit(
             "No project given. Pass a name under projects/ (e.g. "
-            "`tm1 run base_2023_ctramp`) or a path to a project directory."
+            "`tm1 run ctramp_2023`) or a path to a project directory."
         )
     if args.scenario:
         sys.stderr.write(
@@ -107,34 +112,67 @@ def _project_arg(args: argparse.Namespace) -> str:
     return str(project)
 
 
+#: What a broken project raises.  Every one of these is deliberate -- the module
+#: that raises it writes the message for the person who has to fix the config -- so
+#: the CLI prints that message and nothing else.  A traceback here would bury a
+#: usable sentence under ten lines of stack, and the reader is a modeller, not the
+#: author of the harness.
+#:
+#: A step that fails mid-run is different: its traceback goes to the run log
+#: (see `_report_failure`), so nothing is lost by keeping the console clean.
+_CONFIG_PROBLEMS = (FileNotFoundError, KeyError, ValueError, TypeError, yaml.YAMLError)
+
+
+def _run_cleanly(work: Callable[[], None]) -> None:
+    """Run *work*, reporting a broken project as a message rather than a stack."""
+    try:
+        work()
+    except _CONFIG_PROBLEMS as exc:
+        # KeyError's str() is the repr of its argument, which wraps an already
+        # quoted message in another layer of quotes.
+        message = exc.args[0] if isinstance(exc, KeyError) and exc.args else str(exc)
+        sys.exit(f"\nerror: {message}\n")
+
+
 def cmd_run(args: argparse.Namespace) -> None:
     """Execute the 'run' subcommand."""
     repo_root = _find_repo_root()
     config_dir = _resolve_config_dir(_project_arg(args), repo_root)
-    run_model(
-        config_dir=config_dir,
-        steps=args.steps or None,
-        slack_level=args.slack,
-        base_model_dir=repo_root,
-        iterations=args.iterations,
-        resume_at=args.resume_at,
-        until=args.until,
-    )
+    try:
+        run_model(
+            config_dir=config_dir,
+            steps=args.steps or None,
+            slack_level=args.slack,
+            base_model_dir=repo_root,
+            case=args.case,
+            rerun=args.rerun,
+            iterations=args.iterations,
+            resume_at=args.resume_at,
+            until=args.until,
+        )
+    except AlreadyCompleteError as done:
+        sys.exit(str(done))
 
 
 def cmd_cases(args: argparse.Namespace) -> None:
     """Execute the 'cases' subcommand: expand cases.yaml and check every one."""
     config_dir = _resolve_config_dir(_project_arg(args), _find_repo_root())
+
+    # Config first: with an unreadable config.yaml there is nothing to check the
+    # cases against, and printing the table anyway would report success to anyone
+    # reading stdout or piping it.
+    cfg = load_config(config_dir)
     expansion = cases_mod.load(config_dir)
     sys.stdout.write(f"\n{cases_mod.render(expansion)}\n")
 
-    problems = cases_mod.validate(load_config(config_dir), expansion)
+    problems = [
+        f"{name} is not set (see .env.example)"
+        for name in missing_env(cfg, also=(RUNS_ROOT_VAR,))
+    ]
+    problems += validate_cases(cfg, expansion)
     if problems:
         joined = "\n  ".join(problems)
-        sys.exit(
-            f"\n{len(problems)} address(es) do not resolve against "
-            f"config.yaml:\n  {joined}"
-        )
+        sys.exit(f"\n{len(problems)} problem(s) to fix before running:\n  {joined}\n")
 
 
 def cmd_status(args: argparse.Namespace) -> None:
@@ -142,7 +180,7 @@ def cmd_status(args: argparse.Namespace) -> None:
     config_dir = _resolve_config_dir(_project_arg(args), _find_repo_root())
     # Written to stdout rather than logged: it is a report, not a run event, and
     # it must not land in the run log of a run happening in another shell.
-    sys.stdout.write(status(config_dir) + "\n")
+    sys.stdout.write(status(config_dir, args.case) + "\n")
 
 
 def _add_project_argument(parser: argparse.ArgumentParser) -> None:
@@ -151,7 +189,7 @@ def _add_project_argument(parser: argparse.ArgumentParser) -> None:
         "project",
         nargs="?",
         help=(
-            f"Project name (folder under {PROJECTS_DIR}/, e.g. base_2023_ctramp) "
+            f"Project name (folder under {PROJECTS_DIR}/, e.g. ctramp_2023) "
             f"or a path to any directory containing a {CONFIG_NAME}"
         ),
     )
@@ -169,6 +207,23 @@ def main() -> None:
 
     run_parser = sub.add_parser("run", help="Run project pipeline (or selected steps)")
     _add_project_argument(run_parser)
+    run_parser.add_argument(
+        "--case",
+        metavar="ID",
+        default=None,
+        help=(
+            "Which case to run, when the project declares more than one "
+            "(`tm1 cases <project>` lists them)"
+        ),
+    )
+    run_parser.add_argument(
+        "--rerun",
+        action="store_true",
+        help=(
+            "Run a case again even though it finished unchanged; the new run "
+            "lands beside the old one rather than over it"
+        ),
+    )
     run_parser.add_argument(
         "--steps",
         nargs="+",
@@ -221,15 +276,19 @@ def main() -> None:
         help="Show where the newest run got to, and how to resume it",
     )
     _add_project_argument(status_parser)
+    status_parser.add_argument(
+        "--case", metavar="ID", default=None,
+        help="Which case to report on, when the project declares more than one",
+    )
 
     args = parser.parse_args()
 
     if args.command == "run":
-        cmd_run(args)
+        _run_cleanly(lambda: cmd_run(args))
     elif args.command == "cases":
-        cmd_cases(args)
+        _run_cleanly(lambda: cmd_cases(args))
     elif args.command == "status":
-        cmd_status(args)
+        _run_cleanly(lambda: cmd_status(args))
     else:
         parser.print_help()
         sys.exit(1)

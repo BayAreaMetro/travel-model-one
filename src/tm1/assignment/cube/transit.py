@@ -14,10 +14,11 @@ and injected on the child process's ``PYTHONPATH``.
 """
 
 import logging
+import os
 import shutil
 from pathlib import Path
 
-from tm1.assignment.cube.runner import run_cube_job
+from cube.job import run_cube_job
 
 log = logging.getLogger(__name__)
 
@@ -26,14 +27,25 @@ PERIODS: tuple[str, ...] = ("EA", "AM", "MD", "PM", "EV")
 # BuildTransitNetworks shells out to gawk (reverseLinks/Select_PNRs/createLocalBusKNRs
 # .awk) via Cube ``*`` SYS commands; gawk ships with Git for Windows but isn't on the
 # scheduled task's PATH, so we prepend its dir for the transit jobs.
-_GAWK_DIR = r"C:\Program Files\Git\usr\bin"
+#
+#: Last-resort location, where Git for Windows puts it.  ``TM1_GAWK_DIR`` in `.env`
+#: is the declared answer; this is only what to try when nothing else says.
+_DEFAULT_GAWK_DIR = r"C:\Program Files\Git\usr\bin"
 
 
 def _gawk_path() -> str:
-    """PATH value that prepends gawk's dir (resolved, with a Git-for-Windows default)."""
-    d = shutil.which("gawk")
-    gdir = str(Path(d).parent) if d else _GAWK_DIR
+    """PATH value that prepends gawk's directory.
+
+    Found on PATH first (the project config puts ``TM1_GAWK_DIR`` there), then the
+    ``.env`` value directly, then Git for Windows' default location.
+    """
+    found = shutil.which("gawk")
+    gdir = (
+        str(Path(found).parent) if found
+        else os.environ.get("TM1_GAWK_DIR") or _DEFAULT_GAWK_DIR
+    )
     return f"{gdir};%PATH%"
+
 
 # TransitAssign/TransitSkims distribute accegg(3) x path(5) = up to 15 tasks per
 # period via DistributeMultistep (the job caps at <=18); the cluster must have at

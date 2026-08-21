@@ -14,7 +14,7 @@ production until its own phase lands and passes its own gate.
 
 | # | Phase | Scope | ~files | Status |
 |---|---|---|---|---|
-| 1 | Runtime harness | `tm1` CLI, runner, project config chain; flat steps + project-supplied steps; `copy_inputs` / `simulate_ctramp` / `assignment`; `base_2023_ctramp`; target-layout scaffold | ~40 | **in progress** |
+| 1 | Runtime harness | `tm1` CLI, runner, project config chain; flat steps + project-supplied steps; `copy_inputs` / `simulate_ctramp` / `assignment`; `ctramp_2023`; target-layout scaffold | ~40 | **in progress** |
 | 2 | Cube matrix I/O | `cubeio` — pure-Python TPP ↔ OMX, no Cube install; bit-exact golden tests | ~30 | ready |
 | 3 | Calibration reporting | HTML calibration/validation report system (needs #2 to read `.tpp` skims) | ~37 | ready |
 | 4 | Model parity | the rest of `RunModel.bat`, ported for *equivalent results* rather than in kind (see [Port the intent, not the mechanism](#port-the-intent-not-the-mechanism)): preprocess (`SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py`), inputs from the reference run's pristine `INPUT/`, then post-processing (EMFAC, logsums, core summaries, metrics) — dropping the steps that exist only to move data between Cube, R and batch | — | not started |
@@ -103,7 +103,7 @@ So phase 4 targets *parity of results*, not of file layout. Where a step exists 
 between tools, the port should reproduce the result rather than the step — and say so, with
 the before and after, so reviewers can check the reasoning rather than the diff.
 
-`projects/base_2023_ctramp/hooks.py` is the small worked example of the target shape: it
+`projects/ctramp_2023/hooks.py` is the small worked example of the target shape: it
 reads an output the pipeline already writes and aggregates it to a few rows, rather than
 copying anything.
 
@@ -124,7 +124,7 @@ travel-model-one/
 ```text
 travel-model-one/
 |-- default-configs/   base configs, specs, lookup tables, default assets (activity/ assignment/ population/)
-|-- projects/      config.yaml + cases.yaml per project (base_2023_activitysim, base_2023_ctramp, ...)
+|-- projects/      config.yaml + cases.yaml per project (base_2023_activitysim, ctramp_2023, ...)
 |-- scripts/       run/prep/export entrypoints + migration_validation/{activitysim,assignment}
 `-- src/           shared Python: cubeio/, tm1/ (steps, assignment/{cube,aeq})
 ```
@@ -160,11 +160,11 @@ no launcher script to keep in sync. The project argument takes a name under `pro
 or a path, so a project can live outside the repo.
 
 ```
-tm1 run base_2023_ctramp                        # the whole pipeline
-tm1 run base_2023_ctramp --steps assignment     # one step
-tm1 run base_2023_ctramp --iterations 3         # override iterate.count
+tm1 run ctramp_2023                        # the whole pipeline
+tm1 run ctramp_2023 --steps assignment     # one step
+tm1 run ctramp_2023 --iterations 3         # override iterate.count
 tm1 run E:/runs/one_off                         # a project outside the repo
-tm1 run base_2023_ctramp --slack verbose
+tm1 run ctramp_2023 --slack verbose
 ```
 
 Flags: `--steps`, `--iterations`, `--resume-at`, `--until`, `--slack {off,minimal,verbose}`.
@@ -198,7 +198,7 @@ layout can be argued over while it is still free to change.
 Project-specific pre/post-processing scripts (currently scattered across `utilities/` and
 `model-files/scripts/`) now have a home: any step can point at Python via `script:` or
 `module:`, and where it sits under `steps:` decides whether it runs before or after the
-model. `projects/base_2023_ctramp/hooks.py` ports the runnable subset of
+model. `projects/ctramp_2023/hooks.py` ports the runnable subset of
 `utilities/RTP/ExtractKeyFiles.bat` as a worked example. Which of the remaining legacy
 scripts are worth carrying forward is phase 7's triage.
 
@@ -375,7 +375,7 @@ as CT-RAMP is being deleted. What holds is *where the choice is made*:
   One step name means the two runs being compared differ only in the solver, and not in the
   shape of the pipeline or its `--resume-at` points.
 - **Demand is chosen between projects.** There is no useful run in which the demand engine
-  changes and everything else holds; `base_2023_ctramp` and `base_2023_activitysim` are
+  changes and everything else holds; `ctramp_2023` and `base_2023_activitysim` are
   separate directories for that reason.
 
 This is not a one-way door: adding a generic `simulate:` step later is additive, so the

@@ -73,7 +73,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tm1.config import step_config
+from tm1.project.config import step_config
 
 log = logging.getLogger(__name__)
 

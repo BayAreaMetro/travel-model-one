@@ -7,6 +7,10 @@ from pathlib import Path
 
 import yaml
 
+#: The one machine-specific thing a run needs: where run directories go.  It is a
+#: local disk, because Cube's cluster is chatty and a network path is slow.
+RUNS_ROOT_VAR = "TM1_RUNS_ROOT"
+
 #: ``{env:NAME}`` -- a value from the environment, which ``tm1`` populates from
 #: ``.env`` at import.  This is how a project config stays machine-independent:
 #: every path that differs between machines is named here and set in ``.env``,
@@ -63,7 +67,7 @@ def expand_env(obj: str | dict | list | object) -> str | dict | list | object:
     the current working directory and succeed at it.
     """
     if isinstance(obj, str):
-        return _ENV_REF.sub(lambda m: _env_value(m.group(1), obj), obj)
+        return _ENV_REF.sub(lambda m: env_value(m.group(1), obj), obj)
     if isinstance(obj, dict):
         return {k: expand_env(v) for k, v in obj.items()}
     if isinstance(obj, list):
@@ -71,7 +75,28 @@ def expand_env(obj: str | dict | list | object) -> str | dict | list | object:
     return obj
 
 
-def _env_value(name: str, context: str) -> str:
+def env_references(obj: object) -> set[str]:
+    """Every ``{env:NAME}`` the config mentions, anywhere in it."""
+    if isinstance(obj, str):
+        return set(_ENV_REF.findall(obj))
+    if isinstance(obj, dict):
+        return set().union(*(env_references(v) for v in obj.values())) if obj else set()
+    if isinstance(obj, list):
+        return set().union(*(env_references(v) for v in obj)) if obj else set()
+    return set()
+
+
+def missing_env(cfg: dict, also: tuple[str, ...] = ()) -> list[str]:
+    """Which of the variables this project needs are not set.
+
+    A pre-flight, so that a `.env` copied but not finished is caught in the second
+    `tm1 cases` takes rather than in hour nine of a run.  *also* names variables the
+    harness itself reads, which the config does not mention.
+    """
+    return sorted(n for n in env_references(cfg) | set(also) if os.environ.get(n) is None)
+
+
+def env_value(name: str, context: str) -> str:
     """One environment variable, or an error naming it and where to set it."""
     value = os.environ.get(name)
     if value is None:

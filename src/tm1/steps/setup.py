@@ -40,7 +40,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from tm1.config import step_config
+from tm1.project.config import step_config
 
 log = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ def _strip_ctrl_z(path: Path) -> None:
 
 
 def _selected(rel: Path, include: list[str], exclude: list[str]) -> bool:
-    """Whether a file at *rel* (relative to ``from``) is staged.
+    r"""Whether a file at *rel* (relative to ``from``) is staged.
 
     Patterns are :mod:`fnmatch` globs against the forward-slash relative path,
     so ``*.tpp`` reads the same on both platforms.  ``exclude`` wins: it is how

@@ -14,7 +14,7 @@
 
 This module covers everything except step 2, which the ``simulate_ctramp`` step
 owns.  Every job is the stock script, unmodified, launched through
-:func:`~tm1.assignment.cube.runner.run_cube_job`.
+:func:`~cube.job.run_cube_job`.
 
 CT-RAMP writes its own demand to ``trips{PERIOD}.tpp`` via ``PrepAssign.job`` --
 a Cube job -- so nothing here reads or writes matrix content, and this module
@@ -26,6 +26,7 @@ bridge, because ActivitySim emits OMX; that lives in
 import logging
 from pathlib import Path
 
+from cube.job import run_cube_job
 from tm1.assignment.cube.highway import (
     _NODES_ASSIGN,
     _NODES_PERIOD,
@@ -35,7 +36,6 @@ from tm1.assignment.cube.highway import (
     run_highway_feedback,
     run_highway_skims,
 )
-from tm1.assignment.cube.runner import run_cube_job
 from tm1.assignment.cube.transit import run_transit
 
 log = logging.getLogger(__name__)
