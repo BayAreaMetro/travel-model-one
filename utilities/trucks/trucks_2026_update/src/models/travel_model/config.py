@@ -17,7 +17,7 @@ class Replacement(BaseModel):
     ----------
     source : str
         A local file path or a GitHub URL (auto-detected at run time by
-        :func:`~models.travel_model.pipeline.resolve_source`).
+        :func:`~src.models.travel_model.pipeline.resolve_source`).
     destination : str
         Path relative to the scenario root; must already exist (the tool never
         creates new files).

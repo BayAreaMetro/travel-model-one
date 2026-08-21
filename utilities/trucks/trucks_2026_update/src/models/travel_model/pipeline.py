@@ -7,7 +7,7 @@ conversions) works on macOS; those raise a clear error off-Windows.
 
 Run a quick offline smoke check with::
 
-    python -m models.travel_model.pipeline
+    python -m src.models.travel_model.pipeline
 """
 from __future__ import annotations
 
