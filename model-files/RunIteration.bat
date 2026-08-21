@@ -15,7 +15,7 @@
 :: Step 0:  If iteration equals zero, go to step four (i.e. skip the demand models)
 ::
 :: ------------------------------------------------------------------------------------------------------
-goto trucks
+
 if %ITER%==0 goto hwyAssign
 
 
@@ -97,7 +97,7 @@ if ERRORLEVEL 2 goto done
 :: Apply a value toll choice model for the interna/external demand
 runtpp CTRAMP\scripts\nonres\IxTollChoice.job
 if ERRORLEVEL 2 goto done
-:trucks
+
 :: Apply the commercial vehicle generation models
 runtpp CTRAMP\scripts\nonres\TruckTripGeneration.job
 if ERRORLEVEL 2 goto done
@@ -107,12 +107,12 @@ runtpp CTRAMP\scripts\nonres\TruckTripDistribution.job
 if ERRORLEVEL 2 goto done
 
 :: Apply the special generator truck trip generation models
-::runtpp CTRAMP\scripts\nonres\SpecialGeneratorTruckTripGeneration.job
-::if ERRORLEVEL 2 goto done
+runtpp CTRAMP\scripts\nonres\SpecialGeneratorTruckTripGeneration.job
+if ERRORLEVEL 2 goto done
 
 :: Apply the special generator truck trip distribution models
-::runtpp CTRAMP\scripts\nonres\SpecialGeneratorTruckTripDistribution.job
-::if ERRORLEVEL 2 goto done
+runtpp CTRAMP\scripts\nonres\SpecialGeneratorTruckTripDistribution.job
+if ERRORLEVEL 2 goto done
 
 :: Apply the commercial vehicle diurnal factors
 runtpp CTRAMP\scripts\nonres\TruckTimeOfDay.job
@@ -121,7 +121,7 @@ if ERRORLEVEL 2 goto done
 :: Apply a value toll choice model for eligibile commercial demand
 runtpp CTRAMP\scripts\nonres\TruckTollChoice.job
 if ERRORLEVEL 2 goto done
-::GOTO temp_done
+
 :: Apply a transit submode choice model for transit trips to bay area HSR stations
 runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
 if ERRORLEVEL 2 goto done
@@ -129,7 +129,7 @@ if ERRORLEVEL 2 goto done
 :: Move air passenger trips from the free path to the tolled path, if the free path does not exist
 runtpp CTRAMP\scripts\nonres\MoveAirPaxTrips_IfNoFreePath.job
 if ERRORLEVEL 2 goto done
-GOTO temp_done
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 4:  Build matrices from trip lists and assign trips to the highway network
@@ -213,9 +213,9 @@ del hwy\iter%ITER%\x*.net
 :: Last Step:  Stamp the time of completion to the feedback report file
 ::
 :: ------------------------------------------------------------------------------------------------------
-:temp_done
+
 echo FINISHED ITERATION %ITER%  %DATE% %TIME% >> logs\feedback.rpt
 
-::python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
+python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
 
 :done
