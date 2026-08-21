@@ -1,0 +1,100 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; SpecialGeneratorTruckTripDistribution.job
+;
+; TP+ script to apply BAYCAST's trip distribution model for trucks produced and attracted by special generators.  
+; The implementation is based on the BAYCAST implementation, though input files are specific to special truck generators.  
+; A simple gravity model is used to distribute the truck trips, with separate friction factors used for each class of truck.  
+; The two truck types are: medium trucks (three-axle), and large or combination (four or more axle) trucks.
+;
+; A blended travel time is used as the impedance measure, specifically the weighted average of the AM travel time
+; (one-third weight) and the midday travel time (two-thirds weight). 
+;
+; Input:  (1) Blended level of service matrices representing the AM peak period (6 am to 10 am) 
+;             and midday period (10 am to 3 pm) which contain truck-class specific estimates of congested 
+;             travel time (in minutes) using the following table names:(a) timeVSM, which is the time for 
+;             very small trucks; (b) timeSML, which is the time for small trucks; (c) timeMED, which is 
+;             the time for medium trucks; and, (d) timeLRG, which is the time for large trucks. 
+;         (2) Trip generation results in a DBF file containing the following fields: (a) zone number; 
+;             (b) medium truck trip productions; (c) medium truck trip attractions; (d) large truck trip productions; 
+;             (e) large truck trip attractions; 
+;         (4) A table of friction factors in ASCII format with the following fields (each 12 columns wide): (a)
+;             impedance measure (blended travel time); (b) friction factors for very small trucks; (c) friction
+;             factors for small trucks; (d) friction factors for medium trucks; and, (e) friction factors for large
+;             trucks. 
+;
+; Output: (1) A two-table production/attraction trip table matrix of daily class-specific truck trips (in units 
+;             of trips x 100, to be consistent with the previous application) with a table for (a) medium trucks 
+;             and (b) large trucks.
+;
+; Notes:  (1) These scripts do not update the BAYCAST truck model; rather, the model is simply implemented in a
+;             manner consistent with the Travel Model One implementation. 
+;
+; See also: (1) SpecialGeneratorTruckTripGeneration.job, which applies the generation model.
+;           (2) TruckTimeOfDay.job, which applies diurnal factors to the daily trips generated here. 
+;           (3) TruckTollChoice.job, which applies a toll/no toll choice model for trucks.
+;
+; version:  Travel Model One (v 0.3-1.7)
+; authors:  mas (WSP) (2026 07 02); lmz (2022 12 01); dto (2011 09 08); dto (2010 08 31); cp (date unknown)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the number of zones token
+token_number_of_internal_zones = 1454
+
+; step two: apply the distribution models
+run pgm = tripdist
+
+   ; read in the trip generation output
+   filei zdati[1] = nonres\SGTruckTGx.dbf
+                                                
+   ; read in the level of service matrix with the blended time
+   ; TODO: replace with distance skims if main TruckTripDistribution does the same
+   filei mati[1] = nonres\blendedTruckDistance.tpp
+   
+   ; read in the k-factors
+   ; filei mati[2] = nonres\truckkfact.k22.z1454.mat
+   
+   ; write out the results
+   fileo mato[1] = nonres\DailySGTruckTrips.tpp, mo = 3-4, name = medium, large
+                                                
+   ; set the parameters
+   ;   - maximum iterations is 99
+   maxiters = 99
+   
+   ;   - maximum root mean square error is 10
+   maxrmse = 10
+   
+   ;   - number of zones
+   zones = @token_number_of_internal_zones@ 
+
+   ; set the production and attraction variables
+   ; TODO: expand if ffactors vary by special generator
+   setpa p[1] = zi.1.medprod
+   setpa a[1] = zi.1.medattr
+   
+   setpa p[2] = zi.1.lrgprod
+   setpa a[2] = zi.1.lrgattr
+   
+   ; set the friction factors (time is in column 1, medium FF in 4, and large FF in 5)
+   ; TODO: expand if ffactors vary by special generator
+   lookup list = Y, file = nonres\truckFF.dat, name = truckff, 
+          lookup[1] = 1, result = 4,
+          lookup[2] = 1, result = 5,
+          interpolate = Y, setupper = N
+          
+   ; apply the gravity models
+   ; TODO: expand if ffactors vary by special generator
+   gravity purpose = 1, los = mi.1.distanceMED, ffactors = truckff
+   gravity purpose = 2, los = mi.1.distanceLRG, ffactors = truckff 
+   
+   ; scale the trips by 100 and bucket round (to be consistent with Chuck's application)
+   ; TODO: expand if ffactors vary by special generator OR sum cores by vehicle type
+   mw[3] = mw[1] * 100.0
+   mw[4] = mw[2] * 100.0
+   
+   temp = rowfix(3) + rowfix(4)
+   
+endrun
+
