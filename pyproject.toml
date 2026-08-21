@@ -1,0 +1,91 @@
+[project]
+name = "travel-model-one"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "pandas>=2.0",
+    "psutil>=5.9",
+    "python-dotenv>=1.0",
+    "pyyaml>=6.0",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+# What the legacy RunModel.bat scripts need, and nothing else does.  Every entry
+# exists to run one `command:` step in the CT-RAMP project:
+#
+#   dbfpy3           csvToDbf.py            hwy/tolls.csv -> the .dbf Cube's LOOKUPI reads
+#   NetworkWrangler  transitDwellAccess.py  `from Wrangler import ...`; pulls simpleparse,
+#                                           xlrd, numpy, pandas and pywin32 itself
+#   xlrd/xlwt/       RuntimeConfiguration.py  patches costPerMile into the UEC .xls files
+#     xlutils
+#
+# NetworkWrangler is pinned to a commit, not a branch, so `uv sync` on another machine
+# resolves to the same code.  c806951 is the commit that made it installable at all --
+# before it, setup.py omitted the _static/ directory that Wrangler imports at module
+# level, so only `pip install -e` off a clone ever worked.
+#
+# Phase 4 replaces those scripts with native steps, and this whole extra goes with
+# them -- it is complete when no `command:` in any project points into CTRAMP/scripts.
+legacy = [
+    "dbfpy3>=2.3",
+    "NetworkWrangler @ git+https://github.com/BayAreaMetro/NetworkWrangler@c806951496126c6c5a3a37f5c325176aee91f31d",
+    "xlrd>=2.0",
+    "xlutils>=2.0",
+    "xlwt>=1.3",
+]
+
+[project.scripts]
+tm1 = "tm1.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-coverage>=0.0",
+    "ruff>=0.15.11",
+]
+
+[tool.hatch.metadata]
+# The `legacy` extra pins NetworkWrangler to a git commit.  Hatchling refuses such
+# direct references unless told to allow them, because they cannot be published to
+# PyPI -- which is fine here: this package is never published, and NetworkWrangler
+# is not on PyPI either.
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tm1", "src/cube"]
+
+[tool.ruff]
+line-length = 100
+lint.select = ["ALL"]
+lint.pylint.max-args = 8  # Increase from default of 5 to accomodate 6 canon tables
+lint.ignore = [
+    "COM812",  # Trailing comma - conflicts with formatter
+    "D203",    # Use D211 (no blank line before class)
+    "D213",    # Use D212 (summary on first line)
+    "RET504",  # Allow return of assigned variable
+    "FBT001",  # Boolean args OK in this codebase
+    "FBT002",  # Boolean args OK in this codebase
+    "ERA001",  # Ignore commented out code
+    "FIX002",  # TODOs are tracked in code intentionally
+    "TD002",   # TODO author not required
+    "TD003",   # TODO issue link not required
+    "TC001",   # no `if TYPE_CHECKING:` import blocks -- plain runtime imports preferred
+    "TC002",   # (as above)
+    "TC003",   # (as above)
+    "FA100",   # no `from __future__ import annotations` -- Python floor is 3.11
+    "FA102",   # (as above)
+]
+lint.pydocstyle.convention = "google"
+exclude = ["*.html", "uv.lock", "renv", "utilities", "core", "model-files"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**" = ["T201", "INP001", "D103", "PLR0915"]  # print(), not packages, no docstrings, long mains OK in standalone scripts
+"tests/**" = ["T201", "S101", "INP001"]  # Allow print(), assert; not packages
+"projects/**" = ["T201", "INP001"]  # Project step scripts: print() OK, loaded by path not imported as packages
