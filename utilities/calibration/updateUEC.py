@@ -67,7 +67,7 @@ def get_config(submodel, version):
 
     elif submodel == 'NonworkDestinationChoice':
         uec_src_workbook = UEC_DIR / "TM1.0 version" / "DestinationChoice_TM1.xls"
-        calib_workbook = CALIB_DIR / "09 Non-Work Destination Choice" / f"09_NonWorkDestinationChoice_{version}.xlsx"
+        calib_workbook = CALIB_DIR / "09 Non-Work Destination Choice" / f"09_NonWorkDestinationChoice_2023_{version}.xlsx"
         # sheet, column, startRow, endRow
         copy_src = {
             "escort1":   ("calibration",  5,  4,  8),

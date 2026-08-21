@@ -46,7 +46,6 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
 
     UEC_SOURCE_RANGES = {
         "escort1": ("EscortKids", 7, 12, 16),
-        "escort2": ("EscortNoKids", 7, 12, 16),
         "shopping": ("Shopping", 7, 12, 16),
         "maint": ("OthMaint", 7, 12, 16),
         "eatout": ("EatOut", 7, 12, 16),
@@ -56,14 +55,13 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
     }
 
     CALIBRATION_DESTINATION_RANGES = {
-        "escort1": ("calibration", 5, 4, 8),
-        "escort2": ("calibration", 5, 4, 8),
-        "shopping": ("calibration", 17, 4, 8),
-        "maint": ("calibration", 29, 4, 8),
-        "eatout": ("calibration", 41, 4, 8),
-        "social": ("calibration", 53, 4, 8),
-        "discr": ("calibration", 65, 4, 8),
-        "atwork": ("calibration", 77, 4, 8),
+        "escort1": ("calibration", 4, 4, 8),
+        "shopping": ("calibration", 16, 4, 8),
+        "maint": ("calibration", 28, 4, 8),
+        "eatout": ("calibration", 40, 4, 8),
+        "social": ("calibration", 52, 4, 8),
+        "discr": ("calibration", 64, 4, 8),
+        "atwork": ("calibration", 76, 4, 8),
     }
 
     def __init__(self, config_file: str = None):
@@ -104,7 +102,6 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
                 dist_values = tour_dists["DIST"].dropna()
                 hist_df = create_histogram_tlfd(
                     dist_values,
-                    bins=histogram_bins,
                     sampleshare=self.sampleshare,
                 )
                 weighted_mean = float(dist_values.mean()) if len(dist_values) > 0 else 0.0
@@ -159,7 +156,6 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
                 "end_hour",
                 "orig_taz",
                 "dest_taz",
-                "tour_weight"
             ],
         )
 
@@ -179,9 +175,12 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
                 "orig_taz",
                 "dest_taz",
                 'tour_participants',
-                "joint_tour_weight"
             ],
         )
+
+        if self.bats_data:
+            indiv_tours.append("tour_weight")
+            joint_tours.append("joint_tour_weight")
         joint_tours.rename(columns = {"joint_tour_weight": "tour_weight"})
         joint_tours['num_participants'] = joint_tours['tour_participants'].str.split(" ").str.len()
         joint_tours['indiv_joint'] = 'joint'
