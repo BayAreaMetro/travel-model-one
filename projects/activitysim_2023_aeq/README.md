@@ -55,7 +55,7 @@ transit matrices are preserved instead.
    ```bash
    python scripts/build_aeq_inputs.py --out E:/aeq_inputs
    ```
-2. Point `reference_run`, `proj_dir` and `aeq_inputs` at your machine.
+2. Point `ctramp_run`, `run_dir` and `aeq_inputs` at your machine.
 
 ## Iterations
 
