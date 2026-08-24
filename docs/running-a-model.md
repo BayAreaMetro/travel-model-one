@@ -50,28 +50,47 @@ It states what runs, not how. It is intended to be read from top to bottom.
 ## Quickstart
 
 ```bash
+uv sync --extra legacy        # once per checkout: installs the harness and its dependencies
 cp .env.example .env          # once per machine, then edit it
-tm1 run ctramp_2023
+uv run tm1 run ctramp_2023
 ```
 
 To report on a run, from any shell, during it or after it:
 
 ```bash
-tm1 status ctramp_2023
+uv run tm1 status ctramp_2023
 ```
 
 To list the cases a project declares and check that the project is runnable:
 
 ```bash
-tm1 cases ctramp_2023
+uv run tm1 cases ctramp_2023
 ```
 
 A project is a directory under `projects/` containing a `config.yaml`. A path is also
 accepted, so a project may live outside the repository:
 
 ```bash
-tm1 run E:/my_projects/cordon_pricing
+uv run tm1 run E:/my_projects/cordon_pricing
 ```
+
+### About `uv run`
+
+`uv run <command>` executes a command inside the project's virtual environment, creating
+or updating that environment first if the lockfile has changed. It removes the need to
+activate anything, and it guarantees the command runs against the dependency versions
+`uv.lock` pins rather than whatever happens to be installed on the machine.
+
+If the environment is already activated, the prefix is unnecessary and `tm1 …` is
+equivalent:
+
+```bash
+.venv\Scripts\activate        # Windows
+tm1 run ctramp_2023           # no prefix needed from here on
+```
+
+The remainder of this document writes `tm1 …` without the prefix. Add `uv run` in front
+of any of them if the environment is not activated.
 
 ---
 
