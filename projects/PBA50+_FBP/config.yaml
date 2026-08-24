@@ -206,7 +206,6 @@ steps:
   - build_hsr_trips:
       from: "{run_dir}/INPUT/nonres"
       to: "{run_dir}/nonres"
-      model_year: "{env:MODEL_YEAR}"
       trn_param: "{run_dir}/CTRAMP/scripts/block/trnParam.block"
 
   # Non-motorized level of service (RunModel.bat step 4).  Free-flow only, so unlike

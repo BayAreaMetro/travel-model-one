@@ -26,7 +26,6 @@ Config::
     build_hsr_trips:
       from: "{reference_run}/INPUT/nonres"
       to: "{run_dir}/nonres"
-      model_year: 2023
       trn_param: "{run_dir}/CTRAMP/scripts/block/trnParam.block"
 
 .. warning:: CUBE-ERA FILE FORMAT, PERMANENT MODEL CONTENT.
@@ -95,7 +94,11 @@ def run(
     step_cfg = step_config(cfg, "build_hsr_trips", kwargs)
     src_dir = resolve_path(step_cfg, cfg, "from", "nonres")
     out_dir = resolve_path(step_cfg, cfg, "to", "nonres")
-    model_year = int(step_cfg["model_year"])
+    # `MODEL_YEAR` describes the run, not this step, so it lives in the project's
+    # `env:` block -- the same place assignment reads it and the Cube jobs get
+    # %MODEL_YEAR% from.  A step key still wins, for direct calls in tests.
+    project_env = cfg.get("env") or {}
+    model_year = int(step_cfg.get("model_year") or project_env["MODEL_YEAR"])
     trn_param = resolve_path(
         step_cfg, cfg, "trn_param", "CTRAMP", "scripts", "block", "trnParam.block"
     )
