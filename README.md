@@ -41,21 +41,29 @@ full phase plan and current status of each piece.
 
 ### Scope
 
-Runs a full global iteration: input staging, CT-RAMP demand, then Cube assignment, feedback
-and skims. Every Cube `.job` script is the stock one, run unmodified; only the orchestration
-around them is new.
+Runs the model end to end from pristine `INPUT/`: staging, preprocess, three global
+iterations of CT-RAMP demand → Cube assignment → feedback → skims, and the two Cube
+post-processing jobs. Every `.job` and `.py` is the stock one, run unmodified; only the
+orchestration around them is new.
 
-That covers `SetUpModel.bat`'s staging and **all of `RunIteration.bat`**. It does *not* yet
-cover two phases of `RunModel.bat`:
+That covers `SetUpModel.bat`'s staging, **all of `RunIteration.bat`**, and `RunModel.bat`
+down to `net2csv_avgload5period.job` (line 364). The seven `.bat` calls after it are *not*
+ported:
 
-| Not yet ported | What it does |
-|----------------|--------------|
-| Preprocess | `SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`, `transitDwellAccess.py` |
-| Post-processing | `SkimsDatabase`, `net2csv`, EMFAC, logsums, core summaries, metrics, `ExtractKeyFiles` |
+| Not yet ported | `RunModel.bat` |
+|----------------|----------------|
+| `RunPrepareEmfac.bat` | 369-370 |
+| `RunLogsums` | 383 |
+| `RunCoreSummaries` | 394 |
+| `RunMetrics`, `RunScenarioMetrics` | 403, 412 |
+| `RunNextGenFwysMetrics.bat`, `RunOffmodel` | 416, 427 |
 
-Because preprocess is absent, a project currently stages `hwy/` from a network directory
-on M: rather than building the period networks from `freeflow.net`. Closing that gap is
-phase 4; see [`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
+These are analysis rather than model: they run after results exist and do not feed back
+into them, so a run is complete without them.
+
+The legacy preprocess scripts run here as-is, at the engine boundary. Replacing them with
+native Python — and retiring the `dbfpy3` and NetworkWrangler dependencies with them — is
+the next phase; see [`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
 
 Requires Cube Voyager and a licence, as before.
 
