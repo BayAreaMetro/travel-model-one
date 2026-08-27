@@ -109,6 +109,9 @@ Comparison of modeled and reference trip length frequency distributions (TLFDs) 
 | Large | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Large.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Large.png?raw=true)|
 ---
 
+## Sensitivity 
+
+A series of sensitivity tests were conducted to evaluate the response of the TM-1.7 truck model to three major logistics developments that are either approved or considered likely to occur in the near future: Bridgehead Industrial (Oakley, Contra Costa), Giovannoni Logistic Center (American Canyon, Napa), and Suisun Logistics (Suisun City, Solano). For each scenario, the projected employment associated with the development was added to the corresponding TAZ in the `TazData.bdf` input file and distributed proportionally across the existing logistics-related employment categories (`RETEMPN`, `FPSEMPN`, `AGREMPN`, and `MWTEMPN`). Detailed assumptions, development-specific documentation, and project references are provided in [data_for_sensitivity_test.ipynb](notebooks/data_for_sensitivity_test.ipynb). Model outputs and network-level impacts can be explored through the an HTML visualization tool available on [Box](https://mtcdrive.box.com/s/45vi5jhv8kpbgbwxehy48k6tqu00oo28).
 
 ## Quick Start
 
