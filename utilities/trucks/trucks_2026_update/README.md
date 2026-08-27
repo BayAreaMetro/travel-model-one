@@ -93,7 +93,7 @@ Comparison of modeled versus observed truck counts using available Caltrans and 
 
 | Truck Class | TM1.6 | TM1.7 |
 |------------|:-----:|:-----:|
-| Heavy Trucks | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.6_HV.png?raw=true)| ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/scatter_TM-1.7_GEN_IX_HV.png?raw=true)|
+| Heavy Trucks | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/scatter_TM-1.6_HV.png?raw=true)| ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/scatter_TM-1.7_FINAL_HV.png?raw=true)|
 
 
 
@@ -103,10 +103,10 @@ Comparison of modeled and reference trip length frequency distributions (TLFDs) 
 
 | Truck Class | TM1.6 | TM1.7 |
 |------------|:-----:|:-----:|
-| Very Small | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Very%20Small.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Very%20Small.png?raw=true)|
-| Small | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Small.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Small.png?raw=true)|
-| Medium | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Medium.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Medium.png?raw=true)|
-| Large | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.6_Large.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/best_TM17_20260728/plots/trip_distribution_TM-1.7_GEN_IX_Large.png?raw=true)|
+| Very Small | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/trip_distribution_TM-1.6_Very%20Small.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/trip_distribution_TM-1.7_FINAL_Very%20Small.png?raw=true)|
+| Small | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/trip_distribution_TM-1.6_Small.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/trip_distribution_TM-1.7_FINAL_Small.png?raw=true)|
+| Medium | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/trip_distribution_TM-1.6_Medium.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/trip_distribution_TM-1.7_FINAL_Medium.png?raw=true)|
+| Large | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/trip_distribution_TM-1.6_Large.png?raw=true) | ![](https://github.com/BayAreaMetro/travel-model-one/blob/tm1.7_truck_updates/utilities/trucks/trucks_2026_update/models/evaluation/20260821_180904_all_experiments/plots/trip_distribution_TM-1.7_FINAL_Large.png?raw=true)|
 ---
 
 ## Sensitivity 
