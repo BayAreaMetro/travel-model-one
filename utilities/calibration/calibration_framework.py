@@ -836,11 +836,12 @@ class CalibrationBase(ABC):
         Subclasses opt in by defining two class attributes:
 
         * ``UEC_SOURCE_RANGES``: mapping key -> ``(sheet, column, start_row, end_row)``
-          for the source ``.xls`` workbook.
+          for the source ``.xls`` workbook. (1-based index)
         * ``CALIBRATION_DESTINATION_RANGES``: mapping key ->
-          ``(sheet, column, start_row, end_row)`` for the destination ``.xlsx`` workbook.
+          ``(sheet, column, start_row, end_row)`` for the destination ``.xlsx`` workbook. (1-based index)
 
         If either mapping is missing/empty, population is skipped.
+
         """
         if self.bats_data:
             self.logger.info("Skipping UEC value population for BATS mode.")

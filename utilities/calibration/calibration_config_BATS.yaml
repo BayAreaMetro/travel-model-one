@@ -2,7 +2,7 @@ general:
   # Root of the BATS pipeline output (the ctramp_2023 folder). Used to:
   #   - locate input files via {target_dir} substitution in submodel configs
   #   - set the output directory: {target_dir}/BATS_Summaries/
-  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_mt_20260623_NoMon_rmo/ctramp_2023"
+  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_BATS_Summaries/pipeline_mt_20260821_NoMon_rmo/ctramp_2023"
   # Not used in BATS mode: output goes to BATS_Summaries/ regardless of this
   # value, and no iteration-stamped workbook is written.
   calib_iter: "00"
@@ -26,7 +26,7 @@ data_sources:
 calibration_01:
   name: Usual Work and School Location
   workbook_template: 01_UsualWorkAndSchoolLocation_2023
-  input_file: "{target_dir}/wsLocResults_BATS2023.csv"
+  input_file: "{target_dir}/MandatoryLocationData_BATS2023.csv"
   bats_data: true
   bats_person_data: "{target_dir}/personData_BATS2023.csv"  # path to PersonData.csv with person_weight column for BATS survey mode
 
@@ -42,6 +42,7 @@ calibration_04:
 calibration_09:
   name: Non-Work Destination Choice
   workbook_template: 09_NonWorkDestinationChoice_2023
+  all_tour_file: "{target_dir}/AllTourData_BATS2023.csv"
   indiv_tour_file: "{target_dir}/indivTourData_BATS2023.csv"
   joint_tour_file: "{target_dir}/jointTourData_BATS2023.csv"
   bats_data: true
@@ -50,6 +51,7 @@ calibration_09:
 calibration_11:
   name: Tour Mode Choice
   workbook_template: 11_TourModeChoice_2023
+  all_tour_file: "{target_dir}/AllTourData_BATS2023.csv"
   indiv_tour_file: "{target_dir}/indivTourData_BATS2023.csv"
   joint_tour_file: "{target_dir}/jointTourData_BATS2023.csv"
   bats_data: true
@@ -59,6 +61,7 @@ calibration_11:
 calibration_15:
   name: Trip Mode Choice
   workbook_template: 15_TripModeChoice_2023
+  all_trip_file: "{target_dir}/AllTripData_BATS2023.csv"
   indiv_trip_file: "{target_dir}/indivTripData_BATS2023.csv"
   joint_trip_file: "{target_dir}/jointTripData_BATS2023.csv"
   household_file: "{target_dir}/householdData_BATS2023.csv"

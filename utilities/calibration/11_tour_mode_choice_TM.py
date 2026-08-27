@@ -65,6 +65,53 @@ class TourModeChoiceCalibration(CalibrationBase):
     # Toll drive modes (DA toll, SR2 toll, SR3+ toll) to exclude from observed outputs.
     EXCLUDED_TOUR_MODES = [2, 4, 6]
 
+    # UEC Source and Calibration Destination
+    UEC_SOURCE_RANGES = {
+        "work_ivt": ("Work", 5, 42, 42),
+        "work": ("Work", 5, 414, 475),
+        "university_ivt": ("University", 5, 42, 42),
+        "university": ("University", 5, 414, 475),
+        "school_ivt": ("School", 5, 42, 42),
+        "school": ("School", 5, 414, 475),
+        "escort_ivt":("Escort", 5, 42, 42),
+        "escort": ("Escort", 5, 414, 475),
+        "shopping_ivt": ("Shopping", 5, 42, 42),
+        "shopping": ("Shopping", 5, 414, 475),
+        "eatout_ivt": ("EatOut", 5, 42, 42 ),
+        "eatout": ("EatOut", 5, 414, 475),
+        "othmaint_ivt": ("OthMaint", 5, 42, 42),
+        "othmaint": ("OthMaint", 5, 414, 475),
+        "social_ivt": ("Social", 5, 42, 42),
+        "social": ("Social", 5, 414, 475),
+        "othdiscr_ivt": ("OthDiscr", 5, 42, 42),
+        "othdiscr": ("OthDiscr", 5, 414, 475),
+        "workbased_ivt": ("WorkBased", 5, 11, 11),
+        "workbased": ("WorkBased", 5, 417, 478)
+    }
+    
+    CALIBRATION_DESTINATION_RANGES = {
+        "work_ivt": ("constants", 5, 1, 1),
+        "work": ("constants", 3, 3, 64),
+        "university_ivt": ("constants", 9, 1, 1),
+        "university": ("constants", 7, 3, 64),
+        "school_ivt": ("constants", 13, 1, 1),
+        "school": ("constants", 11, 3, 64),
+        "escort_ivt": ("constants", 17, 1, 1),
+        "escort": ("constants", 15, 3, 64),
+        "shopping_ivt": ("constants", 21, 1, 1),
+        "shopping": ("constants", 19, 3, 64),
+        "eatout_ivt": ("constants", 25, 1, 1),
+        "eatout": ("constants", 23, 3, 64),
+        "othmaint_ivt": ("constants", 29, 1, 1),
+        "othmaint": ("constants", 27, 3, 64),
+        "social_ivt": ("constants", 33, 1, 1),
+        "social": ("constants", 31, 3, 64),
+        "othdiscr_ivt": ("constants", 37, 1, 1),
+        "othdiscr": ("constants", 35, 3, 64),
+        "workbased_ivt": ("constants", 41, 1, 1),
+        "workbased": ("constants", 39, 3, 64)
+        
+    }
 
 
     def __init__(self, config_file: str | None = None):
@@ -98,10 +145,6 @@ class TourModeChoiceCalibration(CalibrationBase):
             "orig_taz",
             "dest_taz",
         ]
-
-        if self.bats_data:
-            indiv_cols.append("sampleRate")
-            joint_cols.append("sampleRate")
 
         indiv = pd.read_csv(self.submodel_config["indiv_tour_file"], usecols=indiv_cols)
         indiv["num_participants"] = 1
@@ -188,7 +231,7 @@ class TourModeChoiceCalibration(CalibrationBase):
         grouped = df.copy()
         grouped["sample_rate"] = pd.to_numeric(grouped["sampleRate"], errors="coerce").fillna(0)
         grouped["num_tours_unweighted"] = 1
-        grouped["num_tours_weighted"] = grouped["num_participants"] / grouped["sampleRate"]
+        grouped["num_tours_weighted"] = 1 / grouped["sampleRate"]
 
         all_modes = [m.value for m in CTRAMPModeType]
         grouped["tour_mode"] = pd.Categorical(grouped["tour_mode"], categories=all_modes)
@@ -582,7 +625,12 @@ class TourModeChoiceCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nPROCESS OBSERVED (BATS) DATA\n{sep}")
 
-        tours = self._load_tours()
+        tours = pd.read_csv(self.submodel_config["all_tour_file"])
+        tours["indiv_joint"] = np.where(
+            tours["joint_tour_id"].isna(),
+            "indiv",
+            "joint"
+        )
         tours = self._attach_auto_sufficiency(tours)
         taz_data = pd.read_csv(self.config.get("data_sources", "taz_data"), usecols=["ZONE", "COUNTY"])
         tours = add_county_info(tours, taz_data, self.county_lookup,
@@ -624,14 +672,14 @@ class TourModeChoiceCalibration(CalibrationBase):
             "auto_suff", "num_tours", self._auto_suff_cols, add_total=False,
         )
 
-        trn_od_summary = self._build_transit_od_summary(transit)
-        auto_od_summary = self._build_auto_od_summary(tours)
+        # trn_od_summary = self._build_transit_od_summary(transit)
+        # auto_od_summary = self._build_auto_od_summary(tours)
 
         return {
             "tour_mode_summary": mode_summary,
             "transit_mode_summary": trn_summary,
-            "transit_od_summary": trn_od_summary,
-            "auto_od_summary": auto_od_summary,
+            # "transit_od_summary": trn_od_summary,
+            # "auto_od_summary": auto_od_summary,
         }
 
     def validate_outputs(self, results: dict):

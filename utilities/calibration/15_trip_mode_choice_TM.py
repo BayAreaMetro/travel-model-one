@@ -97,6 +97,36 @@ class TripModeChoiceCalibration(CalibrationBase):
     # Toll modes (DA toll, SR2 toll, SR3+ toll) to exclude from observed outputs.
     EXCLUDED_MODES = [2, 4, 6]
 
+    UEC_SOURCE_RANGES = {
+            "work_ivt": ("Work", 5, 12, 12),
+            "work": ("Work", 5, 514, 550),
+            "university_ivt": ("University", 5, 12, 12),
+            "university": ("University", 5, 517, 553),
+            "school_ivt": ("School", 5, 12, 12),
+            "school": ("School", 5, 517, 553),
+            "indiv_maint_ivt": ("Shopping", 5, 12, 12),
+            "indiv_maint": ("Shopping", 5, 517, 582),
+            "indiv_disc_ivt": ("Social", 5, 12, 12),
+            "indiv_disc": ("Social", 5, 517, 582),
+            "indiv_atwork_ivt": ("WorkBased", 5, 12, 12),
+            "indiv_atwork": ("WorkBased", 5, 516, 552)
+        }
+        
+    CALIBRATION_DESTINATION_RANGES = {
+        "work_ivt": ("constants", 8, 1, 1),
+        "work": ("constants", 2, 3, 39),
+        "university_ivt": ("constants", 14, 1, 1),
+        "university": ("constants", 10, 3, 39),
+        "school_ivt": ("constants", 24, 1, 1),
+        "school": ("constants", 18, 3, 39),
+        "indiv_maint_ivt": ("constants", 32, 1, 1),
+        "indiv_maint": ("constants", 26, 3, 68),
+        "indiv_disc_ivt": ("constants", 40, 1, 1),
+        "indiv_disc": ("constants", 34, 3, 68),
+        "indiv_atwork_ivt": ("constants", 46, 1, 1),
+        "indiv_atwork": ("constants", 42, 3, 39)
+    }
+
     def __init__(self, config_file: str | None = None):
         super().__init__("15", config_file)
         self._skim_dir = self.submodel_config.get(
@@ -218,9 +248,9 @@ class TripModeChoiceCalibration(CalibrationBase):
             return pd.DataFrame(columns=group_cols + ["num_trips_unweighted", "num_trips_weighted"])
         grouped = df.copy()
         grouped["sample_rate"] = pd.to_numeric(grouped["sampleRate"], errors="coerce").fillna(0)
-        grouped["num_trips_unweighted"] = grouped["num_participants"]
+        grouped["num_trips_unweighted"] = 1
         grouped["num_trips_weighted"] = np.where(
-            grouped["sample_rate"] > 0, grouped["num_participants"] / grouped["sample_rate"], 0.0)
+            grouped["sample_rate"] > 0, 1 / grouped["sample_rate"], 0.0)
 
         if categories is None:
             categories = [m.value for m in CTRAMPModeType]
@@ -297,7 +327,12 @@ class TripModeChoiceCalibration(CalibrationBase):
                     path = Path(self._skim_dir) / f"trnskm{tp}_{acc}_{submode}_{egr}.csv"
                     if not path.exists():
                         continue
-                    skim = pd.read_csv(path, usecols=["orig", "dest", "boards", "firstMode"])
+                    self.logger.info(f"Loading transit skim from: {path}")
+                    target_cols = ["orig", "dest", "boards", "firstMode"]
+                    skim = pd.read_csv(
+                        path, 
+                        usecols=lambda x: x.strip() in target_cols)
+                    skim.columns = skim.columns.str.strip()
                     skim = skim.rename(columns={"orig": "orig_taz", "dest": "dest_taz"})
                     skim["timeperiod"] = tp
                     skim["trn_submode"] = trn_submode
@@ -324,6 +359,9 @@ class TripModeChoiceCalibration(CalibrationBase):
         missing = int(trn["num_boards"].isna().sum())
         self.logger.info("Have %d transit rows without board counts of %d", missing, len(trn))
         return trn
+    # %%
+
+    #%%
 
     def _build_boards_summary(self, trn: pd.DataFrame) -> pd.DataFrame:
         """Spread board counts by submode for the workbook boards table."""
@@ -406,18 +444,33 @@ class TripModeChoiceCalibration(CalibrationBase):
         agg["num_trips"] = agg["num_trips"] / self.sampleshare
         return agg
 
-    def _copy_chts_file(self) -> None:
-        chts = self.submodel_config.get("chts_file")
-        if chts and Path(chts).exists():
-            dest = f"{self.output_dir}/15_trip_mode_choice_auto_ODdist_CHTS.csv"
-            shutil.copy(chts, dest)
-            self.logger.info("Copied CHTS file to %s", dest)
-
     # ------------------------------------------------------------------ BATS
     def _build_bats_summaries(self, trips: pd.DataFrame) -> dict:
         """Cross-tab observed trips as tour mode x trip mode, segmented by tour purpose."""
         trips = self._add_mode_label(trips, mode_col="tour_mode", label_col="tour_mode_label")
-        trip_mode_cols = [m.label for m in CTRAMPModeType if m.value not in self.EXCLUDED_MODES]
+        bats_mode_order = [
+            CTRAMPModeType.DA,
+            CTRAMPModeType.SR2,
+            CTRAMPModeType.SR3,
+            CTRAMPModeType.WALK,
+            CTRAMPModeType.BIKE,
+            CTRAMPModeType.WLK_LOC_WLK,
+            CTRAMPModeType.WLK_LRF_WLK,
+            CTRAMPModeType.WLK_FERRY_WLK,
+            CTRAMPModeType.WLK_EXP_WLK,
+            CTRAMPModeType.WLK_HVY_WLK,
+            CTRAMPModeType.WLK_COM_WLK,
+            CTRAMPModeType.DRV_LOC_WLK,
+            CTRAMPModeType.DRV_LRF_WLK,
+            CTRAMPModeType.DRV_FERRY_WLK,
+            CTRAMPModeType.DRV_EXP_WLK,
+            CTRAMPModeType.DRV_HVY_WLK,
+            CTRAMPModeType.DRV_COM_WLK,
+            CTRAMPModeType.TAXI,
+            CTRAMPModeType.TNC,
+            CTRAMPModeType.TNC2,
+        ]
+        trip_mode_cols = [m.label for m in bats_mode_order if m.value not in self.EXCLUDED_MODES]
 
         group_cols = ["simple_purpose", "tour_mode", "tour_mode_label", "trip_mode"]
 #        idx_cols = ["simple_purpose", "tour_mode", "tour_mode_label"]
@@ -451,7 +504,14 @@ class TripModeChoiceCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nPROCESS OBSERVED (BATS) DATA\n{sep}")
 
-        trips = self._load_trips()
+        trips = pd.read_csv(self.submodel_config['all_trip_file'])
+        trips["indiv_joint"] = np.where(
+            trips["joint_tour_id"].isna(),
+            "indiv",
+            "joint"
+        )
+        trips["simple_purpose"] = self._map_simple_purpose(
+            trips["tour_purpose"], trips["indiv_joint"], collapse_joint=True)
         taz_data = pd.read_csv(self.config.get("data_sources", "taz_data"),
                                usecols=["ZONE", "COUNTY"])
         trips = add_county_info(trips, taz_data, self.county_lookup, taz_col="orig_taz",
@@ -493,8 +553,6 @@ class TripModeChoiceCalibration(CalibrationBase):
             trips, ["simple_purpose", "ridehail_mode", "orig_SD", "dest_SD"])
         ridehail_county_summary = self._ridehail_summary(
             trips, ["ridehail_mode", "orig_COUNTY", "dest_COUNTY"])
-
-        self._copy_chts_file()
 
         return {
             "trip_mode_summary": trip_mode_summary,
