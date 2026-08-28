@@ -19,11 +19,11 @@ it. Shared model configuration lives in [`../default-configs/`](../default-confi
 
 | Project | Engine | Notes |
 |---|---|---|
-| `ctramp_2023` | Java CT-RAMP | 2023 base year; RunModel.bat parity |
+| `PBA50+_FBP` | Java CT-RAMP | Plan Bay Area 2050+ Final Blueprint |
 
 Run every case in a project, or one by name:
 
 ```
-tm1 run ctramp_2023
+tm1 run PBA50+_FBP
 tm1 status ctramp_2023
 ```
