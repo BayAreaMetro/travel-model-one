@@ -1,4 +1,4 @@
-# Cases for ctramp_2023.
+# Cases for PBA50+_FBP.
 #
 # A case is a named set of overrides into config.yaml, addressed by where the
 # value lives:
@@ -21,7 +21,7 @@
 #             adjacent rungs isolates the one intervention that was added
 #   matrix:   the cross product of named axes, minus `exclude:` combinations
 #
-# `tm1 cases ctramp_2023` prints what this file expands to and checks every
+# `tm1 cases PBA50+_FBP` prints what this file expands to and checks every
 # address against config.yaml.
 #
 # IDs are SERIES-TOKENS-YEAR, uppercase, and stable forever: the ID names the run
@@ -37,7 +37,7 @@ cases:
 
 # ── The other two pathways, for when this project grows past one case ──────────────────
 # Both expand to the same thing `cases:` does, so the rules above apply unchanged.
-# Uncomment, adjust, and check with `tm1 cases ctramp_2023`.
+# Uncomment, adjust, and check with `tm1 cases PBA50+_FBP`.
 
 # ladder: cumulative un-ablation.  Start from the year's land use and networks with no
 # strategies, then switch them on one at a time until the last rung *is* the full

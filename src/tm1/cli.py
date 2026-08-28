@@ -2,15 +2,15 @@
 
 Usage::
 
-    tm1 run ctramp_2023
-    tm1 run ctramp_2023 --steps setup
-    tm1 run ctramp_2023 --iterations 3
-    tm1 run ctramp_2023 --slack verbose
+    tm1 run PBA50+_FBP
+    tm1 run PBA50+_FBP --steps setup
+    tm1 run PBA50+_FBP --iterations 3
+    tm1 run PBA50+_FBP --slack verbose
 
 Restart a failed run at the step that died, rather than from the beginning::
 
-    tm1 run ctramp_2023 --resume-at assignment
-    tm1 run ctramp_2023 --resume-at 2:assignment
+    tm1 run PBA50+_FBP --resume-at assignment
+    tm1 run PBA50+_FBP --resume-at 2:assignment
 
 The project also takes a path, so it can live outside the repo::
 
@@ -18,11 +18,11 @@ The project also takes a path, so it can live outside the repo::
 
 Ask where a run got to -- from another shell, during or after it::
 
-    tm1 status ctramp_2023
+    tm1 status PBA50+_FBP
 
 List the cases a project declares, checking every address resolves::
 
-    tm1 cases ctramp_2023
+    tm1 cases PBA50+_FBP
 """
 
 import argparse
@@ -102,7 +102,7 @@ def _project_arg(args: argparse.Namespace) -> str:
     if not project:
         sys.exit(
             "No project given. Pass a name under projects/ (e.g. "
-            "`tm1 run ctramp_2023`) or a path to a project directory."
+            "`tm1 run PBA50+_FBP`) or a path to a project directory."
         )
     if args.scenario:
         sys.stderr.write(
@@ -189,7 +189,7 @@ def _add_project_argument(parser: argparse.ArgumentParser) -> None:
         "project",
         nargs="?",
         help=(
-            f"Project name (folder under {PROJECTS_DIR}/, e.g. ctramp_2023) "
+            f"Project name (folder under {PROJECTS_DIR}/, e.g. PBA50+_FBP) "
             f"or a path to any directory containing a {CONFIG_NAME}"
         ),
     )

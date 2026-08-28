@@ -82,7 +82,7 @@ def _owns(cmdline: Iterable[str], run_dir: Path) -> bool:
     Compared with separators folded and case ignored: the config writes forward
     slashes, Windows hands back backslashes, and drive letters vary in case.
     The match must end on a path boundary -- a plain prefix test claims
-    ``ctramp_2023_v2``'s processes as ``ctramp_2023``'s.
+    ``PBA50+_FBP_v2``'s processes as ``PBA50+_FBP``'s.
     """
     want = str(run_dir).replace("\\", "/").casefold().rstrip("/")
     for arg in cmdline:

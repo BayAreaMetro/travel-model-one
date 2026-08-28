@@ -52,19 +52,19 @@ It states what runs, not how. It is intended to be read from top to bottom.
 ```bash
 uv sync --extra legacy        # once per checkout: installs the harness and its dependencies
 cp .env.example .env          # once per machine, then edit it
-uv run tm1 run ctramp_2023
+uv run tm1 run PBA50+_FBP
 ```
 
 To report on a run, from any shell, during it or after it:
 
 ```bash
-uv run tm1 status ctramp_2023
+uv run tm1 status PBA50+_FBP
 ```
 
 To list the cases a project declares and check that the project is runnable:
 
 ```bash
-uv run tm1 cases ctramp_2023
+uv run tm1 cases PBA50+_FBP
 ```
 
 A project is a directory under `projects/` containing a `config.yaml`. A path is also
@@ -86,7 +86,7 @@ equivalent:
 
 ```bash
 .venv\Scripts\activate        # Windows
-tm1 run ctramp_2023           # no prefix needed from here on
+tm1 run PBA50+_FBP           # no prefix needed from here on
 ```
 
 The remainder of this document writes `tm1 …` without the prefix. Add `uv run` in front
@@ -100,21 +100,21 @@ A run can be interrupted by a lost Cube licence, an unavailable network path, or
 restart. The run directory survives, and completed steps remain completed.
 
 ```bash
-tm1 status ctramp_2023        # what ran, what failed, and how to resume
+tm1 status PBA50+_FBP        # what ran, what failed, and how to resume
 ```
 
 `status` reports the command that resumes the run, normally one of:
 
 ```bash
-tm1 run ctramp_2023 --resume-at hwy_assign
-tm1 run ctramp_2023 --resume-at 2:hwy_assign   # when the step runs in several rounds
+tm1 run PBA50+_FBP --resume-at hwy_assign
+tm1 run PBA50+_FBP --resume-at 2:hwy_assign   # when the step runs in several rounds
 ```
 
 The named step re-runs from its beginning, never part-way through, and every step before
 it is skipped. `--until` is the converse; the two combine to run any contiguous slice:
 
 ```bash
-tm1 run ctramp_2023 --until 0:publish_networks   # just the warm start
+tm1 run PBA50+_FBP --until 0:publish_networks   # just the warm start
 ```
 
 ---
@@ -203,11 +203,11 @@ projects/my_project/
   cases.yaml      named variations on it                    (optional)
 ```
 
-Copy the nearest existing project and edit it. `ctramp_2023` is the RunModel.bat
+Copy the nearest existing project and edit it. `PBA50+_FBP` is the RunModel.bat
 parity run and the usual starting point.
 
 ```bash
-cp -r projects/ctramp_2023 projects/my_project
+cp -r projects/PBA50+_FBP projects/my_project
 tm1 cases my_project          # verify before committing to a full run
 ```
 

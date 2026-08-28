@@ -1,4 +1,4 @@
-"""Project-specific pipeline steps for ctramp_2023.
+"""Project-specific pipeline steps for PBA50+_FBP.
 
 Anything in here is ordinary Python, wired in from ``config.yaml``::
 

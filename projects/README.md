@@ -25,5 +25,5 @@ Run every case in a project, or one by name:
 
 ```
 tm1 run PBA50+_FBP
-tm1 status ctramp_2023
+tm1 status PBA50+_FBP
 ```

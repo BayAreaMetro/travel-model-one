@@ -247,10 +247,10 @@ def test_the_command_line_is_printed_verbatim(tmp_path: Path) -> None:
         (0, "--- Step: simulate_ctramp (iteration 2) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     assert (
-        "tm1 run ctramp_2023 --resume-at 2:simulate_ctramp" in out
+        "tm1 run PBA50+_FBP --resume-at 2:simulate_ctramp" in out
     )
 
 
@@ -258,7 +258,7 @@ def test_a_step_that_runs_once_needs_no_round_prefix(tmp_path: Path) -> None:
     """The shortest unambiguous form: `net2csv`, not `3:net2csv`."""
     state = read_log(_log(tmp_path, [(0, "--- Step: net2csv (iteration 3) ---")]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     assert "--resume-at net2csv" in out
 
@@ -324,7 +324,7 @@ def test_a_live_run_is_never_offered_a_resume_command(tmp_path: Path) -> None:
         (0, "--- Step: simulate_ctramp (iteration 2) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path, alive=True)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path, alive=True)
 
     assert "--resume-at" not in out
     assert "RUNNING" in out
@@ -337,7 +337,7 @@ def test_a_dead_harness_is_stated_plainly(tmp_path: Path) -> None:
         (0, "--- Step: simulate_ctramp (iteration 2) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path, alive=False)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path, alive=False)
 
     assert "harness is gone" in out
     assert "left" not in out
@@ -354,7 +354,7 @@ def test_the_last_activity_and_its_age_are_shown(tmp_path: Path) -> None:
         (2, "--- Done: copy_inputs (2.0m) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     assert "last activity 2026-08-11 06:02" in out
     assert "ago)" in out
@@ -378,7 +378,7 @@ def test_repeated_runs_are_counted_from_the_first(tmp_path: Path) -> None:
     )
 
     state = read_logs(tmp_path)
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     assert state.attempts == len(list((tmp_path / "logs").glob("*.log")))
     assert "2 runs since 2026-08-11" in out
@@ -405,7 +405,7 @@ def test_a_step_absent_from_a_round_is_blank_not_pending(tmp_path: Path) -> None
     """`-` means "has not run yet". Nothing planned must not look like that."""
     state = read_log(_log(tmp_path, [(0, "--- Step: net2csv (iteration 3) ---")]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
     row = next(ln for ln in out.splitlines() if "simulate_ctramp" in ln)
 
     # simulate_ctramp has no iteration-0 entry: three cells, not four.
@@ -425,7 +425,7 @@ def test_a_step_that_ran_outranks_the_same_step_skipped(tmp_path: Path) -> None:
         (31, "--- Done: hwy_assign (30.6m) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
     row = next(ln for ln in out.splitlines() if "hwy_assign" in ln)
 
     assert "30.0m" in row
@@ -436,7 +436,7 @@ def test_every_step_is_listed_by_name(tmp_path: Path) -> None:
     """Sections are not collapsed to counts: the point is per-step durations."""
     state = read_log(_log(tmp_path, [(0, "--- Step: copy_inputs (iteration 1) ---")]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     for name in ("copy_inputs", "hwy_skims", "simulate_ctramp", "net2csv"):
         assert any(ln.strip().startswith(name) for ln in out.splitlines()), name
@@ -446,7 +446,7 @@ def test_no_row_carries_trailing_whitespace(tmp_path: Path) -> None:
     """Blank trailing cells would otherwise pad the line, which breaks diffs."""
     state = read_log(_log(tmp_path, [(0, "--- Step: copy_inputs (iteration 1) ---")]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     assert all(ln == ln.rstrip() for ln in out.splitlines())
 
@@ -462,7 +462,7 @@ def test_output_is_plain_ascii(tmp_path: Path) -> None:
         (2, "--- Step: simulate_ctramp (iteration 1) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     assert out.isascii()
 
@@ -474,7 +474,7 @@ def test_the_grid_shows_one_column_per_round(tmp_path: Path) -> None:
         (60, "--- Done: simulate_ctramp (1h00m) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     assert "round 1" in out
     assert f"round {ROUNDS}" in out
@@ -495,7 +495,7 @@ def test_a_first_run_says_there_is_no_estimate_yet(tmp_path: Path) -> None:
         (2, "--- Step: hwy_assign (iteration 0) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path, alive=True)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path, alive=True)
 
     assert "no estimate yet" in out
     assert "~0s left" not in out
@@ -508,7 +508,7 @@ def test_an_estimate_appears_once_a_step_has_a_precedent(tmp_path: Path) -> None
         (30, "--- Done: hwy_assign (30.0m) ---"),
     ]))
 
-    out = render("ctramp_2023", _plan(), state, tmp_path, alive=True)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path, alive=True)
 
     assert "no estimate yet" not in out
     assert "left" in out
@@ -523,7 +523,7 @@ def test_a_complete_run_says_so_instead_of_estimating(tmp_path: Path) -> None:
     state = RunLog(path=tmp_path, elapsed=56580.0)
     state.done = dict.fromkeys(_plan().entries(), 1.0)
 
-    out = render("ctramp_2023", _plan(), state, tmp_path)
+    out = render("PBA50+_FBP", _plan(), state, tmp_path)
 
     assert "15h43m elapsed" in out
     assert "complete" in out
