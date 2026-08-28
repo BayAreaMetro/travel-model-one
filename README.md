@@ -11,7 +11,7 @@ The following model versions are available in the repository:
 4. Version 1.5 -- Maintained in branch [`TM1.5`](https://github.com/BayAreaMetro/travel-model-one/tree/TM1.5).
 5. Version 1.6 -- Maintained in branch [`master`](https://github.com/BayAreaMetro/travel-model-one/tree/master).
 
-Travel Model Two is also under development in a different repository: https://github.com/BayAreaMetro/travel-model-two
+Additionally, specific releases are [tagged](https://github.com/BayAreaMetro/travel-model-one/tagshttps://github.com/BayAreaMetro/travel-model-one/tags).
 
 For additional details about the different versions, please see [here](https://github.com/BayAreaMetro/modeling-website/wiki/Development)
 Any other branches are exploratory and not used in our planning work.
@@ -77,9 +77,29 @@ pip install uv
 # Install project in dev mode
 uv sync
 
-# Verify
-tm1 --help
+# Verify (or activate .venv\Scripts\activate first, then call tm1 directly)
+uv run tm1 --help
 ```
+
+> **Windows note:** if `uv` is "not recognized" after `pip install uv`, pip installed
+> it under your user Python `Scripts` folder (e.g.
+> `%APPDATA%\Python\Python3XX\Scripts`), which may not be on `PATH`. Either add that
+> folder to `PATH`, or install `uv` via the standalone installer instead, which adds
+> itself to `PATH` automatically:
+> ```powershell
+> powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+> ```
+
+> **Windows note:** if the project lives on a mapped network drive (e.g. `X:\` backed
+> by a `\\server\share` UNC path), `uv sync`'s default `.venv` will be on that same
+> share, and compiled packages (e.g. `psutil`) fail to import with `DLL load
+> failed ... The parameter is incorrect` — Windows can't load native `.pyd`/DLLs over
+> a network path. Point the venv at local disk instead:
+> ```cmd
+> set UV_PROJECT_ENVIRONMENT=E:\tm1-venv
+> uv sync
+> uv run tm1 --help
+> ```
 
 ### Running a Project
 
