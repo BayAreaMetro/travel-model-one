@@ -48,8 +48,8 @@ Model validation relies on observed truck traffic counts from the following avai
 |  Bay Area Toll Authority (BATA) | 2023 | • Hourly truck volumes by axle classification at seven Bay Area toll bridges, based on Tuesday-Thursday observations collected during March-May and September-November (excluding holidays)<br>• Each toll plaza observation was manually matched to the corresponding MTC highway network link at the toll collection location for validation purposes.| 7 | [BATA_counts_by_plaza_hour_axles.xlsx](https://mtcdrive.box.com/s/5mjgq6iwjlzxidap533rr9zd6xb6ukbi) [BATA_TM_network_link_matching.csv](https://mtcdrive.box.com/s/re5hrvsc5601hh905u46hanr70rxh4ca)|
 
 Other datasources evaluated: 
-- PEMS: #TODO: Why not used
-- 2023 Caltrans census data.  #TODO: Why not used
+- PeMS: Data source appears to be discontinued (Asana task: https://app.asana.com/1/11860278793487/task/1213975595124411?focus=true)
+- Historical Caltrans Census Data (https://dot.ca.gov/programs/traffic-operations/census) Represents a much larger sample size (approximately 300 locations), and includes historical data from 2013 to 2024. We did not perform a detailed review of the network-link matching or observation location assignments, so these results should be considered preliminary. Even with the larger sample, the results suggest that the TM-1.7 updates implemented in this project provide only modest improvements. That said, the size and coverage of the dataset suggest it could be a useful source for future validation efforts. See the related Asana task for additional details: https://app.asana.com/1/11860278793487/task/1214624633679309?focus=true
 
 ---
 
