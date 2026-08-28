@@ -16,23 +16,72 @@ from tm1.project import cases, overrides
 from tm1.project.cases import Case, expand
 from tm1.project.overrides import apply_case, resolve_address
 
-PROJECT_CONFIG = (
-    Path(__file__).parents[1] / "projects" / "ctramp_2023" / "config.yaml"
-)
+#: Every project the repo ships, discovered rather than named, so adding, renaming or
+#: retiring one needs no edit here.
+PROJECTS = sorted((Path(__file__).parents[1] / "projects").glob("*/config.yaml"))
 
-#: Values the shipped config declares, and the ones a case overrides them with.
+#: A config with the *shape* a project has and none of its content: top-level keys, an
+#: `env:` block, a step with several entries, a `warmstart:` and an `iterate:` that
+#: share a step name, a mapping-valued key, and a step that does not declare `enabled`.
+#:
+#: Deliberately synthetic.  What follows pins the override *mechanism*, so it must not
+#: move when a real project's YAML changes: a project evolving is not a regression, and
+#: a test that says otherwise only teaches people to edit the assertion until it passes.
+#: The two tests that genuinely need a real project are at the bottom, and they assert
+#: what is true of any valid one rather than what today's happens to say.
+FIXTURE = """
+slack: minimal
+m_drive: "M:/models"
+
+env:
+  MODEL_YEAR: 2023
+  EN7: DISABLED
+  PATH: "C:/gawk;%PATH%"
+
+steps:
+  - copy_inputs:
+      input_hwy:
+        from: "M:/networks/hwy"
+        to: "{run_dir}/INPUT/hwy"
+      input_landuse:
+        from: "M:/landuse"
+        to: "{run_dir}/INPUT/landuse"
+
+  - warmstart:
+      - hwy_assign:
+          job: "CTRAMP/scripts/assign/HwyAssign.job"
+          cluster_nodes: 48
+
+  - iterate:
+      count: 3
+      steps:
+        - simulate_ctramp:
+            threads: 24
+            sample_rate:
+              1: 0.15
+              2: 0.30
+              3: 0.50
+        - hwy_assign:
+            job: "CTRAMP/scripts/assign/HwyAssign.job"
+            cluster_nodes: 48
+
+  - skims_database:
+      job: "CTRAMP/scripts/database/SkimsDatabase.job"
+"""
+
+#: Values FIXTURE declares, and the ones a case overrides them with.
 EXPECTED_PROBLEMS = 2
-SHIPPED_YEAR = 2023
+FIXTURE_YEAR = 2023
 HORIZON_YEAR = 2035
-SHIPPED_NODES = 48
+FIXTURE_NODES = 48
 FEWER_NODES = 24
 FEWER_THREADS = 12
 
 
 @pytest.fixture
 def cfg() -> dict:
-    """The shipped project config -- the thing addresses are written against."""
-    return yaml.safe_load(PROJECT_CONFIG.read_text(encoding="utf-8"))
+    """The fixture config -- the thing addresses are written against."""
+    return yaml.safe_load(FIXTURE)
 
 
 # --------------------------------------------------------------------------- #
@@ -59,7 +108,7 @@ def test_the_forecast_year(cfg: dict) -> None:
 
     assert out["env"]["MODEL_YEAR"] == HORIZON_YEAR
     assert out["env"]["EN7"] == "DISABLED", "its siblings must survive"
-    assert cfg["env"]["MODEL_YEAR"] == SHIPPED_YEAR, "the original must not be mutated"
+    assert cfg["env"]["MODEL_YEAR"] == FIXTURE_YEAR, "the original must not be mutated"
 
 
 def test_inside_a_top_level_mapping_keeps_its_siblings(cfg: dict) -> None:
@@ -105,7 +154,7 @@ def test_the_same_step_in_the_warm_start(cfg: dict) -> None:
     }))
 
     assert _in_block(out, "warmstart", "hwy_assign")["cluster_nodes"] == FEWER_NODES
-    assert _in_block(out, "iterate", "hwy_assign")["cluster_nodes"] == SHIPPED_NODES
+    assert _in_block(out, "iterate", "hwy_assign")["cluster_nodes"] == FIXTURE_NODES
 
 
 def test_a_bare_name_in_two_blocks_is_refused(cfg: dict) -> None:
@@ -279,12 +328,25 @@ def test_validate_reports_every_case_not_just_the_first(cfg: dict) -> None:
     assert any(p.startswith("A-TWO") for p in problems)
 
 
-def test_the_shipped_project_validates(cfg: dict) -> None:
-    """Whatever cases.yaml declares today must resolve against config.yaml."""
-    expansion = cases.load(PROJECT_CONFIG.parent)
+@pytest.mark.parametrize("config_path", PROJECTS, ids=lambda p: p.parent.name)
+def test_every_shipped_project_validates(config_path: Path) -> None:
+    """Whatever a project's cases.yaml declares must resolve against its config.yaml.
+
+    The only test here that reads a real project, and it asserts nothing about what
+    that project *says* -- just that its cases resolve.  So editing a config or a
+    case cannot break it; writing an address that does not exist can, which is the
+    whole point.
+    """
+    cfg = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    expansion = cases.load(config_path.parent)
 
     assert expansion.cases, "a project declares at least one case"
     assert overrides.validate(cfg, expansion) == []
+
+
+def test_at_least_one_project_ships() -> None:
+    """Guards the discovery above: a bad glob would silently test nothing."""
+    assert PROJECTS
 
 
 # --------------------------------------------------------------------------- #

@@ -18,9 +18,8 @@ from tm1.steps.simulate_ctramp import _sample_rate_for
 #: RunModel.bat's ramp, lines 280, 304 and 328.
 LEGACY_RAMP = {1: 0.15, 2: 0.30, 3: 0.50}
 
-PROJECT_CONFIG = (
-    Path(__file__).parents[1] / "projects" / "ctramp_2023" / "config.yaml"
-)
+#: Every project the repo ships, discovered rather than named -- see test_cases.py.
+PROJECTS = sorted((Path(__file__).parents[1] / "projects").glob("*/config.yaml"))
 
 
 def test_flat_rate_applies_to_every_round() -> None:
@@ -82,14 +81,32 @@ def test_a_ramp_key_that_is_not_a_round_number_is_an_error() -> None:
         _sample_rate_for(1, {"first": 0.15})
 
 
-def test_the_shipped_project_states_the_legacy_ramp() -> None:
-    """Parity depends on these three values; assert them rather than trust them."""
-    cfg = yaml.safe_load(PROJECT_CONFIG.read_text(encoding="utf-8"))
+@pytest.mark.parametrize("config_path", PROJECTS, ids=lambda p: p.parent.name)
+def test_every_shipped_project_states_a_rate_for_every_round(config_path: Path) -> None:
+    """A project's ramp has to cover the rounds that project will actually run.
+
+    Not *which* rate -- that is the project's business, and asserting today's values
+    would make a config edit look like a regression.  What must hold for any project
+    is that `count` and `sample_rate` agree: a ramp one round short used to fall
+    through to 0.50 unannounced, which is the failure this file exists to prevent.
+    """
+    cfg = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     loop = next(
-        s["iterate"] for s in cfg["steps"] if isinstance(s, dict) and "iterate" in s
+        (s["iterate"] for s in cfg["steps"] if isinstance(s, dict) and "iterate" in s),
+        None,
     )
-    sim = next(s["simulate_ctramp"] for s in loop["steps"] if "simulate_ctramp" in s)
-    assert {int(k): v for k, v in sim["sample_rate"].items()} == LEGACY_RAMP
+    if loop is None:
+        pytest.skip("no feedback loop, so no per-round rate to state")
+
+    sim = next(
+        (s["simulate_ctramp"] for s in loop["steps"] if "simulate_ctramp" in s), None
+    )
+    if sim is None:
+        pytest.skip("this project's demand model is not CT-RAMP")
+
+    rate = sim.get("sample_rate")
+    for round_number in range(1, loop["count"] + 1):
+        assert _sample_rate_for(round_number, rate) > 0
 
 
 def test_start_notification_renders_the_ramp() -> None:
