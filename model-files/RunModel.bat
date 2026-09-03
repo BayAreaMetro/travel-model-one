@@ -208,6 +208,11 @@ if ERRORLEVEL 2 goto done
 voyagercli CTRAMP\scripts\preprocess\HsrTripGeneration.job -S %MODEL_DIR%
 if ERRORLEVEL 2 goto done
 
+:: Create PT-compatible transit network files
+python CTRAMP\utilities\pt_converter\run.py ^
+  --model-dir "%MODEL_DIR%" ^
+  --config CTRAMP\utilities\pt_converter\config.json
+if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 4:  Build non-motorized level-of-service matrices
