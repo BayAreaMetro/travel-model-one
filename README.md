@@ -82,8 +82,13 @@ model-files/, core/   # Legacy CT-RAMP/Cube assets, unchanged, still in producti
 # Install uv (one-time)
 pip install uv
 
-# Install project in dev mode
-uv sync
+# Install project in dev mode -- --extra legacy pulls in dbfpy3 and NetworkWrangler,
+# needed by the csv_to_dbf and transit_dwell_access steps (see MIGRATION_NOTES.md)
+uv sync --extra legacy
+
+# Machine-specific paths -- a drive letter, a UNC share, the location of gawk --
+# and nothing about the model itself. Copy once per machine, then edit it.
+cp .env.example .env
 
 # Verify (or activate .venv\Scripts\activate first, then call tm1 directly)
 uv run tm1 --help

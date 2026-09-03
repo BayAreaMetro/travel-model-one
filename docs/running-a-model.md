@@ -31,9 +31,8 @@ The sections below are ordered for a reader who knows `RunModel.bat`.
 Three, and they are the ones that change existing habits.
 
 **1. `.env` is configured once per machine.**
-Copy `.env.example` to `.env` at the repository root and complete it. It holds only
-machine-specific roots — a drive letter, a UNC share, the location of gawk — and nothing
-about the model itself.
+Machine-specific roots — a drive letter, a UNC share, the location of gawk — live there
+instead of in `config.yaml`. See [README.md#setup](../README.md#setup).
 
 **2. The run does not execute in the working directory.**
 `RunModel.bat` ran in the directory containing it. A run now executes in
@@ -49,9 +48,10 @@ It states what runs, not how. It is intended to be read from top to bottom.
 
 ## Quickstart
 
+Setup (installing `uv`, the project and its `--extra legacy` dependencies) is in the
+top-level [README.md](../README.md#setup) -- one copy, so the two cannot drift apart.
+
 ```bash
-uv sync --extra legacy        # once per checkout: installs the harness and its dependencies
-cp .env.example .env          # once per machine, then edit it
 uv run tm1 run PBA50+_FBP
 ```
 
