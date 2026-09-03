@@ -4,6 +4,7 @@ from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 
@@ -22,10 +23,8 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             temp_path = Path(temp)
             source_dir = temp_path / "INPUT" / "trn"
-            source_dir.mkdir(parents=True)
-            (source_dir / "transitLines.lin").write_text(
-                'LINE NAME="TEST", MODE=11, FREQ[1]=10, N=1,2\n',
-                encoding="utf-8",
+            shutil.copytree(
+                Path(__file__).parent / "fixtures" / "minimal_trn", source_dir
             )
             config = temp_path / "config.json"
             config.write_text(
@@ -43,7 +42,7 @@ class CliTests(unittest.TestCase):
                 status = main(["--model-dir", temp, "--config", str(config)])
 
         self.assertEqual(status, 0)
-        self.assertIn("No PT assignment files were created", output.getvalue())
+        self.assertIn("converted 1 transit line(s)", output.getvalue())
 
     def test_bad_config_returns_two_without_traceback(self) -> None:
         errors = io.StringIO()

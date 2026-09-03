@@ -8,6 +8,7 @@ from pathlib import Path
 from .config import ConverterConfig
 from .errors import ConfigurationError, SourceReadError, ValidationError
 from .inventory import IssueSeverity, NetworkWranglerInputReader, write_inventory
+from .line_conversion import PTInputWriter, TransitLineReader, VehicleCatalogReader
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,13 +49,18 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
                 f"Network Wrangler inputs have {error_count} error(s). "
                 f"Review {inventory_path}."
             )
+        source_directory = model_directory / "INPUT" / "trn"
+        lines = TransitLineReader().read(source_directory / "transitLines.lin")
+        vehicles = VehicleCatalogReader().read(source_directory)
+        written = PTInputWriter().write(lines, vehicles, output_directory)
         return ConversionResult(
-            action="inspect-network-wrangler-inputs",
+            action="convert-network-wrangler-inputs",
             output_directory=output_directory,
             message=(
                 f"Inspected {len(inventory.files)} source file(s) and "
-                f"{inventory.transit_lines.count} transit line(s). "
-                f"Inventory: {inventory_path}. No PT assignment files were created."
+                f"converted {written.line_count} transit line(s) and "
+                f"{written.vehicle_type_count} vehicle type(s). "
+                f"Inventory: {inventory_path}. Conversion report: {written.report_path}."
             ),
         )
 

@@ -1,0 +1,7 @@
+;;<<PT>>;;
+; Generated from finalized Network Wrangler inputs.
+MODE NUMBER=11, NAME="MODE_11"
+
+OPERATOR NUMBER=7, NAME="OPERATOR_7"
+
+VEHICLETYPE NUMBER=1, NAME="Standard Bus", CRUSHCAP=60

@@ -27,10 +27,10 @@ _KNOWN_FILE_TYPES = {
     "transit_support_nodes.dat": "transit_support_nodes",
 }
 
-_LINE_START = re.compile(r"(?im)^\s*LINE\s+NAME\s*=")
+_LINE_START = re.compile(r"(?im)^[ \t]*LINE[ \t]+NAME[ \t]*=")
 _NAME = re.compile(r'(?i)\bNAME\s*=\s*(?:"([^"]+)"|([^,\s]+))')
 _MODE = re.compile(r"(?i)\bMODE\s*=\s*(-?\d+)")
-_OPERATOR = re.compile(r"(?i)\bOPERATOR\s*=\s*(-?\d+)")
+_OPERATOR = re.compile(r"(?i)\b(?:OPERATOR|OWNER)\s*=\s*(-?\d+)")
 _HEADWAY = re.compile(r"(?i)\bFREQ\[(\d+)\]\s*=")
 
 

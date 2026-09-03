@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
+import shutil
 import tempfile
 import unittest
 
@@ -18,10 +19,8 @@ class ConversionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             model_dir = Path(temp)
             source_dir = model_dir / "INPUT" / "trn"
-            source_dir.mkdir(parents=True)
-            (source_dir / "transitLines.lin").write_text(
-                'LINE NAME="TEST", MODE=11, OPERATOR=7, FREQ[1]=10, FREQ[2]=15, N=1,2\n',
-                encoding="utf-8",
+            shutil.copytree(
+                Path(__file__).parent / "fixtures" / "minimal_trn", source_dir
             )
             result = convert_transit_network(
                 ConversionRequest(model_dir, self.config("network_wrangler"))
@@ -30,13 +29,15 @@ class ConversionTests(unittest.TestCase):
             inventory_path = model_dir / "trn" / "pt" / "source_inventory.json"
             inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
 
-            self.assertEqual(result.action, "inspect-network-wrangler-inputs")
+            self.assertEqual(result.action, "convert-network-wrangler-inputs")
             self.assertEqual(inventory["transit_lines"]["count"], 1)
             self.assertEqual(inventory["transit_lines"]["modes"], [11])
             self.assertEqual(inventory["transit_lines"]["operators"], [7])
-            self.assertEqual(inventory["transit_lines"]["headway_periods"], [1, 2])
+            self.assertEqual(inventory["transit_lines"]["headway_periods"], [1, 2, 3, 4, 5])
             self.assertEqual(inventory["issues"], [])
-            self.assertFalse(any(inventory_path.parent.glob("*.pts")))
+            self.assertTrue((inventory_path.parent / "transitLines.lin").is_file())
+            self.assertTrue((inventory_path.parent / "transitSystem.pts").is_file())
+            self.assertTrue((inventory_path.parent / "line_conversion_report.json").is_file())
 
     def test_unsupported_source_fails_clearly(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
