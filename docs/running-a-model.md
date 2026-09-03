@@ -48,8 +48,8 @@ It states what runs, not how. It is intended to be read from top to bottom.
 
 ## Quickstart
 
-Setup (installing `uv`, the project and its `--extra legacy` dependencies) is in the
-top-level [README.md](../README.md#setup) -- one copy, so the two cannot drift apart.
+Setup (installing `uv` and the project) is in the top-level
+[README.md](../README.md#setup) -- one copy, so the two cannot drift apart.
 
 ```bash
 uv run tm1 run PBA50+_FBP

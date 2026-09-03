@@ -16,24 +16,12 @@ dependencies = [
     "xlrd>=2.0",
     "xlutils>=2.0",
     "xlwt>=1.3",
-]
-
-[project.optional-dependencies]
-# What the legacy RunModel.bat scripts need, and nothing else does.  Every entry
-# exists to run one `command:` step in the CT-RAMP project:
-#
-#   dbfpy3           csvToDbf.py            hwy/tolls.csv -> the .dbf Cube's LOOKUPI reads
-#   NetworkWrangler  transitDwellAccess.py  `from Wrangler import ...`; pulls simpleparse,
-#                                           xlrd, numpy, pandas and pywin32 itself
-#
-# NetworkWrangler is pinned to a commit, not a branch, so `uv sync` on another machine
-# resolves to the same code.  c806951 is the commit that made it installable at all --
-# before it, setup.py omitted the _static/ directory that Wrangler imports at module
-# level, so only `pip install -e` off a clone ever worked.
-#
-# Phase 4 replaces those scripts with native steps, and this whole extra goes with
-# them -- it is complete when no `command:` in any project points into CTRAMP/scripts.
-legacy = [
+    # dbfpy3 (csvToDbf.py) and NetworkWrangler (transitDwellAccess.py) back `command:`
+    # steps that every project's pipeline runs unconditionally today -- csvToDbf.py
+    # writes hwy/tolls.dbf, which the Cube LOOKUPI in HwyAssign.job reads.  Phase 4
+    # replaces those scripts with native steps and deletes both dependencies outright;
+    # until then they are load-bearing, not optional, so they live here rather than in
+    # a `legacy` extra someone has to remember to ask for.
     "dbfpy3>=2.3",
     "NetworkWrangler @ git+https://github.com/BayAreaMetro/NetworkWrangler@c806951496126c6c5a3a37f5c325176aee91f31d",
 ]
@@ -53,10 +41,12 @@ dev = [
 ]
 
 [tool.hatch.metadata]
-# The `legacy` extra pins NetworkWrangler to a git commit.  Hatchling refuses such
-# direct references unless told to allow them, because they cannot be published to
-# PyPI -- which is fine here: this package is never published, and NetworkWrangler
-# is not on PyPI either.
+# NetworkWrangler is pinned to a git commit, not a branch, so `uv sync` on another
+# machine resolves to the same code -- c806951 is the commit that made it installable
+# at all (setup.py previously omitted the _static/ directory Wrangler imports at module
+# level). Hatchling refuses such direct references unless told to allow them, because
+# they cannot be published to PyPI -- which is fine here: this package is never
+# published, and NetworkWrangler is not on PyPI either.
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
