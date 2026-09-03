@@ -30,10 +30,40 @@
 cases:
 
   # No overrides: config.yaml exactly as written.
-  PARITY-2023:
+  BASEYEAR-2023:
     description: >
       RunModel.bat parity: adopted 2023 networks and land use, no strategies
       applied.  The run the harness is measured against.
+  
+  PLAN-2050-V16:
+    description: >
+      Plan Bay Area 2050+ Final Blueprint run. Equivalent to 2050_TM161_FBP_Plan_16
+    model_year:     2050
+    env.MODEL_YEAR: 2050
+    env.EN7: ENABLED
+
+    copy_inputs.input_hwy.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Blueprint/hwy"
+    copy_inputs.input_trn.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Blueprint/trn"
+    copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_FBP_v08/2050/popsyn"
+    copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_FBP_v08/2050/landuse"
+    # Parking strategy (En9): SetUpModel_PBA50Plus.bat applies this for MODEL_YEAR >= 2035.
+    copy_inputs.input_landuse.variant:
+      tazData.csv: parking_strategy/tazData_parkingStrategy_v01_wSFCordon_wTICordon.csv
+      tazData.dbf: parking_strategy/tazData_parkingStrategy_v01_wSFCordon_wTICordon.dbf
+    copy_inputs.input_nonres.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+    # logsums and metrics are unchanged
+
+    # TODO: the time period stuff here is a bit unnecessary; can we use {{timeperiod}}?
+    copy_inputs.input_airpax_ea.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEA.tpp"
+    copy_inputs.input_airpax_am.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxAM.tpp"
+    copy_inputs.input_airpax_md.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxMD.tpp"
+    copy_inputs.input_airpax_pm.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxPM.tpp"
+    copy_inputs.input_airpax_ev.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEV.tpp"
+
+    copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/Blueprint/Archive_FBP/2050_TM161_FBP_Plan_15/OUTPUT/main"
+    copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/Archive_FBP/2050_TM161_FBP_Plan_15/OUTPUT/nonres"
+
+    copy_inputs.input_params.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/params.properties"
 
 # ── The other two pathways, for when this project grows past one case ──────────────────
 # Both expand to the same thing `cases:` does, so the rules above apply unchanged.

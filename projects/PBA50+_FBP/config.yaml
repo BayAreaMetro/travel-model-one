@@ -6,7 +6,7 @@
 # so the year names where the project starts, not the only year it can produce.
 # What the keys mean: docs/running-a-model.md
 
-slack: "minimal"          # start, finish and failure only; "verbose" adds every step
+slack: "off"              # "minimal": start, finish, failure only; "verbose" adds every step
 
 logging:
   level: DEBUG            # what reaches the run log; console stays at INFO
@@ -14,6 +14,11 @@ logging:
 # The one shorthand this file defines; another would belong here beside it.  Only the
 # ROOT is machine-specific -- which network and which land use are spelled out below.
 m_drive: "{env:TM1_M_DRIVE}"        # M: = \\models.ad.mtc.ca.gov\data\models
+
+# The run's year, read by Python steps (configure_ctramp) that need it typed rather
+# than as an environment string.  Keep this in step with env.MODEL_YEAR below -- a
+# case that forecasts forward must override both.
+model_year: 2023
 
 # Injected per run -- usable below, not settable:
 #   run_dir = {env:TM1_RUNS_ROOT}/{project}/{case}-{NNN}, plus runs_root, project, case, run
@@ -29,7 +34,6 @@ env:
   EN7: DISABLED           # required: RunModel.bat 115-128 will not start without it
   PATH: "{env:TM1_GAWK_DIR};{env:PATH}"    # gawk, for BuildTransitNetworks.job
   # MAXITERATIONS: 3      # RunModel.bat 135-147 hard-codes these
-  # TRNCONFIG: FAST       # STANDARD makes transit iterate; not supported yet
 
 # ════════════════════════════════════════════════════════════════════════════════════════
 # PIPELINE — steps run in the order written.  `warmstart:` and `iterate:` are the only
@@ -83,6 +87,7 @@ steps:
       input_landuse:                    # INPUT_POPLU/landuse
         from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/landuse"
         to: "{run_dir}/INPUT/landuse"
+        variant: {}                      # optional: {dest name: path relative to `from`} -- e.g. a parking-strategy tazData.csv
       input_telecommute_max_rate:       # from this checkout, not the M drive
         from: "utilities/telecommute/telecommute_max_rate_county.csv"
         to: "{run_dir}/INPUT/landuse/telecommute_max_rate_county.csv"
