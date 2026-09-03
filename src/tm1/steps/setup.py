@@ -19,10 +19,18 @@ An entry::
       include: ["*.tpp"]        # optional; only these, matched against the path
       exclude: ["ixDaily*.tpp"] #   relative to `from`.  exclude wins.
       overwrite: true           # optional; default is never to clobber
+      variant:                  # optional; {dest name: path relative to `from`},
+        tazData.csv: "parking_strategy/tazData_v01.csv"  #   copied on top after
 
 ``from`` may be a directory or a single file; a file entry may rename, which is
 how ``SetUpModel.bat`` turns ``2023b_tripsAirPaxEA.tpp`` into
 ``tripsAirPaxEA.tpp``.
+
+``variant`` is how a strategy swaps in one file from inside a directory entry's own
+``from:`` -- a parking-strategy ``tazData.csv`` living in a ``parking_strategy/``
+subdirectory of the same land use release, say -- without restating the whole source
+path a second time.  It always overwrites, the same as a renamed file entry landing on
+a directory: the swap is declared, not defaulted into.
 
 Two sources may **merge** into one directory -- ``RunModel.bat`` 175-177 copies
 both ``INPUT\nonres`` and ``INPUT\warmstart\nonres`` into ``nonres\`` -- so the
@@ -46,7 +54,7 @@ log = logging.getLogger(__name__)
 
 #: Keys an entry may declare.  Anything else is refused by name, so a typo is an
 #: error rather than a silently ignored instruction.
-_ENTRY_KEYS = frozenset({"from", "to", "include", "exclude", "overwrite"})
+_ENTRY_KEYS = frozenset({"from", "to", "include", "exclude", "overwrite", "variant"})
 
 
 def _strip_ctrl_z(path: Path) -> None:
@@ -107,6 +115,28 @@ def _copy_file(src: Path, dest: Path, *, overwrite: bool) -> int:
     return 1
 
 
+def _copy_variant(src: Path, dest: Path, variant: dict) -> int:
+    """Land named files from *src* onto *dest*, always overwriting.
+
+    *variant* is ``{dest name: path relative to src}`` -- named relative to the
+    entry's own ``from:`` rather than restated absolutely, so the swap moves with
+    it if a case repoints the whole entry.
+    """
+    written = 0
+    for dest_name, rel_src in variant.items():
+        source = src / rel_src
+        if not source.exists():
+            msg = f"copy_inputs variant {rel_src!r} not found under {src}"
+            raise FileNotFoundError(msg)
+        target = dest / dest_name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        _strip_ctrl_z(target)
+        written += 1
+        log.info("Copied variant %s -> %s", source, target)
+    return written
+
+
 def _check_keys(name: str, entry: dict) -> None:
     """Refuse an unknown key by name, listing what is allowed."""
     unknown = sorted(set(entry) - _ENTRY_KEYS)
@@ -142,6 +172,9 @@ def run(
                 exclude=list(entry.get("exclude") or []),
                 overwrite=overwrite,
             )
+            variant = entry.get("variant")
+            if variant:
+                copied += _copy_variant(src, dest, variant)
         else:
             copied += _copy_file(src, dest, overwrite=overwrite)
 

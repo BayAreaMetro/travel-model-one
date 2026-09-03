@@ -115,6 +115,23 @@ def test_a_file_entry_may_rename(tree: Path) -> None:
     assert (tree / "out" / "renamed.tpp").read_text() == "ix"
 
 
+def test_a_variant_lands_on_top_named_relative_to_from(tree: Path) -> None:
+    """A strategy swaps in one file from inside the entry's own `from:`.
+
+    Named relative to `from` rather than restated absolutely, so the swap moves
+    with the entry if a case repoints the whole directory to a different release.
+    """
+    _run(tree, {
+        "landuse": {
+            "from": str(tree / "src_a"),
+            "to": str(tree / "out"),
+            "variant": {"ixDaily.tpp": "airpax/nested.tpp"},
+        },
+    })
+
+    assert (tree / "out" / "ixDaily.tpp").read_text() == "air"
+
+
 def test_an_unknown_entry_key_is_refused_by_name(tree: Path) -> None:
     """A misspelled key would otherwise stage the wrong bytes and say nothing."""
     with pytest.raises(ValueError, match="excludes"):
