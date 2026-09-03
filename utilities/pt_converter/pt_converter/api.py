@@ -37,12 +37,24 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
     output_directory = model_directory / request.config.output_directory
 
     if request.config.source == "network_wrangler":
+        inventory = NetworkWranglerInputReader().inspect(model_directory)
+        inventory_path = output_directory / "source_inventory.json"
+        write_inventory(inventory, inventory_path)
+        error_count = sum(
+            issue.severity == IssueSeverity.ERROR for issue in inventory.issues
+        )
+        if error_count:
+            raise ValidationError(
+                f"Network Wrangler inputs have {error_count} error(s). "
+                f"Review {inventory_path}."
+            )
         return ConversionResult(
-            action="network-wrangler-input-check",
+            action="inspect-network-wrangler-inputs",
             output_directory=output_directory,
             message=(
-                "The Network Wrangler input path is configured. "
-                "No PT files were created because conversion is not implemented yet."
+                f"Inspected {len(inventory.files)} source file(s) and "
+                f"{inventory.transit_lines.count} transit line(s). "
+                f"Inventory: {inventory_path}. No PT assignment files were created."
             ),
         )
 
