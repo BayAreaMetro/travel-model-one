@@ -333,6 +333,7 @@ def _open_run(
         git=run_receipt.git_state(Path(str(repo_root or config_dir.parent))),
     ).write(prepared.run_dir)
     _write_resolved(prepared.run_dir, prepared.cfg)
+    _write_case_config(prepared.run_dir, prepared.applied_cfg)
 
 
 def _write_resolved(run_dir: Path, cfg: dict) -> None:
@@ -346,6 +347,22 @@ def _write_resolved(run_dir: Path, cfg: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         yaml.safe_dump(cfg, sort_keys=False, default_flow_style=False),
+        encoding="utf-8",
+    )
+
+
+def _write_case_config(run_dir: Path, applied_cfg: dict) -> None:
+    """Archive the case merged into the config, templates left open.
+
+    Unlike :func:`_write_resolved`, this one is portable: it names no run_dir, so
+    copying it into a project directory (with a one-entry cases.yaml beside it)
+    re-runs this exact case into a fresh run_dir, even after config.yaml or
+    cases.yaml have since moved on.
+    """
+    path = Path(run_dir) / run_receipt.TM1_DIR / run_receipt.CASE_CONFIG
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        yaml.safe_dump(applied_cfg, sort_keys=False, default_flow_style=False),
         encoding="utf-8",
     )
 

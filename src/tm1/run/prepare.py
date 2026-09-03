@@ -14,6 +14,7 @@ This lives under ``run/`` rather than ``project/`` because it is about a run.
 :mod:`tm1.project.config` only reads files; it knows nothing about where a run goes.
 """
 
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -35,6 +36,11 @@ class PreparedRun:
 
     case: Case
     cfg: dict
+    #: The case applied but templates still literal (``{run_dir}``, ``{env:...}``)
+    #: -- a self-contained config.yaml for this case, portable to a fresh run_dir
+    #: on any machine.  ``cfg`` itself is not, because injection and template
+    #: resolution bake in *this* run's own directory.
+    applied_cfg: dict
     run_dir: Path
     run_no: int
     fingerprint: str
@@ -77,6 +83,9 @@ def prepare_run(
     config_dir = Path(config_dir).resolve()
     case = _sole_case(config_dir, case_id)
     cfg = apply_case(load_config(config_dir), case)
+    # Snapshot before injection mutates `cfg` in place below -- this is the
+    # portable "config.yaml for this one case" written into `.tm1/`.
+    applied_cfg = deepcopy(cfg)
 
     stamp = run_fingerprint.fingerprint(cfg, run_fingerprint.referenced_files(cfg, config_dir))
     project = config_dir.name
@@ -98,6 +107,7 @@ def prepare_run(
     return PreparedRun(
         case=case,
         cfg=resolved if isinstance(resolved, dict) else {},
+        applied_cfg=applied_cfg,
         run_dir=run_dir,
         run_no=run_no,
         fingerprint=stamp,
@@ -114,6 +124,7 @@ def latest_run(config_dir: Path, case_id: str | None = None) -> PreparedRun | No
     config_dir = Path(config_dir).resolve()
     case = _sole_case(config_dir, case_id)
     cfg = apply_case(load_config(config_dir), case)
+    applied_cfg = deepcopy(cfg)
     stamp = run_fingerprint.fingerprint(cfg, run_fingerprint.referenced_files(cfg, config_dir))
 
     project = config_dir.name
@@ -134,6 +145,7 @@ def latest_run(config_dir: Path, case_id: str | None = None) -> PreparedRun | No
     return PreparedRun(
         case=case,
         cfg=resolved if isinstance(resolved, dict) else {},
+        applied_cfg=applied_cfg,
         run_dir=run_dir,
         run_no=run_no,
         fingerprint=stamp,

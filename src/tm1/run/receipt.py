@@ -25,6 +25,12 @@ RECEIPT = "case.json"
 #: The config as executed, fully resolved -- the answer to "what did this run use".
 RESOLVED = "config.resolved.yaml"
 
+#: The case applied but not yet templated -- a self-contained config.yaml for this
+#: one case, portable to a fresh run_dir.  Copy it into a project directory (with a
+#: one-entry cases.yaml) to re-run this exact case even after config.yaml/cases.yaml
+#: have since moved on.
+CASE_CONFIG = "config.case.yaml"
+
 
 @dataclass
 class Receipt:
