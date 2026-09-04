@@ -7,7 +7,7 @@ For people changing this code. If you want to *run* a model, read
 
 ## What this is
 
-Given a **project** (a config), optionally permuted into **cases**, produce results by
+Given a **project** (a config), optionally permuted into **scenarios**, produce results by
 executing an ordered sequence of **steps**, some of which drive **external engines**,
 resumably, on one or many machines, leaving a record.
 
@@ -16,7 +16,9 @@ Those four nouns stack, and the stack is the architecture:
 ```
 CLI
 
-  PROJECT     config.yaml, cases.yaml, overrides       reads files, decides nothing
+  MODEL       default-configs/ctramp-cube-model.yaml    definition of working model. not project-specific.
+     |
+  PROJECT     scenarios.yaml (each scenario self-contained), overrides  reads files, decides nothing
      |
   RUN         which steps, which round, which directory, and doing it
      |
@@ -25,48 +27,39 @@ CLI
   ENGINES     Cube, CT-RAMP, ActivitySim, AequilibraE
 ```
 
-Two rules fall out, and they are most of what matters:
-
-**An engine never knows a project exists.** It takes paths and parameters. That is what
-lets Cube process-probing serve both the runner and `tm1 status` without either importing
-the other.
-
-**A step is an adapter, not an implementation.** Config in, one call into an engine,
-outputs on disk. A step that grows past a few hundred lines means engine knowledge leaked
-upward.
-
 ## The tree
 
+Numbers are line counts.
 ```
 src/
   cube/                      THE CUBE PROGRAM.  Zero tm1 imports.
-    job.py            459    run a .job: cluster, licence, interactive session
-    process.py        162    read-only: are this run's Cube processes working, or wedged?
+    job.py            404    run a .job: cluster, licence, interactive session
+    process.py        131    read-only: are this run's Cube processes working, or wedged?
 
   tm1/
-    cli.py            262    tm1 run / tm1 status / tm1 cases
+    cli.py            238    tm1 run / tm1 status / tm1 scenarios
 
     project/                 READING THE TWO YAMLs.  No I/O beyond reading files.
-      config.py       124    config.yaml, {env:} and {run_dir} resolution
-      cases.py        321    cases.yaml: explicit, ladder, matrix
-      overrides.py    226    how a case changes a value, and whether it resolves
+      config.py       176    load a project's config (shared model + steps:)
+      scenarios.py    292    scenarios.yaml: explicit, ladder, matrix, steps:
+      overrides.py    215    how a scenario changes a value, and whether it resolves
 
     run/                     DOING ONE RUN                    <- RunModel.bat
-      directory.py    103    where does this run go?
-      fingerprint.py  105    has anything changed since last time?
-      receipt.py       95    what ran, on what machine, how it ended
-      prepare.py      143    project + case -> a run ready to start
-      iterations.py   463    which steps, which round, which of them you asked for
-      model.py        467    run_model(): walk the list, call each step, log it
+      directory.py     83    where does this run go?
+      fingerprint.py   87    has anything changed since last time?
+      receipt.py       81    what ran, on what machine, how it ended
+      prepare.py      132    project + scenario -> a run ready to start
+      iterations.py   381    which steps, which round, which of them you asked for
+      model.py        406    run_model(): walk the list, call each step, log it
 
     status/                  CHECKING ON A RUN.  Read-only, separate process.
-      __init__.py      54    status()
-      read.py         227    what the log says happened, and whether it still is
-      grid.py         424    the grid, the verdict, the resume line
-      slack.py         91    post a message to Slack
+      __init__.py      44    status()
+      read.py         190    what the log says happened, and whether it still is
+      grid.py         351    the grid, the verdict, the resume line
+      slack.py         67    post a message to Slack
 
     steps/                   THE MODEL'S STEPS
-      __init__.py     175    the catalog: step name -> the function that runs it
+      __init__.py     152    the catalog: step name -> the function that runs it
       setup.py  staging.py  external.py  assignment.py
       configure_ctramp.py  simulate_ctramp.py
 
@@ -123,7 +116,7 @@ Rejected, and why:
 | rejected | chosen | |
 |---|---|---|
 | `harness/` | `project/` `run/` `status/` | jargon; these are the words people type |
-| `address.py` | `overrides.py` | it is how a case overrides the config |
+| `address.py` | `overrides.py` | it is how a scenario overrides the config |
 | `sequence.py` | `iterations.py` | RunModel.bat's own word |
 | `execute.py` + `run_model` | `run/model.py` -> `run_model()` | one name for one thing |
 | `status.py` + `status_render.py` | `status/read.py` + `status/grid.py` | what happened / the picture |
@@ -134,7 +127,7 @@ Rejected, and why:
 
 | RunModel.bat | here |
 |---|---|
-| Step 1 — path variables | `project/config.py` + `.env` |
+| Step 1 — path variables | `.env` (machine-specific) + each scenario in `scenarios.yaml` |
 | Steps 2–3 — directories, pre-process | `steps/staging.py`, `steps/setup.py` |
 | Steps 4, 4.5 — non-motorized LOS, transit files | config-declared `job:` steps |
 | Steps 5–9 — iteration N | `run/iterations.py` drives the plan |

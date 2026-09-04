@@ -1,4 +1,4 @@
-"""Step orchestrator — runs steps declared in config.yaml.
+"""Step orchestrator — runs steps declared in the project's config.
 
 Each step is a module (or any object) exposing ``run(config_dir, cfg, **kwargs)``.
 Steps run in the order written.  ``steps:`` is a list of ``name: {config}`` entries
@@ -89,9 +89,9 @@ from pathlib import Path
 import yaml
 
 from tm1 import add_run_logfile, fmt_elapsed, remove_run_logfile
-from tm1.project import cases as cases_mod
+from tm1.project import scenarios as scenarios_mod
 from tm1.project.config import load_config
-from tm1.project.overrides import validate as validate_cases
+from tm1.project.overrides import validate as validate_scenarios
 from tm1.run import directory as run_directory
 from tm1.run import receipt as run_receipt
 from tm1.run.iterations import (
@@ -229,17 +229,17 @@ def _start_run_log(cfg: dict, label: str, steps: list[str]) -> logging.Handler |
     return handler
 
 
-def _check_cases(config_dir: Path) -> None:
-    """Refuse to start when any case in the project fails to resolve.
+def _check_scenarios(config_dir: Path) -> None:
+    """Refuse to start when any scenario in the project fails to resolve.
 
     Checked against the *unresolved* config, which is where addresses are written,
-    and reported all at once rather than one failure per attempt: finding case 27's
-    typo fifteen hours in is the failure this exists to prevent.
+    and reported all at once rather than one failure per attempt: finding scenario
+    27's typo fifteen hours in is the failure this exists to prevent.
     """
-    problems = validate_cases(load_config(config_dir), cases_mod.load(config_dir))
+    problems = validate_scenarios(load_config(config_dir), scenarios_mod.load(config_dir))
     if problems:
         joined = "\n  ".join(problems)
-        msg = f"cases.yaml does not resolve against config.yaml:\n  {joined}"
+        msg = f"scenarios.yaml does not resolve against the shared model:\n  {joined}"
         raise ValueError(msg)
 
 
@@ -252,20 +252,20 @@ class AlreadyCompleteError(Exception):
 
 
 def _begin_run(config_dir: Path, kwargs: dict) -> tuple[PreparedRun, str]:
-    """Settle which case runs where, and stamp the directory before anything else.
+    """Settle which scenario runs where, and stamp the directory before anything else.
 
-    Everything that has to happen before the first step: every case is checked
+    Everything that has to happen before the first step: every scenario is checked
     against the config, the run's directory is chosen, and the receipt and the
     resolved config are written -- so a run that dies in its first minute still
     says what it was and where it came from.
 
-    The label is the *run*, not the project: two cases of one project are two
+    The label is the *run*, not the project: two scenarios of one project are two
     different runs, and the log, the Slack line and the resume hint all have to
     say which one they mean.
     """
-    _check_cases(config_dir)
+    _check_scenarios(config_dir)
     prepared = prepare_run(
-        config_dir, kwargs.get("case"), rerun=bool(kwargs.get("rerun")),
+        config_dir, kwargs.get("scenario"), rerun=bool(kwargs.get("rerun")),
     )
     label = f"{config_dir.name}:{prepared.run_dir.name}"
     if prepared.state == run_directory.COMPLETE:
@@ -324,7 +324,7 @@ def _open_run(
     )
     run_receipt.Receipt(
         project=config_dir.name,
-        case=prepared.case.id,
+        scenario=prepared.scenario.id,
         run=prepared.run_no,
         fingerprint=prepared.fingerprint,
         machine=run_receipt.machine_name(),
@@ -333,7 +333,7 @@ def _open_run(
         git=run_receipt.git_state(Path(str(repo_root or config_dir.parent))),
     ).write(prepared.run_dir)
     _write_resolved(prepared.run_dir, prepared.cfg)
-    _write_case_config(prepared.run_dir, prepared.applied_cfg)
+    _write_scenario_config(prepared.run_dir, prepared.applied_cfg)
 
 
 def _write_resolved(run_dir: Path, cfg: dict) -> None:
@@ -351,15 +351,15 @@ def _write_resolved(run_dir: Path, cfg: dict) -> None:
     )
 
 
-def _write_case_config(run_dir: Path, applied_cfg: dict) -> None:
-    """Archive the case merged into the config, templates left open.
+def _write_scenario_config(run_dir: Path, applied_cfg: dict) -> None:
+    """Archive the scenario merged into the config, templates left open.
 
     Unlike :func:`_write_resolved`, this one is portable: it names no run_dir, so
-    copying it into a project directory (with a one-entry cases.yaml beside it)
-    re-runs this exact case into a fresh run_dir, even after config.yaml or
-    cases.yaml have since moved on.
+    copying it into a project directory (with a one-entry scenarios.yaml beside
+    it) re-runs this exact scenario into a fresh run_dir, even after the shared model
+    or scenarios.yaml have since moved on.
     """
-    path = Path(run_dir) / run_receipt.TM1_DIR / run_receipt.CASE_CONFIG
+    path = Path(run_dir) / run_receipt.TM1_DIR / run_receipt.SCENARIO_CONFIG
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         yaml.safe_dump(applied_cfg, sort_keys=False, default_flow_style=False),

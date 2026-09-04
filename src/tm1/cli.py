@@ -20,9 +20,9 @@ Ask where a run got to -- from another shell, during or after it::
 
     tm1 status PBA50+_FBP
 
-List the cases a project declares, checking every address resolves::
+List the scenarios a project declares, checking every address resolves::
 
-    tm1 cases PBA50+_FBP
+    tm1 scenarios PBA50+_FBP
 """
 
 import argparse
@@ -33,9 +33,9 @@ from pathlib import Path
 import yaml
 
 from tm1 import setup_logging
-from tm1.project import cases as cases_mod
+from tm1.project import scenarios as scenarios_mod
 from tm1.project.config import load_config, missing_env
-from tm1.project.overrides import validate as validate_cases
+from tm1.project.overrides import validate as validate_scenarios
 from tm1.run.model import AlreadyCompleteError, run_model
 from tm1.run.prepare import RUNS_ROOT_VAR
 from tm1.status import status
@@ -43,8 +43,9 @@ from tm1.status import status
 #: The directory holding projects, relative to the repo root.
 PROJECTS_DIR = "projects"
 
-#: The file that identifies a project directory.
-CONFIG_NAME = "config.yaml"
+#: The file that identifies a project directory.  Universal -- every project
+#: declares the runs it defines.
+CONFIG_NAME = "scenarios.yaml"
 
 
 def _find_repo_root() -> Path:
@@ -97,17 +98,12 @@ def _resolve_config_dir(project: str, repo_root: Path) -> Path:
 
 
 def _project_arg(args: argparse.Namespace) -> str:
-    """The project named positionally, or by the deprecated ``--scenario``."""
-    project = args.project or args.scenario
+    """The project named positionally."""
+    project = args.project
     if not project:
         sys.exit(
             "No project given. Pass a name under projects/ (e.g. "
             "`tm1 run PBA50+_FBP`) or a path to a project directory."
-        )
-    if args.scenario:
-        sys.stderr.write(
-            "warning: --scenario is deprecated; pass the project positionally, "
-            f"e.g. `tm1 {args.command} {project}`\n"
         )
     return str(project)
 
@@ -144,7 +140,7 @@ def cmd_run(args: argparse.Namespace) -> None:
             steps=args.steps or None,
             slack_level=args.slack,
             base_model_dir=repo_root,
-            case=args.case,
+            scenario=args.scenario,
             rerun=args.rerun,
             iterations=args.iterations,
             resume_at=args.resume_at,
@@ -154,22 +150,22 @@ def cmd_run(args: argparse.Namespace) -> None:
         sys.exit(str(done))
 
 
-def cmd_cases(args: argparse.Namespace) -> None:
-    """Execute the 'cases' subcommand: expand cases.yaml and check every one."""
+def cmd_scenarios(args: argparse.Namespace) -> None:
+    """Execute the 'scenarios' subcommand: expand scenarios.yaml and check every one."""
     config_dir = _resolve_config_dir(_project_arg(args), _find_repo_root())
 
-    # Config first: with an unreadable config.yaml there is nothing to check the
-    # cases against, and printing the table anyway would report success to anyone
-    # reading stdout or piping it.
+    # Config first: with a broken shared model there is nothing to check the
+    # scenarios against, and printing the table anyway would report success to
+    # anyone reading stdout or piping it.
     cfg = load_config(config_dir)
-    expansion = cases_mod.load(config_dir)
-    sys.stdout.write(f"\n{cases_mod.render(expansion)}\n")
+    expansion = scenarios_mod.load(config_dir)
+    sys.stdout.write(f"\n{scenarios_mod.render(expansion)}\n")
 
     problems = [
         f"{name} is not set (see .env.example)"
         for name in missing_env(cfg, also=(RUNS_ROOT_VAR,))
     ]
-    problems += validate_cases(cfg, expansion)
+    problems += validate_scenarios(cfg, expansion)
     if problems:
         joined = "\n  ".join(problems)
         sys.exit(f"\n{len(problems)} problem(s) to fix before running:\n  {joined}\n")
@@ -180,11 +176,11 @@ def cmd_status(args: argparse.Namespace) -> None:
     config_dir = _resolve_config_dir(_project_arg(args), _find_repo_root())
     # Written to stdout rather than logged: it is a report, not a run event, and
     # it must not land in the run log of a run happening in another shell.
-    sys.stdout.write(status(config_dir, args.case) + "\n")
+    sys.stdout.write(status(config_dir, args.scenario) + "\n")
 
 
 def _add_project_argument(parser: argparse.ArgumentParser) -> None:
-    """The project selector: positional, with the old flag kept as an alias."""
+    """The project selector: positional."""
     parser.add_argument(
         "project",
         nargs="?",
@@ -193,9 +189,6 @@ def _add_project_argument(parser: argparse.ArgumentParser) -> None:
             f"or a path to any directory containing a {CONFIG_NAME}"
         ),
     )
-    # Deprecated: the interface this PR is replacing. Kept so instructions
-    # already circulating keep working; delete once nobody is running them.
-    parser.add_argument("--scenario", default=None, help=argparse.SUPPRESS)
 
 
 def main() -> None:
@@ -208,19 +201,19 @@ def main() -> None:
     run_parser = sub.add_parser("run", help="Run project pipeline (or selected steps)")
     _add_project_argument(run_parser)
     run_parser.add_argument(
-        "--case",
+        "--scenario",
         metavar="ID",
         default=None,
         help=(
-            "Which case to run, when the project declares more than one "
-            "(`tm1 cases <project>` lists them)"
+            "Which scenario to run, when the project declares more than one "
+            "(`tm1 scenarios <project>` lists them)"
         ),
     )
     run_parser.add_argument(
         "--rerun",
         action="store_true",
         help=(
-            "Run a case again even though it finished unchanged; the new run "
+            "Run a scenario again even though it finished unchanged; the new run "
             "lands beside the old one rather than over it"
         ),
     )
@@ -265,11 +258,11 @@ def main() -> None:
         help="Slack notification level (default: from project config, or 'minimal')",
     )
 
-    cases_parser = sub.add_parser(
-        "cases",
-        help="List the cases a project declares, and check every address",
+    scenarios_parser = sub.add_parser(
+        "scenarios",
+        help="List the scenarios a project declares, and check every address",
     )
-    _add_project_argument(cases_parser)
+    _add_project_argument(scenarios_parser)
 
     status_parser = sub.add_parser(
         "status",
@@ -277,16 +270,16 @@ def main() -> None:
     )
     _add_project_argument(status_parser)
     status_parser.add_argument(
-        "--case", metavar="ID", default=None,
-        help="Which case to report on, when the project declares more than one",
+        "--scenario", metavar="ID", default=None,
+        help="Which scenario to report on, when the project declares more than one",
     )
 
     args = parser.parse_args()
 
     if args.command == "run":
         _run_cleanly(lambda: cmd_run(args))
-    elif args.command == "cases":
-        _run_cleanly(lambda: cmd_cases(args))
+    elif args.command == "scenarios":
+        _run_cleanly(lambda: cmd_scenarios(args))
     elif args.command == "status":
         _run_cleanly(lambda: cmd_status(args))
     else:

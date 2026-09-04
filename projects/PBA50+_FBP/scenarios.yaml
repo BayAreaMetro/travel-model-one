@@ -1,0 +1,221 @@
+# PBA50+_FBP: 2023 baseline + 2050 Final Blueprint, on top of the shared
+# CT-RAMP+Cube pipeline in default-configs/ctramp-cube-model.yaml.
+#
+# There is no project-level defaults layer: each scenario below states its own
+# full set of overrides, including the values every scenario in this project
+# happens to share (env.FUTURE, the popsyn file name). Restating them is the
+# cost of a scenario being readable on its own -- `tm1 scenarios PBA50+_FBP`
+# checks each one in full, and refuses a scenario that leaves a shared model
+# `REQUIRED` placeholder unresolved.
+#
+#   model_year: 2035                                  a top-level key
+#   env.MODEL_YEAR: 2035                              inside a top-level mapping
+#   env.EN7: ENABLED                                  ... and its siblings survive
+#   copy_inputs.input_landuse.from: "M:/.../landuse"  inside a step
+#   iterate.count: 1                                  the loop's own key
+#   warmstart.hwy_assign.cluster_nodes: 24            a step, in one block
+#
+# The address must already exist in the shared model file, values replace
+# rather than merge, a step name appearing in both `warmstart:` and `iterate:`
+# must say which, and `steps` itself is not addressable -- a scenario varies
+# values, it never changes the pipeline.
+#
+# Three ways to declare scenarios, all expanding to the same thing:
+#
+#   scenarios: written out, one entry per run
+#   ladder:    cumulative -- rung k applies rungs 1..k, so the diff between
+#              adjacent rungs isolates the one intervention that was added
+#   matrix:    the cross product of named axes, minus `exclude:` combinations
+#
+# `tm1 scenarios PBA50+_FBP` prints what this file expands to and checks every
+# address against the shared model file.
+#
+# IDs are SERIES-TOKENS-YEAR, uppercase, and stable forever: the ID names the run
+# directory, so renaming a scenario makes it an unrun one.
+
+# This project's own post-processing, appended after the shared pipeline's own
+# steps, for every scenario alike -- the shared model has no name for it (see
+# docs/running-a-model.md). Genuinely project-wide, unlike a scenario override:
+# every scenario runs the same pipeline shape, so there is nothing to restate
+# per scenario.
+steps:
+  # Fills in the shared model's `copy_project_inputs: {}` placeholder, landed
+  # between copy_inputs and copy_input_to_working -- see the comment there.
+  # SetUpModel_PBA50Plus.bat Step 4's Blueprint strategy overrides: off by
+  # default; a scenario turns on the ones its MODEL_YEAR qualifies for via
+  # `enabled: true`. Sources are all repo-relative.
+  - copy_project_inputs:
+      bp_bus_on_shoulder_job:           # BusOnShoulder_by_TP, MODEL_YEAR >= 2030:
+        from: "utilities/RTP/strategy_overrides/BusOnShoulder_by_TP/CreateFiveHighwayNetworks_BusOnShoulder.job"
+        to: "{run_dir}/CTRAMP/scripts/preprocess/CreateFiveHighwayNetworks.job"
+        overwrite: true                 # lands on top of copy_inputs' ctramp_scripts
+        enabled: false
+      bp_bus_on_shoulder_links_us101:    # FBP_MR_018_US101_BOS network project
+        from: "utilities/RTP/strategy_overrides/BusOnShoulder_by_TP/mod_links_BRT_FBP_MR_018_US101_BOS.csv"
+        to: "{run_dir}/INPUT/hwy/mod_links_BRT_FBP_MR_018_US101_BOS.csv"
+        enabled: false
+      bp_bus_on_shoulder_links_vine:     # FBP_NP_040_VINE_Exp_Bus_Enhancements network project
+        from: "utilities/RTP/strategy_overrides/BusOnShoulder_by_TP/mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv"
+        to: "{run_dir}/INPUT/hwy/mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv"
+        enabled: false
+      bp_bus_on_shoulder_links_merged:   # `copy A+B C`: concatenated, not CSV-merged
+        concat:
+          - "{run_dir}/INPUT/hwy/mod_links_BRT_FBP_MR_018_US101_BOS.csv"
+          - "{run_dir}/INPUT/hwy/mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv"
+        to: "{run_dir}/INPUT/hwy/mod_links_BRT.csv"
+        enabled: false
+
+      bp_vision_zero_block:             # Vision Zero, freeways MODEL_YEAR >= 2035
+        from: "utilities/RTP/strategy_overrides/Vision_Zero/SpeedCapacity_1hour_2035to2050.block"
+        to: "{run_dir}/CTRAMP/scripts/block/SpeedCapacity_1hour.block"
+        overwrite: true                 # lands on top of copy_inputs' ctramp_scripts
+        enabled: false
+
+      bp_regional_transit_fares_job:     # T2 fare integration, MODEL_YEAR >= 2035;
+        from: "utilities/RTP/strategy_overrides/Regional_Transit_Fare_Policy/apply_regional_transit_fares_to_skims.job"
+        to: "{run_dir}/CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
+        enabled: false                  # run by the apply_regional_transit_fares step
+
+  # Genuinely new: the shared model has no step named this, so it is appended
+  # after the shared pipeline's own steps rather than merged into a placeholder.
+  - vmt_vht_metrics:
+      script: "hooks.py:vmt_vht_metrics"
+
+scenarios:
+
+  BASEYEAR-2023:
+    description: >
+      RunModel.bat parity: adopted 2023 networks and land use, no strategies
+      applied.  The run the harness is measured against.
+    model_year: 2023
+    env.MODEL_YEAR: 2023
+    env.FUTURE: PBA50
+
+    copy_inputs.input_hwy.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/hwy"
+    copy_inputs.input_trn.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/trn"
+    copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/popsyn"
+    copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/landuse"
+    copy_inputs.input_nonres.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+    copy_inputs.input_logsums.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
+    copy_inputs.input_metrics.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
+
+    # The air passenger tables are per model year: SetUpModel.bat picks the year's
+    # file and drops the prefix.  A different year is five `from:` values, which is
+    # what makes this a config line rather than an `if MODEL_YEAR ==` branch.
+    copy_inputs.input_airpax_ea.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxEA.tpp"
+    copy_inputs.input_airpax_am.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxAM.tpp"
+    copy_inputs.input_airpax_md.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxMD.tpp"
+    copy_inputs.input_airpax_pm.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxPM.tpp"
+    copy_inputs.input_airpax_ev.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxEV.tpp"
+
+    # The demand iteration 0 assigns, from the previous run's published output.
+    copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35/OUTPUT/main"
+    copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35/OUTPUT/nonres"
+
+    copy_inputs.input_params.from: "utilities/RTP/config_RTP2025/params_2023.properties"
+
+    # The versioned name this project's INPUT/popsyn ships under.
+    filter_unconnected_households.skip_if_exists: "popsyn/hhFile.2023_v12.csv"
+
+  PLAN-2050-V16:
+    description: >
+      Plan Bay Area 2050+ Final Blueprint run. Equivalent to 2050_TM161_FBP_Plan_16
+    model_year:     2050
+    env.MODEL_YEAR: 2050
+    env.FUTURE: PBA50
+    env.EN7: ENABLED
+
+    copy_inputs.input_hwy.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Blueprint/hwy"
+    copy_inputs.input_trn.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Blueprint/trn"
+    copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_FBP_v08/2050/popsyn"
+    copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_FBP_v08/2050/landuse"
+    # Parking strategy (En9): SetUpModel_PBA50Plus.bat applies this for MODEL_YEAR >= 2035.
+    copy_inputs.input_landuse.variant:
+      tazData.csv: parking_strategy/tazData_parkingStrategy_v01_wSFCordon_wTICordon.csv
+      tazData.dbf: parking_strategy/tazData_parkingStrategy_v01_wSFCordon_wTICordon.dbf
+    copy_inputs.input_nonres.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+    copy_inputs.input_logsums.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
+    copy_inputs.input_metrics.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
+
+    # TODO: the time period stuff here is a bit unnecessary; can we use {{timeperiod}}?
+    copy_inputs.input_airpax_ea.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEA.tpp"
+    copy_inputs.input_airpax_am.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxAM.tpp"
+    copy_inputs.input_airpax_md.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxMD.tpp"
+    copy_inputs.input_airpax_pm.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxPM.tpp"
+    copy_inputs.input_airpax_ev.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEV.tpp"
+
+    copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/Blueprint/Archive_FBP/2050_TM161_FBP_Plan_15/OUTPUT/main"
+    copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/Archive_FBP/2050_TM161_FBP_Plan_15/OUTPUT/nonres"
+
+    copy_inputs.input_params.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/params.properties"
+
+    # The versioned name this project's INPUT/popsyn ships under.
+    filter_unconnected_households.skip_if_exists: "popsyn/hhFile.2023_v12.csv"
+
+    # Blueprint strategy overrides (this project's own copy_project_inputs, see
+    # top-level `steps:` above), all off by default; MODEL_YEAR 2050 qualifies
+    # for all three.
+    copy_project_inputs.bp_bus_on_shoulder_job.enabled:            true  # >= 2030
+    copy_project_inputs.bp_bus_on_shoulder_links_us101.enabled:    true
+    copy_project_inputs.bp_bus_on_shoulder_links_vine.enabled:     true
+    copy_project_inputs.bp_bus_on_shoulder_links_merged.enabled:   true
+    copy_project_inputs.bp_vision_zero_block.enabled:              true  # >= 2035
+    copy_project_inputs.bp_regional_transit_fares_job.enabled:     true  # >= 2035
+    warmstart.apply_regional_transit_fares.enabled: true
+    iterate.apply_regional_transit_fares.enabled:   true
+
+# ── The other two pathways, for when this project grows past one scenario ──────────────
+# Both expand to the same thing `scenarios:` does, so the rules above apply unchanged.
+# Uncomment, adjust, and check with `tm1 scenarios PBA50+_FBP`.
+
+# ladder: cumulative un-ablation.  Start from the year's land use and networks with no
+# strategies, then switch them on one at a time until the last rung *is* the full
+# Blueprint.  The difference between adjacent rungs is that one strategy's contribution,
+# which is the question these runs exist to answer.
+#
+# ladder:
+#   - id: "BP-{n}-{rung}-2035"
+#     description: 2035 Blueprint, un-ablated one strategy at a time.
+#     env.MODEL_YEAR: 2035
+#     rungs:
+#       - NONE:
+#           description: 2035 land use and adopted networks, no strategies.
+#       - TELE:
+#           description: + telecommute.
+#           env.EN7: ENABLED
+#       - TRNF:
+#           description: + transit frequency.
+#           copy_inputs.input_trn.from: "{m_drive}/.../net_2035_Blueprint/trn"
+#       - CORD:
+#           description: + cordon pricing.
+#           set_tolls.job: "variants/SetTolls_cordon.job"
+#
+#   gives  BP-01-NONE-2035  BP-02-TELE-2035  BP-03-TRNF-2035  BP-04-CORD-2035
+#   BP-04 carries all four, so it is the full Blueprint; BP-01 is the do-nothing floor.
+#   Inserting a rung renumbers everything after it -- correctly, since it changes what
+#   every later rung means.
+
+# matrix: the cross product of named axes, for a sweep.  Give every axis point a
+# description -- a scenario's prose is assembled from them, and in a sweep of thirty
+# the ID is otherwise all you have to go on.
+#
+# matrix:
+#   - id: "A1-{tolls}-{landuse}"
+#     axes:
+#       tolls:
+#         NOTL:
+#           description: No new tolls.
+#         CORD:
+#           description: Cordon pricing.
+#           set_tolls.job: "variants/SetTolls_cordon.job"
+#       landuse:
+#         ADPT:
+#           description: Adopted land use.
+#         JHBL:
+#           description: Jobs-housing balance.
+#           env.MODEL_YEAR: 2035
+#     exclude:
+#       - {tolls: CORD, landuse: JHBL}     # combinations that make no sense
+#
+#   gives  A1-NOTL-ADPT, A1-NOTL-JHBL, A1-CORD-ADPT
+#   (an exclude rule may name a subset of the axes, so it survives a new axis)

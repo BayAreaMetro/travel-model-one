@@ -1,4 +1,4 @@
-"""One run of one case: what it does, and where it happens.
+"""One run of one scenario: what it does, and where it happens.
 
 - :mod:`tm1.run.iterations` -- which steps run, in which round, and which of them
   this invocation wants. Pure: config in, ordered list out.

@@ -1,15 +1,12 @@
 r"""Input staging.
 
-``copy_inputs`` is ``SetUpModel.bat`` step 3 and ``RunModel.bat`` 172-178, in one
-step.  It reads ``copy_inputs:`` from the project config -- named entries, each
-with ``from`` and ``to`` -- and runs them **in the order written**, so a later
-entry may read what an earlier one staged.  That ordering is what lets one step
-both assemble ``INPUT/`` from its sources and then fill the working directories
-from ``INPUT/``.
-
-There is no reference run.  Each entry names where its bytes actually come from,
-the way ``SetUpModel.bat`` named ``INPUT_NETWORK`` / ``INPUT_POPLU`` /
-``NONRES_INPUT_DIR``, and the model's own code comes from this checkout.
+``copy_inputs`` is ``SetUpModel.bat`` step 3 and ``RunModel.bat`` 172-178 -- two
+steps, one mechanism.  ``copy_inputs`` assembles ``INPUT/`` from its real sources
+(the M drive, this checkout); ``copy_input_to_working`` then fills the working
+directories (``hwy/``, ``trn/``, ...) from ``INPUT/``.  Split by name because they
+do different things -- one reaches outside the run, the other reshuffles what is
+already inside it -- but both read a ``name: {from, to, ...}`` block the same way,
+so one function runs either, keyed by whichever step named it.
 
 An entry::
 
@@ -21,6 +18,7 @@ An entry::
       overwrite: true           # optional; default is never to clobber
       variant:                  # optional; {dest name: path relative to `from`},
         tazData.csv: "parking_strategy/tazData_v01.csv"  #   copied on top after
+      enabled: true             # optional; false skips the entry entirely
 
 ``from`` may be a directory or a single file; a file entry may rename, which is
 how ``SetUpModel.bat`` turns ``2023b_tripsAirPaxEA.tpp`` into
@@ -31,6 +29,24 @@ how ``SetUpModel.bat`` turns ``2023b_tripsAirPaxEA.tpp`` into
 subdirectory of the same land use release, say -- without restating the whole source
 path a second time.  It always overwrites, the same as a renamed file entry landing on
 a directory: the swap is declared, not defaulted into.
+
+``concat`` takes ``from``'s place for an entry built by concatenation rather than
+copying -- ``SetUpModel_PBA50Plus.bat``'s bus-on-shoulder override does
+``copy /b a+b c``, byte for byte, to combine two network-project override files into
+one::
+
+    mod_links_brt:
+      concat: ["{run_dir}/INPUT/hwy/a.csv", "{run_dir}/INPUT/hwy/b.csv"]
+      to: "{run_dir}/INPUT/hwy/mod_links_BRT.csv"
+
+No CSV-aware merge (e.g. de-duping a header row): the downstream job already handles
+whatever the concatenation produces, and doing it differently here would stop being
+what the batch file produced.
+
+``enabled: false`` drops an entry entirely, the same switch a step itself takes --
+how a Blueprint-only strategy override sits inert in a project's own
+`copy_project_inputs:` without applying to every scenario: off by default, a
+scenario turns one on rather than restating the whole entry.
 
 Two sources may **merge** into one directory -- ``RunModel.bat`` 175-177 copies
 both ``INPUT\nonres`` and ``INPUT\warmstart\nonres`` into ``nonres\`` -- so the
@@ -54,7 +70,9 @@ log = logging.getLogger(__name__)
 
 #: Keys an entry may declare.  Anything else is refused by name, so a typo is an
 #: error rather than a silently ignored instruction.
-_ENTRY_KEYS = frozenset({"from", "to", "include", "exclude", "overwrite", "variant"})
+_ENTRY_KEYS = frozenset(
+    {"from", "to", "include", "exclude", "overwrite", "variant", "concat", "enabled"},
+)
 
 
 def _strip_ctrl_z(path: Path) -> None:
@@ -120,13 +138,13 @@ def _copy_variant(src: Path, dest: Path, variant: dict) -> int:
 
     *variant* is ``{dest name: path relative to src}`` -- named relative to the
     entry's own ``from:`` rather than restated absolutely, so the swap moves with
-    it if a case repoints the whole entry.
+    it if a scenario repoints the whole entry.
     """
     written = 0
     for dest_name, rel_src in variant.items():
         source = src / rel_src
         if not source.exists():
-            msg = f"copy_inputs variant {rel_src!r} not found under {src}"
+            msg = f"variant {rel_src!r} not found under {src}"
             raise FileNotFoundError(msg)
         target = dest / dest_name
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -137,14 +155,40 @@ def _copy_variant(src: Path, dest: Path, variant: dict) -> int:
     return written
 
 
+def _copy_concat(sources: list[Path], dest: Path, *, overwrite: bool) -> int:
+    """Concatenate *sources* into *dest*, in order, byte for byte.
+
+    ``copy /b a+b c``, not a CSV-aware merge -- see the module docstring.
+    """
+    if dest.exists() and not overwrite:
+        log.info("Already exists: %s", dest)
+        return 0
+    for source in sources:
+        if not source.exists():
+            msg = f"concat: source not found: {source}"
+            raise FileNotFoundError(msg)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with dest.open("wb") as out:
+        for source in sources:
+            out.write(source.read_bytes())
+    log.info("Concatenated %d file(s) -> %s", len(sources), dest)
+    return 1
+
+
 def _check_keys(name: str, entry: dict) -> None:
     """Refuse an unknown key by name, listing what is allowed."""
     unknown = sorted(set(entry) - _ENTRY_KEYS)
     if unknown:
         msg = (
-            f"copy_inputs entry {name!r} declares {', '.join(unknown)}; "
+            f"entry {name!r} declares {', '.join(unknown)}; "
             f"allowed keys are {', '.join(sorted(_ENTRY_KEYS))}."
         )
+        raise ValueError(msg)
+    if "concat" in entry and "from" in entry:
+        msg = f"entry {name!r}: declare `from` or `concat`, not both."
+        raise ValueError(msg)
+    if "concat" not in entry and "from" not in entry:
+        msg = f"entry {name!r}: needs `from` or `concat`."
         raise ValueError(msg)
 
 
@@ -153,18 +197,39 @@ def run(
     cfg: dict,
     **kwargs: object,
 ) -> str | None:
-    """Stage every entry declared under ``copy_inputs``, in order."""
-    copy_inputs = step_config(cfg, "copy_inputs", kwargs)
+    """Stage every entry declared under this step's block, in order.
+
+    Runs as either ``copy_inputs`` or ``copy_input_to_working`` -- same
+    mechanism, different sources -- so every message names the step that was
+    actually launched (``kwargs["step_name"]``) rather than assuming which one.
+    """
+    step_name = str(kwargs.get("step_name") or "copy_inputs")
+    entries = step_config(cfg, step_name, kwargs)
 
     copied = 0
-    for name, entry in copy_inputs.items():
-        _check_keys(name, entry)
-        src = Path(entry["from"])
-        dest = Path(entry["to"])
-        if not src.exists():
-            sys.exit(f"copy_inputs[{name}]: source not found: {src}")
+    for name, entry in entries.items():
+        try:
+            _check_keys(name, entry)
+        except ValueError as exc:
+            raise ValueError(f"{step_name} {exc}") from exc
+        if entry.get("enabled", True) is False:
+            continue
 
+        dest = Path(entry["to"])
         overwrite = bool(entry.get("overwrite", False))
+
+        concat = entry.get("concat")
+        if concat is not None:
+            try:
+                copied += _copy_concat([Path(p) for p in concat], dest, overwrite=overwrite)
+            except FileNotFoundError as exc:
+                raise FileNotFoundError(f"{step_name} {exc}") from exc
+            continue
+
+        src = Path(entry["from"])
+        if not src.exists():
+            sys.exit(f"{step_name}[{name}]: source not found: {src}")
+
         if src.is_dir():
             copied += _copy_tree(
                 src, dest,
@@ -174,11 +239,14 @@ def run(
             )
             variant = entry.get("variant")
             if variant:
-                copied += _copy_variant(src, dest, variant)
+                try:
+                    copied += _copy_variant(src, dest, variant)
+                except FileNotFoundError as exc:
+                    raise FileNotFoundError(f"{step_name} {exc}") from exc
         else:
             copied += _copy_file(src, dest, overwrite=overwrite)
 
-    log.info("copy_inputs: %d entries, %d file(s) written", len(copy_inputs), copied)
+    log.info("%s: %d entries, %d file(s) written", step_name, len(entries), copied)
     # "Nothing to do" is the whole step doing nothing, not one entry: an entry
     # that legitimately finds everything in place must not mask the ones that
     # did work.

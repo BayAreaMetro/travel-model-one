@@ -1,9 +1,9 @@
 """What a person sees when the project is wrong.
 
-These are the messages read most often -- a mistyped case, a `.env` copied but not
-finished, a YAML block indented one space off -- and they are read by someone who
-did not write the harness. A traceback answers "which line of tm1 raised this",
-which is not the question being asked.
+These are the messages read most often -- a mistyped scenario, a `.env` copied but
+not finished, a YAML block indented one space off -- and they are read by someone
+who did not write the harness. A traceback answers "which line of tm1 raised
+this", which is not the question being asked.
 
 The other half is what must *not* happen: a genuine bug in the harness has to keep
 its traceback, or a wrong answer becomes indistinguishable from a bad config.
@@ -69,7 +69,7 @@ def test_nothing_is_reported_when_everything_is_set(
 
 
 @pytest.mark.parametrize("exc", [
-    FileNotFoundError("No cases.yaml in /p."),
+    FileNotFoundError("No scenarios.yaml in /p."),
     ValueError("'model_yaer': no such address. Did you mean model_year?"),
     TypeError("`steps` entries must each be one `name: {config}` mapping."),
     yaml.YAMLError("while parsing a block collection"),
@@ -85,14 +85,14 @@ def test_a_broken_project_prints_its_message_and_exits(exc: Exception) -> None:
 def test_a_key_error_is_not_double_quoted() -> None:
     """``KeyError``'s ``str()`` is the repr of its argument, so it needs unwrapping.
 
-    Without this the reader gets ``error: "No case 'X' in /p."`` -- quotes around a
-    sentence that already had its own.
+    Without this the reader gets ``error: "No scenario 'X' in /p."`` -- quotes
+    around a sentence that already had its own.
     """
     with pytest.raises(SystemExit) as caught:
-        _run_cleanly(_boom(KeyError("No case 'X' in /p.")))
+        _run_cleanly(_boom(KeyError("No scenario 'X' in /p.")))
 
-    assert "No case 'X' in /p." in str(caught.value)
-    assert '"No case' not in str(caught.value)
+    assert "No scenario 'X' in /p." in str(caught.value)
+    assert '"No scenario' not in str(caught.value)
 
 
 def test_a_bug_in_the_harness_keeps_its_traceback() -> None:

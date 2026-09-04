@@ -1,6 +1,6 @@
-"""Applying a case to a config: what an override address means, and where it lands.
+"""Applying a scenario to a config: what an override address means, and where it lands.
 
-An override names *where the value lives* in ``config.yaml``::
+An override names *where the value lives* in the config::
 
     m_drive: "X:/models"                               a top-level key
     env.MODEL_YEAR: 2035                               inside a top-level mapping
@@ -23,7 +23,7 @@ Four rules, and they are the whole mechanism:
 3. **A step name in both blocks must be qualified.** Twelve steps appear in both
    ``warmstart:`` and ``iterate:``; bare, they are ambiguous, and guessing would
    change a different round than the one meant.
-4. **``steps`` itself is not addressable.** A case varies values inside the
+4. **``steps`` itself is not addressable.** A scenario varies values inside the
    pipeline; it never adds, removes, or reorders steps. A different pipeline shape
    is a different project.
 """
@@ -31,10 +31,10 @@ Four rules, and they are the whole mechanism:
 import copy
 import difflib
 
-from tm1.project.cases import Case, Expansion, pairs
+from tm1.project.scenarios import Expansion, Scenario, pairs
 
-#: Keys a case may set on a step even when the step does not declare them.  The
-#: list is deliberately one item: everything else must already exist, so the
+#: Keys a scenario may set on a step even when the step does not declare them.
+#: The list is deliberately one item: everything else must already exist, so the
 #: config stays the record of what a step can be asked to do.
 UNIVERSAL_STEP_KEYS = frozenset({"enabled"})
 
@@ -52,7 +52,7 @@ def _step_entries(cfg: dict) -> list[tuple[str, dict, str]]:
 
     *qualifier* is ``""`` for a flat step and the block name for one inside
     ``warmstart:`` or ``iterate:``.  Built by walking rather than by importing the
-    runner's plan, because a case is applied *before* the plan exists.
+    runner's plan, because a scenario is applied *before* the plan exists.
     """
     entries: list[tuple[str, dict, str]] = []
     for name, block in pairs(cfg.get(_STEPS)):
@@ -88,9 +88,9 @@ def _root_for(cfg: dict, segments: list[str], address: str) -> tuple[object, lis
 
     if head == _STEPS:
         msg = (
-            f"{address!r}: `steps` is not addressable. A case sets values inside "
-            f"steps; it cannot add, remove, or reorder them -- a different pipeline "
-            f"is a different project."
+            f"{address!r}: `steps` is not addressable. A scenario sets values "
+            f"inside steps; it cannot add, remove, or reorder them -- a different "
+            f"pipeline is a different project."
         )
         raise ValueError(msg)
 
@@ -157,7 +157,7 @@ def _unknown(cfg: dict, address: str, head: str) -> str:
     )
     close = difflib.get_close_matches(head, known, n=3, cutoff=0.6)
     hint = f" Did you mean {', '.join(close)}?" if close else ""
-    return f"{address!r}: no such address -- {head!r} is not in config.yaml.{hint}"
+    return f"{address!r}: no such address -- {head!r} is not in the config.{hint}"
 
 
 def resolve_address(cfg: dict, address: str) -> tuple[dict, str]:
@@ -200,28 +200,65 @@ def _missing(address: str, segment: str, container: object) -> str:
     return f"{address!r}: {segment!r} is not there.{hint}"
 
 
-def apply_case(cfg: dict, case: Case) -> dict:
-    """*cfg* with *case*'s overrides applied, leaving the original untouched."""
+def apply_scenario(cfg: dict, scenario: Scenario) -> dict:
+    """*cfg* with *scenario*'s overrides applied, leaving the original untouched."""
     out = copy.deepcopy(cfg)
-    for address, value in case.overrides.items():
+    for address, value in scenario.overrides.items():
         container, key = resolve_address(out, address)
         container[key] = copy.deepcopy(value)
     return out
 
 
-def validate(cfg: dict, expansion: Expansion) -> list[str]:
-    """Every problem across every case, rather than the first one.
+#: The sentinel a placeholder value in the shared model file starts with -- e.g.
+#: ``"REQUIRED: override copy_inputs.input_hwy.from"``. There is no project-level
+#: defaults layer, so this is what stands in for one: a scenario that does not
+#: override every address holding it is refused, rather than silently running
+#: with a value nobody wrote.
+_REQUIRED = "REQUIRED"
 
-    All of them, because a bundle is queued and left: finding case 27's typo at
-    hour 40 is the failure this exists to prevent.
+
+def _unresolved_placeholders(obj: object, path: str = "") -> list[str]:
+    """Every address in *obj* whose value is still a :data:`_REQUIRED` placeholder."""
+    if isinstance(obj, str):
+        return [path] if obj.startswith(_REQUIRED) else []
+    if isinstance(obj, dict):
+        found: list[str] = []
+        for key, value in obj.items():
+            found += _unresolved_placeholders(value, f"{path}.{key}" if path else str(key))
+        return found
+    if isinstance(obj, list):
+        found = []
+        for index, value in enumerate(obj):
+            found += _unresolved_placeholders(value, f"{path}[{index}]")
+        return found
+    return []
+
+
+def validate(cfg: dict, expansion: Expansion) -> list[str]:
+    """Every problem across every scenario, rather than the first one.
+
+    All of them, because a bundle is queued and left: finding scenario 27's typo
+    at hour 40 is the failure this exists to prevent.
     """
     problems: list[str] = []
-    for case in expansion.cases:
-        for address in case.overrides:
+    for scenario in expansion.scenarios:
+        for address in scenario.overrides:
             try:
                 resolve_address(copy.deepcopy(cfg), address)
             except (KeyError, ValueError) as exc:
                 # args[0] rather than str(): KeyError's str() is the repr of its
                 # argument, which wraps an already-quoted message in more quotes.
-                problems.append(f"{case.id}: {exc.args[0]}")
+                problems.append(f"{scenario.id}: {exc.args[0]}")
+
+        try:
+            applied = apply_scenario(cfg, scenario)
+        except (KeyError, ValueError, TypeError):
+            # Already reported above; scanning a partially-applied config for
+            # placeholders here would only repeat the same failure as noise.
+            continue
+        problems += [
+            f"{scenario.id}: {address} is still a REQUIRED placeholder -- override it"
+            for address in _unresolved_placeholders(applied)
+        ]
     return problems
+

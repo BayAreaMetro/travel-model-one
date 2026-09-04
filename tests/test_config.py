@@ -1,6 +1,6 @@
 """Tests for project config loading -- specifically `{env:NAME}`.
 
-This is what keeps `config.yaml` machine-independent: every path that
+This is what keeps a project's config machine-independent: every path that
 differs between machines is named in the config and set in `.env`, so moving a
 project to another box is an `.env` edit rather than a YAML edit.
 
@@ -11,7 +11,9 @@ directory, and a fifteen-hour run would happily write itself there.
 
 import pytest
 
-from tm1.project.config import expand_env, resolve_templates
+from pathlib import Path
+
+from tm1.project.config import expand_env, load_config, resolve_templates
 
 
 def test_an_env_reference_is_replaced_by_its_value(monkeypatch) -> None:  # noqa: ANN001
@@ -87,3 +89,53 @@ def test_a_config_with_no_env_references_is_unchanged() -> None:
     resolved = resolve_templates(cfg)
 
     assert resolved["ctramp_output_dir"] == "E:/Tests/run/main"
+
+
+# --- a project's `steps:`, against the shared model file ---------------------
+
+
+def _model_and_project(tmp_path: Path, model_steps: str, project_steps: str) -> Path:
+    """A synthetic checkout: default-configs/ at the root, a project below it."""
+    (tmp_path / "default-configs").mkdir()
+    (tmp_path / "default-configs" / "ctramp-cube-model.yaml").write_text(
+        f"steps:\n{model_steps}", encoding="utf-8",
+    )
+    project = tmp_path / "myproject"
+    project.mkdir()
+    (project / "scenarios.yaml").write_text(
+        f"steps:\n{project_steps}scenarios:\n  A: {{}}\n", encoding="utf-8",
+    )
+    return project
+
+
+def test_a_projects_step_fills_in_a_shared_placeholder_in_place(tmp_path: Path) -> None:
+    """A step the shared model names but leaves empty is filled in, not appended."""
+    project = _model_and_project(
+        tmp_path,
+        "  - copy_inputs: {a: {from: 'x', to: 'y'}}\n"
+        "  - copy_project_inputs: {}\n"
+        "  - copy_input_to_working: {}\n",
+        "  - copy_project_inputs: {b: {from: 'p', to: 'q'}}\n",
+    )
+
+    cfg = load_config(project)
+
+    assert [next(iter(item)) for item in cfg["steps"]] == [
+        "copy_inputs", "copy_project_inputs", "copy_input_to_working",
+    ]
+    assert cfg["steps"][1]["copy_project_inputs"] == {"b": {"from": "p", "to": "q"}}
+
+
+def test_a_projects_step_is_appended_when_the_shared_model_has_no_such_name(
+    tmp_path: Path,
+) -> None:
+    """No placeholder to fill -- a genuinely new step lands after the shared ones."""
+    project = _model_and_project(
+        tmp_path,
+        "  - copy_inputs: {}\n",
+        "  - vmt_vht_metrics: {script: 'hooks.py:vmt_vht_metrics'}\n",
+    )
+
+    cfg = load_config(project)
+
+    assert [next(iter(item)) for item in cfg["steps"]] == ["copy_inputs", "vmt_vht_metrics"]

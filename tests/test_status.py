@@ -540,11 +540,12 @@ def test_status_says_so_when_nothing_has_run(
     change the thing it is reporting on.
     """
     monkeypatch.setenv("TM1_RUNS_ROOT", str(tmp_path / "runs"))
-    project = tmp_path / "proj"
-    project.mkdir()
-    (project / "config.yaml").write_text(
+    (tmp_path / "default-configs").mkdir()
+    (tmp_path / "default-configs" / "ctramp-cube-model.yaml").write_text(
         "steps:\n  - copy_inputs: {}\n", encoding="utf-8",
     )
-    (project / "cases.yaml").write_text("cases:\n  BASE-2023:\n", encoding="utf-8")
+    project = tmp_path / "proj"
+    project.mkdir()
+    (project / "scenarios.yaml").write_text("scenarios:\n  BASE-2023:\n", encoding="utf-8")
 
     assert "nothing run yet" in status(project)

@@ -6,7 +6,7 @@ finished run, an interrupted one, or something it does not recognise -- and what
 a shared index across machines will read for the same reason.
 
 The git commit is **recorded, not fingerprinted**. Hashing it would mark every
-case in the project stale on every commit, which trains people to ignore the
+scenario in the project stale on every commit, which trains people to ignore the
 signal.
 """
 
@@ -20,16 +20,16 @@ from pathlib import Path
 TM1_DIR = ".tm1"
 
 #: The receipt: what ran, from what, where, and how it ended.
-RECEIPT = "case.json"
+RECEIPT = "scenario.json"
 
 #: The config as executed, fully resolved -- the answer to "what did this run use".
 RESOLVED = "config.resolved.yaml"
 
-#: The case applied but not yet templated -- a self-contained config.yaml for this
-#: one case, portable to a fresh run_dir.  Copy it into a project directory (with a
-#: one-entry cases.yaml) to re-run this exact case even after config.yaml/cases.yaml
-#: have since moved on.
-CASE_CONFIG = "config.case.yaml"
+#: The scenario applied but not yet templated -- a self-contained config for
+#: this one scenario, portable to a fresh run_dir.  Copy it into a project
+#: directory (with a one-entry scenarios.yaml) to re-run this exact scenario even
+#: after the shared model or scenarios.yaml have since moved on.
+SCENARIO_CONFIG = "config.scenario.yaml"
 
 
 @dataclass
@@ -37,7 +37,7 @@ class Receipt:
     """What a run records about itself, locally and in the shared index."""
 
     project: str
-    case: str
+    scenario: str
     run: int
     fingerprint: str
     machine: str
@@ -77,7 +77,7 @@ def git_state(repo_root: Path) -> dict[str, object]:
     """The commit a run was launched from, and whether the tree was dirty.
 
     Recorded for traceability, never fingerprinted: hashing it would mark every
-    case in the project stale on every commit.
+    scenario in the project stale on every commit.
     """
     def _git(*args: str) -> str | None:
         try:

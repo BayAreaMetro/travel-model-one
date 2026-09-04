@@ -7,9 +7,16 @@ from pathlib import Path
 
 import yaml
 
+from tm1.project.scenarios import load as load_scenarios
+
 #: The one machine-specific thing a run needs: where run directories go.  It is a
 #: local disk, because Cube's cluster is chatty and a network path is slow.
 RUNS_ROOT_VAR = "TM1_RUNS_ROOT"
+
+#: The pipeline every CT-RAMP+Cube project shares -- steps, job paths, the whole
+#: warmstart:/iterate: shape.  Found by walking up from a project directory, so a
+#: project need not say where its own checkout root is.
+_MODEL_FILE = Path("default-configs") / "ctramp-cube-model.yaml"
 
 #: ``{env:NAME}`` -- a value from the environment, which ``tm1`` populates from
 #: ``.env`` at import.  This is how a project config stays machine-independent:
@@ -18,13 +25,76 @@ RUNS_ROOT_VAR = "TM1_RUNS_ROOT"
 _ENV_REF = re.compile(r"\{env:([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
+def _find_model_file(config_dir: Path) -> Path | None:
+    """``default-configs/ctramp-cube-model.yaml``, walking up from *config_dir*.
+
+    None if never found -- *config_dir* is not inside a checkout that has one,
+    which is how a synthetic project (tests) keeps working.
+    """
+    for parent in (config_dir, *config_dir.parents):
+        candidate = parent / _MODEL_FILE
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def load_config(config_dir: Path) -> dict:
-    """Load config.yaml from *config_dir*."""
-    cfg_path = Path(config_dir) / "config.yaml"
-    if not cfg_path.exists():
-        sys.exit(f"Config not found: {cfg_path}")
-    with cfg_path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    """A project's config, fully assembled from the shared model plus its own `steps:`.
+
+    There is no per-project pipeline of its own, and no project-level defaults
+    layer either: the shared ``default-configs/ctramp-cube-model.yaml`` is the
+    only pipeline, and every scenario in ``scenarios.yaml`` overrides the
+    model's ``REQUIRED`` placeholders itself, through the same address grammar
+    it uses for everything else -- so a scenario is complete on its own reading,
+    without also reading a separate block to know what it runs.
+    :func:`tm1.project.overrides.validate` refuses a scenario that leaves one of
+    those placeholders unresolved.
+
+    ``steps:`` is the one addition applied here rather than by a scenario, and
+    genuinely project-wide, so every scenario gets it alike. Two shapes:
+
+    - the name matches a step the shared pipeline already has (empty there on
+      purpose, e.g. ``copy_project_inputs``) -> the project's entries are
+      merged into it, in the position the shared pipeline put it.
+    - it does not -> appended as a new step, after the shared pipeline's own
+      (e.g. ``vmt_vht_metrics``, a project's own post-processing hook).
+    """
+    config_dir = Path(config_dir)
+    model_path = _find_model_file(config_dir)
+    if model_path is None:
+        sys.exit(f"No {_MODEL_FILE} above {config_dir}.")
+
+    with model_path.open(encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+    cfg.pop("_shared_step_bodies", None)  # anchor source only; not part of the pipeline
+
+    for extra in load_scenarios(config_dir).extra_steps:
+        _add_step(cfg, extra)
+    return cfg
+
+
+def _add_step(cfg: dict, extra: object) -> None:
+    """Merge one of a project's `steps:` entries into *cfg*.
+
+    Fills in a step the shared pipeline already named but left empty (e.g.
+    ``copy_project_inputs: {}``), in place -- pipeline position matters for a
+    step like that one, and a project cannot say where in the list to insert.
+    Anything else is appended as a new step, since the shared pipeline has no
+    name -- and so no position -- for it.
+    """
+    if not isinstance(extra, dict) or len(extra) != 1:
+        msg = f"A project's `steps:` entry must be one `name: {{...}}` mapping; got {extra!r}."
+        raise TypeError(msg)
+    name, body = next(iter(extra.items()))
+
+    existing = next(
+        (item[name] for item in cfg["steps"] if isinstance(item, dict) and name in item),
+        None,
+    )
+    if isinstance(existing, dict) and isinstance(body, dict):
+        existing.update(body)
+    else:
+        cfg["steps"] = [*cfg["steps"], extra]
 
 
 def step_config(cfg: dict, name: str, kwargs: dict | None = None) -> dict:
@@ -90,8 +160,8 @@ def missing_env(cfg: dict, also: tuple[str, ...] = ()) -> list[str]:
     """Which of the variables this project needs are not set.
 
     A pre-flight, so that a `.env` copied but not finished is caught in the second
-    `tm1 cases` takes rather than in hour nine of a run.  *also* names variables the
-    harness itself reads, which the config does not mention.
+    `tm1 scenarios` takes rather than in hour nine of a run.  *also* names variables
+    the harness itself reads, which the config does not mention.
     """
     return sorted(n for n in env_references(cfg) | set(also) if os.environ.get(n) is None)
 

@@ -1,6 +1,6 @@
 """The steps a project can name, and the code each one runs.
 
-A step in ``config.yaml`` is a name plus a block. This module turns that pair
+A step in the config is a name plus a block. This module turns that pair
 into the callable that does the work:
 
 * a **built-in** step -- one of :data:`STEPS` below;
@@ -47,6 +47,8 @@ STEPS: dict[str, Callable] = {
     "publish_networks": staging_step.publish_networks,
     # The model itself.
     "copy_inputs": setup_step.run,
+    "copy_project_inputs": setup_step.run,
+    "copy_input_to_working": setup_step.run,
     "configure_ctramp": configure_ctramp_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,

@@ -20,7 +20,7 @@ from tm1.status.read import RunLog, harness_alive, read_logs
 
 __all__ = ["RunLog", "Sections", "render", "sections", "status"]
 
-def status(config_dir: Path, case: str | None = None) -> str:
+def status(config_dir: Path, scenario: str | None = None) -> str:
     """Render the newest run's status, or say why there is nothing to show.
 
     Read-only in every sense: :func:`tm1.project.config.latest_run` finds the newest
@@ -28,7 +28,7 @@ def status(config_dir: Path, case: str | None = None) -> str:
     bring a run directory into being.
     """
     config_dir = Path(config_dir).resolve()
-    prepared = latest_run(config_dir, case)
+    prepared = latest_run(config_dir, scenario)
     if prepared is None:
         return f"\n  {config_dir.name}: nothing run yet.\n"
 
@@ -41,9 +41,9 @@ def status(config_dir: Path, case: str | None = None) -> str:
         return f"\n  {label}: no run logs in {run_dir / 'logs'}.\n"
 
     # Said out loud rather than left for someone to notice: the newest run for
-    # this case was produced by a different config than the one on disk now.
+    # this scenario was produced by a different config than the one on disk now.
     stale = "" if prepared.state == run_directory.RESUME else (
-        "\n  NOTE: config.yaml or cases.yaml has changed since this run.\n"
+        "\n  NOTE: the shared model or scenarios.yaml has changed since this run.\n"
     )
     return stale + render(
         label,

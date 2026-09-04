@@ -12,10 +12,10 @@ The sections below are ordered for a reader who knows `RunModel.bat`.
 
 | RunModel.bat | now |
 |---|---|
-| Step 1 — set path variables | `.env` (machine-specific) + `config.yaml` (everything else) |
+| Step 1 — set path variables | `.env` (machine-specific) + each scenario in a project's `scenarios.yaml` (everything else) |
 | Step 2 — create the directory structure | the `make_directories` step |
-| Step 3 — pre-process | the `copy_inputs` step, then the pre-process steps |
-| Steps 4, 4.5 — non-motorized LOS, transit files | steps in `config.yaml`, in order |
+| Step 3 — pre-process | the `copy_inputs` and `copy_input_to_working` steps, then the pre-process steps |
+| Steps 4, 4.5 — non-motorized LOS, transit files | steps in the shared pipeline, in order |
 | Step 5 — prepare iteration 0 | the `warmstart:` block |
 | Steps 6–9 — RunIteration, four times | the `iterate:` block, `count: 3` |
 | the `.job` calls throughout | still `.job` calls — run through Cube, unmodified |
@@ -32,17 +32,19 @@ Three, and they are the ones that change existing habits.
 
 **1. `.env` is configured once per machine.**
 Machine-specific roots — a drive letter, a UNC share, the location of gawk — live there
-instead of in `config.yaml`. See [README.md#setup](../README.md#setup).
+instead of in a project's config. See [README.md#setup](../README.md#setup).
 
 **2. The run does not execute in the working directory.**
 `RunModel.bat` ran in the directory containing it. A run now executes in
-`{TM1_RUNS_ROOT}/{project}/{case}-{NNN}`, a new numbered directory each time.
+`{TM1_RUNS_ROOT}/{project}/{scenario}-{NNN}`, a new numbered directory each time.
 
 No existing run is deleted or overwritten. Re-running after a land use update produces
 `-002` alongside an intact `-001`.
 
-**3. `config.yaml` is declarative.**
-It states what runs, not how. It is intended to be read from top to bottom.
+**3. A project's config is declarative.**
+It states what runs, not how. `default-configs/ctramp-cube-model.yaml` (the pipeline every
+project shares) and each scenario in a project's own `scenarios.yaml` are both intended
+to be read from top to bottom.
 
 ---
 
@@ -61,13 +63,13 @@ To report on a run, from any shell, during it or after it:
 uv run tm1 status PBA50+_FBP
 ```
 
-To list the cases a project declares and check that the project is runnable:
+To list the scenarios a project declares and check that the project is runnable:
 
 ```bash
-uv run tm1 cases PBA50+_FBP
+uv run tm1 scenarios PBA50+_FBP
 ```
 
-A project is a directory under `projects/` containing a `config.yaml`. A path is also
+A project is a directory under `projects/` containing a `scenarios.yaml`. A path is also
 accepted, so a project may live outside the repository:
 
 ```bash
@@ -183,7 +185,7 @@ or a resumed run differs from a fresh one.
 ### Machine settings vs. model settings
 
 `cluster_nodes`, `threads`, `intrastep_processes` and `timeout` tune a machine. They are
-held in `config.yaml` rather than `.env` because they are not paths, and they do not affect
+held in the config rather than `.env` because they are not paths, and they do not affect
 results — which is what allows runs from different machines to be compared.
 
 `intrastep_processes` is constrained: it selects a real file, and only
@@ -195,12 +197,11 @@ execution, and the run completes in roughly five times the expected duration.
 
 ## Starting a new project
 
-A project is a folder with two files:
+A project is a folder with one file:
 
 ```
 projects/my_project/
-  config.yaml     the full model, with real values          (required)
-  cases.yaml      named variations on it                    (optional)
+  scenarios.yaml  every scenario, self-contained, plus any steps: additions (required)
 ```
 
 Copy the nearest existing project and edit it. `PBA50+_FBP` is the RunModel.bat
@@ -208,10 +209,13 @@ parity run and the usual starting point.
 
 ```bash
 cp -r projects/PBA50+_FBP projects/my_project
-tm1 cases my_project          # verify before committing to a full run
+tm1 scenarios my_project      # verify before committing to a full run
 ```
 
-Then work down `config.yaml`. Most projects change only a few regions:
+Then work down each scenario in `scenarios.yaml` -- there is no project-level defaults
+layer, so every scenario overrides the shared pipeline in
+[`default-configs/ctramp-cube-model.yaml`](../default-configs/ctramp-cube-model.yaml)
+directly and in full. Most projects change only a few regions per scenario:
 
 | intended change | what to edit |
 |---|---|
@@ -221,30 +225,48 @@ Then work down `config.yaml`. Most projects change only a few regions:
 | running on a different machine | nothing here; `cluster_nodes` / `threads` if the machine differs in size |
 | a shorter test run | `iterate.count`, and `simulate_ctramp`'s `sample_rate` |
 
-The step list itself rarely changes. Adding or removing steps generally indicates a
-different project rather than a case — see rule 4 below.
+The step list itself rarely changes, and a project should not need to restate it: the
+shared pipeline already declares every step, with placeholder `from:` values every
+scenario overrides. Adding or removing steps from the *shared* pipeline generally
+indicates a different model family rather than a project or a scenario — see rule 4 below.
+A project's own additions are the one exception, declared via a top-level `steps:` in
+`scenarios.yaml` -- genuinely project-wide, unlike a scenario override, so stated once
+rather than per scenario. Two shapes:
 
-> **Verify before running.** `tm1 cases my_project` completes in about a second and checks
-> the three conditions that would otherwise surface part-way through a run:
+- **a name the shared pipeline already has, left empty for exactly this** (e.g.
+  `copy_project_inputs: {}`) -- filled in, in place, for entries a project needs that
+  are not part of every project (a Blueprint strategy override, say). Position in the
+  pipeline matters for a step like that one, which is why it is a named placeholder
+  rather than something appended.
+- **a name the shared pipeline has no use for** (e.g. `vmt_vht_metrics`, a project's own
+  post-processing hook, `script:`/`module:`) -- appended after the shared pipeline's own
+  steps.
+
+> **Verify before running.** `tm1 scenarios my_project` completes in about a second and
+> checks the three conditions that would otherwise surface part-way through a run:
 >
-> - `config.yaml` parses and `cases.yaml` expands
+> - the shared model file parses and `scenarios.yaml` expands
 > - every `.env` variable the project references is set
-> - every case's overrides resolve to a real value in the config
+> - every scenario's overrides resolve to a real value, and none leaves a `REQUIRED`
+>   placeholder unresolved
 >
 > It exits non-zero on failure, so it is usable in a script.
 
 ---
 
-## Cases: one project, many runs
+## Scenarios: one project, many runs
 
-A **case** is a named set of overrides on `config.yaml`. `config.yaml` is the full model
-with its default values; `cases.yaml` says how each run differs from it.
+A **scenario** is a named set of overrides on the shared pipeline in
+`default-configs/ctramp-cube-model.yaml`. There is no project-level defaults layer: a
+scenario states its own full set of overrides, including the values every scenario in
+the project happens to share -- so it is readable on its own, without also reading a
+separate block to know what an apparently-empty scenario runs.
 
-Each case runs in its own directory, `{case}-{NNN}`, so cases never collide.
+Each scenario runs in its own directory, `{scenario}-{NNN}`, so scenarios never collide.
 
 ### Addressing a value
 
-An override names *where the value lives* in `config.yaml`:
+An override names *where the value lives* in the shared pipeline:
 
 ```yaml
 m_drive: "X:/models"                               a top-level key
@@ -261,25 +283,28 @@ Four rules, and they are the whole mechanism:
 1. **The address must already exist.** Nothing is declared up front — the config's value at
    an address *is* the default, its type *is* the type, and its existence *is* the
    validation. An address that resolves to nothing is an error naming the closest match, so
-   a typo cannot quietly run the default.
+   a typo cannot quietly run the default. Some addresses in the shared model file hold a
+   `REQUIRED: ...` placeholder instead of a real default (`model_year`, every `copy_inputs`
+   `from:` for an external data source) -- `tm1 scenarios` refuses a scenario that leaves
+   one unresolved, rather than running with a value nobody wrote.
 2. **Values replace, never merge.** Naming a mapping replaces it whole. Name a deeper
    address to change one key — overriding `env:` to change `EN7` would silently drop `PATH`.
 3. **A step in both blocks must say which.** Twelve steps appear in both `warmstart:` and
    `iterate:`. Bare, they are ambiguous, so write `warmstart.hwy_assign...` or
    `iterate.hwy_assign...`.
-4. **`steps` itself is not addressable.** A case varies values inside the pipeline; it never
-   adds, removes or reorders steps. A different pipeline shape is a different project.
-   (The one exception is `enabled: false`, which any step accepts.)
+4. **`steps` itself is not addressable.** A scenario varies values inside the pipeline; it
+   never adds, removes or reorders steps. A different pipeline shape is a different
+   project. (The one exception is `enabled: false`, which any step accepts.)
 
 ### Three ways to declare them
 
 All three expand to the same flat list, so the rules above apply regardless of which is
 used. They may be combined in one file.
 
-**`cases:` — written out, one entry per run.** For runs with little in common.
+**`scenarios:` — written out, one entry per run.** For runs with little in common.
 
 ```yaml
-cases:
+scenarios:
   PARITY-2023:
     description: RunModel.bat parity, adopted networks and land use.
 
@@ -331,9 +356,9 @@ Produces `A1-NOTL-ADPT`, `A1-NOTL-JHBL` and `A1-CORD-ADPT`. Exclusions are repor
 than silently dropped from the count. An `exclude:` rule may name a subset of the axes, so
 it remains correct when a further axis is added.
 
-A matrix case's description is assembled from its axis points, so each point should carry a
-`description:`. Without one, `tm1 cases` lists the case with an empty description, leaving
-the ID as the only identifying information in a large sweep:
+A matrix scenario's description is assembled from its axis points, so each point should
+carry a `description:`. Without one, `tm1 scenarios` lists the scenario with an empty
+description, leaving the ID as the only identifying information in a large sweep:
 
 ```yaml
       tolls:
@@ -344,26 +369,26 @@ the ID as the only identifying information in a large sweep:
           set_tolls.job: "variants/SetTolls_cordon.job"
 ```
 
-### Case IDs
+### Scenario IDs
 
 `SERIES-TOKENS-YEAR` — uppercase, hyphen-separated, e.g. `A001-NOPK-2035`.
 
-**IDs are permanent.** The ID names the run directory, so renaming a case converts a
+**IDs are permanent.** The ID names the run directory, so renaming a scenario converts a
 completed run into an unrun one, at the cost of the full run time. Descriptive text belongs
 in `description:`, not in the ID.
 
 Ladder and matrix generate IDs from the `id:` template, with two consequences:
 
-- **Adding a matrix axis value does not rename existing cases.** The tokens are part names,
-  not positions.
+- **Adding a matrix axis value does not rename existing scenarios.** The tokens are part
+  names, not positions.
 - **Inserting a ladder rung renames every rung after it.** This is correct: it changes what
   each later rung represents.
 
 ### Running one
 
 ```bash
-tm1 cases my_project              # what the project declares, and whether it resolves
-tm1 run my_project --case NOPK-2035
+tm1 scenarios my_project           # what the project declares, and whether it resolves
+tm1 run my_project --scenario NOPK-2035
 ```
 
 ---
@@ -371,7 +396,7 @@ tm1 run my_project --case NOPK-2035
 ## What the run leaves behind
 
 ```
-{TM1_RUNS_ROOT}/{project}/{case}-001/
+{TM1_RUNS_ROOT}/{project}/{scenario}-001/
   INPUT/          every input staged in, as the run's record of what it consumed
   hwy/ trn/ skims/ landuse/ popsyn/ nonres/ main/ database/ logsums/ metrics/
   logs/           the run log

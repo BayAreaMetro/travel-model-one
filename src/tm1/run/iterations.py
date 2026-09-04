@@ -1,6 +1,6 @@
 """Which steps run, in which round, and which of them this invocation wants.
 
-``config.yaml`` describes the pipeline in blocks; a run needs it flat -- an ordered
+The config describes the pipeline in blocks; a run needs it flat -- an ordered
 list of ``(step, round)``. That flattening is here, along with the selection
 ``--steps`` / ``--resume-at`` / ``--until`` apply to the result.
 
@@ -42,7 +42,8 @@ _SKIP_IF_EXISTS = "skip_if_exists"
 
 #: Key switching a step off entirely.  Default true, so a config need not say it.
 #: A step that has no cheap no-op sits in the pipeline disabled and is switched on
-#: by the case that wants it -- which keeps the step list the same for every case.
+#: by the scenario that wants it -- which keeps the step list the same for every
+#: scenario.
 _ENABLED = "enabled"
 
 
@@ -83,8 +84,8 @@ def _step_enabled(step_cfg: object) -> bool:
     """Whether a step runs.  Only a literal ``enabled: false`` switches it off.
 
     Checked against dicts alone, so ``warmstart:`` (a list) and ``iterate:`` (whose
-    keys are already restricted) cannot be disabled wholesale -- a case varies what
-    the pipeline does, not whether half of it exists.
+    keys are already restricted) cannot be disabled wholesale -- a scenario varies
+    what the pipeline does, not whether half of it exists.
     """
     return not (isinstance(step_cfg, dict) and step_cfg.get(_ENABLED) is False)
 

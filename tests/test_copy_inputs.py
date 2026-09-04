@@ -119,7 +119,8 @@ def test_a_variant_lands_on_top_named_relative_to_from(tree: Path) -> None:
     """A strategy swaps in one file from inside the entry's own `from:`.
 
     Named relative to `from` rather than restated absolutely, so the swap moves
-    with the entry if a case repoints the whole directory to a different release.
+    with the entry if a scenario repoints the whole directory to a different
+    release.
     """
     _run(tree, {
         "landuse": {
@@ -130,6 +131,32 @@ def test_a_variant_lands_on_top_named_relative_to_from(tree: Path) -> None:
     })
 
     assert (tree / "out" / "ixDaily.tpp").read_text() == "air"
+
+
+def test_concat_is_byte_for_byte_not_a_csv_merge(tree: Path) -> None:
+    """`copy /b a+b c` -- two network-project override files combined into one."""
+    _run(tree, {
+        "mod_links_brt": {
+            "concat": [str(tree / "src_a" / "ixDaily.tpp"), str(tree / "src_b" / "warm.tpp")],
+            "to": str(tree / "out" / "merged.csv"),
+        },
+    })
+
+    assert (tree / "out" / "merged.csv").read_text() == "ixwarm"
+
+
+def test_a_disabled_entry_is_skipped_entirely(tree: Path) -> None:
+    """`enabled: false` is how a Blueprint-only override sits inert in a shared config."""
+    result = _run(tree, {
+        "bp_override": {
+            "from": str(tree / "src_a"),
+            "to": str(tree / "out"),
+            "enabled": False,
+        },
+    })
+
+    assert result == "skipped"
+    assert not (tree / "out").exists()
 
 
 def test_an_unknown_entry_key_is_refused_by_name(tree: Path) -> None:

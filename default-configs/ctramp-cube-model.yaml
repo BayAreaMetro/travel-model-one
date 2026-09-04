@@ -1,9 +1,15 @@
-# CT-RAMP on 2023 inputs — RunModel.bat, driven by the Python runner instead of cmd.
-# Same model, same inputs, same results; only the orchestration changes.
+# CT-RAMP on Cube — the pipeline every project in projects/ shares.
 #
-# 2023 is the input vintage this project is built from -- the adopted networks and
-# land use it points at below.  A case may forecast forward from it (env.MODEL_YEAR),
-# so the year names where the project starts, not the only year it can produce.
+# This is not a project: nothing here names a data source, a forecast year or a
+# strategy.  Every scenario in a project's scenarios.yaml overrides the handful
+# of addresses marked REQUIRED below -- copy_inputs' `from:` values, model_year,
+# env.MODEL_YEAR/FUTURE -- through the same address grammar it uses for
+# everything else.  There is no project-level default: a scenario that leaves
+# one of these unresolved fails `tm1 scenarios` rather than running with a value
+# nobody wrote.  Everything else -- job paths, cwd, commpath, cluster sizes, the
+# warmstart:/iterate: shape -- is identical for every CT-RAMP+Cube project, so it
+# lives here once instead of being copied into each one.
+#
 # What the keys mean: docs/running-a-model.md
 
 slack: "off"              # "minimal": start, finish, failure only; "verbose" adds every step
@@ -11,29 +17,86 @@ slack: "off"              # "minimal": start, finish, failure only; "verbose" ad
 logging:
   level: DEBUG            # what reaches the run log; console stays at INFO
 
-# The one shorthand this file defines; another would belong here beside it.  Only the
-# ROOT is machine-specific -- which network and which land use are spelled out below.
+# The only machine-specific value a run needs -- a drive letter, set in .env, never
+# overridden by a project.
 m_drive: "{env:TM1_M_DRIVE}"        # M: = \\models.ad.mtc.ca.gov\data\models
 
-# The run's year, read by Python steps (configure_ctramp) that need it typed rather
-# than as an environment string.  Keep this in step with env.MODEL_YEAR below -- a
-# case that forecasts forward must override both.
-model_year: 2023
+# The run's forecast year, read by Python steps (configure_ctramp) that need it
+# typed rather than as an environment string.  No sensible shared default -- every
+# scenario must override it (and keep it in step with env.MODEL_YEAR below).
+model_year: "REQUIRED: override model_year"
 
 # Injected per run -- usable below, not settable:
-#   run_dir = {env:TM1_RUNS_ROOT}/{project}/{case}-{NNN}, plus runs_root, project, case, run
+#   run_dir = {env:TM1_RUNS_ROOT}/{project}/{scenario}-{NNN}, plus runs_root, project, scenario, run
 # {PERIOD} and {iteration} are expanded per step.
 
 # The legacy jobs take parameters from the environment, not argv.  ITER, PREV_ITER, WGT,
 # PREV_WGT, SAMPLESHARE and SEED come from the runner per round; these are the rest.
 # RunModel.bat sliced MODEL_YEAR and FUTURE out of the folder name; stating them is the fix.
 env:
-  MODEL_YEAR: 2023        # IxForecasts_horizon.job grows external trips from a 2021 base;
-                          # HsrTripGeneration.job picks its table for the year
-  FUTURE: PBA50           # one branch in one job; PBA50 is the only value implemented
-  EN7: DISABLED           # required: RunModel.bat 115-128 will not start without it
+  MODEL_YEAR: "REQUIRED: override env.MODEL_YEAR"   # keep in step with model_year above
+  FUTURE: "REQUIRED: override env.FUTURE"           # PBA50 is the only value implemented
+  EN7: DISABLED             # required: RunModel.bat 115-128 will not start without it; a
+                            # scenario turns it on, a project need not
   PATH: "{env:TM1_GAWK_DIR};{env:PATH}"    # gawk, for BuildTransitNetworks.job
   # MAXITERATIONS: 3      # RunModel.bat 135-147 hard-codes these
+
+# Bodies shared, verbatim or nearly so, between `warmstart:` (round 0) and `iterate:`
+# (rounds 1..N) -- anchored once so the two cannot drift on a job path, cwd, commpath,
+# cluster size or env.  `warmstart:` layers `skip_if_exists:` on top via `<<:`, since
+# only it is resumable; `iterate:` always reruns every round and takes several of
+# these verbatim (`*name`).  Not itself a step: not listed under `steps:` below.
+_shared_step_bodies:
+  hwy_assign: &hwy_assign
+    job: "CTRAMP/scripts/assign/HwyAssign.job"
+    cluster_nodes: 48           # must match the intrastep range in HwyIntraStep.block
+  prep_hwy_net: &prep_hwy_net
+    job: "CTRAMP/scripts/skims/PrepHwyNet.job"
+    cwd: "trn/TransitAssignment.iter{iteration}"
+    timeout: 1800
+  build_transit_networks: &build_transit_networks
+    job: "CTRAMP/scripts/skims/BuildTransitNetworks.job"
+    cwd: "trn/TransitAssignment.iter{iteration}"
+    timeout: 3600
+    # The two files gawk writes.  If TM1_GAWK_DIR is wrong the job still exits
+    # 0 -- the shell redirect creates these, empty -- and the failure would
+    # otherwise surface in transit_assign, blaming the wrong step.
+    verify:
+      - "trn/TransitAssignment.iter{iteration}/{PERIOD}_walk_egrlinks.dat"
+      - "trn/TransitAssignment.iter{iteration}/{PERIOD}_transit_suplinks_walk.dat"
+  transit_assign: &transit_assign
+    job: "CTRAMP/scripts/assign/TransitAssign.job"
+    cwd: "trn/TransitAssignment.iter{iteration}"
+    commpath: "commpath"
+    cluster_nodes: 15           # accegg(3) x path(5) tasks per period
+  transit_skims: &transit_skims
+    job: "CTRAMP/scripts/skims/TransitSkims.job"
+    cwd: "trn/TransitAssignment.iter{iteration}"
+    commpath: "commpath"
+    cluster_nodes: 15
+    env:                        # trnAssign.bat's counters; FAST is a single pass
+      TRNASSIGNITER: "0"
+      PREVTRNASSIGNITER: "NEG1"
+  apply_regional_transit_fares: &apply_regional_transit_fares  # T2 fare integration; off unless bp_regional_transit_fares_job staged the job
+    job: "CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
+    cwd: "trn/TransitAssignment.iter{iteration}"
+    commpath: "commpath"
+    cluster_nodes: 15
+    env:
+      TRNASSIGNITER: "0"
+      PREVTRNASSIGNITER: "NEG1"
+    enabled: false
+  rename_assignment_variables: &rename_assignment_variables
+    job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
+  test_network_convergence: &test_network_convergence
+    job: "CTRAMP/scripts/feedback/TestNetworkConvergence.job"
+  merge_networks: &merge_networks
+    job: "CTRAMP/scripts/feedback/MergeNetworks.job"
+  hwy_skims: &hwy_skims
+    job: "CTRAMP/scripts/skims/HwySkims.job"
+    cluster_nodes: 5            # DistributeMultistep, one node per period
+  accessibility: &accessibility
+    job: "CTRAMP/scripts/skims/Accessibility.job"
 
 # ════════════════════════════════════════════════════════════════════════════════════════
 # PIPELINE — steps run in the order written.  `warmstart:` and `iterate:` are the only
@@ -63,29 +126,32 @@ steps:
         - "{run_dir}/logsums"
         - "{run_dir}/metrics"
 
-  # SetUpModel.bat step 3, then RunModel.bat 172-178, in one step.  Entries run in order,
-  # so INPUT/ is staged before the working directories that read it, and kept as the run's
-  # record of what went into it.  Directories merge file by file; nothing is overwritten
-  # unless an entry says so.  Nothing the model *produces* is staged, so a failure in the
-  # steps that build them cannot hide behind a stale file.
+  # SetUpModel.bat step 3: assembles INPUT/ from its real sources and kept as the run's
+  # record of what went into it.  Entries run in order.  Directories merge file by file;
+  # nothing is overwritten unless an entry says so.  Nothing the model *produces* is
+  # staged, so a failure in the steps that build them cannot hide behind a stale file.
+  # `copy_input_to_working`, right after this step, is the second half -- INPUT/ into the
+  # working directories.
   - copy_inputs:
 
       # 1. INPUT/ from its real sources.  Each `from:` is the variable of the same
       #    meaning in SetUpModel.bat: INPUT_NETWORK, INPUT_POPLU, NONRES_INPUT_DIR,
-      #    LOGSUMS_INPUT_DIR, METRICS_INPUT_DIR, PREV_RUN_DIR, PARAMS.
+      #    LOGSUMS_INPUT_DIR, METRICS_INPUT_DIR, PREV_RUN_DIR, PARAMS.  No project has
+      #    a sensible shared default for any of these -- every `from:` below is a
+      #    placeholder every scenario in scenarios.yaml must override.
 
       input_hwy:                        # INPUT_NETWORK/hwy
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/hwy"
+        from: "REQUIRED: override copy_inputs.input_hwy.from"
         to: "{run_dir}/INPUT/hwy"
       input_trn:                        # INPUT_NETWORK/trn
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/trn"
+        from: "REQUIRED: override copy_inputs.input_trn.from"
         to: "{run_dir}/INPUT/trn"
 
       input_popsyn:                     # INPUT_POPLU/popsyn
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/popsyn"
+        from: "REQUIRED: override copy_inputs.input_popsyn.from"
         to: "{run_dir}/INPUT/popsyn"
       input_landuse:                    # INPUT_POPLU/landuse
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/landuse"
+        from: "REQUIRED: override copy_inputs.input_landuse.from"
         to: "{run_dir}/INPUT/landuse"
         variant: {}                      # optional: {dest name: path relative to `from`} -- e.g. a parking-strategy tazData.csv
       input_telecommute_max_rate:       # from this checkout, not the M drive
@@ -93,36 +159,36 @@ steps:
         to: "{run_dir}/INPUT/landuse/telecommute_max_rate_county.csv"
 
       input_nonres:
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+        from: "REQUIRED: override copy_inputs.input_nonres.from"
         to: "{run_dir}/INPUT/nonres"
       input_logsums:
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
+        from: "REQUIRED: override copy_inputs.input_logsums.from"
         to: "{run_dir}/INPUT/logsums"
       input_metrics:
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
+        from: "REQUIRED: override copy_inputs.input_metrics.from"
         to: "{run_dir}/INPUT/metrics"
 
       # The air passenger tables are per model year: SetUpModel.bat picks the year's
       # file and drops the prefix.  A different year is five `from:` values, which is
       # what makes this a config line rather than an `if MODEL_YEAR ==` branch.
       input_airpax_ea:
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxEA.tpp"
+        from: "REQUIRED: override copy_inputs.input_airpax_ea.from"
         to: "{run_dir}/INPUT/nonres/tripsAirPaxEA.tpp"
         overwrite: true                 # lands on top of input_nonres above
       input_airpax_am:
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxAM.tpp"
+        from: "REQUIRED: override copy_inputs.input_airpax_am.from"
         to: "{run_dir}/INPUT/nonres/tripsAirPaxAM.tpp"
         overwrite: true
       input_airpax_md:
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxMD.tpp"
+        from: "REQUIRED: override copy_inputs.input_airpax_md.from"
         to: "{run_dir}/INPUT/nonres/tripsAirPaxMD.tpp"
         overwrite: true
       input_airpax_pm:
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxPM.tpp"
+        from: "REQUIRED: override copy_inputs.input_airpax_pm.from"
         to: "{run_dir}/INPUT/nonres/tripsAirPaxPM.tpp"
         overwrite: true
       input_airpax_ev:
-        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxEV.tpp"
+        from: "REQUIRED: override copy_inputs.input_airpax_ev.from"
         to: "{run_dir}/INPUT/nonres/tripsAirPaxEV.tpp"
         overwrite: true
 
@@ -130,17 +196,17 @@ steps:
       # Only its trip tables; `exclude:` is SetUpModel.bat's two `del` lines, done by
       # never copying rather than by deleting afterwards.
       input_warmstart_main:             # PREV_RUN_DIR/OUTPUT/main
-        from: "{m_drive}/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35/OUTPUT/main"
+        from: "REQUIRED: override copy_inputs.input_warmstart_main.from"
         to: "{run_dir}/INPUT/warmstart/main"
         include: ["*.tpp"]
       input_warmstart_nonres:           # PREV_RUN_DIR/OUTPUT/nonres
-        from: "{m_drive}/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35/OUTPUT/nonres"
+        from: "REQUIRED: override copy_inputs.input_warmstart_nonres.from"
         to: "{run_dir}/INPUT/warmstart/nonres"
         include: ["*.tpp"]
         exclude: ["ixDaily2015.tpp", "ixDailyx4.tpp"]
 
-      input_params:                     # PARAMS -- from this checkout
-        from: "utilities/RTP/config_RTP2025/params_2023.properties"
+      input_params:                     # PARAMS
+        from: "REQUIRED: override copy_inputs.input_params.from"
         to: "{run_dir}/INPUT/params.properties"
 
       # 2. The model itself, from this checkout.  SetUpModel.bat copied these from
@@ -158,8 +224,19 @@ steps:
         from: "utilities/RTP/metrics"
         to: "{run_dir}/CTRAMP/scripts/metrics"
 
-      # 3. INPUT/ -> the working directories (RunModel.bat 172-178).  popsyn is absent
-      #    on purpose: filterUnconnectedHouseholds.py writes it.
+  # Empty here on purpose: a project fills this in via its own `scenarios.yaml`
+  # `steps:` -- entries it alone needs (a Blueprint strategy override, say), landed
+  # after copy_inputs above and before copy_input_to_working below, on top of or
+  # beside whatever copy_inputs staged.  Same entry shape and mechanism as
+  # copy_inputs, under a name reserved for exactly this.
+  - copy_project_inputs: {}
+
+  # RunModel.bat 172-178.  A distinct step from copy_inputs above -- that one reaches
+  # outside the run for its sources; this one reshuffles what copy_inputs already
+  # staged into INPUT/.  Same entry shape, same mechanism (src/tm1/steps/setup.py),
+  # different direction.  popsyn is absent on purpose: filterUnconnectedHouseholds.py
+  # writes it.
+  - copy_input_to_working:
       hwy:
         from: "{run_dir}/INPUT/hwy"
         to: "{run_dir}/hwy"
@@ -219,9 +296,9 @@ steps:
       args: ["NORMAL", "NoExtraDelay", "Simple", "complexDwell", "complexAccess"]
 
   # ── Warm start · iteration 0 ──────────────────────────────────────────────────────────
-  # RunModel.bat's `set ITER=0` pass: assign the staged demand once, so round 1 has
-  # congested skims to read.  Twelve names below repeat in `iterate:` -- same job,
-  # different round.
+  # Round 0 of the same feedback loop `iterate:` runs -- the identical assignment/skims
+  # body below (via *anchor), just starting after the demand-generation prefix, since
+  # round 0's demand comes from copy_inputs' warmstart_main/nonres, not CT-RAMP.
   #
   # DEPARTURE from RunIteration.bat: hwy_skims/accessibility run at the END of each round
   # rather than the head of rounds 1-3.  Same inputs either way, but the final round's
@@ -230,56 +307,42 @@ steps:
   - warmstart:
 
       - hwy_assign:                   # assigns the staged warm-start demand
-          job: "CTRAMP/scripts/assign/HwyAssign.job"
-          cluster_nodes: 48           # must match the intrastep range in HwyIntraStep.block
+          <<: *hwy_assign
           skip_if_exists: "hwy/iter0/LOADEA.net"   # its LOAD nets, after the move below
 
       # trnAssign.bat, unrolled.  These run from trn/TransitAssignment.iter0; their cluster
       # still talks in run_dir/commpath rather than under it.
       - stage_transit_lines:
-      - prep_hwy_net:
-          job: "CTRAMP/scripts/skims/PrepHwyNet.job"
-          cwd: "trn/TransitAssignment.iter{iteration}"
-          timeout: 1800
+      - prep_hwy_net: *prep_hwy_net
       - build_transit_networks:
-          job: "CTRAMP/scripts/skims/BuildTransitNetworks.job"
-          cwd: "trn/TransitAssignment.iter{iteration}"
-          timeout: 3600
-          # The two files gawk writes.  If TM1_GAWK_DIR is wrong the job still exits
-          # 0 -- the shell redirect creates these, empty -- and the failure would
-          # otherwise surface in transit_assign, blaming the wrong step.
-          verify:
-            - "trn/TransitAssignment.iter{iteration}/{PERIOD}_walk_egrlinks.dat"
-            - "trn/TransitAssignment.iter{iteration}/{PERIOD}_transit_suplinks_walk.dat"
+          <<: *build_transit_networks
           skip_if_exists: "trn/TransitAssignment.iter0/EA_transit_suplinks.dat"
       - transit_assign:
-          job: "CTRAMP/scripts/assign/TransitAssign.job"
-          cwd: "trn/TransitAssignment.iter{iteration}"
-          commpath: "commpath"
-          cluster_nodes: 15           # accegg(3) x path(5) tasks per period
+          <<: *transit_assign
           skip_if_exists: "trn/TransitAssignment.iter0/trnlinkam_drv_com_wlk.dbf"
       - transit_skims:
-          job: "CTRAMP/scripts/skims/TransitSkims.job"
-          cwd: "trn/TransitAssignment.iter{iteration}"
-          commpath: "commpath"
-          cluster_nodes: 15
-          env:                        # trnAssign.bat's counters; FAST is a single pass
-            TRNASSIGNITER: "0"
-            PREVTRNASSIGNITER: "NEG1"
+          <<: *transit_skims
           skip_if_exists: "trn/TransitAssignment.iter0/trnskmam_drv_com_wlk.avg.iter0.tpp"
+      - apply_regional_transit_fares:  # T2 fare integration; off unless bp_regional_transit_fares_job staged the job
+          <<: *apply_regional_transit_fares
+          skip_if_exists: "trn/TransitAssignment.iter0/trnskmam_wlk_com_wlk_woRegionalFare.tpp"
       - copy_transit_skims:           # trnAssign.bat copy-up: iteration dir -> skims/
 
       # RunIteration.bat 159-200.  stage_loaded_networks moves hwy_assign's LOAD nets into
       # iter0/, so it shares hwy_assign's sentinel: if the nets were moved, both are done.
       - stage_loaded_networks:
           skip_if_exists: "hwy/iter0/LOADEA.net"
-      - rename_assignment_variables:
-          job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
-      - seed_average_networks:        # no earlier round to average against: seed, don't average
-      - test_network_convergence:
-          job: "CTRAMP/scripts/feedback/TestNetworkConvergence.job"
-      - merge_networks:
-          job: "CTRAMP/scripts/feedback/MergeNetworks.job"
+      - rename_assignment_variables: *rename_assignment_variables
+
+      # Round 0's own version of the averaging step: there is no round -1 to
+      # reference, not even zero-weighted (unlike round 1, which points at round 0 --
+      # see PER_ITERATION in external.py).  AverageNetworkVolumes/CalculateSpeeds
+      # would have nothing to read, so this seeds avgLOAD{P}.net directly from
+      # HwyAssign's own (already-congested) output instead.
+      - seed_average_networks:
+
+      - test_network_convergence: *test_network_convergence
+      - merge_networks: *merge_networks
       - publish_networks:             # hwy/avgLOAD{P}.net -- what the next round's skims read
 
       # No skip_if_exists on these two, unlike every other expensive step here: their
@@ -287,16 +350,15 @@ steps:
       # existence check would find round 3's skims and skip, leaving round 1 to read
       # them instead of round 0's -- a re-run that quietly differs from a fresh one.
       # Rebuilding costs ~4 minutes.
-      - hwy_skims:
-          job: "CTRAMP/scripts/skims/HwySkims.job"
-          cluster_nodes: 5            # DistributeMultistep, one node per period
-      - accessibility:
-          job: "CTRAMP/scripts/skims/Accessibility.job"
+      - hwy_skims: *hwy_skims
+      - accessibility: *accessibility
 
-      # RunIteration.bat 49-57 parks these under `if %ITER%==1`; with the skims built above
-      # they are ordinary warm-start steps.  Once the households are filtered they stay
-      # filtered -- refiltering against a later round's skims would change the population
-      # mid-run.
+      # One-time, not per-round: population filtering based on round 0's connectivity,
+      # not part of the assignment/skims body iterate: repeats.  RunIteration.bat
+      # 49-57 parks these under `if %ITER%==1`; with the skims built above they are
+      # ordinary warm-start steps.  Once the households are filtered they stay
+      # filtered -- refiltering against a later round's skims would change the
+      # population mid-run.
       - find_no_access_zones:         # zones with no tolled-DA path -> unconnected_zones.csv
           job: "CTRAMP/scripts/skims/FindNoAccessZones.job"
           verify: ["skims/unconnected_zones.csv", "skims/unconnected_zones.dbf"]
@@ -307,7 +369,9 @@ steps:
       - filter_unconnected_households:  # INPUT/popsyn -> popsyn/, dropping unreachable homes
           command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
           args: ["popsyn"]
-          skip_if_exists: "popsyn/hhFile.2023_v12.csv"   # the versioned name INPUT ships
+          # The versioned name INPUT ships depends on the project's popsyn release;
+          # a project overrides filter_unconnected_households.skip_if_exists to match.
+          skip_if_exists: "REQUIRED: override filter_unconnected_households.skip_if_exists"
 
   # ── The feedback loop · three identical rounds (RunIteration.bat) ─────────────────────
   # One round = demand + assignment; demand responds to the skims the previous round
@@ -329,7 +393,6 @@ steps:
               subsequent: 2           # later rounds top up the previous round's
               # 4 + 2 + 2 chains to seven; raising it is a convergence run, not a parity run.
             # SampleRate is required, no default.
-            # sample_rate: 0.5         # Global rate
             sample_rate:              # Per-round rate, like the RunModel.bat's values (lines 280, 304, 328).
               1: 0.15
               2: 0.30
@@ -391,71 +454,38 @@ steps:
             job: "CTRAMP/scripts/assign/PrepAssign.job"
             cluster_nodes: 5
             verify: ["main/trips{PERIOD}.tpp"]   # it exits 0 with no trip lists to read
-        - hwy_assign:
-            job: "CTRAMP/scripts/assign/HwyAssign.job"
-            cluster_nodes: 48
+        - hwy_assign: *hwy_assign
 
         # Transit assignment (trnAssign.bat).
         - stage_transit_lines:
-        - prep_hwy_net:
-            job: "CTRAMP/scripts/skims/PrepHwyNet.job"
-            cwd: "trn/TransitAssignment.iter{iteration}"
-            timeout: 1800
-        - build_transit_networks:
-            job: "CTRAMP/scripts/skims/BuildTransitNetworks.job"
-            cwd: "trn/TransitAssignment.iter{iteration}"
-            timeout: 3600
-            verify:                     # gawk's output; see the warm start's copy
-              - "trn/TransitAssignment.iter{iteration}/{PERIOD}_walk_egrlinks.dat"
-              - "trn/TransitAssignment.iter{iteration}/{PERIOD}_transit_suplinks_walk.dat"
-        - transit_assign:
-            job: "CTRAMP/scripts/assign/TransitAssign.job"
-            cwd: "trn/TransitAssignment.iter{iteration}"
-            commpath: "commpath"
-            cluster_nodes: 15
-        - transit_skims:
-            job: "CTRAMP/scripts/skims/TransitSkims.job"
-            cwd: "trn/TransitAssignment.iter{iteration}"
-            commpath: "commpath"
-            cluster_nodes: 15
-            env:
-              TRNASSIGNITER: "0"
-              PREVTRNASSIGNITER: "NEG1"
+        - prep_hwy_net: *prep_hwy_net
+        - build_transit_networks: *build_transit_networks
+        - transit_assign: *transit_assign
+        - transit_skims: *transit_skims
+        - apply_regional_transit_fares: *apply_regional_transit_fares
         - copy_transit_skims:
 
         # Feedback.  AverageNetworkVolumes runs every round; the .bat skips it at
         # iteration 1 and copies instead, and PREV_ITER=0 makes the two equivalent --
         # see the parity plan, finding 5.
         - stage_loaded_networks:
-        - rename_assignment_variables:
-            job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
+        - rename_assignment_variables: *rename_assignment_variables
         - average_network_volumes:    # the warm start seeds instead -- no earlier round
             job: "CTRAMP/scripts/feedback/AverageNetworkVolumes.job"
         - calculate_speeds:
             job: "CTRAMP/scripts/feedback/CalculateSpeeds.job"
             cluster_nodes: 5
-        - test_network_convergence:
-            job: "CTRAMP/scripts/feedback/TestNetworkConvergence.job"
-        - merge_networks:
-            job: "CTRAMP/scripts/feedback/MergeNetworks.job"
+        - test_network_convergence: *test_network_convergence
+        - merge_networks: *merge_networks
         - publish_networks:
 
         # Level of service for the NEXT round's demand -- and, in the final round, for
         # the skims database, which then reflects the finished network.
-        - hwy_skims:
-            job: "CTRAMP/scripts/skims/HwySkims.job"
-            cluster_nodes: 5
-        - accessibility:
-            job: "CTRAMP/scripts/skims/Accessibility.job"
+        - hwy_skims: *hwy_skims
+        - accessibility: *accessibility
 
   # ── Summaries · once, at the end (RunModel.bat steps 11, 17) ──────────────────────────
   - skims_database:
       job: "CTRAMP/scripts/database/SkimsDatabase.job"
   - net2csv_avgload5period:
       job: "CTRAMP/scripts/metrics/net2csv_avgload5period.job"
-
-  # Python-native, unlike every step above: `script:` imports and calls with the resolved
-  # config rather than spawning a subprocess.  This is the shape #110 converts the legacy
-  # steps into.  Position in the list decides pre- or post-processing.
-  - vmt_vht_metrics:
-      script: "hooks.py:vmt_vht_metrics"

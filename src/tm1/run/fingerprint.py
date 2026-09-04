@@ -1,10 +1,10 @@
 """Has anything changed since last time?
 
 A fingerprint is a stable hash of **what a run computes**, taken from the parsed
-config after the case's overrides and *before* ``{env:}`` expansion and ``{key}``
-resolution. That ordering is the whole trick: template strings stay literal, so
-the same case fingerprints identically on every machine, and the ``{case}-{NNN}``
-inside ``run_dir`` cannot make every run look new.
+config after the scenario's overrides and *before* ``{env:}`` expansion and
+``{key}`` resolution. That ordering is the whole trick: template strings stay
+literal, so the same scenario fingerprints identically on every machine, and the
+``{scenario}-{NNN}`` inside ``run_dir`` cannot make every run look new.
 
 Removed before hashing:
 
@@ -24,7 +24,7 @@ from pathlib import Path
 #: Top-level keys removed before fingerprinting: where a run is written, and how it
 #: talks about itself, are not part of what it computes.
 _SKIP_TOP = frozenset({
-    "runs_root", "run_dir", "project", "case", "run", "logging", "slack",
+    "runs_root", "run_dir", "project", "scenario", "run", "logging", "slack",
 })
 
 #: Step keys removed before fingerprinting.  Result-neutral by construction: this
@@ -52,7 +52,7 @@ def _strip(value: object, *, top: bool) -> object:
 def fingerprint(cfg: dict, extra_files: dict[str, str] | None = None) -> str:
     """A stable hash of what this run computes.
 
-    *cfg* must be the config with the case applied but **not** yet resolved --
+    *cfg* must be the config with the scenario applied but **not** yet resolved --
     see the module docstring.  *extra_files* maps a label to a content hash, for
     the repo-local files the config points at; they are part of the run even
     though their contents are not in the config.

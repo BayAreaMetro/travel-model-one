@@ -36,7 +36,7 @@ full phase plan and current status of each piece.
 | Legacy                        | New                                     |
 |-------------------------------|-----------------------------------------|
 | `RunModel.bat`                | `tm1 run PBA50+_FBP`              |
-| Hand-edited properties files  | `config.yaml` per project               |
+| Hand-edited properties files  | `scenarios.yaml` (its own values) |
 | Paths edited in-place per run | Templated (`{run_dir}`, `{m_drive}`)      |
 
 ### Scope
@@ -70,9 +70,9 @@ Requires Cube Voyager and a licence, as before.
 ### Repository Layout
 
 ```
-projects/{name}/      # config.yaml + cases.yaml + any project-specific step code
+projects/{name}/      # scenarios.yaml (each scenario self-contained) + any project-specific step code
 src/tm1/              # Python package: CLI, step orchestrator, model steps
-default-configs/      # Shared model configs — scaffolded, populated in phase 5
+default-configs/      # Shared model configs — the CT-RAMP+Cube pipeline every project inherits
 model-files/, core/   # Legacy CT-RAMP/Cube assets, unchanged, still in production
 ```
 
@@ -166,10 +166,13 @@ whatever stale matrices happened to be lying around.
 
 ### Creating a New Project
 
-1. Copy `projects/PBA50+_FBP/config.yaml` and `cases.yaml` to `projects/<name>/`
-2. Update the `copy_inputs` sources for your environment
-3. Adjust the `steps:` block — iterations, sample rate, threads, model components
-4. Declare the runs in `cases.yaml`; `tm1 cases <name>` checks every address
+1. Copy `projects/PBA50+_FBP/scenarios.yaml` to `projects/<name>/`
+2. Update each scenario's `copy_inputs` sources for your environment -- there is no
+   project-level defaults layer, so every scenario needs its own full set
+3. Adjust the shared pipeline only if this project genuinely needs a different one --
+   see [`default-configs/ctramp-cube-model.yaml`](default-configs/ctramp-cube-model.yaml)
+4. Declare the runs under `scenarios:`; `tm1 scenarios <name>` checks every address,
+   including that no `REQUIRED` placeholder is left unresolved
 5. Run with `tm1 run <name>`
 
 ### Run Logs
@@ -187,7 +190,7 @@ full traceback if a step fails. The console stays at INFO; the file records DEBU
 The name carries a timestamp and pid, so concurrent runs and repeat attempts never
 write into each other's log — a failed run's log survives the next attempt.
 
-Optional, in `config.yaml`:
+Optional, in a scenario's own overrides (or the shared model file):
 
 ```yaml
 logging:

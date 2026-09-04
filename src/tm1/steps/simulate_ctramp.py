@@ -42,7 +42,7 @@ Requires:
     - Pre-built skims (.tpp) and accessibility files
     - Population synthesis outputs (popsyn/hhFile.csv, personFile.csv)
 
-Usage in config.yaml::
+Usage::
 
     simulate_ctramp:
       host_ip: "123.123.123.123"  # IP address of the machine running CTRAMP
@@ -282,7 +282,7 @@ def shadow_price_run_notes() -> str:
     across a full run, which is known to be insufficient -- the tell is the spread
     of modeled-to-target fill ratios, which stays wide instead of settling flat.
 
-    Converging them is a *case*, not a step, because three things have to
+    Converging them is a *scenario*, not a step, because three things have to
     change together::
 
         simulate_ctramp:

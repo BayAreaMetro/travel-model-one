@@ -124,7 +124,7 @@ travel-model-one/
 ```text
 travel-model-one/
 |-- default-configs/   base configs, specs, lookup tables, default assets (activity/ assignment/ population/)
-|-- projects/      config.yaml + cases.yaml per project (base_2023_activitysim, PBA50+_FBP, ...)
+|-- projects/      scenarios.yaml per project (base_2023_activitysim, PBA50+_FBP, ...)
 |-- scripts/       run/prep/export entrypoints + migration_validation/{activitysim,assignment}
 `-- src/           shared Python: cubeio/, tm1/ (steps, assignment/{cube,aeq})
 ```
@@ -140,7 +140,7 @@ travel-model-one/
 
 ### Working principle
 
-Separate (1) base model assets, (2) project/case deltas, (3) operational scripts, (4) shared code.
+Separate (1) base model assets, (2) project/scenario deltas, (3) operational scripts, (4) shared code.
 That keeps the repo reasonable to reason about and makes eventual deletions obvious.
 
 ### What dies (eventually)
@@ -169,13 +169,13 @@ tm1 run PBA50+_FBP --slack verbose
 
 Flags: `--steps`, `--iterations`, `--resume-at`, `--until`, `--slack {off,minimal,verbose}`.
 
-`cases.yaml` declares the runs a project defines -- explicit, ladder (cumulative)
+`scenarios.yaml` declares the runs a project defines -- explicit, ladder (cumulative)
 or matrix (cross product) -- each a set of overrides addressed by where the value
-lives in `config.yaml`. `tm1 cases <project>` expands them and checks every address;
-a case that does not resolve stops a run before it starts.
+lives in the shared model. `tm1 scenarios <project>` expands them and checks every
+address; a scenario that does not resolve stops a run before it starts.
 
-**Not implemented** — selecting a case to run, and running many across machines.
-The intent is that each machine runs the same `tm1 run <project>` and a per-case
+**Not implemented** — selecting a scenario to run, and running many across machines.
+The intent is that each machine runs the same `tm1 run <project>` and a per-scenario
 lock file in a shared index decides who takes what.
 
 ---

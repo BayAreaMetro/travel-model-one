@@ -18,12 +18,12 @@ from tm1.run import fingerprint as run_fingerprint
 from tm1.run import receipt as run_receipt
 
 #: A minimal project config, in the shape the loader hands to fingerprint():
-#: case applied, templates still literal.
+#: scenario applied, templates still literal.
 CFG = {
     "run_dir": "{runs_root}/proj/A-001",
     "runs_root": "E:/runs",
     "project": "proj",
-    "case": "A",
+    "scenario": "A",
     "run": "A-001",
     "model_year": 2023,
     "steps": [
@@ -38,7 +38,7 @@ CFG = {
 
 def _receipt(run_dir: Path, fingerprint: str, status: str = "running") -> None:
     run_receipt.Receipt(
-        project="proj", case="A", run=1, fingerprint=fingerprint,
+        project="proj", scenario="A", run=1, fingerprint=fingerprint,
         machine="test", pid=1, status=status,
     ).write(run_dir)
 
@@ -52,7 +52,7 @@ def test_the_same_config_fingerprints_the_same() -> None:
 
 
 def test_where_a_run_is_written_does_not_change_it() -> None:
-    """Otherwise every machine computes a different hash for the same case.
+    """Otherwise every machine computes a different hash for the same scenario.
 
     `.env` differs per machine, so `runs_root` and everything derived from it
     would make "already done" unrecognisable anywhere but where it ran.
@@ -114,7 +114,7 @@ def test_a_referenced_file_changes_it(tmp_path: Path) -> None:
 # --- choosing the directory --------------------------------------------------
 
 
-def test_the_first_run_of_a_case_is_001(tmp_path: Path) -> None:
+def test_the_first_run_of_a_scenario_is_001(tmp_path: Path) -> None:
     """And the directory exists afterwards -- allocation is a claim, not a plan."""
     run_no, path, state = run_directory.allocate(tmp_path, "A001-NOPK-2035", "abc")
 
@@ -160,7 +160,7 @@ def test_rerun_asks_for_one_anyway_and_keeps_the_finished_result(
     assert (first / "result.txt").read_text(encoding="utf-8") == "kept"
 
 
-def test_a_changed_case_lands_beside_its_predecessor(tmp_path: Path) -> None:
+def test_a_changed_scenario_lands_beside_its_predecessor(tmp_path: Path) -> None:
     """The land use refresh: -002 appears, -001 stays intact.
 
     Never on top: the old run's outputs are a result someone may still be using,
@@ -188,7 +188,7 @@ def test_an_unreadable_receipt_does_not_block_the_project(tmp_path: Path) -> Non
 
 
 def test_a_directory_taken_between_check_and_create_is_skipped(tmp_path: Path) -> None:
-    """Two machines forcing the same stale case must not both own the number."""
+    """Two machines forcing the same stale scenario must not both own the number."""
     (tmp_path / "A-001").mkdir(parents=True)
 
     run_no, path, _ = run_directory.allocate(tmp_path, "A", "abc")
