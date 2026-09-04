@@ -63,7 +63,7 @@ BayArea_UZAs = c(
 
 BOX_DIR          <- "E:\\Box"
 WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Share Data", "national-transit-database")
-INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "January 2026 Raw Monthly Ridership (no adjustments or estimates)_260302.xlsx")
+INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "June 2026 Complete Monthly Ridership (with adjustments and estimates)_260803.xlsx")
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 INPUT_UPT_MONTHLY_TO_DAILY <- file.path(WORKING_DIR, "MonthlyToTypicalWeekdayRidership.xlsx")
@@ -163,8 +163,10 @@ for (worksheet in INPUT_WORKSHEETS) {
   if (worksheet=="UPT") {
     NTD_long_df <- left_join(NTD_long_df, upt_monthly_to_daily_df)
     stopifnot(nrow(filter(NTD_long_df, is.na("Monthly_To_Typical_Weekday")))==0)
+    stopifnot(nrow(filter(NTD_long_df, is.na("Monthly_To_Typical_Weekend")))==0)
     NTD_long_df <- mutate(NTD_long_df,
-                          average_daily = !!as.symbol(worksheet) * Monthly_To_Typical_Weekday)
+                          average_daily = !!as.symbol(worksheet) * Monthly_To_Typical_Weekday,
+                          average_weekend = !!as.symbol(worksheet) * Monthly_To_Typical_Weekend)
   } else {
     # add very simple average daily
     NTD_long_df <- mutate(NTD_long_df,

@@ -74,16 +74,22 @@ def extract_off_model_calculator_result(run_directory, run_id, calculator_name):
     else:
         refresh_excelworkbook(off_model_wb)
         off_model_df = pd.read_excel(off_model_wb, sheet_name='Output', skiprows=1)
-        off_model_df = off_model_df[[
-            'Horizon Run ID', 
-            # 'Out_daily_VMT_reduced_{}'.format(run_id[:4]), 
-            'Out_daily_GHG_reduced_{}'.format(run_id[:4]), 
-            'Out_per_capita_GHG_reduced_{}'.format(run_id[:4])]]
-        off_model_df.rename(
-            columns={'Horizon Run ID': 'directory',
-                     'Out_daily_GHG_reduced_{}'.format(run_id[:4]): 'daily_ghg_reduction',
-                     'Out_per_capita_GHG_reduced_{}'.format(run_id[:4]): 'per_capita_ghg_reduction'},
-            inplace=True)
+        year = run_id[:4]
+        extract_cols = {
+            'Horizon Run ID': 'directory',
+            f'Out_daily_GHG_reduced_{year}': 'daily_ghg_reduction',
+            f'Out_per_capita_GHG_reduced_{year}': 'per_capita_ghg_reduction'
+        }
+        vmt_col = f'Out_daily_VMT_reduced_{year}'
+        if vmt_col in off_model_df.columns:
+            extract_cols[vmt_col] = 'daily_vmt_reduction'
+       
+        off_model_df = off_model_df[list(extract_cols.keys())].rename(columns=extract_cols)
+
+        # Keep output schema consistent across all calculators
+        if 'daily_vmt_reduction' not in off_model_df.columns:
+            off_model_df['daily_vmt_reduction'] = 0
+        
         off_model_df['offmodel_strategy'] = calculator_name
         return off_model_df
 
@@ -106,10 +112,11 @@ def summarize_off_model_calculator_results(run_directory, run_id, calculator_nam
 
     off_model_tot = None
     if len(off_model_summary) > 0:
-
         off_model_tot = off_model_summary.groupby('directory').agg({
             'daily_ghg_reduction'     : 'sum',
-            'per_capita_ghg_reduction': 'sum'})
+            'per_capita_ghg_reduction': 'sum',
+            'daily_vmt_reduction'     : 'sum'
+            })
         LOGGER.info(f'Off-model summary:\n{off_model_tot}')
 
     return off_model_summary, off_model_tot
@@ -137,15 +144,15 @@ if __name__ == '__main__':
     for run in runs_with_off_models_FBP['directory']:
         run_directory = os.path.join(TM_RUN_LOCATION_BP, run)
         off_model_output_dir = os.path.join(run_directory, 'OUTPUT', 'offmodel', 'offmodel_output')
-        if not os.path.exists(os.path.join(off_model_output_dir, 'off_model_summary.csv')):
+        if not os.path.exists(os.path.join(off_model_output_dir, 'off_model_summary_withVMT.csv')):
             off_model_summary, off_model_tot = summarize_off_model_calculator_results(
                 run_directory, 
                 run,
                 [BIKE_SHARE, CAR_SHARE, TARGETED_TRANS_ALT, VAN_POOL, CHARGER, VEH_BUYBACK, EBIKE]
                 )
             if len(off_model_summary) > 0:
-                off_model_summary.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_summary.csv'), index=False)
-                off_model_tot.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_tot.csv'))
+                off_model_summary.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_summary_withVMT.csv'), index=False)
+                off_model_tot.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_tot_withVMT.csv'))
         elif not os.path.exists(off_model_output_dir):
             LOGGER.info(f'Off-model output directory does not exist for run {run}')
         else:
@@ -155,15 +162,15 @@ if __name__ == '__main__':
     for run in runs_with_off_models_IP['directory']:
         run_directory = os.path.join(TM_RUN_LOCATION_IP, run)
         off_model_output_dir = os.path.join(run_directory, 'OUTPUT', 'offmodel', 'offmodel_output')
-        if not os.path.exists(os.path.join(off_model_output_dir, 'off_model_summary.csv')):
+        if not os.path.exists(os.path.join(off_model_output_dir, 'off_model_summary_withVMT.csv')):
             off_model_summary, off_model_tot = summarize_off_model_calculator_results(
                 run_directory, 
                 run,
                 [BIKE_SHARE, CAR_SHARE, TARGETED_TRANS_ALT, VAN_POOL, CHARGER, VEH_BUYBACK, EBIKE]
                 )
             if len(off_model_summary) > 0:
-                off_model_summary.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_summary.csv'), index=False)
-                off_model_tot.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_tot.csv'))
+                off_model_summary.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_summary_withVMT.csv'), index=False)
+                off_model_tot.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_tot_withVMT.csv'))
         elif not os.path.exists(off_model_output_dir):
             LOGGER.info(f'Off-model output directory does not exist for run {run}')
         else:
