@@ -6,7 +6,6 @@
 ;
 
 token_model_dir = '%MODEL_DIR%'
-token_trnassigniter = '%TRNASSIGNITER%'
 
 ; time period loop
 loop period = 1,5
@@ -60,13 +59,13 @@ loop period = 1,5
           token_path = 'trn'
         endif
 
-        ; rename original (e.g. trnskmam_wlk_com_wlk.avg.iter0.tpp => trnskmam_wlk_com_wlk_woRegionalFare.tpp)
-        * move trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_trnassigniter@.tpp trnskm@token_period@_@token_access@_@token_path@_@token_egress@_woRegionalFare.tpp
+        ; rename original (e.g. trnskmam_wlk_com_wlk.tpp => trnskmam_wlk_com_wlk_woRegionalFare.tpp)
+        * move trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp trnskm@token_period@_@token_access@_@token_path@_@token_egress@_woRegionalFare.tpp
 
         ; create version with regional fares
         RUN PGM=MATRIX
           FILEI MATI[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@_woRegionalFare.tpp
-          FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_trnassigniter@.tpp, MO=1-27,
+          FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp, MO=1-27,
                 NAME=ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
                      ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
                      distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode, distRegFar
