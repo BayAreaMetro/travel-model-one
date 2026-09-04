@@ -13,11 +13,10 @@
 #   env.EN7: ENABLED                                  ... and its siblings survive
 #   copy_inputs.input_landuse.from: "M:/.../landuse"  inside a step
 #   iterate.count: 1                                  the loop's own key
-#   warmstart.hwy_assign.cluster_nodes: 24            a step, in one block
+#   iterate.hwy_assign.cluster_nodes: 24               a step, whatever iteration it runs in
 #
 # The address must already exist in the shared model file, values replace
-# rather than merge, a step name appearing in both `warmstart:` and `iterate:`
-# must say which, and `steps` itself is not addressable -- a scenario varies
+# rather than merge, and `steps` itself is not addressable -- a scenario varies
 # values, it never changes the pipeline.
 #
 # Three ways to declare scenarios, all expanding to the same thing:
@@ -75,6 +74,22 @@ steps:
         from: "utilities/RTP/strategy_overrides/Regional_Transit_Fare_Policy/apply_regional_transit_fares_to_skims.job"
         to: "{run_dir}/CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
         enabled: false                  # run by the apply_regional_transit_fares step
+
+  # T2 fare integration: specific to this project, so not part of the shared
+  # pipeline -- inserted right after transit_skims, where trnAssign.bat runs it,
+  # via `after:` rather than a shared placeholder.  Off by default; a scenario
+  # turns it on (alongside bp_regional_transit_fares_job above, which stages the
+  # job file this step runs) for the MODEL_YEAR it qualifies for.
+  - apply_regional_transit_fares:
+      after: transit_skims
+      job: "CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
+      cwd: "trn/TransitAssignment.iter{iteration}"
+      commpath: "commpath"
+      cluster_nodes: 15
+      env:
+        TRNASSIGNITER: "0"
+        PREVTRNASSIGNITER: "NEG1"
+      enabled: false
 
   # Genuinely new: the shared model has no step named this, so it is appended
   # after the shared pipeline's own steps rather than merged into a placeholder.
@@ -161,8 +176,7 @@ scenarios:
     copy_project_inputs.bp_bus_on_shoulder_links_merged.enabled:   true
     copy_project_inputs.bp_vision_zero_block.enabled:              true  # >= 2035
     copy_project_inputs.bp_regional_transit_fares_job.enabled:     true  # >= 2035
-    warmstart.apply_regional_transit_fares.enabled: true
-    iterate.apply_regional_transit_fares.enabled:   true
+    iterate.apply_regional_transit_fares.enabled:                  true
 
 # ── The other two pathways, for when this project grows past one scenario ──────────────
 # Both expand to the same thing `scenarios:` does, so the rules above apply unchanged.

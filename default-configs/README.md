@@ -10,7 +10,7 @@ free of personally identifiable information.
 
 | File / directory | Holds | Arrives in |
 |---|---|---|
-| `ctramp-cube-model.yaml` | The CT-RAMP+Cube pipeline every project shares -- steps, job paths, the whole `warmstart:`/`iterate:` shape. Each scenario in a project's `scenarios.yaml` overrides the handful of addresses that make it a project (data sources, forecast year) directly, through the same address grammar. See [`../docs/running-a-model.md`](../docs/running-a-model.md). | phase 1 |
+| `ctramp-cube-model.yaml` | The CT-RAMP+Cube pipeline every project shares -- steps, job paths, the whole `iterate:` shape. Each scenario in a project's `scenarios.yaml` overrides the handful of addresses that make it a project (data sources, forecast year) directly, through the same address grammar. See [`../docs/running-a-model.md`](../docs/running-a-model.md). | phase 1 |
 | `activity/` | ActivitySim configs — specs, coefficients, YAML settings | phase 4 |
 | `population/` | PopulationSim configs — controls, crosswalks, seed encoding | phase 4 |
 | `assignment/` | Assignment policy constants (occupancy, ride-hail shares, VDF params) | phase 5 |

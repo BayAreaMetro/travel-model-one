@@ -30,13 +30,12 @@ ROUNDS = 3
 
 STEPS = [
     {"copy_inputs": {}},
-    {"warmstart": [
-        {"hwy_assign": {"job": "warm.job", "skip_if_exists": "hwy/iter0/LOADEA.net"}},
-        {"hwy_skims": {"job": "skims.job"}},
-    ]},
     {"iterate": {"count": ROUNDS, "steps": [
         {"simulate_ctramp": {}},
+        {"iteration_zero_begins": {}},
         {"hwy_assign": {"job": "loop.job"}},
+        {"hwy_skims": {"job": "skims.job", "only_iteration": 0,
+                       "skip_if_exists": "hwy/iter0/LOADEA.net"}},
     ]}},
     {"net2csv": {}},
 ]
@@ -390,9 +389,13 @@ def test_repeated_runs_are_counted_from_the_first(tmp_path: Path) -> None:
 def test_warm_start_only_steps_are_slotted_into_loop_order() -> None:
     """Merged, not concatenated, so a step lands beside the one it stands in for."""
     plan = sections([
-        {"warmstart": [{"a": {}}, {"seed": {}}, {"c": {}}, {"only_warm": {}}]},
         {"iterate": {"count": 2, "steps": [
-            {"a": {}}, {"average": {}}, {"c": {}},
+            {"iteration_zero_begins": {}},
+            {"a": {}},
+            {"seed": {"only_iteration": 0}},
+            {"average": {"skip_iteration": 0}},
+            {"c": {}},
+            {"only_warm": {"only_iteration": 0}},
         ]}},
     ])
 

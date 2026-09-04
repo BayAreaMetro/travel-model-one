@@ -16,7 +16,7 @@ The sections below are ordered for a reader who knows `RunModel.bat`.
 | Step 2 — create the directory structure | the `make_directories` step |
 | Step 3 — pre-process | the `copy_inputs` and `copy_input_to_working` steps, then the pre-process steps |
 | Steps 4, 4.5 — non-motorized LOS, transit files | steps in the shared pipeline, in order |
-| Step 5 — prepare iteration 0 | the `warmstart:` block |
+| Step 5 — prepare iteration 0 | `iterate:`, from `iteration_zero_begins` |
 | Steps 6–9 — RunIteration, four times | the `iterate:` block, `count: 3` |
 | the `.job` calls throughout | still `.job` calls — run through Cube, unmodified |
 | Steps 11, 13 — skim databases, logsums | steps after the loop |
@@ -109,7 +109,7 @@ tm1 status PBA50+_FBP        # what ran, what failed, and how to resume
 
 ```bash
 tm1 run PBA50+_FBP --resume-at hwy_assign
-tm1 run PBA50+_FBP --resume-at 2:hwy_assign   # when the step runs in several rounds
+tm1 run PBA50+_FBP --resume-at 2:hwy_assign   # when the step runs in several iterations
 ```
 
 The named step re-runs from its beginning, never part-way through, and every step before
@@ -143,18 +143,27 @@ Four ways. The first two spawn a process; paths in them are relative to the run 
       args: ["hwy/tolls.csv", "hwy/tolls.dbf"]
 ```
 
-### Rounds
+### Iterations
 
-Steps run in the order written. Two entries nest, and they are the only thing that decides
-a step's round:
+Steps run in the order written. One entry nests, and it is what decides a step's
+iteration:
 
 | | |
 |---|---|
-| `warmstart:` | runs its steps once at iteration 0 — RunModel.bat's `set ITER=0` |
-| `iterate:` | repeats its steps `count` times, rounds 1..count |
+| `iterate:` | repeats its steps `count` times, iterations 0..count -- iteration 0 is the warm start |
 
-Anything written flat runs once where it sits: round 1 before the loop, the final round
-after it. There is no per-step iteration key.
+Anything written flat runs once where it sits: before the loop, or after it.
+
+Within `iterate:`, `iteration_zero_begins` marks where iteration 0 joins in: steps above
+it run only in iterations 1..count -- iteration 0's demand is the previous run's
+published trip tables, not CT-RAMP's -- and steps at or after it run in iteration 0 too.
+Two keys pin an individual step to, or away from, iteration 0 instead, for the few steps
+that are not simply "every iteration" or "iterations 1..count":
+
+| | |
+|---|---|
+| `only_iteration: 0` | this step runs at iteration 0 only |
+| `skip_iteration: 0` | this step is skipped at iteration 0 |
 
 `--iterations N` overrides `count` from the command line.
 
@@ -174,13 +183,19 @@ after it. There is no per-step iteration key.
 
 > A step may only name a file that is **its** product and nobody else's.
 
-Naming a file that a later round overwrites makes the check answer a different question
-— *does round 3's output exist* — and skip work that was never performed. Deleting the
-named file forces a rebuild.
+Naming a file that a later iteration overwrites makes the check answer a different
+question -- *does iteration 3's output exist* -- and skip work that was never performed.
+Deleting the named file forces a rebuild.
 
 A step without the key always runs, which is frequently correct: inexpensive file
-operations repeat harmlessly, and a step whose output is not round-specific must rebuild,
-or a resumed run differs from a fresh one.
+operations repeat harmlessly, and a step whose output is not iteration-specific must
+rebuild, or a resumed run differs from a fresh one.
+
+Inside `iterate:`, a step that repeats every iteration (`hwy_assign`, `transit_assign`,
+...) takes no `skip_if_exists` at all -- there is no single file that means "this
+iteration is done" across iterations 0..count, so every iteration reruns it. A step
+pinned with `only_iteration: 0` (`find_no_access_zones`, ...) can take one directly,
+since iteration 0 is the only iteration it ever runs.
 
 ### Machine settings vs. model settings
 
@@ -231,13 +246,18 @@ scenario overrides. Adding or removing steps from the *shared* pipeline generall
 indicates a different model family rather than a project or a scenario — see rule 4 below.
 A project's own additions are the one exception, declared via a top-level `steps:` in
 `scenarios.yaml` -- genuinely project-wide, unlike a scenario override, so stated once
-rather than per scenario. Two shapes:
+rather than per scenario. Three shapes:
 
 - **a name the shared pipeline already has, left empty for exactly this** (e.g.
   `copy_project_inputs: {}`) -- filled in, in place, for entries a project needs that
   are not part of every project (a Blueprint strategy override, say). Position in the
   pipeline matters for a step like that one, which is why it is a named placeholder
   rather than something appended.
+- **`after: <step>`** -- inserted as a new step immediately following the one named,
+  wherever it is (the top level, or inside `iterate.steps`). For an optional step
+  specific to one project (e.g. `apply_regional_transit_fares`, positioned right after
+  `transit_skims`), rather than a placeholder the shared pipeline carries for every
+  project whether or not it is used.
 - **a name the shared pipeline has no use for** (e.g. `vmt_vht_metrics`, a project's own
   post-processing hook, `script:`/`module:`) -- appended after the shared pipeline's own
   steps.
@@ -275,7 +295,7 @@ env.EN7: ENABLED                                   ... and its siblings survive
 copy_inputs.input_landuse.from: "M:/.../landuse"   inside a step
 iterate.count: 1                                   the loop's own key
 iterate.simulate_ctramp.threads: 12                a step inside the loop
-warmstart.hwy_assign.cluster_nodes: 24             the same step, at round 0
+iterate.hwy_assign.cluster_nodes: 24               a step that runs every iteration, incl. 0
 ```
 
 Four rules, and they are the whole mechanism:
@@ -289,9 +309,9 @@ Four rules, and they are the whole mechanism:
    one unresolved, rather than running with a value nobody wrote.
 2. **Values replace, never merge.** Naming a mapping replaces it whole. Name a deeper
    address to change one key — overriding `env:` to change `EN7` would silently drop `PATH`.
-3. **A step in both blocks must say which.** Twelve steps appear in both `warmstart:` and
-   `iterate:`. Bare, they are ambiguous, so write `warmstart.hwy_assign...` or
-   `iterate.hwy_assign...`.
+3. **A step appears once, however many iterations it runs in.** `iterate.hwy_assign...`
+   addresses the step regardless of iteration -- there is no `warmstart.` prefix to
+   choose between.
 4. **`steps` itself is not addressable.** A scenario varies values inside the pipeline; it
    never adds, removes or reorders steps. A different pipeline shape is a different
    project. (The one exception is `enabled: false`, which any step accepts.)

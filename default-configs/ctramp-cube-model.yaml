@@ -7,12 +7,12 @@
 # everything else.  There is no project-level default: a scenario that leaves
 # one of these unresolved fails `tm1 scenarios` rather than running with a value
 # nobody wrote.  Everything else -- job paths, cwd, commpath, cluster sizes, the
-# warmstart:/iterate: shape -- is identical for every CT-RAMP+Cube project, so it
-# lives here once instead of being copied into each one.
+# iterate: shape -- is identical for every CT-RAMP+Cube project, so it lives here
+# once instead of being copied into each one.
 #
 # What the keys mean: docs/running-a-model.md
 
-slack: "off"              # "minimal": start, finish, failure only; "verbose" adds every step
+slack: "minimal"          # "minimal": start, finish, failure only; "verbose" adds every step
 
 logging:
   level: DEBUG            # what reaches the run log; console stays at INFO
@@ -31,7 +31,7 @@ model_year: "REQUIRED: override model_year"
 # {PERIOD} and {iteration} are expanded per step.
 
 # The legacy jobs take parameters from the environment, not argv.  ITER, PREV_ITER, WGT,
-# PREV_WGT, SAMPLESHARE and SEED come from the runner per round; these are the rest.
+# PREV_WGT, SAMPLESHARE and SEED come from the runner per iteration; these are the rest.
 # RunModel.bat sliced MODEL_YEAR and FUTURE out of the folder name; stating them is the fix.
 env:
   MODEL_YEAR: "REQUIRED: override env.MODEL_YEAR"   # keep in step with model_year above
@@ -41,68 +41,12 @@ env:
   PATH: "{env:TM1_GAWK_DIR};{env:PATH}"    # gawk, for BuildTransitNetworks.job
   # MAXITERATIONS: 3      # RunModel.bat 135-147 hard-codes these
 
-# Bodies shared, verbatim or nearly so, between `warmstart:` (round 0) and `iterate:`
-# (rounds 1..N) -- anchored once so the two cannot drift on a job path, cwd, commpath,
-# cluster size or env.  `warmstart:` layers `skip_if_exists:` on top via `<<:`, since
-# only it is resumable; `iterate:` always reruns every round and takes several of
-# these verbatim (`*name`).  Not itself a step: not listed under `steps:` below.
-_shared_step_bodies:
-  hwy_assign: &hwy_assign
-    job: "CTRAMP/scripts/assign/HwyAssign.job"
-    cluster_nodes: 48           # must match the intrastep range in HwyIntraStep.block
-  prep_hwy_net: &prep_hwy_net
-    job: "CTRAMP/scripts/skims/PrepHwyNet.job"
-    cwd: "trn/TransitAssignment.iter{iteration}"
-    timeout: 1800
-  build_transit_networks: &build_transit_networks
-    job: "CTRAMP/scripts/skims/BuildTransitNetworks.job"
-    cwd: "trn/TransitAssignment.iter{iteration}"
-    timeout: 3600
-    # The two files gawk writes.  If TM1_GAWK_DIR is wrong the job still exits
-    # 0 -- the shell redirect creates these, empty -- and the failure would
-    # otherwise surface in transit_assign, blaming the wrong step.
-    verify:
-      - "trn/TransitAssignment.iter{iteration}/{PERIOD}_walk_egrlinks.dat"
-      - "trn/TransitAssignment.iter{iteration}/{PERIOD}_transit_suplinks_walk.dat"
-  transit_assign: &transit_assign
-    job: "CTRAMP/scripts/assign/TransitAssign.job"
-    cwd: "trn/TransitAssignment.iter{iteration}"
-    commpath: "commpath"
-    cluster_nodes: 15           # accegg(3) x path(5) tasks per period
-  transit_skims: &transit_skims
-    job: "CTRAMP/scripts/skims/TransitSkims.job"
-    cwd: "trn/TransitAssignment.iter{iteration}"
-    commpath: "commpath"
-    cluster_nodes: 15
-    env:                        # trnAssign.bat's counters; FAST is a single pass
-      TRNASSIGNITER: "0"
-      PREVTRNASSIGNITER: "NEG1"
-  apply_regional_transit_fares: &apply_regional_transit_fares  # T2 fare integration; off unless bp_regional_transit_fares_job staged the job
-    job: "CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
-    cwd: "trn/TransitAssignment.iter{iteration}"
-    commpath: "commpath"
-    cluster_nodes: 15
-    env:
-      TRNASSIGNITER: "0"
-      PREVTRNASSIGNITER: "NEG1"
-    enabled: false
-  rename_assignment_variables: &rename_assignment_variables
-    job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
-  test_network_convergence: &test_network_convergence
-    job: "CTRAMP/scripts/feedback/TestNetworkConvergence.job"
-  merge_networks: &merge_networks
-    job: "CTRAMP/scripts/feedback/MergeNetworks.job"
-  hwy_skims: &hwy_skims
-    job: "CTRAMP/scripts/skims/HwySkims.job"
-    cluster_nodes: 5            # DistributeMultistep, one node per period
-  accessibility: &accessibility
-    job: "CTRAMP/scripts/skims/Accessibility.job"
-
 # ════════════════════════════════════════════════════════════════════════════════════════
-# PIPELINE — steps run in the order written.  `warmstart:` and `iterate:` are the only
-# nesting, and they are what decides a step's round.  For the four ways to declare a step
-# (job / command / module / script) and the rules governing `skip_if_exists:`, see
-# docs/running-a-model.md.
+# PIPELINE — steps run in the order written.  A single `iterate:` block carries every
+# iteration, iteration 0 (the warm start) included: `iteration_zero_begins` marks where
+# iteration 0 joins in, and `only_iteration:` / `skip_iteration:` pin a step to, or skip
+# it at, iteration 0.  For the four ways to declare a step (job / command / module /
+# script) and the rules governing `skip_if_exists:`, see docs/running-a-model.md.
 # ════════════════════════════════════════════════════════════════════════════════════════
 steps:
 
@@ -110,8 +54,8 @@ steps:
 
   # RunModel.bat 156-165, plus metrics/ -- which the .bat leaves to whichever summary
   # script runs first.  Cube jobs do not create their own output directories.
-  # Nesting is just a longer path.  Per-round directories (hwy/iter{N}) are absent
-  # because N is not known until the round runs, so their steps create them.
+  # Nesting is just a longer path.  Per-iteration directories (hwy/iter{N}) are absent
+  # because N is not known until the iteration runs, so their steps create them.
   - make_directories:
       dirs:
         - "{run_dir}/hwy"
@@ -295,105 +239,36 @@ steps:
       # would add arguments the script never saw and crash it on int("").
       args: ["NORMAL", "NoExtraDelay", "Simple", "complexDwell", "complexAccess"]
 
-  # ── Warm start · iteration 0 ──────────────────────────────────────────────────────────
-  # Round 0 of the same feedback loop `iterate:` runs -- the identical assignment/skims
-  # body below (via *anchor), just starting after the demand-generation prefix, since
-  # round 0's demand comes from copy_inputs' warmstart_main/nonres, not CT-RAMP.
+  # ── The feedback loop · four iterations, iteration 0 the warm start (RunIteration.bat) ──
+  # One iteration = demand + assignment; demand responds to the skims the previous
+  # iteration published.  `count` iterations run in full; iteration 0 -- the warm start --
+  # runs only the part at or after `iteration_zero_begins`, since its demand is the
+  # previous run's published trip tables (copy_inputs/copy_input_to_working's
+  # warmstart_main/nonres), not CT-RAMP's.  `--iterations N` overrides count.
   #
-  # DEPARTURE from RunIteration.bat: hwy_skims/accessibility run at the END of each round
-  # rather than the head of rounds 1-3.  Same inputs either way, but the final round's
-  # network also gets skimmed, and it lets find_no_access_zones and
-  # filter_unconnected_households run here instead of splitting round 1.
-  - warmstart:
-
-      - hwy_assign:                   # assigns the staged warm-start demand
-          <<: *hwy_assign
-          skip_if_exists: "hwy/iter0/LOADEA.net"   # its LOAD nets, after the move below
-
-      # trnAssign.bat, unrolled.  These run from trn/TransitAssignment.iter0; their cluster
-      # still talks in run_dir/commpath rather than under it.
-      - stage_transit_lines:
-      - prep_hwy_net: *prep_hwy_net
-      - build_transit_networks:
-          <<: *build_transit_networks
-          skip_if_exists: "trn/TransitAssignment.iter0/EA_transit_suplinks.dat"
-      - transit_assign:
-          <<: *transit_assign
-          skip_if_exists: "trn/TransitAssignment.iter0/trnlinkam_drv_com_wlk.dbf"
-      - transit_skims:
-          <<: *transit_skims
-          skip_if_exists: "trn/TransitAssignment.iter0/trnskmam_drv_com_wlk.avg.iter0.tpp"
-      - apply_regional_transit_fares:  # T2 fare integration; off unless bp_regional_transit_fares_job staged the job
-          <<: *apply_regional_transit_fares
-          skip_if_exists: "trn/TransitAssignment.iter0/trnskmam_wlk_com_wlk_woRegionalFare.tpp"
-      - copy_transit_skims:           # trnAssign.bat copy-up: iteration dir -> skims/
-
-      # RunIteration.bat 159-200.  stage_loaded_networks moves hwy_assign's LOAD nets into
-      # iter0/, so it shares hwy_assign's sentinel: if the nets were moved, both are done.
-      - stage_loaded_networks:
-          skip_if_exists: "hwy/iter0/LOADEA.net"
-      - rename_assignment_variables: *rename_assignment_variables
-
-      # Round 0's own version of the averaging step: there is no round -1 to
-      # reference, not even zero-weighted (unlike round 1, which points at round 0 --
-      # see PER_ITERATION in external.py).  AverageNetworkVolumes/CalculateSpeeds
-      # would have nothing to read, so this seeds avgLOAD{P}.net directly from
-      # HwyAssign's own (already-congested) output instead.
-      - seed_average_networks:
-
-      - test_network_convergence: *test_network_convergence
-      - merge_networks: *merge_networks
-      - publish_networks:             # hwy/avgLOAD{P}.net -- what the next round's skims read
-
-      # No skip_if_exists on these two, unlike every other expensive step here: their
-      # outputs carry no iteration in the path, so every round overwrites them.  An
-      # existence check would find round 3's skims and skip, leaving round 1 to read
-      # them instead of round 0's -- a re-run that quietly differs from a fresh one.
-      # Rebuilding costs ~4 minutes.
-      - hwy_skims: *hwy_skims
-      - accessibility: *accessibility
-
-      # One-time, not per-round: population filtering based on round 0's connectivity,
-      # not part of the assignment/skims body iterate: repeats.  RunIteration.bat
-      # 49-57 parks these under `if %ITER%==1`; with the skims built above they are
-      # ordinary warm-start steps.  Once the households are filtered they stay
-      # filtered -- refiltering against a later round's skims would change the
-      # population mid-run.
-      - find_no_access_zones:         # zones with no tolled-DA path -> unconnected_zones.csv
-          job: "CTRAMP/scripts/skims/FindNoAccessZones.job"
-          verify: ["skims/unconnected_zones.csv", "skims/unconnected_zones.dbf"]
-          # The dbf, not the csv: the job *echo*s the csv header before the MATRIX step
-          # that does the work, so a failed run leaves a csv behind.  Only MATRIX creates
-          # the dbf.
-          skip_if_exists: "skims/unconnected_zones.dbf"
-      - filter_unconnected_households:  # INPUT/popsyn -> popsyn/, dropping unreachable homes
-          command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
-          args: ["popsyn"]
-          # The versioned name INPUT ships depends on the project's popsyn release;
-          # a project overrides filter_unconnected_households.skip_if_exists to match.
-          skip_if_exists: "REQUIRED: override filter_unconnected_households.skip_if_exists"
-
-  # ── The feedback loop · three identical rounds (RunIteration.bat) ─────────────────────
-  # One round = demand + assignment; demand responds to the skims the previous round
-  # published.  Every round runs every step below, in this order.  `--iterations N`
-  # overrides count.
+  # DEPARTURE from RunIteration.bat: hwy_skims/accessibility run at the END of each
+  # iteration rather than the head of iterations 1-3.  Same inputs either way, but the
+  # final iteration's network also gets skimmed, and it lets find_no_access_zones and
+  # filter_unconnected_households run pinned to iteration 0 instead of splitting iteration 1.
   - iterate:
       count: 3
       steps:
         # CT-RAMP.  RunIteration.bat also calls RuntimeConfiguration.py --iter here; it
         # sets only the shadow-price properties, which simulate_ctramp writes itself.
+        # Iterations 1..count only -- iteration 0's demand comes from copy_inputs'
+        # warmstart tables, not from here.
         - simulate_ctramp:
             runtime_dir: "{run_dir}/CTRAMP/runtime"
             host_ip: "localhost"
             threads: 24               # processing.threads per JPPF node, as the .bat sets it
             seed: 0
             shadow_pricing: true      # recomputed every run; nothing is reused
-            shadow_price_passes:      # an inner loop of location choice, per global round
-              first: 4                # round 1 starts from zero prices
-              subsequent: 2           # later rounds top up the previous round's
+            shadow_price_passes:      # an inner loop of location choice, per global iteration
+              first: 4                # iteration 1 starts from zero prices
+              subsequent: 2           # later iterations top up the previous one's
               # 4 + 2 + 2 chains to seven; raising it is a convergence run, not a parity run.
             # SampleRate is required, no default.
-            sample_rate:              # Per-round rate, like the RunModel.bat's values (lines 280, 304, 328).
+            sample_rate:              # Per-iteration rate, like the RunModel.bat's values (lines 280, 304, 328).
               1: 0.15
               2: 0.30
               3: 0.50
@@ -454,35 +329,112 @@ steps:
             job: "CTRAMP/scripts/assign/PrepAssign.job"
             cluster_nodes: 5
             verify: ["main/trips{PERIOD}.tpp"]   # it exits 0 with no trip lists to read
-        - hwy_assign: *hwy_assign
 
-        # Transit assignment (trnAssign.bat).
+        # ── iteration_zero_begins · iteration 0 (the warm start) joins the loop here ──
+        # Its demand is already staged in main/trips{PERIOD}.tpp -- copy_input_to_working's
+        # warmstart_main/warmstart_nonres -- so it needs nothing above this line.
+        - iteration_zero_begins:
+
+        - hwy_assign:
+            job: "CTRAMP/scripts/assign/HwyAssign.job"
+            cluster_nodes: 48       # must match the intrastep range in HwyIntraStep.block
+
+        # Transit assignment (trnAssign.bat).  These run from
+        # trn/TransitAssignment.iter{iteration}; their cluster still talks in
+        # run_dir/commpath rather than under it.
         - stage_transit_lines:
-        - prep_hwy_net: *prep_hwy_net
-        - build_transit_networks: *build_transit_networks
-        - transit_assign: *transit_assign
-        - transit_skims: *transit_skims
-        - apply_regional_transit_fares: *apply_regional_transit_fares
-        - copy_transit_skims:
+        - prep_hwy_net:
+            job: "CTRAMP/scripts/skims/PrepHwyNet.job"
+            cwd: "trn/TransitAssignment.iter{iteration}"
+            timeout: 1800
+        - build_transit_networks:
+            job: "CTRAMP/scripts/skims/BuildTransitNetworks.job"
+            cwd: "trn/TransitAssignment.iter{iteration}"
+            timeout: 3600
+            # The two files gawk writes.  If TM1_GAWK_DIR is wrong the job still exits
+            # 0 -- the shell redirect creates these, empty -- and the failure would
+            # otherwise surface in transit_assign, blaming the wrong step.
+            verify:
+              - "trn/TransitAssignment.iter{iteration}/{PERIOD}_walk_egrlinks.dat"
+              - "trn/TransitAssignment.iter{iteration}/{PERIOD}_transit_suplinks_walk.dat"
+        - transit_assign:
+            job: "CTRAMP/scripts/assign/TransitAssign.job"
+            cwd: "trn/TransitAssignment.iter{iteration}"
+            commpath: "commpath"
+            cluster_nodes: 15       # accegg(3) x path(5) tasks per period
+        - transit_skims:
+            job: "CTRAMP/scripts/skims/TransitSkims.job"
+            cwd: "trn/TransitAssignment.iter{iteration}"
+            commpath: "commpath"
+            cluster_nodes: 15
+            env:                    # trnAssign.bat's counters; FAST is a single pass
+              TRNASSIGNITER: "0"
+              PREVTRNASSIGNITER: "NEG1"
+        - copy_transit_skims:        # trnAssign.bat copy-up: iteration dir -> skims/
 
-        # Feedback.  AverageNetworkVolumes runs every round; the .bat skips it at
+        # Feedback.  AverageNetworkVolumes runs every iteration; the .bat skips it at
         # iteration 1 and copies instead, and PREV_ITER=0 makes the two equivalent --
         # see the parity plan, finding 5.
         - stage_loaded_networks:
-        - rename_assignment_variables: *rename_assignment_variables
-        - average_network_volumes:    # the warm start seeds instead -- no earlier round
+        - rename_assignment_variables:
+            job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
+
+        # Iteration 0 has no earlier iteration to average against -- not even
+        # zero-weighted (unlike iteration 1, which points at iteration 0 -- see
+        # PER_ITERATION in external.py).  AverageNetworkVolumes/CalculateSpeeds would
+        # have nothing to read, so seed_average_networks seeds avgLOAD{P}.net directly
+        # from HwyAssign's own (already-congested) output instead -- a different
+        # callable, not this step with different config, so it is pinned rather than
+        # merged in.
+        - seed_average_networks:
+            only_iteration: 0
+        - average_network_volumes:
+            skip_iteration: 0
             job: "CTRAMP/scripts/feedback/AverageNetworkVolumes.job"
         - calculate_speeds:
+            skip_iteration: 0
             job: "CTRAMP/scripts/feedback/CalculateSpeeds.job"
             cluster_nodes: 5
-        - test_network_convergence: *test_network_convergence
-        - merge_networks: *merge_networks
-        - publish_networks:
+        - test_network_convergence:
+            job: "CTRAMP/scripts/feedback/TestNetworkConvergence.job"
+        - merge_networks:
+            job: "CTRAMP/scripts/feedback/MergeNetworks.job"
+        - publish_networks:          # hwy/avgLOAD{P}.net -- what the next iteration's skims read
 
-        # Level of service for the NEXT round's demand -- and, in the final round, for
-        # the skims database, which then reflects the finished network.
-        - hwy_skims: *hwy_skims
-        - accessibility: *accessibility
+        # Level of service for the NEXT iteration's demand -- and, in the final
+        # iteration, for the skims database, which then reflects the finished network.
+        # No skip_if_exists on these two, unlike every other expensive step here: their
+        # outputs carry no iteration number in the path, so every iteration overwrites
+        # them.  An existence check would find iteration 3's skims and skip, leaving
+        # iteration 1 to read them instead of iteration 0's -- a re-run that quietly
+        # differs from a fresh one.  Rebuilding costs ~4 minutes.
+        - hwy_skims:
+            job: "CTRAMP/scripts/skims/HwySkims.job"
+            cluster_nodes: 5        # DistributeMultistep, one node per period
+        - accessibility:
+            job: "CTRAMP/scripts/skims/Accessibility.job"
+
+        # One-time pipeline setup pinned to iteration 0 -- not a warm-start substitute
+        # like seed_average_networks above, just steps that need iteration 0's skims and
+        # must run before iteration 1's demand.  RunIteration.bat 49-57 parks these
+        # under `if %ITER%==1`; with iteration 0's skims built above they run here
+        # instead.  Once the households are filtered they stay filtered -- refiltering
+        # against a later iteration's skims would change the population mid-run.
+        - find_no_access_zones:      # zones with no tolled-DA path -> unconnected_zones.csv
+            only_iteration: 0
+            job: "CTRAMP/scripts/skims/FindNoAccessZones.job"
+            verify: ["skims/unconnected_zones.csv", "skims/unconnected_zones.dbf"]
+            # The dbf, not the csv: the job *echo*s the csv header before the MATRIX step
+            # that does the work, so a failed run leaves a csv behind.  Only MATRIX creates
+            # the dbf.
+            skip_if_exists: "skims/unconnected_zones.dbf"
+        - filter_unconnected_households:  # INPUT/popsyn -> popsyn/, dropping unreachable homes
+            only_iteration: 0
+            command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
+            args: ["popsyn"]
+            # The versioned name INPUT ships depends on the project's popsyn release;
+            # a project overrides filter_unconnected_households.skip_if_exists to match.
+            skip_if_exists: "REQUIRED: override filter_unconnected_households.skip_if_exists"
 
   # ── Summaries · once, at the end (RunModel.bat steps 11, 17) ──────────────────────────
   - skims_database:

@@ -14,8 +14,8 @@ from tm1.project.scenarios import load as load_scenarios
 RUNS_ROOT_VAR = "TM1_RUNS_ROOT"
 
 #: The pipeline every CT-RAMP+Cube project shares -- steps, job paths, the whole
-#: warmstart:/iterate: shape.  Found by walking up from a project directory, so a
-#: project need not say where its own checkout root is.
+#: iterate: shape.  Found by walking up from a project directory, so a project
+#: need not say where its own checkout root is.
 _MODEL_FILE = Path("default-configs") / "ctramp-cube-model.yaml"
 
 #: ``{env:NAME}`` -- a value from the environment, which ``tm1`` populates from
@@ -51,12 +51,16 @@ def load_config(config_dir: Path) -> dict:
     those placeholders unresolved.
 
     ``steps:`` is the one addition applied here rather than by a scenario, and
-    genuinely project-wide, so every scenario gets it alike. Two shapes:
+    genuinely project-wide, so every scenario gets it alike. Three shapes:
 
     - the name matches a step the shared pipeline already has (empty there on
       purpose, e.g. ``copy_project_inputs``) -> the project's entries are
       merged into it, in the position the shared pipeline put it.
-    - it does not -> appended as a new step, after the shared pipeline's own
+    - it declares ``after:`` -> inserted as a new step immediately after the
+      named one, wherever that is -- the top level or inside ``iterate.steps``
+      (e.g. ``apply_regional_transit_fares``, optional and specific to one
+      project, positioned right after ``transit_skims``).
+    - neither -> appended as a new step, after the shared pipeline's own
       (e.g. ``vmt_vht_metrics``, a project's own post-processing hook).
     """
     config_dir = Path(config_dir)
@@ -66,26 +70,64 @@ def load_config(config_dir: Path) -> dict:
 
     with model_path.open(encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
-    cfg.pop("_shared_step_bodies", None)  # anchor source only; not part of the pipeline
 
     for extra in load_scenarios(config_dir).extra_steps:
         _add_step(cfg, extra)
     return cfg
 
 
+#: A project's own step, positioned by naming the step it follows rather than by
+#: filling an empty placeholder.  Consumed at merge time -- never part of the
+#: config a step itself sees.
+_AFTER = "after"
+
+#: The one block a step's insertion point may be nested inside.
+_ITERATE = "iterate"
+
+
+def _step_lists(steps: list) -> list[list]:
+    """Every list of step entries this pipeline holds: the top level, plus
+    ``iterate.steps`` if the pipeline has an `iterate:` block.
+
+    Just these two: `iterate:` is the only nesting a pipeline has, so `after:`
+    needs to search no deeper than this.
+    """
+    lists = [steps]
+    for item in steps:
+        if isinstance(item, dict) and _ITERATE in item:
+            inner = item[_ITERATE]
+            if isinstance(inner, dict) and isinstance(inner.get("steps"), list):
+                lists.append(inner["steps"])
+    return lists
+
+
 def _add_step(cfg: dict, extra: object) -> None:
     """Merge one of a project's `steps:` entries into *cfg*.
 
     Fills in a step the shared pipeline already named but left empty (e.g.
-    ``copy_project_inputs: {}``), in place -- pipeline position matters for a
-    step like that one, and a project cannot say where in the list to insert.
-    Anything else is appended as a new step, since the shared pipeline has no
-    name -- and so no position -- for it.
+    ``copy_project_inputs: {}``), in place.  A body declaring ``after:`` is
+    instead inserted as a new step immediately following the one it names,
+    wherever that step lives.  Anything else is appended after the shared
+    pipeline's own steps, since it has no name -- and so no position -- for it.
     """
     if not isinstance(extra, dict) or len(extra) != 1:
         msg = f"A project's `steps:` entry must be one `name: {{...}}` mapping; got {extra!r}."
         raise TypeError(msg)
     name, body = next(iter(extra.items()))
+
+    if isinstance(body, dict) and _AFTER in body:
+        after = str(body[_AFTER])
+        rest = {k: v for k, v in body.items() if k != _AFTER}
+        for steps in _step_lists(cfg["steps"]):
+            idx = next(
+                (i for i, item in enumerate(steps) if isinstance(item, dict) and after in item),
+                None,
+            )
+            if idx is not None:
+                steps.insert(idx + 1, {name: rest})
+                return
+        msg = f"`{name}.after: {after!r}` names no step in the shared pipeline."
+        raise ValueError(msg)
 
     existing = next(
         (item[name] for item in cfg["steps"] if isinstance(item, dict) and name in item),
@@ -102,13 +144,13 @@ def step_config(cfg: dict, name: str, kwargs: dict | None = None) -> dict:
 
     The runner hands each step the exact block it was launched from as
     ``kwargs["step_cfg"]`` — with ``steps:`` as a list the same name may appear
-    twice (the warm start and the loop each carry their own copy), so the entry,
+    twice (a flat step and the loop's copy of the same name, say), so the entry,
     not the name, identifies the block.  Name lookup is the fallback, for direct
     calls in tests and for reading *another* step's block.
 
-    The fallback descends into ``warmstart:`` because its steps are the ones with
-    no top-level entry.  It does not descend into ``iterate:``: a loop step's block
-    is only reachable by round, which a name does not carry.
+    The fallback descends into ``iterate.steps`` because its steps are the ones
+    with no top-level entry -- ``iterate:`` is the only nesting now, and a step
+    inside it appears once regardless of how many iterations it runs.
     """
     if kwargs is not None and isinstance(kwargs.get("step_cfg"), dict):
         return kwargs["step_cfg"]
@@ -122,8 +164,10 @@ def step_config(cfg: dict, name: str, kwargs: dict | None = None) -> dict:
             continue
         if name in item:
             return item[name] or {}
-        if "warmstart" in item:
-            found = step_config({"steps": item["warmstart"]}, name)
+        if _ITERATE in item:
+            inner = item[_ITERATE]
+            inner_steps = inner.get("steps") if isinstance(inner, dict) else inner
+            found = step_config({"steps": inner_steps or []}, name)
             if found:
                 return found
     return {}

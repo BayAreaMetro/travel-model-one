@@ -14,7 +14,7 @@ from pathlib import Path
 
 from cube.process import CubeProbe, probe_cube
 from tm1 import fmt_elapsed
-from tm1.run.iterations import iterate_block, normalize_steps, resume_token, warmstart_block
+from tm1.run.iterations import iterate_block, normalize_steps, resume_token
 from tm1.status.read import RunLog, harness_pid, newest_write
 
 #: A step open this long with nothing written anywhere in run_dir reads as a
@@ -63,18 +63,23 @@ class Sections:
 def sections(steps_cfg: object) -> Sections:
     """Split the config into setup / warm start / loop / summaries.
 
-    The same walk :func:`tm1.runner._iteration_plan` does, kept separate because
-    the plan is a flat list and the display is not: the loop is a grid, and which
-    section a step belongs to is what decides where it is drawn.
+    The same walk :func:`tm1.run.iterations.iteration_plan` does, kept separate
+    because the plan is a flat list and the display is not: the loop is a grid,
+    and which section a step belongs to is what decides where it is drawn.
     """
     found = Sections()
     seen_loop = False
     for name, step_cfg in normalize_steps(steps_cfg):
-        if name == "warmstart":
-            found.warm = [n for n, _ in warmstart_block(step_cfg)]
-        elif name == "iterate":
-            found.rounds, body = iterate_block(step_cfg, None)
-            found.loop = [n for n, _ in body]
+        if name == "iterate":
+            found.rounds, body, zero_idx = iterate_block(step_cfg, None)
+            found.warm = [
+                n for idx, (n, c) in enumerate(body)
+                if idx >= zero_idx and c.get("skip_iteration") != 0
+            ]
+            found.loop = [
+                n for idx, (n, c) in enumerate(body)
+                if idx < zero_idx or c.get("only_iteration") != 0
+            ]
             found.sample_rates = _sample_rates(body, found.rounds)
             seen_loop = True
         elif seen_loop:

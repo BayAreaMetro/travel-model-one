@@ -8,9 +8,9 @@ An override names *where the value lives* in the config::
     copy_inputs.input_landuse.from: "M:/.../landuse"   inside a step
     iterate.count: 1                                   the loop's own key
     iterate.simulate_ctramp.threads: 12                a step inside the loop
-    warmstart.hwy_assign.cluster_nodes: 24             the same step, round 0
+    iterate.hwy_assign.cluster_nodes: 24               a step that runs every iteration
 
-Four rules, and they are the whole mechanism:
+Three rules, and they are the whole mechanism:
 
 1. **The address must already exist.** There is nothing to declare and no schema to
    keep in step: the config's own value at an address is the default, its type is
@@ -20,10 +20,7 @@ Four rules, and they are the whole mechanism:
 2. **Values replace, never merge.** Naming a mapping replaces it whole. Name a
    deeper address to change one key of it -- which is why descent exists: replacing
    ``env:`` to change ``EN7`` would silently drop ``PATH``.
-3. **A step name in both blocks must be qualified.** Twelve steps appear in both
-   ``warmstart:`` and ``iterate:``; bare, they are ambiguous, and guessing would
-   change a different round than the one meant.
-4. **``steps`` itself is not addressable.** A scenario varies values inside the
+3. **``steps`` itself is not addressable.** A scenario varies values inside the
    pipeline; it never adds, removes, or reorders steps. A different pipeline shape
    is a different project.
 """
@@ -38,27 +35,23 @@ from tm1.project.scenarios import Expansion, Scenario, pairs
 #: config stays the record of what a step can be asked to do.
 UNIVERSAL_STEP_KEYS = frozenset({"enabled"})
 
-#: Blocks that nest steps and are addressed by name.
-_WARMSTART = "warmstart"
+#: The one block that nests steps and is addressed by name.
 _ITERATE = "iterate"
-_BLOCKS = (_WARMSTART, _ITERATE)
 
-#: The top-level key holding the pipeline.  Not addressable -- see rule 4.
+#: The top-level key holding the pipeline.  Not addressable -- see rule 3.
 _STEPS = "steps"
 
 
 def _step_entries(cfg: dict) -> list[tuple[str, dict, str]]:
     """Every step as ``(name, config, qualifier)``.
 
-    *qualifier* is ``""`` for a flat step and the block name for one inside
-    ``warmstart:`` or ``iterate:``.  Built by walking rather than by importing the
-    runner's plan, because a scenario is applied *before* the plan exists.
+    *qualifier* is ``""`` for a flat step and ``"iterate"`` for one inside
+    ``iterate.steps``.  Built by walking rather than by importing the runner's
+    plan, because a scenario is applied *before* the plan exists.
     """
     entries: list[tuple[str, dict, str]] = []
     for name, block in pairs(cfg.get(_STEPS)):
-        if name == _WARMSTART:
-            inner = block
-        elif name == _ITERATE:
+        if name == _ITERATE:
             inner = block.get(_STEPS) if isinstance(block, dict) else None
         else:
             # A step with no body has nothing to address, so it is not an entry.
@@ -70,7 +63,7 @@ def _step_entries(cfg: dict) -> list[tuple[str, dict, str]]:
 
 
 def _block(cfg: dict, name: str) -> object:
-    """The ``warmstart:`` or ``iterate:`` block, if the config has one."""
+    """The ``iterate:`` block, if the config has one."""
     for step_name, block in pairs(cfg.get(_STEPS)):
         if step_name == name:
             return block
@@ -80,7 +73,7 @@ def _block(cfg: dict, name: str) -> object:
 def _root_for(cfg: dict, segments: list[str], address: str) -> tuple[object, list[str]]:
     """Where an address starts walking, and what is left to walk.
 
-    Resolves the first segment -- a top-level key, a block name, or a step name --
+    Resolves the first segment -- a top-level key, ``iterate``, or a step name --
     and hands back the container it names.  Everything after that is ordinary
     mapping descent, which is why the grammar needs no depth rule.
     """
@@ -94,7 +87,7 @@ def _root_for(cfg: dict, segments: list[str], address: str) -> tuple[object, lis
         )
         raise ValueError(msg)
 
-    if head in _BLOCKS:
+    if head == _ITERATE:
         return _in_nested_block(cfg, head, segments, address)
 
     if head in cfg:
@@ -103,12 +96,10 @@ def _root_for(cfg: dict, segments: list[str], address: str) -> tuple[object, lis
     matches = [(n, c, q) for n, c, q in _step_entries(cfg) if n == head]
     if not matches:
         raise KeyError(_unknown(cfg, address, head))
-    if len({q for _, _, q in matches}) > 1 or len(matches) > 1:
-        blocks = sorted({q for _, _, q in matches if q})
-        qualified = ", ".join(f"{b}.{head}.…" for b in blocks) or head
+    if len(matches) > 1:
         msg = (
-            f"{address!r}: step {head!r} appears in {' and '.join(blocks)}, so a bare "
-            f"name is ambiguous. Qualify it: {qualified}"
+            f"{address!r}: step {head!r} appears more than once in the pipeline; "
+            f"an address assumes a step appears once."
         )
         raise ValueError(msg)
     return matches[0][1], segments[1:]
@@ -117,11 +108,10 @@ def _root_for(cfg: dict, segments: list[str], address: str) -> tuple[object, lis
 def _in_nested_block(
     cfg: dict, head: str, segments: list[str], address: str
 ) -> tuple[object, list[str]]:
-    """An address starting at ``warmstart:`` or ``iterate:``.
+    """An address starting at ``iterate:``.
 
     ``iterate.count`` is the loop's own key; every other second segment names a
-    step inside the block, which is how the twelve steps that appear in both get
-    told apart.
+    step inside the block.
     """
     block = _block(cfg, head)
     if block is None:
@@ -132,7 +122,7 @@ def _in_nested_block(
         inner = dict(pairs(block.get(_STEPS) if isinstance(block, dict) else block))
         if segments[1] in inner:
             return _in_block(cfg, head, segments[1], address), segments[2:]
-        if head == _ITERATE and isinstance(block, dict) and segments[1] in block:
+        if isinstance(block, dict) and segments[1] in block:
             return block, segments[1:]
 
     msg = f"{address!r}: name a step inside `{head}:`, or `iterate.count`."
@@ -140,7 +130,7 @@ def _in_nested_block(
 
 
 def _in_block(cfg: dict, block_name: str, step: str, address: str) -> dict:
-    """One step's config inside ``warmstart:`` or ``iterate:``."""
+    """One step's config inside ``iterate:``."""
     for name, step_cfg, qualifier in _step_entries(cfg):
         if qualifier == block_name and name == step:
             return step_cfg
@@ -153,7 +143,7 @@ def _unknown(cfg: dict, address: str, head: str) -> str:
     known = sorted(
         {k for k in cfg if k != _STEPS}
         | {n for n, _, _ in _step_entries(cfg)}
-        | set(_BLOCKS)
+        | {_ITERATE}
     )
     close = difflib.get_close_matches(head, known, n=3, cutoff=0.6)
     hint = f" Did you mean {', '.join(close)}?" if close else ""

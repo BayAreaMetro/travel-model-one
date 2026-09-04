@@ -6,8 +6,8 @@ model artifacts -- no ``.job`` or ``.py`` produces them -- but they *are* load
 bearing: the next iteration's ``HwySkims`` reads what :func:`publish_networks`
 leaves in ``hwy/``.
 
-Each step takes its round from the block enclosing it -- ``warmstart:`` (round 0)
-or ``iterate:`` (rounds 1..count).
+Each step takes its iteration from where it sits inside ``iterate:`` -- before
+``iteration_zero_begins`` (iterations 1..count) or at/after it (iteration 0 too).
 
 ===========================  ==========================================
 Step                         ``RunIteration.bat``
@@ -31,15 +31,15 @@ PERIODS: tuple[str, ...] = ("EA", "AM", "MD", "PM", "EV")
 
 
 def _iteration(cfg: dict, kwargs: dict) -> int:
-    """This step's round, supplied by the block it is written in."""
+    """This step's iteration, supplied by the runner."""
     step_name = str(kwargs.get("step_name", "?"))
     step_cfg = step_config(cfg, step_name, kwargs)
     declared = step_cfg.get("iteration", kwargs.get("iteration"))
     if declared is None:
         msg = (
             f"Step {step_name!r} needs an iteration: it names files under "
-            f"hwy/iter{{N}}/. Put it inside `warmstart:` (round 0) or "
-            f"`iterate:` (rounds 1..count); written flat, it has no round."
+            f"hwy/iter{{N}}/. Put it inside `iterate:`; written flat, it has no "
+            f"iteration."
         )
         raise ValueError(msg)
     return int(declared)

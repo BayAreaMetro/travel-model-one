@@ -75,11 +75,11 @@ _DEFAULT_DEMAND = "{run_dir}/main/trips{PERIOD}.tpp"
 def _resolve_iteration(cfg: dict, step_cfg: dict, kwargs: dict) -> int:  # noqa: ARG001
     """Iteration to assign, supplied by the runner from the enclosing block.
 
-    ``warmstart:`` gives 0, ``iterate:`` gives the round, so there is nothing to
-    infer here.  Note that a demand step's iteration *count* is not its iteration
-    *number*: reading one as the other would assign the last round's number to
-    every round.  The ``step_cfg`` lookup serves direct calls only -- the runner
-    refuses a config that states its own ``iteration:``.
+    ``iteration_zero_begins`` gives 0, ``iterate:`` numbers the rest, so there is
+    nothing to infer here.  Note that a demand step's iteration *count* is not its
+    iteration *number*: reading one as the other would assign the last iteration's
+    number to every iteration.  The ``step_cfg`` lookup serves direct calls only --
+    the runner refuses a config that states its own ``iteration:``.
     """
     if step_cfg.get("iteration") is not None:
         return int(step_cfg["iteration"])

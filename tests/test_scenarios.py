@@ -23,8 +23,8 @@ from tm1.project.scenarios import Scenario, expand
 PROJECTS = sorted((Path(__file__).parents[1] / "projects").glob("*/scenarios.yaml"))
 
 #: A config with the *shape* a project has and none of its content: top-level keys, an
-#: `env:` block, a step with several entries, a `warmstart:` and an `iterate:` that
-#: share a step name, a mapping-valued key, and a step that does not declare `enabled`.
+#: `env:` block, a step with several entries, an `iterate:` with a step at iteration 0
+#: and one that isn't, a mapping-valued key, and a step that does not declare `enabled`.
 #:
 #: Deliberately synthetic.  What follows pins the override *mechanism*, so it must not
 #: move when a real project's YAML changes: a project evolving is not a regression, and
@@ -49,11 +49,6 @@ steps:
         from: "M:/landuse"
         to: "{run_dir}/INPUT/landuse"
 
-  - warmstart:
-      - hwy_assign:
-          job: "CTRAMP/scripts/assign/HwyAssign.job"
-          cluster_nodes: 48
-
   - iterate:
       count: 3
       steps:
@@ -63,6 +58,7 @@ steps:
               1: 0.15
               2: 0.30
               3: 0.50
+        - iteration_zero_begins:
         - hwy_assign:
             job: "CTRAMP/scripts/assign/HwyAssign.job"
             cluster_nodes: 48
@@ -75,7 +71,6 @@ steps:
 EXPECTED_PROBLEMS = 2
 FIXTURE_YEAR = 2023
 HORIZON_YEAR = 2035
-FIXTURE_NODES = 48
 FEWER_NODES = 24
 FEWER_THREADS = 12
 
@@ -149,20 +144,13 @@ def test_a_step_inside_the_loop(cfg: dict) -> None:
     assert _in_block(out, "iterate", "simulate_ctramp")["threads"] == FEWER_THREADS
 
 
-def test_the_same_step_in_the_warm_start(cfg: dict) -> None:
-    """hwy_assign runs in both blocks; each carries its own config."""
+def test_a_step_at_iteration_zero(cfg: dict) -> None:
+    """hwy_assign runs at iteration 0 too; it is still addressed through `iterate.`."""
     out = apply_scenario(cfg, Scenario("A", overrides={
-        "warmstart.hwy_assign.cluster_nodes": FEWER_NODES,
+        "iterate.hwy_assign.cluster_nodes": FEWER_NODES,
     }))
 
-    assert _in_block(out, "warmstart", "hwy_assign")["cluster_nodes"] == FEWER_NODES
-    assert _in_block(out, "iterate", "hwy_assign")["cluster_nodes"] == FIXTURE_NODES
-
-
-def test_a_bare_name_in_two_blocks_is_refused(cfg: dict) -> None:
-    """Guessing would change a different round than the one meant."""
-    with pytest.raises(ValueError, match="ambiguous"):
-        resolve_address(cfg, "hwy_assign.cluster_nodes")
+    assert _in_block(out, "iterate", "hwy_assign")["cluster_nodes"] == FEWER_NODES
 
 
 def test_an_unknown_address_names_the_closest_match(cfg: dict) -> None:

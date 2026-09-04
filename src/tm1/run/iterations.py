@@ -1,20 +1,22 @@
-"""Which steps run, in which round, and which of them this invocation wants.
+"""Which steps run, in which iteration, and which of them this invocation wants.
 
-The config describes the pipeline in blocks; a run needs it flat -- an ordered
-list of ``(step, round)``. That flattening is here, along with the selection
+The config describes the pipeline in one block; a run needs it flat -- an ordered
+list of ``(step, iteration)``. That flattening is here, along with the selection
 ``--steps`` / ``--resume-at`` / ``--until`` apply to the result.
 
 Pure: it reads config and returns lists. Nothing here executes a step, opens a run
 directory or writes a log, which is what lets ``tm1 status`` work out what a run
 *would* do without importing the thing that does it.
 
-Two blocks decide every step's round, and nothing else does:
+One block decides every step's iteration, and nothing else does:
 
-* ``warmstart:`` -- its steps run once, at round 0 (RunModel.bat's ``set ITER=0``)
-* ``iterate:``   -- its steps repeat, rounds 1..count
+* ``iterate:`` -- its steps repeat, iterations 0..count.  ``iteration_zero_begins``
+  marks where iteration 0 (the warm start, ``RunModel.bat``'s ``set ITER=0``) joins
+  in: a step above it runs only in iterations 1..count; a step at or after it runs
+  in iteration 0 too, unless ``only_iteration:``/``skip_iteration:`` says otherwise.
 
-A step written flat runs once where it sits: round 1 before the loop, the final
-round after it.
+A step written flat runs once where it sits: iteration 1 before the loop, the
+final iteration after it.
 """
 
 import logging
@@ -26,15 +28,17 @@ log = logging.getLogger(__name__)
 #: Step name reserved for the global feedback loop.
 _ITERATE = "iterate"
 
-#: Step name reserved for the round-0 block that precedes the loop.
-_WARMSTART = "warmstart"
+#: Marker step -- not itself a step -- showing where iteration 0 joins the loop.
+_ITERATION_ZERO_BEGINS = "iteration_zero_begins"
 
-#: The round `warmstart:` steps run as -- `RunModel.bat`'s `set ITER=0`.
-_WARMSTART_ROUND = 0
+#: Keys pinning an individual step to, or away from, iteration 0.  Everything
+#: else in the loop runs at every iteration a plain read of its position implies.
+_ONLY_ITERATION = "only_iteration"
+_SKIP_ITERATION = "skip_iteration"
 
 #: Keys `iterate:` understands.  Anything else is refused by name, so a config
-#: written for a removed mechanism (`warm_start:`, `first_round:`) fails loudly
-#: instead of being silently ignored.
+#: written for a removed mechanism (`warmstart:`, `warm_start:`, `first_round:`)
+#: fails loudly instead of being silently ignored.
 _ITERATE_KEYS = ("count", "steps")
 
 #: Key letting a step *outside* the loop skip itself when its product is on disk.
@@ -83,9 +87,9 @@ def normalize_steps(steps_cfg: object, where: str = "steps") -> list[tuple[str, 
 def _step_enabled(step_cfg: object) -> bool:
     """Whether a step runs.  Only a literal ``enabled: false`` switches it off.
 
-    Checked against dicts alone, so ``warmstart:`` (a list) and ``iterate:`` (whose
-    keys are already restricted) cannot be disabled wholesale -- a scenario varies
-    what the pipeline does, not whether half of it exists.
+    Checked against dicts alone, so ``iterate:`` (whose keys are already
+    restricted) cannot be disabled wholesale -- a scenario varies what the
+    pipeline does, not whether half of it exists.
     """
     return not (isinstance(step_cfg, dict) and step_cfg.get(_ENABLED) is False)
 
@@ -95,46 +99,53 @@ def iteration_plan(
 ) -> tuple[list[tuple[str, int]], dict[tuple[str, int], dict]]:
     """Expand the config into the execution plan, one entry per run of a step.
 
-    Returns ``(plan, configs)``: the ordered ``[(step, round)]`` list, and the
-    config block behind each entry.  The block travels with the entry because a
-    name may appear more than once -- the warm start's ``hwy_assign`` and the
-    loop's are different entries with different configs.
+    Returns ``(plan, configs)``: the ordered ``[(step, iteration)]`` list, and the
+    config block behind each entry.
 
-    A step's round comes from where it is written, and from nothing else:
+    A step's iteration comes from where it is written inside ``iterate:``, and
+    from nothing else:
 
-    - ``warmstart:`` runs its steps once, at round 0 -- ``RunModel.bat``'s
-      ``set ITER=0``.
-    - ``iterate:`` repeats its body ``count`` times, rounds 1..N, identically.
-      Body steps may not declare ``skip_if_exists:``; the loop always re-runs.
-    - Anything else runs once, where it is written: at round 1 before the loop,
-      at the final round after it.
+    - Before ``iteration_zero_begins``: iterations 1..count only.
+    - At or after it: every iteration 0..count, unless ``only_iteration:`` or
+      ``skip_iteration:`` narrows that.
+    - Anything outside ``iterate:`` runs once, where it is written: at
+      iteration 1 before the loop, at the final iteration after it.
     """
     plan: list[tuple[str, int]] = []
     configs: dict[tuple[str, int], dict] = {}
-    seen: set[str] = set()
+    seen_iterate = False
     current = 1
 
-    def add(name: str, rnd: int, cfg: dict) -> None:
-        if (name, rnd) in configs:
+    def add(name: str, it: int, cfg: dict) -> None:
+        if (name, it) in configs:
             msg = (
-                f"Step {name!r} is defined twice for iteration {rnd}. Two copies "
-                f"of a step must run in different rounds -- move one into "
-                f"`{_WARMSTART}:` or `{_ITERATE}:`, or rename it."
+                f"Step {name!r} is defined twice for iteration {it}. Two runs "
+                f"of a step must land at different iterations -- pin one with "
+                f"`{_ONLY_ITERATION}:`/`{_SKIP_ITERATION}:`, or rename it."
             )
             raise ValueError(msg)
-        configs[(name, rnd)] = cfg
-        plan.append((name, rnd))
+        configs[(name, it)] = cfg
+        plan.append((name, it))
 
     for name, step_cfg in normalize_steps(steps_cfg):
-        if name == _WARMSTART:
-            _check_block_placement(name, seen)
-            for body_name, body_cfg in warmstart_block(step_cfg):
-                add(body_name, _WARMSTART_ROUND, body_cfg)
-        elif name == _ITERATE:
-            _check_block_placement(name, seen)
-            count, body = iterate_block(step_cfg, override)
-            for i in range(1, count + 1):
-                for body_name, body_cfg in body:
+        if name == _ITERATE:
+            if seen_iterate:
+                msg = f"`{_ITERATE}` is declared twice; it is the whole of the run's feedback loop."
+                raise ValueError(msg)
+            seen_iterate = True
+            count, body, zero_idx = iterate_block(step_cfg, override)
+            for i in range(0, count + 1):
+                for idx, (body_name, body_cfg) in enumerate(body):
+                    if idx < zero_idx:
+                        if i == 0:
+                            continue  # not part of the warm start
+                    else:
+                        only = body_cfg.get(_ONLY_ITERATION)
+                        if only is not None and i != int(only):
+                            continue
+                        skip_it = body_cfg.get(_SKIP_ITERATION)
+                        if skip_it is not None and i == int(skip_it):
+                            continue
                     add(body_name, i, body_cfg)
             current = count
         else:
@@ -144,96 +155,38 @@ def iteration_plan(
     return plan, configs
 
 
-def _check_block_placement(name: str, seen: set[str]) -> None:
-    """``warmstart:`` and ``iterate:`` appear at most once, warm start first.
-
-    A second copy of either would silently redefine the run's shape, and a warm
-    start written after the loop would run round-0 steps at the end -- succeeding
-    while overwriting the finished round's networks.
-    """
-    if name in seen:
-        msg = f"`{name}` is declared twice; it is the whole of that part of the run."
-        raise ValueError(msg)
-    if name == _WARMSTART and _ITERATE in seen:
-        msg = (
-            f"`{_WARMSTART}` is written after `{_ITERATE}`. It seeds the loop, so "
-            f"it has to come before it -- its steps run at iteration "
-            f"{_WARMSTART_ROUND} and write the networks and skims round 1 reads."
-        )
-        raise ValueError(msg)
-    seen.add(name)
-
-
 def _reject_iteration_key(name: str, step_cfg: dict) -> None:
-    """A step's round comes from where it is written, never from a key.
+    """A step's iteration comes from where it is written, never from a key.
 
-    ``iteration:`` was how the warm start declared round 0 before ``warmstart:``
-    existed, and every use of it said ``0``.  Refused rather than ignored, so a
-    config written against the older shape fails loudly instead of running a
-    warm-start step as round 1 -- which writes ``hwy/iter1/`` from iteration-0
-    demand, succeeding while producing nonsense.
+    ``iteration:`` was how a step pinned its own round before ``iterate:``'s
+    ``iteration_zero_begins``/``only_iteration:``/``skip_iteration:`` existed.
+    Refused rather than ignored, so a config written against the older shape
+    fails loudly instead of quietly running at the wrong iteration.
     """
     if "iteration" not in step_cfg:
         return
     msg = (
-        f"Step {name!r} declares `iteration:`, which is not a step key. Rounds "
-        f"come from position: `{_WARMSTART}:` runs its steps at iteration "
-        f"{_WARMSTART_ROUND}, `{_ITERATE}:` numbers its own rounds 1..count, and "
-        f"a step outside both runs where it is written. Move it into "
-        f"`{_WARMSTART}:`."
+        f"Step {name!r} declares `iteration:`, which is not a step key. "
+        f"Iterations come from position inside `{_ITERATE}:` -- before or after "
+        f"`{_ITERATION_ZERO_BEGINS}`, and `{_ONLY_ITERATION}:`/"
+        f"`{_SKIP_ITERATION}:` for the few steps that need pinning -- or from "
+        f"where a step outside `{_ITERATE}:` is written."
     )
     raise ValueError(msg)
 
 
-def warmstart_block(ws_cfg: object) -> list[tuple[str, dict]]:
-    """Validate the ``warmstart:`` block and return its body.
-
-    A bare list of steps, not a block with keys.  The only thing it says is *these
-    run at iteration 0*, and unlike ``iterate:`` there is no ``count`` to state, so
-    a ``steps:`` wrapper would be a level of nesting carrying no information.
-    """
-    # `ws_cfg` is truthy here so an empty block falls through to the check below:
-    # `normalize_steps` turns an empty list into `{}`, which is a subset of anything.
-    if isinstance(ws_cfg, dict) and ws_cfg and set(ws_cfg) <= set(_ITERATE_KEYS):
-        msg = (
-            f"`{_WARMSTART}` is a bare list of steps, not a block -- it runs once, "
-            f"at iteration {_WARMSTART_ROUND}, so there is no `count` and no "
-            f"`steps:` wrapper:\n\n"
-            f"    {_WARMSTART}:\n"
-            f"      - hwy_assign: {{job: ..., "
-            f"{_SKIP_IF_EXISTS}: hwy/iter0/LOADEA.net}}\n"
-            f"      - hwy_skims:  {{job: ...}}"
-        )
-        raise TypeError(msg)
-
-    body = normalize_steps(ws_cfg or [], where=_WARMSTART)
-    if not body:
-        msg = (
-            f"`{_WARMSTART}` declares no steps; delete the block, or fill it in "
-            f"with the steps that seed the loop."
-        )
-        raise ValueError(msg)
-
-    for body_name, body_cfg in body:
-        if "iteration" in body_cfg:
-            msg = (
-                f"Step {body_name!r} declares `iteration:` inside `{_WARMSTART}`, "
-                f"which is itself the statement that its steps run at iteration "
-                f"{_WARMSTART_ROUND}. Drop the key."
-            )
-            raise ValueError(msg)
-
-    return body
-
-
 def iterate_block(
     it_cfg: object, override: int | None
-) -> tuple[int, list[tuple[str, dict]]]:
-    """Validate the ``iterate:`` block and return ``(count, body)``.
+) -> tuple[int, list[tuple[str, dict]], int]:
+    """Validate the ``iterate:`` block and return ``(count, body, zero_idx)``.
 
-    The body is checked here for the two keys the loop refuses -- see
-    :func:`iteration_plan` -- and the block itself for keys it does not take,
-    so a config written for a removed mechanism fails loudly.
+    *body* excludes the ``iteration_zero_begins`` marker itself; *zero_idx* is
+    the index in *body* at or after which a step runs at iteration 0 too (equal
+    to ``len(body)`` when there is no marker, i.e. no step runs at iteration 0).
+
+    The body is checked here for the keys the loop refuses -- see
+    :func:`iteration_plan` -- and the block itself for keys it does not take, so
+    a config written for a removed mechanism fails loudly.
     """
     if not isinstance(it_cfg, dict) or not it_cfg:
         msg = (
@@ -247,10 +200,9 @@ def iterate_block(
     if unknown:
         msg = (
             f"`{_ITERATE}` does not take {', '.join(map(repr, unknown))} -- "
-            f"only `count` and `steps`. Steps that run outside the rounds go in "
-            f"`{_WARMSTART}:` (iteration {_WARMSTART_ROUND}, seeding the loop) or "
-            f"are written flat before or after the loop; either way they may "
-            f"declare `{_SKIP_IF_EXISTS}:`."
+            f"only `count` and `steps`. A step that runs once regardless of "
+            f"iteration is written outside `{_ITERATE}:`, before or after it; "
+            f"either way it may declare `{_SKIP_IF_EXISTS}:`."
         )
         raise ValueError(msg)
 
@@ -259,29 +211,46 @@ def iterate_block(
         msg = f"{_ITERATE}.count must be >= 1, got {count}"
         raise ValueError(msg)
 
-    body = normalize_steps(it_cfg.get("steps") or [], where=f"{_ITERATE}.steps")
-    if not body:
+    raw_body = normalize_steps(it_cfg.get("steps") or [], where=f"{_ITERATE}.steps")
+    if not raw_body:
         msg = f"`{_ITERATE}` declares no steps; the loop body cannot be empty."
         raise ValueError(msg)
 
+    body: list[tuple[str, dict]] = []
+    zero_idx = len(raw_body)
+    marker_seen = False
+    for body_name, body_cfg in raw_body:
+        if body_name == _ITERATION_ZERO_BEGINS:
+            if marker_seen:
+                msg = (
+                    f"`{_ITERATION_ZERO_BEGINS}` is declared twice inside "
+                    f"`{_ITERATE}`; it can mark only one point in the pipeline."
+                )
+                raise ValueError(msg)
+            marker_seen = True
+            zero_idx = len(body)
+            continue
+        body.append((body_name, body_cfg))
+
     for body_name, body_cfg in body:
-        if _SKIP_IF_EXISTS in body_cfg:
-            msg = (
-                f"Step {body_name!r} declares `{_SKIP_IF_EXISTS}` inside "
-                f"`{_ITERATE}`. The loop always re-runs -- its outputs land "
-                f"on the same paths every round, so an existence check "
-                f"cannot tell this round's product from the last one's. "
-                f"Move the step into `{_WARMSTART}:` if it runs once."
-            )
-            raise ValueError(msg)
         if "iteration" in body_cfg:
             msg = (
                 f"Step {body_name!r} declares `iteration:` inside `{_ITERATE}`, "
-                f"whose rounds are numbered by the loop itself."
+                f"whose iterations are numbered by the loop itself."
+            )
+            raise ValueError(msg)
+        if _SKIP_IF_EXISTS in body_cfg and body_cfg.get(_ONLY_ITERATION) is None:
+            msg = (
+                f"Step {body_name!r} declares `{_SKIP_IF_EXISTS}` inside "
+                f"`{_ITERATE}` without `{_ONLY_ITERATION}:`. It would run at "
+                f"more than one iteration, landing on the same path every time, "
+                f"so an existence check cannot tell one iteration's product "
+                f"from another's. Pin it with `{_ONLY_ITERATION}: <n>` if it "
+                f"truly runs once, or drop `{_SKIP_IF_EXISTS}`."
             )
             raise ValueError(msg)
 
-    return count, body
+    return count, body, zero_idx
 
 
 def skip_target(step_cfg: dict, cfg: dict) -> Path | None:
@@ -376,7 +345,7 @@ def select_steps(
 
     ``--steps`` filters the real plan rather than standing in for one.  Building a
     fresh plan from bare names loses the ``iterate:`` expansion, so every step
-    would be numbered 1 -- and a warm-start step run as iteration 1 writes
+    would be numbered 1 -- and an iteration-0 step run as iteration 1 writes
     ``hwy/iter1/`` from iteration-0 demand, succeeding while producing nonsense.
 
     A name may carry a round (``0:hwy_assign``) to pick one; bare, it keeps every

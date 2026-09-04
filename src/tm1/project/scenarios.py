@@ -66,9 +66,9 @@ def pairs(steps: object) -> list[tuple[str, object]]:
     mappings.  ``steps:`` needs the list form to name a step twice; ladder
     ``rungs:`` need it to stay ordered.
 
-    The value is handed back as it is written, not coerced: ``warmstart:`` is a
-    *list* of steps and ``iterate:`` a mapping, so flattening either to a dict
-    would lose the block.
+    The value is handed back as it is written, not coerced: ``iterate:`` is a
+    *mapping* (``count``, ``steps``), and its own ``steps:`` may itself be a list
+    or a mapping, so flattening either to a dict here would lose the block.
     """
     if isinstance(steps, dict):
         return [(str(k), v) for k, v in steps.items()]

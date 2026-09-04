@@ -10,23 +10,25 @@ Two entries nest, and they are the only ones::
 
     steps:
       - copy_inputs: {...}          # runs once, where it is written
-      - warmstart:                  # runs once, at iteration 0
-          - hwy_assign: {job: ..., skip_if_exists: "hwy/iter0/LOADEA.net"}
-      - iterate:                    # rounds 1..count
+      - iterate:                    # iterations 0..count
           count: 3
           steps:
-            - hwy_assign: {job: ...}
-      - summarize: {...}            # runs once, at the final round
+            - simulate_ctramp: {}    # iterations 1..count only
+            - iteration_zero_begins:
+            - hwy_assign: {job: ..., only_iteration: 0, skip_if_exists: "hwy/iter0/LOADEA.net"}
+      - summarize: {...}            # runs once, at the final iteration
 
-``warmstart:`` is ``RunModel.bat``'s ``set ITER=0`` pass: assign the staged demand
-once, so round 1 has congested skims to read.  A step's round is decided by where
-it is written and nowhere else -- there is no per-step ``iteration:`` key.
+Iteration 0 is ``RunModel.bat``'s ``set ITER=0`` pass: assign the staged demand
+once, so iteration 1 has congested skims to read.  A step's iteration is decided
+by where it is written and nowhere else -- there is no per-step ``iteration:`` key.
 
 A step outside ``iterate:`` may declare ``skip_if_exists: <path>`` -- its work is
 done when that file is on disk, so a rerun walks past it and a deleted file forces
-a rebuild.  The key is refused inside ``iterate:``: the loop is the part of the run
-that always re-runs, and its outputs land on the same paths every round, so an
-existence check cannot tell this round's product from the last one's.
+a rebuild.  A step inside ``iterate:`` may declare it too, but only alongside
+``only_iteration:``, which pins the step to a single iteration -- the loop
+otherwise always re-runs, and its outputs would land on the same paths every
+iteration, so an existence check could not tell one iteration's product from
+another's.
 
 A project may add its own steps -- typically pre- or post-processing -- by
 pointing at Python code::

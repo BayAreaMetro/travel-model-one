@@ -51,9 +51,10 @@ jobs are why it exists: ``trnAssign.bat`` runs them from
 goes with it -- Cube's cluster directory defaults to ``<cwd>/commpath``, so a job
 run outside ``run_dir`` has to say where its nodes should talk.
 
-A step's round is decided by the block it is written in -- ``warmstart:`` runs at
-iteration 0, ``RunModel.bat``'s ``set ITER=0``, and ``iterate:`` numbers its own
-rounds 1..count.  ``{iteration}`` above expands to that number.
+A step's iteration is decided by where it sits inside ``iterate:`` -- before
+``iteration_zero_begins`` it runs at iterations 1..count, at or after it also at
+iteration 0, ``RunModel.bat``'s ``set ITER=0``.  ``{iteration}`` above expands to
+that number.
 
 ``verify:`` names the artifacts a step must have produced::
 
