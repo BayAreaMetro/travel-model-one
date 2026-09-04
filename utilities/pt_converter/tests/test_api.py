@@ -38,6 +38,13 @@ class ConversionTests(unittest.TestCase):
             self.assertTrue((inventory_path.parent / "transitLines.lin").is_file())
             self.assertTrue((inventory_path.parent / "transitSystem.pts").is_file())
             self.assertTrue((inventory_path.parent / "line_conversion_report.json").is_file())
+            self.assertTrue((inventory_path.parent / "transitNetworkLinks.csv").is_file())
+            self.assertTrue(
+                (inventory_path.parent / "transitNetworkDirectedLinks.csv").is_file()
+            )
+            self.assertTrue((inventory_path.parent / "transitLinkFactors.csv").is_file())
+            self.assertTrue((inventory_path.parent / "link_conversion_report.json").is_file())
+            self.assertFalse((inventory_path.parent / "buildPTNetwork.job").exists())
 
     def test_unsupported_source_fails_clearly(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
