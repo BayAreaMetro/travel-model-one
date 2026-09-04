@@ -19,7 +19,7 @@ projects root dir\\python transitcrowding.py 1_CaltrainMod\\2050_TM150_BF_00_1_C
 
 Input:
 * TransitSeatCap.csv, containing VEHTYPE, seatcap and standcap
-* [project dir]\\OUTPUT?\\trn\\trnlink[ea,am,md,pm,ev]_ALLMSA.dbf
+* [project dir]\\OUTPUT?\\trn\\trnlink[ea,am,md,pm,ev].dbf
 
 Output:
 * [project_dir]\\OUTPUT?\\metrics\\transit_crowding_complete.csv
@@ -282,7 +282,7 @@ if __name__ == '__main__':
     # read the transit files
     all_trn_df = pd.DataFrame()
     for timeperiod in ['AM','EA','EV','MD','PM']:
-        trn_file = os.path.join(trn_dir, 'trnlink{}_ALLMSA.dbf'.format(timeperiod))
+        trn_file = os.path.join(trn_dir, 'trnlink{}.dbf'.format(timeperiod))
         dbf      = simpledbf.Dbf5(trn_file)
         trn_df   = dbf.to_dataframe()
         trn_df["period"] = timeperiod

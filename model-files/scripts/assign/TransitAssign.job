@@ -333,7 +333,7 @@ loop period = 1, 5
              
              ; read the transit line and link files
              read file = "@token_model_dir@\trn\transitLines.link"
-             read file = transit@token_period@.lin        
+             read file = "@token_model_dir@\trn\transitLines.lin"
              
              ; read in the generated support links
              read file = @token_period@_transit_suplinks_walk.dat
