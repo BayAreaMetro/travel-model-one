@@ -159,7 +159,7 @@ steps:
         to: "{run_dir}/CTRAMP/scripts/metrics"
 
       # 3. INPUT/ -> the working directories (RunModel.bat 172-178).  popsyn is absent
-      #    on purpose: filterUnconnectedHouseholds.py writes it.
+      #    on purpose: the filter_popsyn step writes it.
       hwy:
         from: "{run_dir}/INPUT/hwy"
         to: "{run_dir}/hwy"
@@ -193,30 +193,35 @@ steps:
       # period.  Must not exceed hwy_assign's cluster_nodes, or it addresses processes
       # that were never started.
       intrastep_processes: 48
-  - csv_to_dbf:
-      command: "CTRAMP/scripts/preprocess/csvToDbf.py"
-      args: ["hwy/tolls.csv", "hwy/tolls.dbf"]
-  - set_tolls:
-      job: "CTRAMP/scripts/preprocess/SetTolls.job"
-  - set_hov_xfer_penalties:
-      job: "CTRAMP/scripts/preprocess/SetHovXferPenalties.job"
-  - create_five_highway_networks:
-      job: "CTRAMP/scripts/preprocess/CreateFiveHighwayNetworks.job"
-  - hsr_trip_generation:
-      job: "CTRAMP/scripts/preprocess/HsrTripGeneration.job"
+  # RunModel.bat step 3, at the engine boundary: tolls.csv -> tolls.dbf is native
+  # (replacing csvToDbf.py, and with it the dbfpy3 dependency), then the stock Cube
+  # jobs run as-is -- SetTolls -> SetHovXferPenalties -> CreateFiveHighwayNetworks,
+  # taking hwy/freeflow.net to hwy/withTolls.net and hwy/avgload{EA..EV}.net.
+  - build_highway_networks:
+      run_dir: "{run_dir}"
+  # Replaces HsrTripGeneration.job with cubeio: reads the California HSR model's 2040
+  # and 2050 tables and interpolates.  All zero before the 2040 opening year (so, zero
+  # for 2023) or when HSR_Interregional_Disable is set in trnParam.block, which
+  # configure_ctramp writes.
+  - build_hsr_trips:
+      from: "{run_dir}/INPUT/nonres"
+      to: "{run_dir}/nonres"
+      trn_param: "{run_dir}/CTRAMP/scripts/block/trnParam.block"
 
   # Non-motorized level of service (RunModel.bat step 4).  Free-flow only, so unlike
-  # every other skim these need no assignment first.
-  - create_nonmotorized_network:
-      job: "CTRAMP/scripts/skims/CreateNonMotorizedNetwork.job"
-  - nonmotorized_skims:
-      job: "CTRAMP/scripts/skims/NonMotorizedSkims.job"
-  - transit_dwell_access:
-      command: "CTRAMP/scripts/skims/transitDwellAccess.py"
-      # The argv the script receives, not a transliteration: RunModel.bat 146-147 set the
-      # complex-mode variables to a single space and cmd collapses those, so passing "" here
-      # would add arguments the script never saw and crash it on int("").
-      args: ["NORMAL", "NoExtraDelay", "Simple", "complexDwell", "complexAccess"]
+  # every other skim these need no assignment first, and the feedback loop never
+  # touches them.  Stock Cube jobs as-is: CreateNonMotorizedNetwork ->
+  # NonMotorizedSkims, producing skims/nonmotskm.tpp (DISTWALK/DISTBIKE/DIST).
+  - build_nonmotorized_skims:
+      run_dir: "{run_dir}"
+  # RunModel.bat step 4.5's transitDwellAccess.py Simple mode, native -- and without
+  # NetworkWrangler.  With COMPLEXMODES_DWELL/ACCESS empty (as RunModel.bat ships them)
+  # that pass leaves the line data untouched, so the five transitOriginal{PERIOD}.lin are
+  # copies of transitLines.lin and of each other.  See the module docstring before
+  # enabling the complex dwell modes.
+  - build_transit_lines:
+      from: "{run_dir}/trn/transitLines.lin"
+      to: "{run_dir}/trn"
 
   # ── Warm start · iteration 0 ──────────────────────────────────────────────────────────
   # RunModel.bat's `set ITER=0` pass: assign the staged demand once, so round 1 has
@@ -294,20 +299,22 @@ steps:
           job: "CTRAMP/scripts/skims/Accessibility.job"
 
       # RunIteration.bat 49-57 parks these under `if %ITER%==1`; with the skims built above
-      # they are ordinary warm-start steps.  Once the households are filtered they stay
+      # they are an ordinary warm-start step.  Once the households are filtered they stay
       # filtered -- refiltering against a later round's skims would change the population
       # mid-run.
-      - find_no_access_zones:         # zones with no tolled-DA path -> unconnected_zones.csv
-          job: "CTRAMP/scripts/skims/FindNoAccessZones.job"
-          verify: ["skims/unconnected_zones.csv", "skims/unconnected_zones.dbf"]
-          # The dbf, not the csv: the job *echo*s the csv header before the MATRIX step
-          # that does the work, so a failed run leaves a csv behind.  Only MATRIX creates
-          # the dbf.
-          skip_if_exists: "skims/unconnected_zones.dbf"
-      - filter_unconnected_households:  # INPUT/popsyn -> popsyn/, dropping unreachable homes
-          command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
-          args: ["popsyn"]
-          skip_if_exists: "popsyn/hhFile.2023_v12.csv"   # the versioned name INPUT ships
+      #
+      # Native replacement for FindNoAccessZones.job + filterUnconnectedHouseholds.py:
+      # scans the AM highway skim for zones with no drivable path (Cube writes 500000
+      # where none exists), drops households home-based there, and writes
+      # popsyn/hhFile.csv + personFile.csv -- the canonical names CT-RAMP's properties
+      # point at.  With zero unconnected zones (the healthy, expected case) the INPUT
+      # files are byte-copied through unchanged.
+      - filter_popsyn:
+          from: "{run_dir}/INPUT/popsyn"
+          to: "{run_dir}/popsyn"
+          skim: "{run_dir}/skims/HWYSKMAM.tpp"
+          max_internal_zone: 1454   # zones 1455+ are externals -- flagged but never filtered
+          verify: ["popsyn/hhFile.csv", "popsyn/personFile.csv"]
 
   # ── The feedback loop · three identical rounds (RunIteration.bat) ─────────────────────
   # One round = demand + assignment; demand responds to the skims the previous round

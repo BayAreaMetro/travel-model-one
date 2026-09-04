@@ -329,54 +329,21 @@ def _run_via_schtasks(  # noqa: C901
     return int(sentinel.read_text().strip() or "1"), logfile
 
 
-def run_cube_job(
-    job: str | Path,
-    cwd: str | Path,
+def _execute_job(
+    job: Path,
+    cwd: Path,
+    logfile: Path,
     *,
-    env_extra: dict[str, object] | None = None,
-    timeout: float = 7200,
-    cluster_nodes: int | None = None,
-    commpath: str | Path | None = None,
-) -> int:
-    """Run a Cube Voyager ``.job`` and return its exit code (raises on non-zero).
+    env_extra: dict[str, object] | None,
+    timeout: float,
+    cluster_nodes: int | None,
+    cpath: Path | None,
+) -> tuple[int, str, Path]:
+    """Run the job, returning ``(exit code, log text, log file)``.
 
-    Parameters
-    ----------
-    job
-        Path to the ``.job`` script.
-    cwd
-        Working directory for the run (job-relative input/output paths resolve
-        against this).
-    env_extra
-        Extra environment variables to set before running (e.g. iteration
-        parameters ``ITER``/``WGT`` for assignment/feedback jobs).
-    timeout
-        Seconds to wait for completion (schtasks path).
-    cluster_nodes
-        If set, start a local Cube Cluster of this many nodes around the job
-        (required by jobs using ``DistributeMultistep``/``Wait4Files`` — i.e. the
-        assignment, skim and feedback jobs).  Must be >= the highest ``processNum``
-        the job distributes (5 for the period-looped jobs).
-    commpath
-        Cluster communication directory (defaults to ``<cwd>/commpath``).  The job's
-        ``%COMMPATH%`` token resolves to this.
+    Split out of :func:`run_cube_job` so cancellation has one place to catch:
+    everything that can leave a cluster node running happens inside here.
     """
-    job = Path(job).resolve()
-    cwd = Path(cwd).resolve()
-    if not job.exists():
-        msg = f"Cube job not found: {job}"
-        raise FileNotFoundError(msg)
-    cwd.mkdir(parents=True, exist_ok=True)
-
-    # Bound up front so every path below -- and the messages after them -- can name
-    # the log.  The schtasks path replaces it with its own per-run name.
-    logfile = cwd / f"_cube_{job.stem}.log"
-
-    cpath: Path | None = None
-    if cluster_nodes:
-        cpath = Path(commpath).resolve() if commpath else cwd / "commpath"
-        cpath.mkdir(parents=True, exist_ok=True)
-
     if is_interactive_session():
         env = os.environ.copy()
         env["PATH"] = _CUBE_PATH + ";" + env.get("PATH", "")
@@ -426,6 +393,71 @@ def run_cube_job(
                 cluster_nodes=cluster_nodes, commpath=cpath,
             )
         log_text = logfile.read_text(errors="replace") if logfile.exists() else ""
+    return rc, log_text, logfile
+
+
+def run_cube_job(
+    job: str | Path,
+    cwd: str | Path,
+    *,
+    env_extra: dict[str, object] | None = None,
+    timeout: float = 7200,
+    cluster_nodes: int | None = None,
+    commpath: str | Path | None = None,
+) -> int:
+    """Run a Cube Voyager ``.job`` and return its exit code (raises on non-zero).
+
+    Parameters
+    ----------
+    job
+        Path to the ``.job`` script.
+    cwd
+        Working directory for the run (job-relative input/output paths resolve
+        against this).
+    env_extra
+        Extra environment variables to set before running (e.g. iteration
+        parameters ``ITER``/``WGT`` for assignment/feedback jobs).
+    timeout
+        Seconds to wait for completion (schtasks path).
+    cluster_nodes
+        If set, start a local Cube Cluster of this many nodes around the job
+        (required by jobs using ``DistributeMultistep``/``Wait4Files`` — i.e. the
+        assignment, skim and feedback jobs).  Must be >= the highest ``processNum``
+        the job distributes (5 for the period-looped jobs).
+    commpath
+        Cluster communication directory (defaults to ``<cwd>/commpath``).  The job's
+        ``%COMMPATH%`` token resolves to this.
+    """
+    job = Path(job).resolve()
+    cwd = Path(cwd).resolve()
+    if not job.exists():
+        msg = f"Cube job not found: {job}"
+        raise FileNotFoundError(msg)
+    cwd.mkdir(parents=True, exist_ok=True)
+
+    # Bound up front so every path below -- and the messages after them -- can name
+    # the log.  The schtasks path replaces it with its own per-run name.
+    logfile = cwd / f"_cube_{job.stem}.log"
+
+    cpath: Path | None = None
+    if cluster_nodes:
+        cpath = Path(commpath).resolve() if commpath else cwd / "commpath"
+        cpath.mkdir(parents=True, exist_ok=True)
+
+    try:
+        rc, log_text, logfile = _execute_job(
+            job, cwd, logfile,
+            env_extra=env_extra, timeout=timeout,
+            cluster_nodes=cluster_nodes, cpath=cpath,
+        )
+    except KeyboardInterrupt:
+        # Ctrl-C reaches this process, but the cluster nodes were started by cmd or
+        # by the scheduled task and never see the signal: without this they keep
+        # running and holding license leases (a 48-node job leaves 49 orphans).
+        # The bat file's `Cluster ... Close Exit` line never runs either.
+        log.warning("Cancelled during Cube job %s -- clearing cluster", job.name)
+        recover_license()
+        raise
 
     # A startup access-violation (0xC0000005 / -1073741819) means runtpp could not
     # reach the Bentley license pipe — a broken license entitlement, not a stuck
