@@ -232,12 +232,6 @@ steps:
       job: "CTRAMP/scripts/skims/CreateNonMotorizedNetwork.job"
   - nonmotorized_skims:
       job: "CTRAMP/scripts/skims/NonMotorizedSkims.job"
-  - transit_dwell_access:
-      command: "CTRAMP/scripts/skims/transitDwellAccess.py"
-      # The argv the script receives, not a transliteration: RunModel.bat 146-147 set the
-      # complex-mode variables to a single space and cmd collapses those, so passing "" here
-      # would add arguments the script never saw and crash it on int("").
-      args: ["NORMAL", "NoExtraDelay", "Simple", "complexDwell", "complexAccess"]
 
   # ── The feedback loop · four iterations, iteration 0 the warm start (RunIteration.bat) ──
   # One iteration = demand + assignment; demand responds to the skims the previous
@@ -341,8 +335,9 @@ steps:
 
         # Transit assignment (trnAssign.bat).  These run from
         # trn/TransitAssignment.iter{iteration}; their cluster still talks in
-        # run_dir/commpath rather than under it.
-        - stage_transit_lines:
+        # run_dir/commpath rather than under it.  A single pass, no line-file
+        # staging or MSA sub-iteration loop -- transitLines.lin is a plain input,
+        # read straight from trn/, since the simplify_transit_master merge.
         - prep_hwy_net:
             job: "CTRAMP/scripts/skims/PrepHwyNet.job"
             cwd: "trn/TransitAssignment.iter{iteration}"
@@ -367,9 +362,6 @@ steps:
             cwd: "trn/TransitAssignment.iter{iteration}"
             commpath: "commpath"
             cluster_nodes: 15
-            env:                    # trnAssign.bat's counters; FAST is a single pass
-              TRNASSIGNITER: "0"
-              PREVTRNASSIGNITER: "NEG1"
         - copy_transit_skims:        # trnAssign.bat copy-up: iteration dir -> skims/
 
         # Feedback.  AverageNetworkVolumes runs every iteration; the .bat skips it at

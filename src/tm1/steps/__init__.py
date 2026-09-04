@@ -40,7 +40,6 @@ log = logging.getLogger(__name__)
 STEPS: dict[str, Callable] = {
     # Staging: file shuffling the legacy .bat files did inline, between the jobs.
     "make_directories": staging_step.make_directories,
-    "stage_transit_lines": staging_step.stage_transit_lines,
     "copy_transit_skims": staging_step.copy_transit_skims,
     "stage_loaded_networks": staging_step.stage_loaded_networks,
     "seed_average_networks": staging_step.seed_average_networks,

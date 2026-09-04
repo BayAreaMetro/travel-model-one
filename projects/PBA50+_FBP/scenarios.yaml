@@ -86,9 +86,6 @@ steps:
       cwd: "trn/TransitAssignment.iter{iteration}"
       commpath: "commpath"
       cluster_nodes: 15
-      env:
-        TRNASSIGNITER: "0"
-        PREVTRNASSIGNITER: "NEG1"
       enabled: false
 
   # Genuinely new: the shared model has no step named this, so it is appended

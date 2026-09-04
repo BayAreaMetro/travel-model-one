@@ -57,7 +57,7 @@ def test_two_sources_merge_into_one_directory(tree: Path) -> None:
 def test_restaging_does_not_clobber_what_a_later_step_wrote(tree: Path) -> None:
     """Later steps write into the same directories staging created.
 
-    csv_to_dbf writes hwy/tolls.dbf, transit_dwell_access writes trn/*.lin.  A
+    csv_to_dbf writes hwy/tolls.dbf, configure_ctramp writes into CTRAMP/model. A
     re-run of copy_inputs must leave their output alone.
     """
     entries = {"hwy": {"from": str(tree / "src_a"), "to": str(tree / "out")}}

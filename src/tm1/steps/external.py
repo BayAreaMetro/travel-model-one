@@ -116,8 +116,8 @@ VERIFY_KEY = "verify"
 #: case -- one artifact per period -- stays a single line.
 _PERIOD_REF = "{PERIOD}"
 
-#: Seconds before a spawned program is presumed hung.  Generous: transitDwellAccess
-#: parses a 33k-line transit network, and SkimsDatabase-scale work is slower still.
+#: Seconds before a spawned program is presumed hung.  Generous:
+#: SkimsDatabase-scale work parses large networks and runs slower still.
 DEFAULT_TIMEOUT = 7200
 
 #: How much captured output to quote when a program fails.  The full text is on

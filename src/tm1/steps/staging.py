@@ -12,7 +12,7 @@ Each step takes its iteration from where it sits inside ``iterate:`` -- before
 ===========================  ==========================================
 Step                         ``RunIteration.bat``
 ===========================  ==========================================
-:func:`stage_transit_lines`  ``trnAssign.bat`` 43-63
+:func:`copy_transit_skims`   ``trnAssign.bat``'s copy-up
 :func:`stage_loaded_networks`  159-164 -- ``mkdir`` + five ``move``
 :func:`seed_average_networks`  177-181 -- the ``ELSE`` copy
 :func:`publish_networks`     193-200 -- five ``copy`` + ``del x*.net``
@@ -82,55 +82,21 @@ def make_directories(config_dir: Path, cfg: dict, **kwargs: object) -> str | Non
     return None
 
 
-def stage_transit_lines(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
-    """Seed this round's transit assignment directory with its line files.
-
-    ``trnAssign.bat`` 43-63.  Every global iteration starts from the period files
-    built at model setup -- faithful for the ``FAST`` configuration, where transit
-    does a single pass and never carries lines forward from its own previous round.
-    """
-    run_dir = Path(cfg["run_dir"])
-    iteration = _iteration(cfg, kwargs)
-    trn = run_dir / "trn"
-    ta_dir = trn / f"TransitAssignment.iter{iteration}"
-    ta_dir.mkdir(parents=True, exist_ok=True)
-
-    for period in PERIODS:
-        source = trn / f"transitOriginal{period}.lin"
-        if not source.is_file():
-            msg = (
-                f"Transit line file missing: {source}. It is built at model setup "
-                f"by the transit_dwell_access step."
-            )
-            raise FileNotFoundError(msg)
-        # Both names: the _0 copy is the round's starting point, the bare one is
-        # what trnbuild reads and later passes overwrite.
-        shutil.copy2(source, ta_dir / f"transit{period}_0.lin")
-        shutil.copy2(source, ta_dir / f"transit{period}.lin")
-
-    log.info("Staged %d transit line files in %s", 2 * len(PERIODS), ta_dir)
-    return None
-
-
 def copy_transit_skims(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
     """Lift this round's transit skims out of the iteration directory, into ``skims/``.
 
-    ``trnAssign.bat:231-235``.  ``TransitSkims.job`` writes
-    ``trnskm{period}_{access}_{path}_{egress}.avg.iter{S}.tpp`` into
-    ``trn/TransitAssignment.iter{N}/``; the copy-up **strips the suffix**, so
-    ``skims/`` holds plain ``trnskm{period}_{path}.tpp`` -- the names CT-RAMP and
-    ``Accessibility.job`` read.  Keeping the suffix leaves the plain names
-    missing, which crashes ``Accessibility.job`` at startup.
+    ``trnAssign.bat``'s copy-up.  ``TransitSkims.job`` writes plain
+    ``trnskm{period}_{access}_{path}_{egress}.tpp`` into
+    ``trn/TransitAssignment.iter{N}/`` -- a straight copy, no rename: the
+    ``STANDARD``/MSA configuration this once had to strip a sub-iteration
+    suffix for is gone (simplify_transit_master), and CT-RAMP/``Accessibility.job``
+    already read this exact name.
 
-    **``S`` is the transit sub-iteration, not the global round.**  It comes from
-    ``%TRNASSIGNITER%`` (``TransitSkims.job:431``), a counter internal to
-    ``trnAssign.bat`` that starts at 0 and only advances in the ``STANDARD``
-    configuration, where transit assignment iterates to convergence.  Under
-    ``FAST`` -- one pass, what this pipeline runs -- it stays 0 in *every* global
-    round, so round 2's directory holds ``.avg.iter0.tpp`` just as round 0's does.
-
-    The ``.bat`` copies ``%LASTITER_{period}%``, the last sub-iteration reached,
-    so this takes the highest one present per skim rather than assuming a number.
+    Excludes ``*_woRegionalFare.tpp``: when the regional fare strategy is on,
+    ``apply_regional_transit_fares_to_skims.job`` renames the pre-fare skim
+    aside under that name before writing the fare-adjusted version back to the
+    plain one, so both exist in the iteration directory -- only the plain name
+    is the round's real product.
     """
     run_dir = Path(cfg["run_dir"])
     iteration = _iteration(cfg, kwargs)
@@ -138,33 +104,18 @@ def copy_transit_skims(config_dir: Path, cfg: dict, **kwargs: object) -> str | N
     skims = run_dir / "skims"
     skims.mkdir(parents=True, exist_ok=True)
 
-    # base name -> (sub-iteration, file), keeping the highest sub-iteration.
-    latest: dict[str, tuple[int, Path]] = {}
-    for path in sorted(ta_dir.glob("trnskm*.avg.iter*.tpp")):
-        base, _, tail = path.name.partition(".avg.iter")
-        sub = tail.removesuffix(".tpp")
-        if not sub.isdigit():
-            continue  # `.avg.iterNEG1.tpp`, TransitSkims.job:424's seed copy
-        if base not in latest or int(sub) > latest[base][0]:
-            latest[base] = (int(sub), path)
-
-    if not latest:
+    files = [f for f in ta_dir.glob("trnskm*.tpp") if "_woRegionalFare" not in f.name]
+    if not files:
         msg = (
             f"No transit skims in {ta_dir}. TransitSkims.job writes "
-            f"trnskm*.avg.iter{{S}}.tpp there, where S is the transit "
-            f"sub-iteration (0 under TRNCONFIG=FAST, not the global round); "
-            f"check that it ran for this round."
+            f"trnskm*.tpp there; check that it ran for this round."
         )
         raise FileNotFoundError(msg)
 
-    for base, (_, path) in latest.items():
-        shutil.copy2(path, skims / f"{base}.tpp")
+    for path in files:
+        shutil.copy2(path, skims / path.name)
 
-    subs = sorted({sub for sub, _ in latest.values()})
-    log.info(
-        "Copied %d transit skims to %s (sub-iteration %s, suffix stripped)",
-        len(latest), skims, ", ".join(str(s) for s in subs),
-    )
+    log.info("Copied %d transit skims to %s", len(files), skims)
     return None
 
 
