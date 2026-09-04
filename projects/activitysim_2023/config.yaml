@@ -1,0 +1,113 @@
+# Base 2023 Cleaned — upgraded PUMS + harmonized PopulationSim
+#
+# This scenario uses PUMS 2019-2023 (5-year ACS) with 2020-vintage PUMAs.
+# It produces a NEW synthetic population that does NOT match the legacy
+# reference run (2023_TM161_IPA_35_testrun), which used PUMS 2017-21.
+#
+# Use base_2023 (not this) if you need to exactly replicate the reference run.
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+m_drive: "{env:TM1_M_DRIVE}"          # M: = \\models.ad.mtc.ca.gov\data\models
+ctramp_run: "{env:TM1_CTRAMP_RUN}"   # a finished CT-RAMP run: this project reads its skims and networks
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  DERIVED PATHS — generally no need to change                               │
+# └─────────────────────────────────────────────────────────────────────────────┘
+survey_output_dir: "{run_dir}/survey"
+asim_output_dir: "{run_dir}/output_full"
+
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+steps:
+  # --- 1. Setup: copy inputs + convert CUBE .tpp skims to OMX ---
+  # NOTE: land_use and skims still come from the reference run.
+  # Only the population is regenerated from newer PUMS.
+  copy_inputs:
+    land_use:
+      from: "{ctramp_run}/landuse/tazData.csv"
+      to: "{run_dir}/data/land_use.csv"
+
+  convert_skims:
+    skim_tpp_dir: "{ctramp_run}/skims"
+    output: "{run_dir}/data/skims.omx"
+
+  # Merge CT-RAMP walk-to-transit subzone shares into land_use (after copy).
+  # The mode-choice preprocessors sample each tour end's walk segment from
+  # these shares to replicate CT-RAMP's transit availability gates.
+  walk_access_buffers:
+    from: "{ctramp_run}/INPUT/landuse/walkAccessBuffers.float.csv"
+    into: "{run_dir}/data/land_use.csv"
+
+  # --- 2. PopulationSim: synthesize from PUMS 2019-2023 (5-year ACS) ---
+  populationsim:
+    pums:
+      # Pre-crosswalked 2019-2023 5-year PUMS with 2020-vintage PUMAs.
+      # These files include a derived WKW column (mapped from WKWN).
+      household: "{m_drive}/Data/Census/PUMS_2023_5Year_Crosswalked/bay_area_households_2019_2023_crosswalked.csv"
+      person: "{m_drive}/Data/Census/PUMS_2023_5Year_Crosswalked/bay_area_persons_2019_2023_crosswalked.csv"
+    controls:
+      taz: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars.csv
+      county: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20County.csv
+      region: https://raw.githubusercontent.com/BayAreaMetro/travel-model-one/master/utilities/taz-data-baseyears/2023/TAZ1454%202023%20Popsim%20Vars%20Region.csv
+    working_dir: "{run_dir}/popsim"
+    output_dir: "{run_dir}/data"
+    configs:
+      - "projects/activitysim_2023/populationsim"
+      - "default-configs/population/configs_mp"
+      - "default-configs/population/configs"
+
+  # --- 3. Simulate: run ActivitySim demand model ---
+  simulate_activitysim:
+    iterations: 0  # 0 = static skims; >0 enables the assignment feedback loop below
+    activitysim:
+      configs:
+        - "projects/activitysim_2023/activitysim"
+        - "default-configs/activity/configs_mp"
+        - "default-configs/activity/configs"
+      data_dir: "{run_dir}/data"
+      output_dir: "{run_dir}/output"
+    # Highway assignment feedback (used only when iterations > 0, so inert here).
+    # Same keys and same `backend:` as the CT-RAMP path -- one assignment step, one
+    # backend table, whichever demand model is driving.
+    assignment:
+      backend: cube
+
+      # The Cube project scaffold: hwy nets, CTRAMP/scripts, frozen nonres/ demand.
+      # Note this is NOT the run's own run_dir -- the Cube tree is the finished CT-RAMP
+      # run, while ActivitySim writes into its own.
+      run_dir: "{ctramp_run}"
+
+      # The demand this assignment consumes: this round's ActivitySim trip
+      # matrices.  `{period}` expands to ea/am/md/pm/ev (`{PERIOD}` gives EA/AM/...).
+      # Optional -- defaults to trips_{period}.omx in the ActivitySim output_dir.
+      demand: "{run_dir}/output/trips_{period}.omx"
+
+      # Where the refreshed skims are written back for the next ActivitySim run.
+      skims_omx: "{run_dir}/data/skims.omx"
+      # per-iteration provenance copies under {skims dir}/skim_archive/:
+      # skims_iter{N}.omx + trips_{p}_iter{N}.omx (archive: false to disable)
+      archive: true
+      cluster_nodes: 12
+      assign_job: "HwyAssign.job"
+      do_transit: true
+      transit_nodes: 15
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  CALIBRATION / VALIDATION                                                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+calibration:
+  submodels:
+    - auto_ownership
+    - work_from_home
+    - free_parking
+    - cdap
+    - mandatory_tour_frequency
+    - joint_tour_frequency
+    - non_mandatory_tour_frequency
+    - atwork_subtour
+    - tour_mode_choice
+    - trip_mode_choice

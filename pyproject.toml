@@ -5,21 +5,27 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "numpy>=1.26",
+    "activitysim==1.5.1",
+    "numpy",  # floor governed by activitysim (pins <1.26)
     "openmatrix>=0.3.5",
     "pandas>=2.0",
+    "polars>=1.39.3",   # ctramp_output, the ActivitySim -> CT-RAMP output shim
+    "populationsim==0.10.0",
     "psutil>=5.9",
     "python-dotenv>=1.0",
     "pyyaml>=6.0",
     "requests>=2.31",
+    "travel-diary-survey-tools",
     # tm1.steps.configure_ctramp._patch_workbook (native, always runs) reads/writes the
     # UEC workbooks in place, which are still binary .xls -- a format neither openpyxl
-    # nor pandas can write.  Not optional: every run reaches this step, and it goes
-    # when the workbooks stop being .xls -- the ActivitySim swap, not this phase.
+    # nor pandas can write.  Not optional: the CT-RAMP project still reaches this step.
     "xlrd>=2.0",
     "xlutils>=2.0",
     "xlwt>=1.3",
 ]
+
+[tool.uv.sources]
+travel-diary-survey-tools = { git = "https://github.com/BayAreaMetro/travel-diary-survey-tools", branch = "develop" }
 
 [project.scripts]
 tm1 = "tm1.cli:main"
@@ -30,19 +36,15 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "polars>=1.39.3",  # golden-fixture comparison in tests
     "pytest>=9.0.3",
     "pytest-coverage>=0.0",
     "ruff>=0.15.11",
 ]
 
 [tool.hatch.metadata]
-# NetworkWrangler is pinned to a git commit, not a branch, so `uv sync` on another
-# machine resolves to the same code -- c806951 is the commit that made it installable
-# at all (setup.py previously omitted the _static/ directory Wrangler imports at module
-# level). Hatchling refuses such direct references unless told to allow them, because
-# they cannot be published to PyPI -- which is fine here: this package is never
-# published, and NetworkWrangler is not on PyPI either.
+# `travel-diary-survey-tools` resolves to a git branch.  Hatchling refuses such direct
+# references unless told to allow them, because they cannot be published to PyPI --
+# fine here: this package is never published, and neither is that one.
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]

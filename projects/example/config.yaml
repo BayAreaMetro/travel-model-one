@@ -1,0 +1,77 @@
+# Example Scenario — WFH Policy Boost
+#
+# Demonstrates how to create a scenario overlay. This scenario applies an EN7-style
+# telecommuting encouragement policy that increases WFH rates in San Francisco
+# superdistricts (SD 1–6) by adding a utility boost of +0.5.
+#
+# Only files that differ from the base model need to be included here.
+# ActivitySim's config directory chain means any file placed in activitysim/
+# will override the same-named file from default-configs/activity/configs/.
+#
+# Structure:
+#   projects/example/
+#   ├── scenario_config.yaml          ← pipeline steps + machine paths
+#   ├── activitysim/                  ← ActivitySim config overrides
+#   │   ├── settings.yaml             ← operational settings (sample size, etc.)
+#   │   └── work_from_home.csv        ← WFH utility spec with SF boosts
+#   └── populationsim/                ← PopulationSim overrides (empty = use base)
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  MACHINE-SPECIFIC PATHS — edit these for your environment                  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+ctramp_run: "{env:TM1_CTRAMP_RUN}"   # a finished CT-RAMP run: this project reads its skims and networks
+
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  PIPELINE STEPS                                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+steps:
+  # --- 1. Setup: copy inputs + convert Cube skims to OMX for ActivitySim ---
+  copy_inputs:
+    land_use:
+      from: "{ctramp_run}/landuse/tazData.csv"
+      to: "{run_dir}/data/land_use.csv"
+    households:
+      from: "{ctramp_run}/popsyn/hhFile.csv"
+      to: "{run_dir}/data/households.csv"
+    persons:
+      from: "{ctramp_run}/popsyn/personFile.csv"
+      to: "{run_dir}/data/persons.csv"
+
+  convert_skims:
+    skim_tpp_dir: "{ctramp_run}/skims"
+    output: "{run_dir}/data/skims.omx"
+
+  # --- 2. Simulate: run ActivitySim, then feed the assignment loop below ---
+  simulate_activitysim:
+    iterations: 1  # 0 = static skims; >0 enables the assignment feedback loop below
+    activitysim:
+      data_dir: "{run_dir}/data"
+      output_dir: "{run_dir}/output"
+      configs:
+        - "projects/example/activitysim"  # ← scenario overrides
+        - "default-configs/activity/configs_mp"
+        - "default-configs/activity/configs"
+
+    # Highway assignment feedback (used only when iterations > 0).  Same keys and
+    # same `backend:` as the CT-RAMP path -- one assignment step, one backend table,
+    # whichever demand model is driving.
+    assignment:
+      backend: cube
+
+      # The Cube project scaffold: hwy nets, CTRAMP/scripts, frozen nonres/ demand.
+      # Note this is NOT the run's own run_dir -- the Cube tree is the finished CT-RAMP
+      # run, while ActivitySim writes into its own.
+      run_dir: "{ctramp_run}"
+
+      # The demand this assignment consumes: this round's ActivitySim trip
+      # matrices.  `{period}` expands to ea/am/md/pm/ev (`{PERIOD}` gives EA/AM/...).
+      # Optional -- defaults to trips_{period}.omx in the ActivitySim output_dir.
+      demand: "{run_dir}/output/trips_{period}.omx"
+
+      # Where the refreshed skims are written back for the next ActivitySim run.
+      skims_omx: "{run_dir}/data/skims.omx"
+      archive: true
+      cluster_nodes: 12
+      assign_job: "HwyAssign.job"
+      do_transit: true
+      transit_nodes: 15

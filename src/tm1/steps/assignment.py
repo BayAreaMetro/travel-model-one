@@ -59,17 +59,19 @@ import logging
 from collections.abc import Callable
 from pathlib import Path
 
+from tm1.assignment import has_period_placeholder
 from tm1.assignment.cube.ctramp import run_iteration
 from tm1.assignment.cube.highway import PERIODS
 from tm1.project.config import step_config
 
 log = logging.getLogger(__name__)
 
-#: Where assignment reads its demand when the project does not say.  CT-RAMP's
-#: ``PrepAssign.job`` writes here, so this is the conventional location rather than
-#: a choice; naming it makes the seam explicit and lets a different demand model
-#: point the engine somewhere else without either knowing about the other.
-_DEFAULT_DEMAND = "{run_dir}/main/trips{PERIOD}.tpp"
+#: Where assignment reads its demand when the project does not say, relative to the
+#: Cube project dir.  CT-RAMP's ``PrepAssign.job`` writes here, so this is the
+#: conventional location rather than a choice; naming it makes the seam explicit and
+#: lets a different demand model point the engine somewhere else without either
+#: knowing about the other.
+_DEFAULT_DEMAND = "main/trips{PERIOD}.tpp"
 
 
 def _resolve_iteration(cfg: dict, step_cfg: dict, kwargs: dict) -> int:  # noqa: ARG001
@@ -110,21 +112,23 @@ def _resolve_demand(run_dir: Path, step_cfg: dict) -> str:
 
     ``{PERIOD}`` is deliberately left unexpanded -- the backend substitutes it once
     per time period.  ``resolve_templates`` uses ``str.replace``, so it passes over
-    placeholders it has no value for; only ``{run_dir}`` is expanded by the time
-    this runs.
+    placeholders it has no value for; ``{run_dir}`` is already expanded by then, and
+    is deliberately *not* re-expanded here.  ``assignment.run_dir`` is the Cube project
+    scaffold, which stops being the run's own directory as soon as the demand model is
+    not CT-RAMP -- substituting it again would silently point the seam at the wrong tree.
     """
-    pattern = str(step_cfg.get("demand") or _DEFAULT_DEMAND)
-    pattern = pattern.replace("{run_dir}", str(run_dir))
-    if "{PERIOD}" not in pattern:
+    pattern = str(step_cfg.get("demand") or (run_dir / _DEFAULT_DEMAND))
+    if not has_period_placeholder(pattern):
         msg = (
-            f"assignment `demand` must contain '{{PERIOD}}' -- assignment reads one "
-            f"demand matrix per time period ({', '.join(PERIODS)}). Got: {pattern}"
+            f"assignment `demand` must contain '{{PERIOD}}' or '{{period}}' -- assignment "
+            f"reads one demand matrix per time period ({', '.join(PERIODS)}). "
+            f"Got: {pattern}"
         )
         raise ValueError(msg)
     return pattern
 
 
-def _run_cube(
+def _run_cube_from_ctramp(
     run_dir: Path, iteration: int, sampleshare: float, demand: str, step_cfg: dict,
 ) -> None:
     """Cube Voyager: ``RunIteration.bat``'s sequence, every ``.job`` unmodified."""
@@ -166,6 +170,65 @@ def _run_cube(
     )
 
 
+def _run_cube_from_omx(
+    run_dir: Path, iteration: int, sampleshare: float, demand: str, step_cfg: dict,  # noqa: ARG001
+) -> None:
+    """Cube Voyager, fed by a demand model that emits OMX rather than TPP.
+
+    ``sampleshare`` is unused: ActivitySim's ``write_trip_matrices`` has already
+    expanded its sample to full population, so there is nothing for the assignment
+    to scale.  The CT-RAMP path needs it because ``PrepAssign.job`` does that
+    expansion itself.
+    """
+    from tm1.assignment.cube.asim_bridge import run_assignment_iteration  # noqa: PLC0415
+
+    skims_omx = step_cfg.get("skims_omx")
+    if not skims_omx:
+        msg = (
+            "assignment needs `skims_omx` when demand is OMX -- the engine writes the "
+            "refreshed skims back to the single file the demand model reads."
+        )
+        raise ValueError(msg)
+
+    run_assignment_iteration(
+        run_dir,
+        demand,
+        iteration,
+        skims_omx_path=skims_omx,
+        cluster_nodes=step_cfg.get("cluster_nodes", 12),
+        assign_job=step_cfg.get("assign_job", "HwyAssign.job"),
+        do_transit=step_cfg.get("do_transit", True),
+        transit_nodes=step_cfg.get("transit_nodes", 15),
+    )
+
+
+#: The Cube engine only ever reads TPP.  Which route gets it there depends on what
+#: wrote the demand -- CT-RAMP's trip lists are folded in by ``PrepAssign.job``, a
+#: Cube job, while ActivitySim's OMX needs a Python bridge.  Selecting on the demand
+#: artifact rather than on a separate switch keeps the seam the single source of
+#: truth about who feeds the engine.
+_CUBE_ROUTES: dict[str, Callable[[Path, int, float, str, dict], None]] = {
+    ".tpp": _run_cube_from_ctramp,
+    ".omx": _run_cube_from_omx,
+}
+
+
+def _run_cube(
+    run_dir: Path, iteration: int, sampleshare: float, demand: str, step_cfg: dict,
+) -> None:
+    """Cube Voyager, routed by the format of the demand it was pointed at."""
+    suffix = Path(demand).suffix.lower()
+    route = _CUBE_ROUTES.get(suffix)
+    if route is None:
+        supported = ", ".join(sorted(_CUBE_ROUTES))
+        msg = (
+            f"assignment `demand` has unsupported format {suffix!r} ({demand}). "
+            f"The cube backend reads: {supported}."
+        )
+        raise ValueError(msg)
+    route(run_dir, iteration, sampleshare, demand, step_cfg)
+
+
 #: Assignment engines, keyed by the ``backend:`` value that selects them.
 #:
 #: Cube and AequilibraE solve the same problem -- multi-class user equilibrium
@@ -183,10 +246,14 @@ _BACKENDS: dict[str, Callable[[Path, int, float, str, dict], None]] = {
 }
 
 
-def run(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
-    """Run one assignment + feedback pass for the current iteration."""
-    step_cfg = step_config(cfg, "assignment", kwargs)
+def run_backend(step_cfg: dict, cfg: dict, iteration: int) -> None:
+    """Run one assignment pass with whichever engine *step_cfg* selects.
 
+    Shared by the ``assignment`` step and by the ActivitySim demand loop, so both
+    demand models reach the engines through one backend table and one set of config
+    keys.  The caller supplies ``iteration``, because what counts as an iteration
+    belongs to the loop rather than to the engine.
+    """
     # `MODEL_YEAR` and `FUTURE` describe the run, not this step: the pre-process reads
     # them too (HsrTripGeneration.job wants %MODEL_YEAR% before any assignment exists).
     # They live in the project's `env:` block because that is what they are -- variables
@@ -220,10 +287,15 @@ def run(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: A
         msg = f"Unknown assignment backend {backend!r}; available: {available}.{extra}"
         raise ValueError(msg)
 
-    iteration = _resolve_iteration(cfg, step_cfg, kwargs)
     sampleshare = _resolve_sampleshare(cfg, step_cfg, iteration)
     demand = _resolve_demand(run_dir, step_cfg)
 
     log.info("Assignment iteration %d via backend %r, demand %s", iteration, backend, demand)
     _BACKENDS[backend](run_dir, iteration, sampleshare, demand, step_cfg)
+
+
+def run(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+    """Run one assignment + feedback pass for the current iteration."""
+    step_cfg = step_config(cfg, "assignment", kwargs)
+    run_backend(step_cfg, cfg, _resolve_iteration(cfg, step_cfg, kwargs))
     return None
