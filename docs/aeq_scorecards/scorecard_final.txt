@@ -1,0 +1,12 @@
+
+TRANSIT SKIM VALIDATION | 610 cells | 2959s @ 24 threads
+component runs     cube      aeq   d(abs) %diff med  corr med
+TOTIVT      75    55.38    54.84    -0.54      -0.9     0.985
+KEYIVT      60    37.75    37.29    -0.46      -1.2     0.972
+IWAIT       75    12.65    12.45    -0.20      +0.3     0.908
+XWAIT       75    15.17    15.39    +0.22      +1.1     0.914
+WAUX        75     3.79     3.71    -0.08      -0.4     0.840
+BOARDS      75     2.09     2.08    -0.00      -0.1     0.988
+FARE        75   420.37   408.85   -11.51      -0.6     0.924
+DTIM        50    10.82    10.90    +0.07      +0.9     0.994
+DDIST       50     7.76     7.75    -0.02      -0.0     0.994

@@ -1,0 +1,8 @@
+# Runs this project defines.  Each case is one row in
+# `tm1 cases activitysim_2023_aeq` and one run directory.
+cases:
+  BASE-2023:
+    description: >
+      ActivitySim demand assigned by AequilibraE instead of Cube Voyager -- the same
+      network and the same demand, solved by an open-source engine and no licence.
+      Compare against activitysim_2023, which differs only in the backend.
