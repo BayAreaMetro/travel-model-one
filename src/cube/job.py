@@ -6,12 +6,13 @@ desktop session**.  A direct ``subprocess`` call to ``runtpp`` from an SSH or
 VS Code Remote session access-violates at startup because it can't reach the
 license pipe.  The workaround (mirrored from :mod:`tm1.steps.simulate_ctramp`):
 
-- **Interactive session** -> call ``runtpp`` directly (fast, simple).
+- **Local session** -> call ``runtpp`` directly (fast, simple).  "Local" is a
+  proxy, not a verified session check -- see :func:`is_local_session`.
 - **Remote session** -> launch the job in the interactive session via Windows
   Task Scheduler (``schtasks /it``); Python stays remote and polls a sentinel
   file for the exit code, tailing the job log for progress.
 
-Public API: :func:`run_cube_job`, :func:`is_interactive_session`.
+Public API: :func:`run_cube_job`, :func:`is_local_session`.
 """
 
 import logging
@@ -83,12 +84,14 @@ class CubeJobError(RuntimeError):
     """A Cube ``.job`` exited non-zero or failed to run."""
 
 
-def is_interactive_session() -> bool:
-    """True if this process can reach the Bentley license pipe directly.
+def is_local_session() -> bool:
+    """True if this process is not a known-remote session.
 
-    The pipe is only available in the interactive desktop session; SSH
-    (``SSH_CONNECTION``) and VS Code Remote (``VSCODE_AGENT_FOLDER``) cannot
-    reach it, so Cube must be launched via :func:`run_cube_job`'s schtasks path.
+    A proxy for "can reach the Bentley license pipe directly", not a verified
+    Windows session check: it only rules out SSH (``SSH_CONNECTION``) and VS
+    Code Remote (``VSCODE_AGENT_FOLDER``).  Anything else -- including a local
+    session that happens not to have desktop access -- is assumed local, since
+    on these machines that has always meant the interactive desktop session.
     """
     return not (os.environ.get("SSH_CONNECTION") or os.environ.get("VSCODE_AGENT_FOLDER"))
 
@@ -377,14 +380,14 @@ def run_cube_job(
         cpath = Path(commpath).resolve() if commpath else cwd / "commpath"
         cpath.mkdir(parents=True, exist_ok=True)
 
-    if is_interactive_session():
+    if is_local_session():
         env = os.environ.copy()
         env["PATH"] = _CUBE_PATH + ";" + env.get("PATH", "")
         if cpath is not None:
             env["COMMPATH"] = str(cpath)
         if env_extra:
             env.update({k: str(v) for k, v in env_extra.items()})
-        log.info("Running Cube job %s (interactive)", job.name)
+        log.info("Running Cube job %s (local)", job.name)
         if cluster_nodes:
             # Reuse the bat path so the cluster bracketing is identical to remote.
             sentinel = cwd / f"_cube_{job.stem}.sentinel"

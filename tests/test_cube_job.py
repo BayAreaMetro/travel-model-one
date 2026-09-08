@@ -5,7 +5,7 @@ Cube is a licensed binary, so ``runtpp`` is replaced with a fake
 call -- that every launch path names its log file, and that the engine's
 ReturnCode beats runtpp's process exit code.
 
-The interactive/no-cluster path is the one short jobs like ``PrepHwyNet.job``
+The local/no-cluster path is the one short jobs like ``PrepHwyNet.job``
 take.  It is the only one that reads Cube's output through a pipe rather than a
 file redirect, and it used to leave ``logfile`` unbound -- so a *successful* job
 crashed the runner, and a failing one lost its diagnosis.
@@ -23,8 +23,8 @@ from cube.job import CubeJobError, run_cube_job
 
 
 def _fake_runtpp(monkeypatch: pytest.MonkeyPatch, stdout: str, returncode: int = 0) -> None:
-    """Stand in for ``runtpp.exe`` in an interactive session with no cluster."""
-    monkeypatch.setattr(runner, "is_interactive_session", lambda: True)
+    """Stand in for ``runtpp.exe`` in a local session with no cluster."""
+    monkeypatch.setattr(runner, "is_local_session", lambda: True)
 
     def fake_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess:  # noqa: ARG001
         return subprocess.CompletedProcess(argv, returncode, stdout=stdout, stderr="")

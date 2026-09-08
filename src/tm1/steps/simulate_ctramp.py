@@ -31,7 +31,7 @@ License constraint (Bentley/Cube):
     Scheduler (schtasks /it) and monitored via log file tailing.
 
 Execution modes:
-    - Interactive session: direct subprocess.Popen (fast, simple)
+    - Local session: direct subprocess.Popen (fast, simple)
     - SSH/remote session:  schtasks launcher bat → interactive session
       Python stays in SSH, monitors logs/sentinel for progress/completion.
 
@@ -499,11 +499,12 @@ def _ensure_native_dlls(runtime_dir: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _is_interactive_session() -> bool:
-    """Return True if the current process runs in an interactive desktop session.
+def _is_local_session() -> bool:
+    """Return True if this process is not a known-remote session.
 
-    The Bentley license pipe (net.pipe://localhost/bentleyconnect/client/
-    licenseservice) is only accessible from the interactive Windows session.
+    A proxy for "can reach the Bentley license pipe directly" (net.pipe://
+    localhost/bentleyconnect/client/licenseservice), not a verified Windows
+    session check -- see :func:`cube.job.is_local_session`, which this mirrors.
     SSH sessions, VS Code Remote terminals, and service sessions cannot reach
     the pipe, causing VoyagerFileAccess.dll to hang indefinitely on
     MatReaderOpen.
@@ -520,12 +521,12 @@ def _is_interactive_session() -> bool:
 def _preflight_license() -> bool:
     """Check whether the Bentley license is accessible from this session.
 
-    Returns True if we can safely call the DLL directly (interactive session).
+    Returns True if we can safely call the DLL directly (local session).
     Returns False if we need to use schtasks to run in the interactive session.
     Does NOT touch the DLL — that would deadlock on failure.
     """
-    if _is_interactive_session():
-        log.info("Preflight: interactive session — direct execution OK")
+    if _is_local_session():
+        log.info("Preflight: local session — direct execution OK")
         return True
 
     log.warning(
@@ -843,7 +844,7 @@ def _monitor_logs(logs_dir: Path, stop: threading.Event) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Direct execution (interactive session only)
+# Direct execution (local session only)
 # ---------------------------------------------------------------------------
 
 
@@ -1012,11 +1013,11 @@ def run(config_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
     # Preflight: determine if we can access the Bentley license from this
     # session, or if we need to launch via schtasks in the interactive session.
     # NOTE: we ALWAYS use schtasks for the single-iteration ablation case,
-    # even from an interactive RDP session, because schtasks survives RDP
+    # even from a local RDP session, because schtasks survives RDP
     # disconnect (Windows throttles direct subprocesses when the session
     # disconnects).  Direct subprocess is only used for multi-iteration runs
     # which require the looping infrastructure.
-    interactive = _preflight_license()
+    local = _preflight_license()
 
     sp_flags = shadow_pricing_flags(
         iteration,
@@ -1026,7 +1027,7 @@ def run(config_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
     patch_properties(props_path, sp_flags)
     log.info("CT-RAMP iteration %d  sample_rate=%.2f", iteration, sample_rate)
 
-    if not interactive:
+    if not local:
         # schtasks path — works from any session and survives RDP disconnect.
         # Every call is single-iteration -- the runner owns the loop -- so this
         # path handles multi-iteration runs one round at a time.
@@ -1038,7 +1039,7 @@ def run(config_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
         finally:
             _recover_license()
     else:
-        # Interactive session: direct subprocess execution.  The JPPF cluster and
+        # Local session: direct subprocess execution.  The JPPF cluster and
         # matrix server are started and torn down per iteration, matching
         # RunIteration.bat, which calls javaOnly_runMain/runNode0 inside each one.
         procs = start_infrastructure(runtime_dir, run_dir, host_ip)
