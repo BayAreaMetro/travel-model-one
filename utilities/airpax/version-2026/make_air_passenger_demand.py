@@ -1,29 +1,29 @@
-"""
-make_air_passenger_demand.py
-============================
-
-Python port of ``make-air-passenger-demand.R`` (Sushreeta Mishra &
-Sujith Rapolu, 2026-04-09).  Builds 2023 and 2050 airport ground-access origin-to-destination
-matrices for SFO, OAK and SJC by expanding airport-level ground-access trip
-totals down to the TAZ level.
+"""Build airport passenger ground-access demand matrices for OAK, SFO, and SJC.
+Author: Sujith Rapolu
+Date: August 2026
 
 Inputs
 ------
-* ``Parameters.xlsx`` - Parameters, as well as information on sources and assumptions.
-* ``taz-superdistrict-county.csv`` - TAZ to Super District correspondence
+* ``parameters/*.csv`` - model configuration, assumptions, and derived shares.
+* ``../../geographies/taz-superdistrict-county.csv`` - model TAZ geography.
 
 Outputs
 -------
-* ``output/<file>.dbf``          - 12 non-transit vehicle-trip matrices and 12 transit person-trip matrices
+* ``output/<file>.dbf`` - 12 non-transit vehicle-trip matrices and 12 transit
+  person-trip matrices for model years 2023 and 2050.
 
-Run from the command line
--------------------------
-::
+Run
+---
+Use the existing parameter CSVs::
 
-    uv run python make_air_passenger_demand.py                
-    uv run python make_air_passenger_demand.py --params my.xlsx # uses a custom parameters file
+    python make_air_passenger_demand.py
 
-Or run the ``# %%`` cells interactively in VS Code.
+Rebuild source-derived parameter CSVs first, then create demand matrices::
+
+    python make_air_passenger_demand.py --rebuild-parameters
+
+Custom paths are available through the command-line options shown with
+``--help``.
 """
 
 # %% imports ------------------------------------------------------------------
@@ -43,48 +43,60 @@ import pandas as pd
 # %% configuration ------------------------------------------------------------
 HERE = Path(__file__).resolve().parent
 
-DEFAULT_XLSX = HERE / "Parameters.xlsx"
-CORRESPONDENCE_CSV = HERE.parent.parent / "geographies/taz-superdistrict-county.csv"
-
+# Default project paths.
+DEFAULT_PARAMETERS_DIR = HERE / "parameters"
+DEFAULT_GOSLING_DIR = HERE / "inputs" / "gosling_summaries"
+DEFAULT_TRANSIT_SOURCE = HERE / "inputs" / "TPS_TAZ_airport_TOD.xlsx"
+CORRESPONDENCE_CSV = HERE.parent.parent / "geographies" / "taz-superdistrict-county.csv"
 OUTPUT_DIR = HERE / "output"
+
+# Parameter tables read by the demand calculation. The TOD/access/submode
+# combination tables are assembled in memory from these component files.
+PARAMETER_FILES = {
+    "airport_output_file_map": "airport_output_file_map.csv",
+    "airport_passenger_targets": "airport_passenger_targets.csv",
+    "super_district_shares": "airport_non_transit_super_district_shares.csv",
+    "airport_non_transit_zone_access_mode_shares": "airport_non_transit_zone_access_mode_shares.csv",
+    "airport_non_transit_submode_shares": "airport_non_transit_submode_shares.csv",
+    "airport_non_transit_tod_shares": "airport_non_transit_tod_shares.csv",
+    "airport_non_transit_access_mode_shares": "airport_non_transit_access_mode_shares.csv",
+    "airport_transit_tod_shares": "airport_transit_tod_shares.csv",
+    "airport_transit_mode_shares": "airport_transit_mode_shares.csv",
+    "airport_transit_zone_shares": "airport_transit_zone_shares.csv",
+    "vehicle_occupancy": "airport_non_transit_vehicle_occupancy.csv",
+}
 
 EXPECTED_N_TAZ = 1454
 ACCESS_MODES = ("ES", "PK", "RN", "TX", "LI", "VN", "HT", "CH")
 TOD_ORDER = ("EA", "AM", "MD", "PM", "EV")
 
-REQUIRED_SHEETS = (
-    "Airport_File_Map",
-    "Air_Pax_Targets",
-    "Super_Dist_Shares",
-    "Zone_Shares",
-    "TOD_Access_Submode_Shares",
-    "Transit_TOD_Access_Shares",
-    "Transit_Zone_Shares",
-    "Veh_Occupancy",
-)
 
+# %% parameter CSV loader -----------------------------------------------------
+def load_parameters(parameters_dir: str | Path) -> dict[str, pd.DataFrame]:
+    """Load the model-ready parameter tables from a directory of CSV files."""
+    parameters_dir = Path(parameters_dir)
+    if not parameters_dir.is_dir():
+        raise FileNotFoundError(f"Parameters directory not found: {parameters_dir}")
 
-# %% Excel loader -------------------------------------------------------------
-def load_parameters(path: str | Path) -> dict[str, pd.DataFrame]:
-    """Load required sheets from an ``.xlsx`` / ``.xlsm`` file."""
-    path = Path(path)
-    if path.suffix.lower() not in (".xlsx", ".xlsm"):
-        raise ValueError(
-            f"Unsupported parameters file extension: {path.suffix}. "
-            "Only Excel files (.xlsx / .xlsm) are supported."
-        )
-    xl = pd.ExcelFile(path)
     out: dict[str, pd.DataFrame] = {}
-    for sheet in REQUIRED_SHEETS:
-        if sheet not in xl.sheet_names:
-            raise ValueError(f"{path.name} is missing sheet '{sheet}'")
-        out[sheet] = xl.parse(sheet)
+    for logical_name, file_name in PARAMETER_FILES.items():
+        path = parameters_dir / file_name
+        if not path.exists():
+            raise FileNotFoundError(
+                f"Required parameter CSV not found: {path}. "
+                "Run build_parameters.py if a generated parameter file is missing."
+            )
+        df = pd.read_csv(path)
+        df.columns = [str(c).strip().upper() for c in df.columns]
+        # The calculation uses SHARE_ACCESSMODE as its internal field name.
+        if "SHARE_ACCESS_MODE" in df.columns:
+            df = df.rename(columns={"SHARE_ACCESS_MODE": "SHARE_ACCESSMODE"})
+        out[logical_name] = df
     return out
 
 
 # %% minimal DBF writer / reader ---------------------------------------------
-# dBASE-III compatible - matches the subset of the format produced by
-# R's ``foreign::write.dbf`` for purely numeric / integer fields.
+# dBASE-III writer/reader for the numeric airport matrix outputs.
 def _truncate_unique(names: Sequence[str], width: int = 10) -> list[str]:
     seen: dict[str, int] = {}
     out: list[str] = []
@@ -246,67 +258,82 @@ def _conv_factor(access_mode: str, submode: str, conv_vec: dict[str, float]) -> 
 
 
 # %% prepare parameter tables -------------------------------------------------
-def load_and_prepare(params_path: Path) -> dict:
-    """Read every parameter table, normalise column names, coerce shares to
-    decimals, and return the prepared frames in a single dict.
-    """
-    raw = load_parameters(params_path)
+def load_and_prepare(parameters_dir: Path) -> dict:
+    """Load parameter CSVs and assemble the combined share tables in memory."""
+    raw = load_parameters(parameters_dir)
 
-    zone_def = _clean_names_upper(raw["Airport_File_Map"])
-    target_df = _clean_names_upper(raw["Air_Pax_Targets"])
-    zone_share = _clean_names_upper(raw["Super_Dist_Shares"])
-    zone_share_detail = _clean_names_upper(raw["Zone_Shares"])
-    col_share_raw = _clean_names_upper(raw["TOD_Access_Submode_Shares"])
-    transit_share_raw = _clean_names_upper(raw["Transit_TOD_Access_Shares"])
-    transit_zone_share_raw = _clean_names_upper(raw["Transit_Zone_Shares"])
-    conv_df = _clean_names_upper(raw["Veh_Occupancy"])
+    zone_def = _clean_names_upper(raw["airport_output_file_map"])
+    target_df = _clean_names_upper(raw["airport_passenger_targets"])
+    zone_share = _clean_names_upper(raw["super_district_shares"])
+    zone_share_detail = _clean_names_upper(raw["airport_non_transit_zone_access_mode_shares"])
+    submode_share = _clean_names_upper(raw["airport_non_transit_submode_shares"])
+    nontransit_tod = _clean_names_upper(raw["airport_non_transit_tod_shares"])
+    nontransit_access = _clean_names_upper(raw["airport_non_transit_access_mode_shares"])
+    transit_tod = _clean_names_upper(raw["airport_transit_tod_shares"])
+    transit_mode = _clean_names_upper(raw["airport_transit_mode_shares"])
+    transit_zone_share_raw = _clean_names_upper(raw["airport_transit_zone_shares"])
+    conv_df = _clean_names_upper(raw["vehicle_occupancy"])
 
     required = {
-        "Airport_File_Map": (
+        "airport_output_file_map.csv": (
             zone_def,
             ["FILE_NAME", "AIRPORT", "DIRECTION", "YEAR", "AIRPORT_TAZ",
              "TAZ_MIN", "TAZ_MAX"],
         ),
-        "Air_Pax_Targets": (
+        "airport_passenger_targets.csv": (
             target_df, ["FILE_NAME", "AIRPORT", "DIRECTION", "YEAR", "TARGET"]
         ),
-        "Super_Dist_Shares": (
+        "airport_non_transit_super_district_shares.csv": (
             zone_share,
             ["FILE_NAME", "AIRPORT", "DIRECTION", "YEAR", "DISTRICT", "SHARE"],
         ),
-        "Zone_Shares": (
+        "airport_non_transit_zone_access_mode_shares.csv": (
             zone_share_detail,
             ["AIRPORT", "DIRECTION", "ZONE", "DISTRICT"] +
             [f"ZDIST_SHARE_{m}" for m in ACCESS_MODES],
         ),
-        "TOD_Access_Submode_Shares": (
-            col_share_raw,
-            ["FILE_NAME", "AIRPORT", "DIRECTION", "YEAR", "TOD", "ACCESS_MODE",
-             "SUBMODE", "SHARE_TOD", "SHARE_ACCESSMODE", "SHARE_SUBMODE"],
+        "airport_non_transit_submode_shares.csv": (
+            submode_share,
+            ["AIRPORT", "DIRECTION", "YEAR", "ACCESS_MODE", "SUBMODE", "SHARE_SUBMODE"],
         ),
-        "Transit_TOD_Access_Shares": (
-            transit_share_raw,
-            ["FILE_NAME", "ACCESS_MODE", "TOD", "SHARE_ACCESSMODE", "SHARE_TOD"],
+        "airport_non_transit_tod_shares.csv": (
+            nontransit_tod, ["AIRPORT", "DIRECTION", "TOD", "SHARE_TOD"]
         ),
-        "Transit_Zone_Shares": (
+        "airport_non_transit_access_mode_shares.csv": (
+            nontransit_access, ["AIRPORT", "DIRECTION", "ACCESS_MODE", "SHARE_ACCESSMODE"]
+        ),
+        "airport_transit_tod_shares.csv": (
+            transit_tod, ["AIRPORT", "DIRECTION", "TOD", "SHARE_TOD"]
+        ),
+        "airport_transit_mode_shares.csv": (
+            transit_mode, ["AIRPORT", "DIRECTION", "SHARE_ACCESSMODE"]
+        ),
+        "airport_transit_zone_shares.csv": (
             transit_zone_share_raw, ["AIRPORT", "DIRECTION", "ZONE", "ZSHARE_TR"]
         ),
-        "Veh_Occupancy": (conv_df, ["SUBMODE", "CONVERSION_FACTOR"]),
+        "airport_non_transit_vehicle_occupancy.csv": (
+            conv_df, ["SUBMODE", "CONVERSION_FACTOR"]
+        ),
     }
-    for sheet, (df, cols) in required.items():
+    for file_name, (df, cols) in required.items():
         missing = [c for c in cols if c not in df.columns]
         if missing:
-            raise ValueError(f"Sheet '{sheet}' is missing columns: {missing}")
+            raise ValueError(f"{file_name} is missing columns: {missing}")
 
     conv_df = conv_df.dropna(subset=["SUBMODE"]).copy()
     conv_df["SUBMODE"] = conv_df["SUBMODE"].astype(str)
-
     if "VN_HT_CH_S3" not in set(conv_df["SUBMODE"]):
-        print("WARNING: Veh_Occupancy has no SUBMODE='VN_HT_CH_S3'; VN/HT/CH S3 "
-              "trips will fall back to the default S3 factor.")
+        print(
+            "WARNING: airport_non_transit_vehicle_occupancy.csv has no "
+            "SUBMODE='VN_HT_CH_S3'; VN/HT/CH S3 trips will use the default S3 factor."
+        )
 
-    for df in (zone_def, target_df, zone_share, zone_share_detail,
-               col_share_raw, transit_share_raw, transit_zone_share_raw):
+    frames = (
+        zone_def, target_df, zone_share, zone_share_detail, submode_share,
+        nontransit_tod, nontransit_access, transit_tod, transit_mode,
+        transit_zone_share_raw,
+    )
+    for df in frames:
         if "DIRECTION" in df.columns:
             df["DIRECTION"] = df["DIRECTION"].astype(str).str.strip().str.lower()
         if "YEAR" in df.columns:
@@ -316,11 +343,68 @@ def load_and_prepare(params_path: Path) -> dict:
     for m in ACCESS_MODES:
         col = f"ZDIST_SHARE_{m}"
         zone_share_detail[col] = zone_share_detail[col].map(_to_share)
-    for c in ("SHARE_TOD", "SHARE_ACCESSMODE", "SHARE_SUBMODE"):
-        col_share_raw[c] = col_share_raw[c].map(_to_share)
-    for c in ("SHARE_TOD", "SHARE_ACCESSMODE"):
-        transit_share_raw[c] = transit_share_raw[c].map(_to_share)
+    submode_share["SHARE_SUBMODE"] = submode_share["SHARE_SUBMODE"].map(_to_share)
+    nontransit_tod["SHARE_TOD"] = nontransit_tod["SHARE_TOD"].map(_to_share)
+    nontransit_access["SHARE_ACCESSMODE"] = nontransit_access["SHARE_ACCESSMODE"].map(_to_share)
+    transit_tod["SHARE_TOD"] = transit_tod["SHARE_TOD"].map(_to_share)
+    transit_mode["SHARE_ACCESSMODE"] = transit_mode["SHARE_ACCESSMODE"].map(_to_share)
     transit_zone_share_raw["ZSHARE_TR"] = transit_zone_share_raw["ZSHARE_TR"].map(_to_share)
+
+    # Expand the non-transit component shares to the file/TOD/access/submode
+    # combinations used by the matrix calculation.
+    file_meta = zone_def[["FILE_NAME", "AIRPORT", "DIRECTION", "YEAR"]].copy()
+    col_share_raw = file_meta.merge(
+        submode_share,
+        on=["AIRPORT", "DIRECTION", "YEAR"],
+        how="left",
+        validate="one_to_many",
+    )
+    col_share_raw = col_share_raw.merge(
+        nontransit_tod,
+        on=["AIRPORT", "DIRECTION"],
+        how="left",
+        validate="many_to_many",
+    )
+    col_share_raw = col_share_raw.merge(
+        nontransit_access,
+        on=["AIRPORT", "DIRECTION", "ACCESS_MODE"],
+        how="left",
+        validate="many_to_one",
+    )
+    if col_share_raw[["SHARE_SUBMODE", "SHARE_TOD", "SHARE_ACCESSMODE"]].isna().any().any():
+        raise ValueError("Missing non-transit share coverage while assembling parameter combinations")
+
+    tod_order = {value: index for index, value in enumerate(TOD_ORDER)}
+    mode_order = {value: index for index, value in enumerate(ACCESS_MODES)}
+    submode_order = {"DA": 0, "S2": 1, "S3": 2}
+    col_share_raw["_TOD_ORDER"] = col_share_raw["TOD"].map(tod_order)
+    col_share_raw["_MODE_ORDER"] = col_share_raw["ACCESS_MODE"].map(mode_order)
+    col_share_raw["_SUBMODE_ORDER"] = col_share_raw["SUBMODE"].map(submode_order)
+    col_share_raw = col_share_raw.sort_values(
+        ["FILE_NAME", "_TOD_ORDER", "_MODE_ORDER", "_SUBMODE_ORDER"]
+    ).drop(columns=["_TOD_ORDER", "_MODE_ORDER", "_SUBMODE_ORDER"]).reset_index(drop=True)
+
+    # Expand the transit TOD and overall mode shares to the transit output files.
+    transit_share_raw = file_meta.merge(
+        transit_tod,
+        on=["AIRPORT", "DIRECTION"],
+        how="left",
+        validate="many_to_many",
+    )
+    transit_share_raw = transit_share_raw.merge(
+        transit_mode,
+        on=["AIRPORT", "DIRECTION"],
+        how="left",
+        validate="many_to_one",
+    )
+    if transit_share_raw[["SHARE_TOD", "SHARE_ACCESSMODE"]].isna().any().any():
+        raise ValueError("Missing transit share coverage while assembling parameter combinations")
+    transit_share_raw["FILE_NAME"] = "TR_" + transit_share_raw["FILE_NAME"].astype(str)
+    transit_share_raw["ACCESS_MODE"] = "TR"
+    transit_share_raw["_TOD_ORDER"] = transit_share_raw["TOD"].map(tod_order)
+    transit_share_raw = transit_share_raw.sort_values(
+        ["FILE_NAME", "_TOD_ORDER"]
+    ).drop(columns=["_TOD_ORDER"]).reset_index(drop=True)
 
     return {
         "zone_def": zone_def,
@@ -336,25 +420,29 @@ def load_and_prepare(params_path: Path) -> dict:
 
 # %% TAZ -> district correspondence ------------------------------------------
 def load_taz_lookup(csv_path: Path) -> pd.DataFrame:
-    """Return TAZ -> DISTRICT mapping from the correspondence CSV.
-
-    The R script used a shapefile; here the CSV column ``SD`` (super district)
-    is equivalent to the ``DISTRICT`` field used throughout the parameters.
-    """
+    """Return the internal TAZ-to-super-district mapping used by the model."""
     df = pd.read_csv(csv_path)
     if not {"ZONE", "SD"}.issubset(df.columns):
         raise ValueError(f"{csv_path.name} must contain ZONE and SD columns")
     lookup = df[["ZONE", "SD"]].rename(columns={"ZONE": "TAZ", "SD": "DISTRICT"})
     lookup["TAZ"] = lookup["TAZ"].astype(int)
     lookup["DISTRICT"] = lookup["DISTRICT"].astype(int)
-    return lookup.drop_duplicates().reset_index(drop=True)
+    lookup = lookup.drop_duplicates("TAZ")
+
+    # The authoritative correspondence includes 21 external zones (1455-1475).
+    # The airport matrices use the 1..1454 internal TAZ system, matching the
+    # supplied Gosling tables and airport_output_file_map.csv.
+    lookup = lookup.loc[lookup["TAZ"].between(1, EXPECTED_N_TAZ)].copy()
+    if set(lookup["TAZ"]) != set(range(1, EXPECTED_N_TAZ + 1)):
+        raise ValueError(f"{csv_path.name} must contain every internal TAZ 1..{EXPECTED_N_TAZ}")
+    return lookup.reset_index(drop=True)
 
 
 # %% build expanded OD (TAZ-level) frame --------------------------------------
 def build_expanded_od(zone_def: pd.DataFrame, taz_lookup: pd.DataFrame,
                       zone_share: pd.DataFrame,
                       zone_share_detail: pd.DataFrame) -> pd.DataFrame:
-    """Replicate the R logic that builds one ORIG/DEST row per TAZ per file.
+    """Build one ORIG/DEST row per TAZ for each configured airport demand file.
 
     For ``DIRECTION == 'from'`` ORIG = AIRPORT_TAZ, DEST = TAZ range.
     For ``DIRECTION == 'to'``   ORIG = TAZ range,  DEST = AIRPORT_TAZ.
@@ -498,19 +586,20 @@ def build_transit_person_df(transit_file_name: str, transit_share: pd.DataFrame,
 
 
 # %% main driver --------------------------------------------------------------
-def run(params_path: Path, csv_path: Path = CORRESPONDENCE_CSV,
+def run(parameters_dir: Path = DEFAULT_PARAMETERS_DIR, csv_path: Path = CORRESPONDENCE_CSV,
         out_dir: Path = OUTPUT_DIR,
         decimals: int = 2) -> dict:
     """End-to-end pipeline; returns the in-memory tables for QA/debugging."""
 
-    if not params_path.exists():
-        raise FileNotFoundError(f"Parameters file not found: {params_path}")
+    parameters_dir = Path(parameters_dir)
+    if not parameters_dir.is_dir():
+        raise FileNotFoundError(f"Parameters directory not found: {parameters_dir}")
     if not csv_path.exists():
         raise FileNotFoundError(f"TAZ correspondence CSV not found: {csv_path}")
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    p = load_and_prepare(params_path)
+    p = load_and_prepare(parameters_dir)
     taz_lookup = load_taz_lookup(csv_path)
 
     expanded_od = build_expanded_od(
@@ -584,17 +673,45 @@ def run(params_path: Path, csv_path: Path = CORRESPONDENCE_CSV,
 
 # %% CLI ---------------------------------------------------------------------
 def _cli() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
-    ap.add_argument("--params", type=Path, default=DEFAULT_XLSX,
-                    help="Path to Parameters.xlsx (default: ./Parameters.xlsx)")
-    ap.add_argument("--csv", type=Path, default=CORRESPONDENCE_CSV,
-                    help="TAZ -> super-district correspondence CSV")
-    ap.add_argument("--out", type=Path, default=OUTPUT_DIR,
-                    help="Output directory for all DBFs (default: ./output)")
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument(
+        "--params-dir", type=Path, default=DEFAULT_PARAMETERS_DIR,
+        help="Directory containing parameter CSVs (default: ./parameters)",
+    )
+    ap.add_argument(
+        "--csv", type=Path, default=CORRESPONDENCE_CSV,
+        help="TAZ-to-super-district correspondence CSV",
+    )
+    ap.add_argument(
+        "--out", type=Path, default=OUTPUT_DIR,
+        help="Output directory for all DBFs (default: ./output)",
+    )
     ap.add_argument("--decimals", type=int, default=2)
+    ap.add_argument(
+        "--rebuild-parameters", action="store_true",
+        help="Rebuild source-derived parameter CSVs before creating demand matrices.",
+    )
+    ap.add_argument(
+        "--gosling-dir", type=Path, default=DEFAULT_GOSLING_DIR,
+        help="Gosling summary DBF directory used with --rebuild-parameters.",
+    )
+    ap.add_argument(
+        "--transit-source", type=Path, default=DEFAULT_TRANSIT_SOURCE,
+        help="Transit airport TAZ workbook used with --rebuild-parameters.",
+    )
     args = ap.parse_args()
 
-    run(args.params, args.csv, args.out, args.decimals)
+    if args.rebuild_parameters:
+        from build_parameters import build_all_parameters
+
+        build_all_parameters(
+            parameters_dir=args.params_dir,
+            taz_lookup_path=args.csv,
+            gosling_dir=args.gosling_dir,
+            transit_source_path=args.transit_source,
+        )
+
+    run(args.params_dir, args.csv, args.out, args.decimals)
 
 
 # %% run (for `# %%` cell execution in VS Code) -------------------------------
@@ -602,5 +719,5 @@ if __name__ == "__main__":
     if any(a.startswith("-") for a in sys.argv[1:]) or len(sys.argv) > 1:
         _cli()
     else:
-        run(DEFAULT_XLSX)
+        run(DEFAULT_PARAMETERS_DIR)
 

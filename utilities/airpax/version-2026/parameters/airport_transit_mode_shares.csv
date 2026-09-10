@@ -1,0 +1,7 @@
+airport,direction,share_access_mode
+OAK,from,0.0500
+SFO,from,0.0500
+SJC,from,0.0034
+OAK,to,0.0500
+SFO,to,0.0500
+SJC,to,0.0034
