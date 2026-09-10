@@ -244,6 +244,12 @@ def build(conflation_dir: Path, network_path: Path, output: Path) -> None:
     payload["gauge"] = gauge_baselines(payload, links)
     payload["table"] = pack_table(paths.COUNTS_CSV, payload)
     payload["fit"] = pack_fit(paths.COUNTS_CSV, payload, links)
+    # Bake the saved decisions in, so a copy opened from disk -- away from
+    # serve.py and from the browser that reviewed -- still shows the outcome.
+    decisions_path = conflation_dir / "decisions.json"
+    if decisions_path.is_file():
+        payload["saved"] = json.loads(decisions_path.read_text(encoding="utf-8"))
+        print(f"{len(payload['saved'].get('decisions', {})):,} saved decisions baked in")
     print(f"{len(payload['table']['year']):,} count rows packed for the Data tab, "
           f"{len(payload['fit'])} points for the Fit tab")
     for kind, stats in sorted(payload["gauge"].items()):

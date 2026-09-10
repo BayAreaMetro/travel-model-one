@@ -578,6 +578,15 @@ async function loadSaved() {
     S.saved.picks = body.picks || {};
     S.saved.decisions = body.decisions || {};
   } catch (e) { /* first run */ }
+  // Nothing local: fall back to the decisions baked in at build time, so a
+  // static copy still shows the review outcome. Local edits, once made, win.
+  if (DATA.saved && !Object.keys(S.saved.decisions).length
+      && !Object.keys(S.saved.picks).length) {
+    S.saved.picks = DATA.saved.picks || {};
+    S.saved.decisions = DATA.saved.decisions || {};
+    setPill("browser", "snapshot — decisions baked in; edits stay here, use Export");
+    return;
+  }
   setPill("browser", "browser only — use Export");
 }
 async function persist() {
