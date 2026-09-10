@@ -300,9 +300,10 @@ def test_per_iteration_env_matches_runmodel_bat(
 ) -> None:
     """Transcribed from RunModel.bat 252-255, 276-281, 300-305, 324-329.
 
-    One deliberate departure: PREV_ITER at iteration 1 is 0, not the .bat's 1.
-    See the parity plan's finding 5 -- at 1 the averaging job reads the file it
-    is about to write, which is the only reason the .bat branches there.
+    One deliberate departure: PREV_ITER at iteration 1 is 0, not the .bat's 1. At
+    the .bat's PREV_ITER=1, the averaging job would read the file it is about to
+    write, which is the only reason the .bat branches around it there instead of
+    running it unguarded.
     """
     env = external.model_environment(_cfg(proj, "x", {}), iteration)
 

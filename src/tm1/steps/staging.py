@@ -150,7 +150,8 @@ def seed_average_networks(config_dir: Path, cfg: dict, **kwargs: object) -> str 
     result *is* the average.
 
     Only the warm start needs this.  From iteration 1 on, ``AverageNetworkVolumes``
-    does the job -- see the parity plan's finding 5 for why it can run unguarded.
+    does the job unguarded: at iteration 1, ``WGT=1.0``/``PREV_WGT=0.00`` makes the
+    weighted average produce the same result as this seed step's plain copy.
     """
     _, iter_dir = _iter_dir(cfg, kwargs)
 

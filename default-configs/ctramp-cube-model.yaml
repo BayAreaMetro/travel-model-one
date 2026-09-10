@@ -365,8 +365,9 @@ steps:
         - copy_transit_skims:        # trnAssign.bat copy-up: iteration dir -> skims/
 
         # Feedback.  AverageNetworkVolumes runs every iteration; the .bat skips it at
-        # iteration 1 and copies instead, and PREV_ITER=0 makes the two equivalent --
-        # see the parity plan, finding 5.
+        # iteration 1 and copies instead, and PREV_ITER=0 makes the two equivalent:
+        # WGT=1.0/PREV_WGT=0.00 at iteration 1 turns the weighted average into the
+        # same copy the .bat performs by hand.
         - stage_loaded_networks:
         - rename_assignment_variables:
             job: "CTRAMP/scripts/feedback/RenameAssignmentVariables.job"
