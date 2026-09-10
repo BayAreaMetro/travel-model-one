@@ -1,0 +1,14 @@
+/data
+/models/assignment
+
+# Cube log files 
+*.PRN
+*.VAR
+*.PRJ
+
+.venv/
+__pycache__/
+*.pyc
+.python-version
+
+**/assigned_volumnes/

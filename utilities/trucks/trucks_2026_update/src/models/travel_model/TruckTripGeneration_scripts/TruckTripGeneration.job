@@ -1,0 +1,158 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; TruckTripGeneration.job
+;
+; TP+ script to apply BAYCAST truck model.  The truck trip generation models for small trucks (two-axle, six tire),
+; medium trucks (three-axle), and large or combination (four or more axle) trucks are taken directly from the study: 
+; "I-880 Intermodal Corridor Study: Truck Travel in the San Francisco Bay Area", prepared by Barton Aschman in 
+; December 1992.  The coefficients are on page 223 of this report.
+;
+; The very small truck generation model is based on the Phoenix four-tire truck model documented in the TMIP Quick
+; Response Freight Manual. 
+;
+; Both models use linear regression models to generate trip ends, balancing attractions to productions. 
+;
+; Note that certain production models previously used SIC-based employment categories.  To both maintain consistency
+; with the BAYCAST truck model and update the model to use NAICS-based employment categories, new regression models
+; were estimated relating the NAICS-based employment data with the SIC-based-predicted trips.  The goal here is not
+; to create a new truck model, but to mimic the old model with the available data.  Please see the excel spreadsheet
+; TruckModel.xlsx for details.  The NAICS-based model results replicate the SIC-based model results quite well. 
+;
+; Input:  (1) Zonal database in DBF format with the following fields: (a) TOTEMP, total employment (same regardless
+;             of classification system); (b) RETEMPN, retail trade employment per the NAICS classification system; 
+;             (c) FPSEMPN, financial and professional services employment per the NAICS classification system; (d) 
+;             HEREMPN, health, educational, and recreational employment per the NAICS classification system; (e) 
+;             OTHEMPN, other employment per the NAICS classification system; (f) AGREMPN, agricultural employment
+;             per the NAICS classificatin system; (g) MWTEMPN, manufacturing, warehousing, and transportation 
+;             emp;loyment per the NAICS classification system; and, (h) TOTHH, total households.
+;
+; Output: (1) An ASCII file containing the following fields: (a) zone number; (b) very small truck trip productions;
+;             (c) very small truck trip attractions; (d) small truck trip productions; (e) small truck trip attractions;
+;             (f) medium truck trip productions; (g) medium truck trip attractions; (h) large truck trip productions;
+;             and, (i) large truck trip attractions. 
+;
+; Notes:  (1) These scripts do not update the BAYCAST truck model; rather, the model is simply implemented in a
+;             manner consistent with the Travel Model One implementation.  
+;         (2) Combined Chuck's calibration adjustments into the NAICS-based model coefficients.  
+;
+; See also: (1) TruckTripDistribution.job, which applies the distribution model. 
+;           (2) TruckTimeOfDay.job, which applies diurnal factors to the daily trips generated here. 
+;           (3) TruckTollChoice.job, which applies a toll/no toll choice model for trucks.
+;
+; version:  Travel Model One
+; authors:  dto (2010 08 31); cp (date unknown)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the number of zones token
+token_number_of_internal_zones = 1454
+
+; apply the generation models
+run pgm = tripgen
+
+   ; read in the zonal data in DBF format
+   filei zdati[1] = landuse\tazdata.dbf
+   
+   ; write the generation results to a DBF
+   fileo pao[1] = nonres\TruckTGx.dbf, form = 12.0, dbf = T, list = z, p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+                                                                       a[1], a[2], a[3], a[4], a[5], a[6], a[7] 
+   
+   ; only apply the model for internal zones
+   zones = @token_number_of_internal_zones@
+   
+   ; loop through the origin zones
+   phase = iloop
+   
+      ; non-garage-based, or linked trips - productions (very small updated with NAICS coefficients)
+      linkedVerySmallP = round(0.4 * (0.95409 * zi.1.RETEMPN + 0.54333 * zi.1.FPSEMPN + 0.50769 * zi.1.HEREMPN + 
+                               0.63558 * zi.1.OTHEMPN + 1.10181 * zi.1.AGREMPN + 0.81576 * zi.1.MWTEMPN +
+                               0.26565 * ZI.1.TOTHH) )
+                               
+      linkedSmallP     = round(0.0324 * zi.1.TOTEMP)
+      linkedMediumP    = round(0.0039 * zi.1.TOTEMP)
+      linkedLargeP     = round(0.0073 * zi.1.TOTEMP)
+      
+      ; non-garage-based, or linked trips - attractions (equal productions)
+      linkedVerySmallA = linkedVerySmallP
+      linkedSmallA     = linkedSmallP
+      linkedMediumA    = linkedMediumP
+      linkedLargeA     = linkedLargeP
+      
+      ; garage-based - productions (updated NAICS coefficients)
+      garageSmallP  = round(0.02146 * zi.1.RETEMPN  + 0.02424 * zi.1.FPSEMPN + 0.01320 * zi.1.HEREMPN +
+                            0.04325 * zi.1.OTHEMPN  + 0.05021 * zi.1.AGREMPN + 0.01960 * zi.1.MWTEMPN) 
+                           
+      garageMediumP = round(0.00102 * zi.1.RETEMPN  + 0.00147 * zi.1.FPSEMPN + 0.00025 * zi.1.HEREMPN +
+                            0.00331 * zi.1.OTHEMPN  + 0.00445 * zi.1.AGREMPN + 0.00165 * zi.1.MWTEMPN) 
+                            
+      garageLargeP  = round(0.00183 * zi.1.RETEMPN  + 0.00482 * zi.1.FPSEMPN + 0.00274 * zi.1.HEREMPN +
+                            0.00795 * zi.1.OTHEMPN  + 0.01125 * zi.1.AGREMPN + 0.00486 * zi.1.MWTEMPN)
+                            
+      ; garage-based - attractions
+      garageSmallA  = round(0.0234 * zi.1.TOTEMP)
+      garageMediumA = round(0.0046 * zi.1.TOTEMP)
+      garageLargeA  = round(0.0136 * zi.1.TOTEMP)
+      
+      ; set the TP+ trip generation variables prior to balance phase
+      p[1] = linkedVerySmallP
+      p[2] = linkedSmallP
+      p[3] = linkedMediumP
+      p[4] = linkedLargeP
+      p[5] = garageSmallP
+      p[6] = garageMediumP
+      p[7] = garageLargeP
+      
+      a[1] = linkedVerySmallA
+      a[2] = linkedSmallA
+      a[3] = linkedMediumA
+      a[4] = linkedLargeA
+      a[5] = garageSmallA
+      a[6] = garageMediumA
+      a[7] = garageLargeA
+      
+   endphase
+   
+   ; balance attractions to productions
+   phase = adjust
+   
+      a[1] = p[1][0] / a[1][0] * a[1]
+      a[2] = p[2][0] / a[2][0] * a[2]
+      a[3] = p[3][0] / a[3][0] * a[3]
+      a[4] = p[4][0] / a[4][0] * a[4]
+      a[5] = p[5][0] / a[5][0] * a[5]
+      a[6] = p[6][0] / a[6][0] * a[6]
+      a[7] = p[7][0] / a[7][0] * a[7]
+   
+   endphase
+   
+endrun
+
+; combine the linked and garage-based trips for each class of truck
+run pgm = matrix
+
+   filei zdati[1] = nonres\TruckTGx.dbf
+   
+   zones = @token_number_of_internal_zones@
+   
+   ; very small only has linked trips
+   verySmallTruckP = zi.1.P1
+   verySmallTruckA = zi.1.A1
+   
+   ; small, medium, and large has linked and unlinked
+   smallTruckP  = zi.1.P2 + zi.1.P5
+   smallTruckA  = zi.1.A2 + zi.1.A5
+   
+   mediumTruckP = zi.1.P3 + zi.1.P6
+   mediumTruckA = zi.1.A3 + zi.1.A6
+   
+   largeTruckP  = zi.1.P4 + zi.1.P7
+   largeTruckA  = zi.1.A4 + zi.1.A7
+   
+   list = z(12), verySmallTruckP(12.0), verySmallTruckA(12.0), smallTruckP(12.0), smallTruckA(12.0),
+                 mediumTruckP(12.0),    mediumTruckA(12.0),    largeTruckP(12.0), largeTruckA(12.0),
+          file = nonres\TruckTG.dat
+
+endrun
+
+

@@ -1,0 +1,66 @@
+import pandas as pd
+import statsmodels.api as sm
+import numpy as np
+
+from src.models.specs import ModelSpec
+
+LOCAL_ENV = {"np": np}
+
+def fit_model(
+    df: pd.DataFrame,
+    spec: ModelSpec,
+    robust_cov_type: str = "HC3",
+):
+    """
+    Fit a regression model from a ModelSpec.
+
+    Parameters
+    ----------
+    df:
+        Modeling dataframe.
+    spec:
+        Model specification.
+    robust_cov_type:
+        statsmodels covariance type. Common options: 'HC3', 'cluster', 'nonrobust'.
+
+    Returns
+    -------
+    statsmodels regression results object.
+    """
+    model_df = df[spec.required_columns()].dropna().copy()
+
+    y = model_df.eval(spec.target, engine = "python", resolvers=[{"np": np}])
+    
+    X = pd.DataFrame(
+        {
+            feat: model_df.eval(feat, engine = "python", resolvers=[{"np": np}]) for feat in spec.features
+        },
+        index=model_df.index
+        ).fillna(0).replace([np.inf, -np.inf], 0)
+
+    # X = sm.add_constant(X, has_constant="add")
+
+    if spec.model_type == "ols":
+        model = sm.OLS(y, X)
+
+        if robust_cov_type == "cluster":
+            if spec.group_col is None:
+                raise ValueError(
+                    f"Model {spec.name} uses cluster covariance but has no group_col."
+                )
+
+            return model.fit(
+                cov_type="cluster",
+                cov_kwds={"groups": model_df[spec.group_col]},
+            )
+
+        return model.fit(cov_type=robust_cov_type)
+
+    if spec.model_type == "wls":
+        if spec.weight_col is None:
+            raise ValueError(f"Model {spec.name} is WLS but has no weight_col.")
+
+        model = sm.WLS(y, X, weights=model_df[spec.weight_col])
+        return model.fit(cov_type=robust_cov_type)
+
+    raise NotImplementedError(f"Model type not implemented: {spec.model_type}")

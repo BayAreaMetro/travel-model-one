@@ -1,0 +1,51 @@
+model_name,target,term,TM 1.6 Coefficient,coefficient,percentage_difference,std_error,t_value,p_value
+Heavy Truck - Non-Freight - Production,HT_NF_CA_OFF_production + HT_NF_CA_AM_production + HT_NF_CA_MID_production + HT_NF_CA_PM_production,TOTEMP,0.0073,0.0050,-31.70%,0.000296916,16.79140549,0
+Heavy Truck - Non-Freight - Attraction,HT_NF_CA_OFF_attraction + HT_NF_CA_AM_attraction + HT_NF_CA_MID_attraction + HT_NF_CA_PM_attraction,TOTEMP,0.0073,0.0050,-32.02%,0.000295705,16.78247919,0
+Medium Truck - Non-Freight - Production,"MT1_NF_CA_OFF_production +  MT1_NF_CA_AM_production +  MT1_NF_CA_MID_production +  MT1_NF_CA_PM_production +  MT2_NF_CA_OFF_production +  MT2_NF_CA_AM_production +  MT2_NF_CA_MID_production +  MT2_NF_CA_PM_production
+",TOTEMP,0.0039,0.0103,165.16%,0.00085568,12.08553105,0
+Medium Truck - Non-Freight - Attraction,"MT1_NF_CA_OFF_attraction +  MT1_NF_CA_AM_attraction +  MT1_NF_CA_MID_attraction +  MT1_NF_CA_PM_attraction +  MT2_NF_CA_OFF_attraction +  MT2_NF_CA_AM_attraction +  MT2_NF_CA_MID_attraction +  MT2_NF_CA_PM_attraction
+",TOTEMP,0.0039,0.0104,166.74%,0.000862084,12.06713965,0
+Small Truck - Non-Freight - Production,LT_NF_CA_OFF_production + LT_NF_CA_AM_production + LT_NF_CA_MID_production + LT_NF_CA_PM_production,TOTEMP,0.0324,0.0357,10.17%,0.003388469,10.53437233,0
+Small Truck - Non-Freight - Attraction,LT_NF_CA_OFF_attraction + LT_NF_CA_AM_attraction + LT_NF_CA_MID_attraction + LT_NF_CA_PM_attraction,TOTEMP,0.0324,0.0360,11.06%,0.003415633,10.534783,0
+Heavy Truck - Freight - Production,"HT_FR_CA_OFF_production +  HT_FR_CA_AM_production +  HT_FR_CA_MID_production +  HT_FR_CA_PM_production +  HT_FR_EXT_OFF_production + HT_FR_EXT_AM_production + HT_FR_EXT_MID_production +   HT_FR_EXT_PM_production
+",RETEMPN,0.00183,0.01586,766.70%,0.008443414,1.878458428,0.060318479
+Heavy Truck - Freight - Production,"HT_FR_CA_OFF_production +  HT_FR_CA_AM_production +  HT_FR_CA_MID_production +  HT_FR_CA_PM_production +  HT_FR_EXT_OFF_production + HT_FR_EXT_AM_production + HT_FR_EXT_MID_production +   HT_FR_EXT_PM_production
+",FPSEMPN,0.00482,0.00410,-15.03%,0.002327602,1.759562362,0.078482038
+Heavy Truck - Freight - Production,"HT_FR_CA_OFF_production +  HT_FR_CA_AM_production +  HT_FR_CA_MID_production +  HT_FR_CA_PM_production +  HT_FR_EXT_OFF_production + HT_FR_EXT_AM_production + HT_FR_EXT_MID_production +   HT_FR_EXT_PM_production
+",HEREMPN,0.00274,-0.00019,-106.83%,0.0008585,-0.218006049,0.827424399
+Heavy Truck - Freight - Production,"HT_FR_CA_OFF_production +  HT_FR_CA_AM_production +  HT_FR_CA_MID_production +  HT_FR_CA_PM_production +  HT_FR_EXT_OFF_production + HT_FR_EXT_AM_production + HT_FR_EXT_MID_production +   HT_FR_EXT_PM_production
+",OTHEMPN,0.00795,-0.00043,-105.38%,0.00156514,-0.273494107,0.784473422
+Heavy Truck - Freight - Production,"HT_FR_CA_OFF_production +  HT_FR_CA_AM_production +  HT_FR_CA_MID_production +  HT_FR_CA_PM_production +  HT_FR_EXT_OFF_production + HT_FR_EXT_AM_production + HT_FR_EXT_MID_production +   HT_FR_EXT_PM_production
+",AGREMPN,0.01125,0.26210,2229.76%,0.173046117,1.514613124,0.129870407
+Heavy Truck - Freight - Production,"HT_FR_CA_OFF_production +  HT_FR_CA_AM_production +  HT_FR_CA_MID_production +  HT_FR_CA_PM_production +  HT_FR_EXT_OFF_production + HT_FR_EXT_AM_production + HT_FR_EXT_MID_production +   HT_FR_EXT_PM_production
+",MWTEMPN,0.00486,0.00725,49.25%,0.005045222,1.437702689,0.15051843
+Heavy Truck - Freight - Attraction,"HT_FR_CA_OFF_attraction +  HT_FR_CA_AM_attraction +  HT_FR_CA_MID_attraction +  HT_FR_CA_PM_attraction +  HT_FR_EXT_OFF_attraction + HT_FR_EXT_AM_attraction + HT_FR_EXT_MID_attraction +   HT_FR_EXT_PM_attraction
+",TOTEMP,0.0136,0.00426,-68.66%,0.00039634,10.75531548,0
+Medium Truck - Freight - Production,"MT1_FR_CA_OFF_production +  MT1_FR_CA_AM_production +  MT1_FR_CA_MID_production +  MT1_FR_CA_PM_production + MT1_FR_EXT_OFF_production + MT1_FR_EXT_AM_production + MT1_FR_EXT_MID_production + MT1_FR_EXT_PM_production + MT2_FR_CA_OFF_production + MT2_FR_CA_AM_production + MT2_FR_CA_MID_production + MT2_FR_CA_PM_production + MT2_FR_EXT_OFF_production +  MT2_FR_EXT_AM_production + MT2_FR_EXT_MID_production + MT2_FR_EXT_PM_production
+",RETEMPN,0.00102,0.01077,956.36%,0.008876579,1.213852277,0.22480414
+Medium Truck - Freight - Production,"MT1_FR_CA_OFF_production +  MT1_FR_CA_AM_production +  MT1_FR_CA_MID_production +  MT1_FR_CA_PM_production + MT1_FR_EXT_OFF_production + MT1_FR_EXT_AM_production + MT1_FR_EXT_MID_production + MT1_FR_EXT_PM_production + MT2_FR_CA_OFF_production + MT2_FR_CA_AM_production + MT2_FR_CA_MID_production + MT2_FR_CA_PM_production + MT2_FR_EXT_OFF_production +  MT2_FR_EXT_AM_production + MT2_FR_EXT_MID_production + MT2_FR_EXT_PM_production
+",FPSEMPN,0.00147,0.00500,240.44%,0.002472258,2.024245927,0.042944854
+Medium Truck - Freight - Production,"MT1_FR_CA_OFF_production +  MT1_FR_CA_AM_production +  MT1_FR_CA_MID_production +  MT1_FR_CA_PM_production + MT1_FR_EXT_OFF_production + MT1_FR_EXT_AM_production + MT1_FR_EXT_MID_production + MT1_FR_EXT_PM_production + MT2_FR_CA_OFF_production + MT2_FR_CA_AM_production + MT2_FR_CA_MID_production + MT2_FR_CA_PM_production + MT2_FR_EXT_OFF_production +  MT2_FR_EXT_AM_production + MT2_FR_EXT_MID_production + MT2_FR_EXT_PM_production
+",HEREMPN,0.00025,-0.00047,-289.76%,0.000832623,-0.569770898,0.568833097
+Medium Truck - Freight - Production,"MT1_FR_CA_OFF_production +  MT1_FR_CA_AM_production +  MT1_FR_CA_MID_production +  MT1_FR_CA_PM_production + MT1_FR_EXT_OFF_production + MT1_FR_EXT_AM_production + MT1_FR_EXT_MID_production + MT1_FR_EXT_PM_production + MT2_FR_CA_OFF_production + MT2_FR_CA_AM_production + MT2_FR_CA_MID_production + MT2_FR_CA_PM_production + MT2_FR_EXT_OFF_production +  MT2_FR_EXT_AM_production + MT2_FR_EXT_MID_production + MT2_FR_EXT_PM_production
+",OTHEMPN,0.00331,-0.00076,-122.99%,0.001611514,-0.472144485,0.636823662
+Medium Truck - Freight - Production,"MT1_FR_CA_OFF_production +  MT1_FR_CA_AM_production +  MT1_FR_CA_MID_production +  MT1_FR_CA_PM_production + MT1_FR_EXT_OFF_production + MT1_FR_EXT_AM_production + MT1_FR_EXT_MID_production + MT1_FR_EXT_PM_production + MT2_FR_CA_OFF_production + MT2_FR_CA_AM_production + MT2_FR_CA_MID_production + MT2_FR_CA_PM_production + MT2_FR_EXT_OFF_production +  MT2_FR_EXT_AM_production + MT2_FR_EXT_MID_production + MT2_FR_EXT_PM_production
+",AGREMPN,0.00445,0.25183,5559.07%,0.208309897,1.208913744,0.226695986
+Medium Truck - Freight - Production,"MT1_FR_CA_OFF_production +  MT1_FR_CA_AM_production +  MT1_FR_CA_MID_production +  MT1_FR_CA_PM_production + MT1_FR_EXT_OFF_production + MT1_FR_EXT_AM_production + MT1_FR_EXT_MID_production + MT1_FR_EXT_PM_production + MT2_FR_CA_OFF_production + MT2_FR_CA_AM_production + MT2_FR_CA_MID_production + MT2_FR_CA_PM_production + MT2_FR_EXT_OFF_production +  MT2_FR_EXT_AM_production + MT2_FR_EXT_MID_production + MT2_FR_EXT_PM_production
+",MWTEMPN,0.00165,0.00637,286.17%,0.004878682,1.306045976,0.191536923
+Medium Truck - Freight - Attraction,"MT1_FR_CA_OFF_attraction +  MT1_FR_CA_AM_attraction +  MT1_FR_CA_MID_attraction +  MT1_FR_CA_PM_attraction + MT1_FR_EXT_OFF_attraction + MT1_FR_EXT_AM_attraction + MT1_FR_EXT_MID_attraction + MT1_FR_EXT_PM_attraction + MT2_FR_CA_OFF_attraction + MT2_FR_CA_AM_attraction + MT2_FR_CA_MID_attraction + MT2_FR_CA_PM_attraction + MT2_FR_EXT_OFF_attraction +  MT2_FR_EXT_AM_attraction + MT2_FR_EXT_MID_attraction + MT2_FR_EXT_PM_attraction
+",TOTEMP,0.0046,0.00347,-24.54%,0.000308175,11.26364572,0
+Small Truck - Freight - Production,"LT_FR_CA_OFF_production +  LT_FR_CA_AM_production + LT_FR_CA_MID_production + LT_FR_CA_PM_production 
+",RETEMPN,0.00183,0.00101,-45.08%,0.001860666,0.540187528,0.589067713
+Small Truck - Freight - Production,"LT_FR_CA_OFF_production +  LT_FR_CA_AM_production + LT_FR_CA_MID_production + LT_FR_CA_PM_production 
+",FPSEMPN,0.00482,0.00081,-83.29%,0.000460663,1.748036591,0.080457692
+Small Truck - Freight - Production,"LT_FR_CA_OFF_production +  LT_FR_CA_AM_production + LT_FR_CA_MID_production + LT_FR_CA_PM_production 
+",HEREMPN,0.00274,-0.00014,-105.15%,0.000147719,-0.955258799,0.339446838
+Small Truck - Freight - Production,"LT_FR_CA_OFF_production +  LT_FR_CA_AM_production + LT_FR_CA_MID_production + LT_FR_CA_PM_production 
+",OTHEMPN,0.00795,-0.00017,-102.17%,0.000286062,-0.603981968,0.54585563
+Small Truck - Freight - Production,"LT_FR_CA_OFF_production +  LT_FR_CA_AM_production + LT_FR_CA_MID_production + LT_FR_CA_PM_production 
+",AGREMPN,0.01125,0.05909,425.20%,0.053156708,1.111527444,0.266341384
+Small Truck - Freight - Production,"LT_FR_CA_OFF_production +  LT_FR_CA_AM_production + LT_FR_CA_MID_production + LT_FR_CA_PM_production 
+",MWTEMPN,0.00486,0.00089,-81.76%,0.000767994,1.15418475,0.248424433
+Small Truck - Freight - Attraction,"LT_FR_CA_OFF_attraction +  LT_FR_CA_AM_attraction + LT_FR_CA_MID_attraction + LT_FR_CA_PM_attraction 
+",TOTEMP,0.0234,0.00053,-97.74%,4.55E-05,11.62920369,0

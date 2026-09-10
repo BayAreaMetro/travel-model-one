@@ -1,0 +1,170 @@
+models:
+  - name: Heavy Truck - Non-Freight - Production
+    target: HT_NF_CA_OFF_production + HT_NF_CA_AM_production + HT_NF_CA_MID_production + HT_NF_CA_PM_production
+    features:
+      - TOTEMP
+    description: Large non-garage TM1.6 model specs. Line 74 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job
+    tags: ["production", "heavy", "non-freight"]
+
+  - name: Heavy Truck - Non-Freight - Attraction
+    target: HT_NF_CA_OFF_attraction + HT_NF_CA_AM_attraction + HT_NF_CA_MID_attraction + HT_NF_CA_PM_attraction
+    features:
+      - TOTEMP
+    description: Large non-garage TM1.6 model specs. Line 80 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job
+    tags: ["attraction", "heavy", "non-freight"]
+
+  - name: Medium Truck - Non-Freight - Production
+    target: >
+      MT1_NF_CA_OFF_production + 
+      MT1_NF_CA_AM_production + 
+      MT1_NF_CA_MID_production + 
+      MT1_NF_CA_PM_production + 
+      MT2_NF_CA_OFF_production + 
+      MT2_NF_CA_AM_production + 
+      MT2_NF_CA_MID_production + 
+      MT2_NF_CA_PM_production
+    features:
+      - TOTEMP
+    description: Medium non-garage TM1.6 model specs. Line 73 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job
+    tags: ["production", "medium", "non-freight"]
+
+  - name: Medium Truck - Non-Freight - Attraction
+    target: >
+      MT1_NF_CA_OFF_attraction + 
+      MT1_NF_CA_AM_attraction + 
+      MT1_NF_CA_MID_attraction + 
+      MT1_NF_CA_PM_attraction + 
+      MT2_NF_CA_OFF_attraction + 
+      MT2_NF_CA_AM_attraction + 
+      MT2_NF_CA_MID_attraction + 
+      MT2_NF_CA_PM_attraction
+    features:
+      - TOTEMP
+    description: Medium non-garage TM1.6 model specs. Line 79 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job
+    tags: ["attraction", "medium", "non-freight"]
+
+  - name: Small Truck - Non-Freight - Production
+    target: LT_NF_CA_OFF_production + LT_NF_CA_AM_production + LT_NF_CA_MID_production + LT_NF_CA_PM_production
+    features:
+      - TOTEMP
+    description: Small non-garage TM1.6 model specs. Line 72 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job
+    tags: ["production", "small", "non-freight"]
+
+  - name: Small Truck - Non-Freight - Attraction
+    target: LT_NF_CA_OFF_attraction + LT_NF_CA_AM_attraction + LT_NF_CA_MID_attraction + LT_NF_CA_PM_attraction
+    features:
+      - TOTEMP
+    description: Small non-garage TM1.6 model specs. Line 78 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job
+    tags: ["attraction", "small", "non-freight"]
+
+  - name: Heavy Truck - Freight - Production
+    target: >
+      HT_FR_CA_OFF_production + 
+      HT_FR_CA_AM_production + 
+      HT_FR_CA_MID_production + 
+      HT_FR_CA_PM_production + 
+      HT_FR_EXT_OFF_production +
+      HT_FR_EXT_AM_production +
+      HT_FR_EXT_MID_production +  
+      HT_FR_EXT_PM_production
+    features:
+      - RETEMPN  
+      - FPSEMPN
+      - HEREMPN 
+      - OTHEMPN
+      - AGREMPN 
+      - MWTEMPN
+    description: Large garage TM1.6 model specs. Lines 89-90 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job 1
+    tags: ["production", "heavy", "freight"]
+
+  - name: Heavy Truck - Freight - Attraction
+    target: >
+      HT_FR_CA_OFF_attraction + 
+      HT_FR_CA_AM_attraction + 
+      HT_FR_CA_MID_attraction + 
+      HT_FR_CA_PM_attraction + 
+      HT_FR_EXT_OFF_attraction +
+      HT_FR_EXT_AM_attraction +
+      HT_FR_EXT_MID_attraction +  
+      HT_FR_EXT_PM_attraction
+    features:
+      - TOTEMP
+    description: Large garage TM1.6 model specs. Lines 95 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job 1 1
+    tags: ["attraction", "heavy", "freight"]
+
+  - name: Medium Truck - Freight - Production
+    target: >
+      MT1_FR_CA_OFF_production + 
+      MT1_FR_CA_AM_production + 
+      MT1_FR_CA_MID_production + 
+      MT1_FR_CA_PM_production +
+      MT1_FR_EXT_OFF_production +
+      MT1_FR_EXT_AM_production +
+      MT1_FR_EXT_MID_production +
+      MT1_FR_EXT_PM_production +
+      MT2_FR_CA_OFF_production +
+      MT2_FR_CA_AM_production +
+      MT2_FR_CA_MID_production +
+      MT2_FR_CA_PM_production +
+      MT2_FR_EXT_OFF_production + 
+      MT2_FR_EXT_AM_production +
+      MT2_FR_EXT_MID_production +
+      MT2_FR_EXT_PM_production
+    features:
+      - RETEMPN  
+      - FPSEMPN
+      - HEREMPN 
+      - OTHEMPN
+      - AGREMPN 
+      - MWTEMPN
+    description: Medium garage TM1.6 model specs. Lines 86-87 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job 1
+    tags: ["production", "medium", "freight"]
+
+  - name: Medium Truck - Freight - Attraction
+    target: >
+      MT1_FR_CA_OFF_attraction + 
+      MT1_FR_CA_AM_attraction + 
+      MT1_FR_CA_MID_attraction + 
+      MT1_FR_CA_PM_attraction +
+      MT1_FR_EXT_OFF_attraction +
+      MT1_FR_EXT_AM_attraction +
+      MT1_FR_EXT_MID_attraction +
+      MT1_FR_EXT_PM_attraction +
+      MT2_FR_CA_OFF_attraction +
+      MT2_FR_CA_AM_attraction +
+      MT2_FR_CA_MID_attraction +
+      MT2_FR_CA_PM_attraction +
+      MT2_FR_EXT_OFF_attraction + 
+      MT2_FR_EXT_AM_attraction +
+      MT2_FR_EXT_MID_attraction +
+      MT2_FR_EXT_PM_attraction
+    features:
+      - TOTEMP
+    description: Medium garage TM1.6 model specs. Line 94 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job 1
+    tags: ["attraction", "medium", "freight"]
+
+  - name: Small Truck - Freight - Production
+    target: >
+      LT_FR_CA_OFF_production + 
+      LT_FR_CA_AM_production +
+      LT_FR_CA_MID_production +
+      LT_FR_CA_PM_production 
+    features:
+      - RETEMPN  
+      - FPSEMPN
+      - HEREMPN 
+      - OTHEMPN
+      - AGREMPN 
+      - MWTEMPN
+    description: Small garage TM1.6 model specs. Lines 83-84 in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job 1
+
+  - name: Small Truck - Freight - Attraction
+    target: >
+      LT_FR_CA_OFF_attraction + 
+      LT_FR_CA_AM_attraction +
+      LT_FR_CA_MID_attraction +
+      LT_FR_CA_PM_attraction 
+    features:
+      - TOTEMP
+    description: Small garage TM1.6 model specs. Line 93in travel-model-one/model-files/scripts/nonres/TruckTripGeneration.job 1
+    tags: ["attraction", "small", "freight"]
