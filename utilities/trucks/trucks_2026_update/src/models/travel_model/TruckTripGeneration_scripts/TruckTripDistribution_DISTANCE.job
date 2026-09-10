@@ -64,7 +64,7 @@ run pgm = matrix
    filei mati[2] = skims\com_hwyskimMD.tpp
    
    ; write out the blended travel distance for each truck class
-   fileo mato[1] = nonres\blendedTruckTime.tpp, mo = 1-4, name = distanceVSM, distanceSML, distanceMED, distanceLRG
+   fileo mato[1] = nonres\blendedTruckDistance.tpp, mo = 1-4, name = distanceVSM, distanceSML, distanceMED, distanceLRG
    
    ; compute the blended travel distance for each truck class
    ;   - very small
@@ -94,7 +94,7 @@ run pgm = tripdist
                                                       largeTruckP = 85-96,     largeTruckA = 97-108
                                                 
    ; read in the level of service matrix with the blended distance
-   filei mati[1] = nonres\blendedTruckTime.tpp
+   filei mati[1] = nonres\blendedTruckDistance.tpp
    
    ; read in the k-factors
    ; filei mati[2] = nonres\truckkfact.k22.z1454.mat

@@ -34,7 +34,7 @@ def standardize_observed_aadtt(aadtt, crosswalk):
     df["type"] = "observed"
     df["source"] = "bata_2023"
     df["mean_volume"] = df["mean_volume"].round(0).astype("int")
-    df["quality_flag"] = "none"
+    df["quality_flag"] = "good" # All observations have more than 20 data points
     df["vehicle_type_2"] = df["vehicle_type"].map(truck_type_2_map)
     cols = {
         "control_station_id": "count_location_id",

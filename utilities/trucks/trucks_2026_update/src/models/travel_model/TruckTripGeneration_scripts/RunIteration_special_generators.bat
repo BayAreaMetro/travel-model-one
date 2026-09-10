@@ -122,7 +122,6 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\TruckTollChoice.job
 if ERRORLEVEL 2 goto done
 
-goto done
 goto hwyAssign
 
 :: Apply a transit submode choice model for transit trips to bay area HSR stations

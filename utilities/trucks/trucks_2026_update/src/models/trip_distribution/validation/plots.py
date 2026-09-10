@@ -7,7 +7,7 @@ Output files written to ``plots_dir``
 --------------------------------------
 ``tlfd_comparison.png``
     Always. One subplot per successful run — bars = observed TLFD, line =
-    modelled TLFD, dashed vertical lines for observed/modelled average trip
+    Modeled TLFD, dashed vertical lines for observed/Modeled average trip
     length (ATL).
 
 ``friction_curves.png``
@@ -20,12 +20,12 @@ Output files written to ``plots_dir``
 
 ``pa_residuals_{short_name}_{geo_col}.png``
     One file per run × ``geo_agg_col``, only when ``geo_agg_cols`` is set.
-    Grouped bar chart — target attractions vs modelled attractions by
+    Grouped bar chart — target attractions vs Modeled attractions by
     geographic unit.
 
 ``od_scatter_{short_name}.png``
     One file per run with ``target_od_path`` set. Log-log scatter of observed
-    vs modelled OD flows, with a 1:1 reference line, fitted trend line, slope
+    vs Modeled OD flows, with a 1:1 reference line, fitted trend line, slope
     and R² annotations.
 
 ``od_residuals_{short_name}_{geo_col}.png``
@@ -51,8 +51,8 @@ from .report import ReportData, RunReport
 # ---------------------------------------------------------------------------
 
 _BLUE   = "#4472C4"   # observed / target data
-_ORANGE = "#ED7D31"   # modelled data (bar charts)
-_RED    = "#C0392B"   # modelled line / trend line
+_ORANGE = "#ED7D31"   # Modeled data (bar charts)
+_RED    = "#C0392B"   # Modeled line / trend line
 
 
 # ---------------------------------------------------------------------------
@@ -101,10 +101,10 @@ def _no_runs_fig(path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 def _plot_tlfd_comparison(report: ReportData, plots_dir: Path) -> None:
-    """Observed vs modelled TLFD bars + line, one subplot per run.
+    """Observed vs Modeled TLFD bars + line, one subplot per run.
 
-    Bars represent observed shares; the red line shows modelled shares.
-    Dashed vertical lines mark observed (blue) and modelled (red) ATL.
+    Bars represent observed shares; the red line shows Modeled shares.
+    Dashed vertical lines mark observed (blue) and Modeled (red) ATL.
     """
     ok = _ok_runs(report)
     out = plots_dir / "tlfd_comparison.png"
@@ -116,6 +116,13 @@ def _plot_tlfd_comparison(report: ReportData, plots_dir: Path) -> None:
     fig, axes = _subplot_grid(len(ok), col_width=5.5, row_height=5.0)
 
     for idx, run in enumerate(ok):
+
+        x_label, unit = (
+            ("Distance (miles)", "miles")
+            if "distance" in run.run_name
+            else ("Time (mins)", "mins")
+        )
+
         ax = axes[idx // min(len(ok), 3)][idx % min(len(ok), 3)]
         tbl = run.tlfd_table
 
@@ -129,27 +136,28 @@ def _plot_tlfd_comparison(report: ReportData, plots_dir: Path) -> None:
         obs_atl = float((midpts * obs_s).sum())
         mod_atl = float((midpts * mod_s).sum())
 
-        # Bars for observed
+        # Bars for CSF2TDM
         ax.bar(starts, obs_s, width=widths, align="edge",
-               color=_BLUE, alpha=0.60, label="Observed", zorder=2)
-        # Line for modelled
+               color=_BLUE, alpha=0.60, label="CSF2TDM", zorder=2)
+        # Line for Modeled
         ax.plot(midpts, mod_s, "o-", color=_RED,
-                linewidth=1.6, markersize=5, label="Modelled", zorder=3)
+                linewidth=1.6, markersize=5, label="Modeled", zorder=3)
         # ATL vertical lines
         ax.axvline(obs_atl, color=_BLUE, linestyle="--", linewidth=1.2,
-                   label=f"Obs ATL  {obs_atl:.1f} min", alpha=0.85)
+                   label=f"Obs ATL  {obs_atl:.1f} {unit}", alpha=0.85)
         ax.axvline(mod_atl, color=_RED, linestyle="--", linewidth=1.2,
-                   label=f"Mod ATL  {mod_atl:.1f} min", alpha=0.85)
+                   label=f"Mod ATL  {mod_atl:.1f} {unit}", alpha=0.85)
 
         ax.set_title(run.run_name, fontweight="bold")
-        ax.set_xlabel("Travel time (min)")
+        ax.set_xlabel(f"{x_label}")
         ax.set_ylabel("Share")
-        ax.set_xticks(starts)
-        ax.set_xticklabels([str(int(v)) for v in starts], rotation=45, ha="right")
+        tick_step = max(1, len(starts) // 8) # ~8 labels max
+        ax.set_xticks(starts[::tick_step])
+        ax.set_xticklabels([str(int(v)) for v in starts[::tick_step]], rotation=45, ha="right")
         ax.legend(fontsize=7, loc="upper right")
         ax.grid(axis="y", alpha=0.3)
 
-    fig.suptitle("TLFD Comparison — Observed vs Modelled",
+    fig.suptitle("TLFD Comparison — CSF2TDM (Reference) vs Modeled",
                  fontsize=13, fontweight="bold")
     plt.tight_layout()
     fig.savefig(out, dpi=150, bbox_inches="tight")
@@ -250,7 +258,7 @@ def _plot_calibration_loss(report: ReportData, plots_dir: Path) -> None:
 
 
 def _plot_pa_residuals(report: ReportData, plots_dir: Path) -> None:
-    """Grouped bar chart — target vs modelled attractions by geography.
+    """Grouped bar chart — target vs Modeled attractions by geography.
 
     One PNG per run × geographic column.  The attraction comparison is shown
     because production residuals are near-zero by IPF construction.
@@ -270,7 +278,7 @@ def _plot_pa_residuals(report: ReportData, plots_dir: Path) -> None:
             ax.bar(x - w / 2, gdf["target_A"], width=w,
                    color=_BLUE, alpha=0.85, label="Target A", zorder=2)
             ax.bar(x + w / 2, gdf["modeled_A"], width=w,
-                   color=_ORANGE, alpha=0.85, label="Modelled A", zorder=2)
+                   color=_ORANGE, alpha=0.85, label="Modeled A", zorder=2)
 
             geo_labels = gdf[geo_col].astype(str).tolist()
             ax.set_xticks(x)
@@ -292,9 +300,9 @@ def _plot_pa_residuals(report: ReportData, plots_dir: Path) -> None:
 
 
 def _plot_od_scatter(report: ReportData, plots_dir: Path) -> None:
-    """Log-log scatter of observed vs modelled OD flows, one PNG per run.
+    """Log-log scatter of observed vs Modeled OD flows, one PNG per run.
 
-    Shows only pairs where both observed and modelled > 0. Overlays:
+    Shows only pairs where both observed and Modeled > 0. Overlays:
       - 1:1 perfect-fit reference line (dashed black)
       - Fitted trend line (solid red) using the stored ``slope_log`` and
         ``intercept_log`` from the log-log regression
@@ -349,8 +357,8 @@ def _plot_od_scatter(report: ReportData, plots_dir: Path) -> None:
 
         ax.set_xscale("log")
         ax.set_yscale("log")
-        ax.set_xlabel("Observed OD trips (log scale)")
-        ax.set_ylabel("Modelled OD trips (log scale)")
+        ax.set_xlabel("CSF2TDM OD trips (log scale)")
+        ax.set_ylabel("Modeled OD trips (log scale)")
         ax.set_title(f"OD Scatter — {run.run_name}", fontweight="bold")
         ax.legend(fontsize=8)
         ax.grid(True, alpha=0.3, which="both")
@@ -364,7 +372,7 @@ def _plot_od_scatter(report: ReportData, plots_dir: Path) -> None:
 def _plot_od_residuals(report: ReportData, plots_dir: Path) -> None:
     """Diverging heatmap of OD residuals aggregated to geography, per run × geo.
 
-    Cell colour = (modelled − observed) / observed × 100 %.
+    Cell colour = (Modeled − CSF2TDM) / CSF2TDM × 100 %.
     Blue = under-prediction, red = over-prediction, white = perfect fit.
     Cells are annotated with their % value when the matrix is small (≤ 100 cells).
     """

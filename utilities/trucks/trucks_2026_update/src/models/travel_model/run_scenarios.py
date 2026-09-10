@@ -2,7 +2,7 @@
 
 Usage
 -----
-    python -m models.travel_model.run_scenarios --config configs/travel_model_scenarios.yaml
+    python -m src.models.travel_model.run_scenarios --config configs/travel_model_scenarios.yaml
 
 One command, one YAML file, no flags to remember. Scenarios marked
 ``skip_if_exists: true`` still get their outputs converted fresh every run, even

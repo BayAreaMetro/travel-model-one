@@ -19,22 +19,22 @@ def plot_trip_distributions(completed_scenarios: list[dict]):
     "Very Small": {
         "distance": "distanceVSM", 
         "trips": "verySmall",
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_vstrucks.csv", 
+        "observed_path": "data/interim/trip_distribution_inputs/observed_frequency_distribution_blended_distance_vstrucks.csv", 
         }, 
     "Small": {
         "distance": "distanceSML", 
         "trips": "small", 
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_strucks.csv",
+        "observed_path": "data/interim/trip_distribution_inputs/observed_frequency_distribution_blended_distance_strucks.csv",
         }, 
     "Medium": {
         "distance": "distanceMED", 
         "trips": "medium", 
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_mtrucks.csv",
+        "observed_path": "data/interim/trip_distribution_inputs/observed_frequency_distribution_blended_distance_mtrucks.csv",
         }, 
     "Large": {
         "distance": "distanceLRG", 
         "trips": "large",
-        "observed_path": "data/processed/trip_distribution_inputs/observed_frequency_distribution_blended_distance_ctrucks.csv",
+        "observed_path": "data/interim/trip_distribution_inputs/observed_frequency_distribution_blended_distance_ctrucks.csv",
         }, 
     }
     to_keep_cols = ['bin_id', 'bin_start', 'bin_end', 'center', 'trips', 'share']
@@ -89,14 +89,13 @@ def plot_trip_distributions(completed_scenarios: list[dict]):
 
 def read_blended_skims(scenario_path):
     skims_path = Path(scenario_path, "nonres/blendedTruckTime.omx")
-    # skims_path = "../data/processed/trip_distribution_inputs/mtc_blended_skims.omx"
     n = 1454
     base = pd.DataFrame({
         "origin": np.repeat(np.arange(1, n + 1), n),
         "destination": np.tile(np.arange(1, n + 1), n),
     })
     
-    # Actual Matricees names: distanceVSM, distanceSML, distanceMED, distanceLRG
+    # Actual Matrices names: distanceVSM, distanceSML, distanceMED, distanceLRG
     omx_file = omx.open_file(skims_path, "r")
     for skim_name in omx_file.list_matrices():
         if skim_name.startswith("time"):
@@ -109,7 +108,6 @@ def read_blended_skims(scenario_path):
 def read_trip_distribution_results(scenario_path):
     
     path = Path(scenario_path, "nonres/DailyTruckTrips.omx")
-    # path =  "C:/temp/mtc_cube_runs/TM-1.6_FIX_ROUNDING_ISSUE/nonres/DailyTruckTrips.omx"
     n = 1454
     long_format_df = pd.DataFrame({
         "origin": np.repeat(np.arange(1, n + 1), n),
