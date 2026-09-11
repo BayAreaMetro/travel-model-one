@@ -52,6 +52,8 @@ class VehicleType:
     name: str
     capacity_100_percent: int
     capacity_85_percent: int
+    short_name: str
+    long_name: str
 
 
 @dataclass(frozen=True, slots=True)

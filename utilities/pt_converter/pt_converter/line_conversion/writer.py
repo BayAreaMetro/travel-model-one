@@ -11,7 +11,7 @@ import tempfile
 from collections.abc import Iterable
 
 from ..errors import OutputWriteError, ValidationError
-from .models import TransitLine, VehicleCatalog
+from .models import TransitLine, TransitMode, TransitOperator, VehicleCatalog
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,9 +36,11 @@ class PTInputWriter:
         self,
         lines: tuple[TransitLine, ...],
         vehicles: VehicleCatalog,
+        modes: tuple[TransitMode, ...],
+        operators: tuple[TransitOperator, ...],
         output_directory: Path,
     ) -> PTWriteResult:
-        self._validate(lines, vehicles)
+        self._validate(lines, vehicles, modes, operators)
         output_directory.mkdir(parents=True, exist_ok=True)
 
         line_path = output_directory / self.LINE_FILENAME
@@ -50,6 +52,7 @@ class PTInputWriter:
             for number, vehicle in enumerate(vehicles.vehicle_types, start=1)
         }
         assignments = []
+        published_mode_names = {mode.number: mode.name for mode in modes}
         unresolved_lines: list[str] = []
         period_specific_lines: list[str] = []
         for line in lines:
@@ -74,13 +77,51 @@ class PTInputWriter:
             )
 
         self._write_text(line_path, self._render_lines(lines))
-        self._write_text(system_path, self._render_system(lines, vehicles))
+        self._write_text(
+            system_path,
+            self._render_system(vehicles, modes, operators),
+        )
         report = {
             "line_count": len(lines),
             "mode_count": len({line.mode for line in lines}),
+            "mode_definition_count": len(modes),
             "operator_count": len(
                 {line.operator for line in lines if line.operator is not None}
             ),
+            "mode_definitions": [
+                {
+                    "number": number,
+                    "name": next(
+                        mode.short_name for mode in modes if mode.number == number
+                    ),
+                    "long_name": published_mode_names[number][:40],
+                }
+                for number in sorted(published_mode_names)
+            ],
+            "operator_definitions": [
+                {
+                    "number": operator.number,
+                    "name": operator.short_name,
+                    "long_name": operator.name[:40],
+                }
+                for operator in sorted(operators, key=lambda item: item.number)
+            ],
+            "operator_name_rule": (
+                "CSV short_name becomes PT NAME. CSV operator_name becomes PT "
+                "LONGNAME and is cropped to 40 characters."
+            ),
+            "wait_curve_definitions": [
+                {
+                    "number": 1,
+                    "name": "HALF HEADWAY",
+                    "long_name": "Wait equals half the headway",
+                    "curve": [[1, 0.5], [180, 90.0]],
+                    "assignment_note": (
+                        "The curve is defined in SYSTEMI but must be assigned through "
+                        "IWAITCURVE and XWAITCURVE configuration."
+                    ),
+                }
+            ],
             "vehicle_type_count": len(vehicles.vehicle_types),
             "lines_missing_operator": [
                 line.name for line in lines if line.operator is None
@@ -105,7 +146,12 @@ class PTInputWriter:
         )
 
     @staticmethod
-    def _validate(lines: tuple[TransitLine, ...], vehicles: VehicleCatalog) -> None:
+    def _validate(
+        lines: tuple[TransitLine, ...],
+        vehicles: VehicleCatalog,
+        modes: tuple[TransitMode, ...],
+        operators: tuple[TransitOperator, ...],
+    ) -> None:
         if not lines:
             raise ValidationError("No transit LINE statements were found.")
 
@@ -129,6 +175,27 @@ class PTInputWriter:
         if invalid_operators:
             raise ValidationError(
                 f"PT operator numbers must be 1-999: {invalid_operators}"
+            )
+        defined_modes = {mode.number for mode in modes}
+        missing_modes = sorted({line.mode for line in lines} - defined_modes)
+        if missing_modes:
+            raise ValidationError(
+                "Transit lines reference mode number(s) missing from the mode table: "
+                + ", ".join(str(mode) for mode in missing_modes)
+            )
+        defined_operators = {operator.number for operator in operators}
+        missing_operators = sorted(
+            {
+                line.operator
+                for line in lines
+                if line.operator is not None and line.operator not in defined_operators
+            }
+        )
+        if missing_operators:
+            raise ValidationError(
+                "Transit lines reference operator number(s) missing from the operator "
+                "table: "
+                + ", ".join(str(operator) for operator in missing_operators)
             )
         if len(vehicles.vehicle_types) > 255:
             raise ValidationError("PT supports at most 255 vehicle types.")
@@ -183,22 +250,38 @@ class PTInputWriter:
         return "\n".join(rendered).rstrip() + "\n"
 
     def _render_system(
-        self, lines: tuple[TransitLine, ...], vehicles: VehicleCatalog
+        self,
+        vehicles: VehicleCatalog,
+        mode_definitions: tuple[TransitMode, ...],
+        operator_definitions: tuple[TransitOperator, ...],
     ) -> str:
-        rendered = [";;<<PT>>;;", "; Generated from finalized Network Wrangler inputs."]
-        for mode in sorted({line.mode for line in lines}):
-            rendered.append(f'MODE NUMBER={mode}, NAME="MODE_{mode}"')
-        rendered.append("")
-        for operator in sorted(
-            {line.operator for line in lines if line.operator is not None}
-        ):
+        rendered = [";;<<PT>><<SYSTEM>>;;"]
+        for mode in sorted(mode_definitions, key=lambda item: item.number):
             rendered.append(
-                f'OPERATOR NUMBER={operator}, NAME="OPERATOR_{operator}"'
+                f'MODE NUMBER={mode.number}, NAME="{_quoted(mode.short_name)}", '
+                f'LONGNAME="{_quoted(mode.name[:40])}"'
             )
         rendered.append("")
+        for operator in sorted(operator_definitions, key=lambda item: item.number):
+            rendered.append(
+                f'OPERATOR NUMBER={operator.number}, '
+                f'NAME="{_quoted(operator.short_name)}", '
+                f'LONGNAME="{_quoted(operator.name[:40])}"'
+            )
+        rendered.append("")
+        rendered.extend(
+            (
+                'WAITCRVDEF NUMBER=1, NAME="HALF HEADWAY", '
+                'LONGNAME="Wait equals half the headway",',
+                "    CURVE=1-0.50, 180-90.00",
+                "",
+            )
+        )
         for number, vehicle in enumerate(vehicles.vehicle_types, start=1):
             rendered.append(
-                f'VEHICLETYPE NUMBER={number}, NAME="{_quoted(vehicle.name)}", '
+                f'VEHICLETYPE NUMBER={number}, '
+                f'NAME="{_quoted(vehicle.short_name)}", '
+                f'LONGNAME="{_quoted(vehicle.long_name[:40])}", '
                 f"CRUSHCAP={vehicle.capacity_100_percent}"
             )
         return "\n".join(rendered).rstrip() + "\n"

@@ -8,7 +8,13 @@ from pathlib import Path
 from .config import ConverterConfig
 from .errors import ConfigurationError, SourceReadError, ValidationError
 from .inventory import IssueSeverity, NetworkWranglerInputReader, write_inventory
-from .line_conversion import PTInputWriter, TransitLineReader, VehicleCatalogReader
+from .line_conversion import (
+    PTInputWriter,
+    TransitLineReader,
+    TransitModeReader,
+    TransitOperatorReader,
+    VehicleCatalogReader,
+)
 from .topology import TopologyWriter, TransitLinkReader
 
 
@@ -53,8 +59,18 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
         source_directory = model_directory / "INPUT" / "trn"
         lines = TransitLineReader().read(source_directory / "transitLines.lin")
         vehicles = VehicleCatalogReader().read(source_directory)
+        mode_table = source_directory / "transit_modes.csv"
+        modes = TransitModeReader().read(mode_table)
+        operator_table = source_directory / "transit_operators.csv"
+        operators = TransitOperatorReader().read(operator_table)
         link_source = TransitLinkReader().read(source_directory / "transitLines.link")
-        written = PTInputWriter().write(lines, vehicles, output_directory)
+        written = PTInputWriter().write(
+            lines,
+            vehicles,
+            modes,
+            operators,
+            output_directory,
+        )
         topology = TopologyWriter().write(link_source, lines, output_directory)
         return ConversionResult(
             action="convert-network-wrangler-inputs",
