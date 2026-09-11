@@ -10,60 +10,83 @@ A tour's "primary purpose" and in turn primary destination is the purpose and lo
 
 #### Frequency Distribution
 - Escort
+```{python}
+from calib_report import config
+from calib_report.data import nonwork_dest
+chts_file = config.CHTS_DIR / "nonMandTourDistProfile.csv"
+bats_file = config.BATS_DIR / "BATS2023_TLFD.csv" 
+
+```
 
 ```{python}
 #| label: fig-escort-tlfd
-#| fig-cap: Non-Mandatory Tour Length Frequency Distributions
-#| fig-subcap:
-#|  - "Escort"
-#|  - "Shop"
-#|  - "Maintenance"
-#|  - "Eat Out"
-#|  - "Visit"
-#|  - "Discretionary"
-#|  - "At Work"
-#| layout-nrow: 7
-#| 
-from calib_report import config
-from calib_report.data import nonwork_dest
+#| fig-cap: Escort Tour Length Frequency Distributions
+#| fig-subcap: 
+#|  - "CHTS 2012"
+#|  - "BATS2023"
 
-bats_file = config.BATS_DIR / "BATS2023_TLFD.csv" 
+nonwork_dest.plot_tlfd(
+    chts_file,
+    "escort",
+    "Percent of Tours",
+    chts_source = True
+)
+
 nonwork_dest.plot_tlfd(
     bats_file,
     "escort",
     "Percent of Tours"
 )
-
+```
+```{python}
+#| label: fig-shop-tlfd
+#| fig-cap: Shop Tour Length Frequency Distributions
 nonwork_dest.plot_tlfd(
     bats_file,
     "shop",
     "Percent of Tours"
 )
-
+```
+```{python}
+#| label: fig-maint-tlfd
+#| fig-cap: Maintenance Tour Length Frequency Distributions
 nonwork_dest.plot_tlfd(
     bats_file,
     "maintenance",
     "Percent of Tours"
 )
-
+```
+```{python}
+#| label: fig-eatout-tlfd
+#| fig-cap: Eating Out Tour Length Frequency Distributions
 nonwork_dest.plot_tlfd(
     bats_file,
     "eatout",
     "Percent of Tours"
 )
-
+```
+```{python}
+#| label: fig-visit-tlfd
+#| fig-cap: Visit Tour Length Frequency Distributions
 nonwork_dest.plot_tlfd(
     bats_file,
     "visit",
     "Percent of Tours"
 )
+```
 
+```{python}
+#| label: fig-discr-tlfd
+#| fig-cap: Discretionary Tour Length Frequeny Distributions
 nonwork_dest.plot_tlfd(
     bats_file,
     "discretionary",
     "Percent of Tours"
 )
-
+```
+```{python}
+#| label: fig-atwork-tlfd
+#| fig-cap: At-Work Tour Length Frequency Distributions
 nonwork_dest.plot_tlfd(
     bats_file,
     "atwork",
