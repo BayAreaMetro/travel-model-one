@@ -28,7 +28,7 @@ rem switch to the drive
 cd !RUNDIR!
 
 rem run the script
-runtpp %JOBFILE%
+voyagercli %JOBFILE%
 
 rem copy the result
 copy "metrics\II_IXXI_XX.csv" "%DESTDIR%\II_XXXI_XX_!filepath!.csv"

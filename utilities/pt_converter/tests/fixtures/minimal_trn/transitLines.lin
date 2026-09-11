@@ -1,0 +1,15 @@
+;;<<Trnbuild>>;;
+; Source: tests/fixtures/minimal_trn/example.tpl
+LINE NAME="TEST_BUS",
+    COLOR=4,
+    FREQ[1]=10,
+    FREQ[2]=12.345,
+    FREQ[3]=15,
+    FREQ[4]=20,
+    FREQ[5]=30,
+    LONGNAME="Test bus route",
+    MODE=11,
+    ONEWAY=T,
+    OWNER=7,
+ N=1, 2, -3, ; important node note
+    ACCESS=2, 1

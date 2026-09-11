@@ -1,0 +1,5 @@
+{
+  "config_version": 1,
+  "source": "network_wrangler",
+  "output_directory": "trn/pt"
+}
