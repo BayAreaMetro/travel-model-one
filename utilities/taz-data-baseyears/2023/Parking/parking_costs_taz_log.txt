@@ -1,0 +1,584 @@
+Logging to: C:\Users\jahrenholtz\Documents\GitHub\travel-model-one\utilities\taz-data-baseyears\2023\Parking\parking_costs_taz_log.txt
+================================================================================
+PARKING COST ESTIMATION
+================================================================================
+
+Parameters:
+  Commercial density threshold: 0.50 jobs/acre
+  Long-term percentile: 95%
+  Hourly probability threshold: 0.50
+  Compare models: True
+  Validation method: Stratified 5-Fold Cross-Validation
+
+
+================================================================================
+LOADING DATA
+================================================================================
+
+Loading TAZ shapefile...
+  Loaded 1,454 TAZ zones
+
+Loading Census place boundaries...
+Census API key has been set for this session.
+Getting data from the 2017-2021 5-year ACS
+Getting data from the 2017-2021 5-year ACS
+  Loaded 264 Census places
+
+======================================================================
+Spatial Join: TAZ to Census Places
+======================================================================
+
+  TAZ CRS: EPSG:26910
+  Places CRS: EPSG:26910
+  Performing spatial overlay...
+  Found 3,969 TAZ-place intersections
+  Completed spatial join
+  TAZs in cities: 1,453
+  TAZs outside cities: 1
+  Added place_name and county_name columns to TAZ
+
+Loading land use data...
+  Loaded 1,454 land use records
+  Merged land use data to TAZ
+    Preserved OPRKCST_2015 (original land use values)
+    Preserved PRKCST_2015 (original land use values)
+
+Calculating parking capacity...
+
+============================================================
+Allocating Block Group Parking Capacity to TAZ Level
+============================================================
+
+Loading input data...
+  ⚠ Warning: Found negative parking values in source data:
+    on_all: 3 block groups with negative values
+  Clipping negative values to 0...
+  Loaded 4,746 block groups with parking data
+  Loaded 1,454 TAZ polygons
+
+Loading TAZ employment data...
+  Loaded employment for 1,454 TAZs
+Performing spatial overlay of TAZ and block groups...
+  Number of TAZs: 1,454
+  Number of block groups: 4,746
+  Number of TAZ-BlockGroup intersections: 14,486
+  ⚠ Warning: 1,452 TAZs span multiple block groups
+    (This is handled by summing allocated parking across contributing block groups)
+Calculating allocation weights...
+Normalizing weights and allocating parking to TAZ level...
+  Total TAZs with allocated parking: 1,454
+
+Validating results...
+  Original block group totals:
+    off_nres: 2,561,327
+    on_all: 8,633,766
+  Allocated TAZ totals:
+    off_nres: 2,561,327
+    on_all: 8,633,766
+  ✓ Conservation check passed (< 0.1% difference)
+
+============================================================
+Parking allocation complete!
+============================================================
+
+    First few rows of capacity frame: 
+    TAZ1454     off_nres      on_all                                           geometry
+0        1  4510.849662  289.706208  POLYGON ((552853.749 4182932.919, 552835.428 4...
+1        2  5914.082222  450.077304  POLYGON ((552853.749 4182932.919, 552871.999 4...
+2        3   571.605519  213.245373  POLYGON ((552212.713 4182716.683, 552203.266 4...
+3        4  5997.209563  270.407473  POLYGON ((552512.352 4182620.062, 552503.194 4...
+4        5  3631.580506  740.091295  POLYGON ((552090.489 4182495.443, 552080.983 4...
+
+  Merged parking capacity to TAZ
+    Total off-street parking (off_nres): 2,561,327
+    Total on-street parking (on_all): 8,633,766
+
+Loading observed hourly parking costs...
+Loading published parking meter cost data...
+  Loading Oakland meters...
+    Loaded 4,872 Oakland meters
+  Loading San Jose meters...
+    Loaded 2,516 San Jose meters
+  Loading San Francisco meter districts...
+    Loaded 45 San Francisco meter districts
+  Loading Berkeley districts...
+    Loaded 54 Berkeley meter districts
+  Converting all datasets to EPSG:26910...
+  Buffering point meters (75m radius)...
+  Dissolving overlapping meter buffers (average cost in overlaps)...
+  Spatial join: Oakland meter areas to TAZ (area-weighted)...
+    Oakland: 36 TAZs with parking meter costs
+  Spatial join: San Jose meter areas to TAZ (area-weighted)...
+    San Jose: 10 TAZs with parking meter costs
+  Spatial join: San Francisco meter districts to TAZ (area-weighted)...
+    San Francisco: 128 TAZs with parking meter costs
+  Spatial join: Berkeley meter districts to TAZ (area-weighted)...
+    Berkeley: 14 TAZs with parking meter costs
+  Merging all sources to TAZ...
+  ✓ All 1,454 TAZ records retained
+  TAZs with OPRKCST: 188/1,454
+  TAZs without OPRKCST: 1,266/1,454
+  OPRKCST range: $0.03 - $3.93
+  OPRKCST mean: $1.33
+  Loaded observed costs for 188 TAZ zones
+
+================================================================================
+HOURLY PARKING ESTIMATION (OPRKCST)
+================================================================================
+
+================================================================================
+HOURLY PARKING MODEL ESTIMATION
+================================================================================
+
+Note: Hourly parking estimation uses observed data from San Francisco, Oakland, San Jose only
+
+Calculating density features for parking cost estimation...
+  Commercial employment density (jobs/acre):
+    Mean: 0.61
+    Median: 0.16
+    90th percentile: 1.28
+    95th percentile: 2.44
+  Downtown employment density (jobs/acre):
+    Mean: 4.48
+    Median: 0.34
+    90th percentile: 3.48
+    95th percentile: 7.82
+  Population density (people/acre):
+    Mean: 15.45
+    Median: 11.79
+    90th percentile: 32.02
+    95th percentile: 45.72
+  Health/Education/Recreation employment density (jobs/acre):
+    Mean: 3.97
+    Median: 1.21
+    90th percentile: 6.29
+    95th percentile: 13.28
+
+  AREATYPE Distribution:
+    0 (Regional Core       ):     23 TAZs (  1.6%)
+    1 (CBD                 ):     57 TAZs (  3.9%)
+    2 (Urban Business      ):     98 TAZs (  6.7%)
+    3 (Urban               ):    314 TAZs ( 21.6%)
+    4 (Suburban            ):    900 TAZs ( 61.9%)
+    5 (Rural               ):     62 TAZs (  4.3%)
+
+  Feature Correlation Matrix:
+                          comm    dwtn     pop  edhlth     cbd   urb_b     urb
+  --------------------------------------------------------------------------------
+  commercial              1.00   0.52   0.22   0.58   0.17   0.08  -0.00
+  downtown                0.52   1.00   0.06   0.54   0.05  -0.01  -0.04
+  pop                     0.22   0.06   1.00   0.45   0.34   0.23   0.15
+  edhealthrec             0.58   0.54   0.45   1.00   0.31   0.10  -0.03
+  cbd                     0.17   0.05   0.34   0.31   1.00  -0.05  -0.11
+  urban_business          0.08  -0.01   0.23   0.10  -0.05   1.00  -0.14
+  urban                  -0.00  -0.04   0.15  -0.03  -0.11  -0.14   1.00
+
+  High Correlations (|r| >= 0.7, excluding diagonal):
+    None found - features are relatively independent
+
+================================================================================
+COUNTY-LEVEL COMMERCIAL EMPLOYMENT DENSITY DISTRIBUTIONS
+================================================================================
+For TAZs with off-street parking capacity (off_nres > 0) in cities
+Excluding AREATYPE 4 (suburban) and 5 (rural)
+
+Total eligible TAZs: 489
+
+Commercial Employment Density (jobs/acre) Percentiles by County:
+────────────────────────────────────────────────────────────────────────────────
+County                 N_TAZs     Mean      P90      P95      P98      P99  Obs
+────────────────────────────────────────────────────────────────────────────────
+Alameda                   115     0.80     2.18     3.10     3.63     3.81    ✓
+Contra Costa               17     1.25     3.29     4.19     6.22     6.90    ✓
+Marin                       5     0.70     1.55     1.74     1.85     1.89     
+Napa                        1     0.89     0.89     0.89     0.89     0.89     
+San Mateo                 238     1.94     4.03     5.56    13.50    22.82    ✓
+Santa Clara               101     0.62     1.48     2.13     2.90     3.61    ✓
+Solano                      6     0.53     1.45     2.00     2.34     2.45     
+Sonoma                      6     0.87     1.76     2.27     2.57     2.67     
+────────────────────────────────────────────────────────────────────────────────
+
+Observed Data Cities:
+  Alameda: Oakland, Berkeley
+  Contra Costa: Concord, Walnut Creek
+  San Mateo: San Francisco, Millbrae
+  Santa Clara: San Jose, Palo Alto
+
+Interpretation:
+  - Percentiles shown: P90, P95, P98, P99
+  - Higher percentiles = stricter criteria for paid parking prediction
+  - Top percentiles capture high-density commercial/downtown areas
+  - Counties with ✓ have observed parking cost data for validation
+
+Note:
+  - Long-term parking (PRKCST) percentile threshold is configurable
+  - Default: P95 for long-term parking
+================================================================================
+
+================================================================================
+STRATIFIED 5-FOLD CROSS-VALIDATION
+================================================================================
+Uses all observed data with balanced paid/free parking in each fold
+Testing probability thresholds: [0.3, 0.4, 0.5, 0.6, 0.7]
+
+Total eligible TAZs: 578
+  Paid parking: 188 (32.5%)
+  Free parking: 390 (67.5%)
+
+Note: Validating on ALL TAZs with on-street capacity in SF/Oakland/San Jose/Berkeley
+      Commercial density threshold (0.5 jobs/acre) used only for predictions
+
+================================================================================
+TESTING: Logistic Regression
+================================================================================
+Using 4 features: commercial_emp_den, downtown_emp_den, pop_den, edhealthrec_emp_den
+
+  Fold 1/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.778 at threshold 0.30
+    Acc: 86.2%, Prec: 82.4%, Rec: 73.7%
+
+  Fold 2/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.806 at threshold 0.40
+    Acc: 87.9%, Prec: 85.3%, Rec: 76.3%
+
+  Fold 3/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.754 at threshold 0.60
+    Acc: 85.3%, Prec: 83.9%, Rec: 68.4%
+
+  Fold 4/5:
+    Train: 463 TAZs (151 paid, 312 free)
+    Test:  115 TAZs (37 paid, 78 free)
+    Best F1: 0.877 at threshold 0.40
+    Acc: 92.2%, Prec: 88.9%, Rec: 86.5%
+
+  Fold 5/5:
+    Train: 463 TAZs (151 paid, 312 free)
+    Test:  115 TAZs (37 paid, 78 free)
+    Best F1: 0.720 at threshold 0.30
+    Acc: 81.7%, Prec: 71.1%, Rec: 73.0%
+
+  ──────────────────────────────────────────────────────────────────────
+  Average across 5 folds:
+    F1: 0.787 ± 0.053
+    Accuracy: 86.7% ± 3.4%
+    Precision: 82.3%
+    Recall: 75.6%
+    Avg threshold: 0.40
+
+================================================================================
+TESTING: Random Forest
+================================================================================
+Using 7 features: commercial_emp_den, downtown_emp_den, pop_den, edhealthrec_emp_den, areatype_cbd, areatype_urban_business, areatype_urban
+
+  Fold 1/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.857 at threshold 0.30
+    Acc: 90.5%, Prec: 84.6%, Rec: 86.8%
+
+  Fold 2/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.812 at threshold 0.60
+    Acc: 88.8%, Prec: 90.3%, Rec: 73.7%
+
+  Fold 3/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.761 at threshold 0.70
+    Acc: 85.3%, Prec: 81.8%, Rec: 71.1%
+
+  Fold 4/5:
+    Train: 463 TAZs (151 paid, 312 free)
+    Test:  115 TAZs (37 paid, 78 free)
+    Best F1: 0.886 at threshold 0.60
+    Acc: 93.0%, Prec: 93.9%, Rec: 83.8%
+
+  Fold 5/5:
+    Train: 463 TAZs (151 paid, 312 free)
+    Test:  115 TAZs (37 paid, 78 free)
+    Best F1: 0.805 at threshold 0.40
+    Acc: 87.0%, Prec: 77.5%, Rec: 83.8%
+
+  ──────────────────────────────────────────────────────────────────────
+  Average across 5 folds:
+    F1: 0.824 ± 0.043
+    Accuracy: 88.9% ± 2.7%
+    Precision: 85.6%
+    Recall: 79.8%
+    Avg threshold: 0.52
+
+================================================================================
+TESTING: Gradient Boosting
+================================================================================
+Using 7 features: commercial_emp_den, downtown_emp_den, pop_den, edhealthrec_emp_den, areatype_cbd, areatype_urban_business, areatype_urban
+
+  Fold 1/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.829 at threshold 0.40
+    Acc: 89.7%, Prec: 90.6%, Rec: 76.3%
+
+  Fold 2/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.822 at threshold 0.40
+    Acc: 88.8%, Prec: 85.7%, Rec: 78.9%
+
+  Fold 3/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.744 at threshold 0.70
+    Acc: 82.8%, Prec: 72.5%, Rec: 76.3%
+
+  Fold 4/5:
+    Train: 463 TAZs (151 paid, 312 free)
+    Test:  115 TAZs (37 paid, 78 free)
+    Best F1: 0.889 at threshold 0.30
+    Acc: 93.0%, Prec: 91.4%, Rec: 86.5%
+
+  Fold 5/5:
+    Train: 463 TAZs (151 paid, 312 free)
+    Test:  115 TAZs (37 paid, 78 free)
+    Best F1: 0.800 at threshold 0.30
+    Acc: 87.8%, Prec: 84.8%, Rec: 75.7%
+
+  ──────────────────────────────────────────────────────────────────────
+  Average across 5 folds:
+    F1: 0.817 ± 0.047
+    Accuracy: 88.4% ± 3.3%
+    Precision: 85.0%
+    Recall: 78.7%
+    Avg threshold: 0.42
+
+================================================================================
+TESTING: SVM (RBF)
+================================================================================
+Using 4 features: commercial_emp_den, downtown_emp_den, pop_den, edhealthrec_emp_den
+
+  Fold 1/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.783 at threshold 0.40
+    Acc: 87.1%, Prec: 87.1%, Rec: 71.1%
+
+  Fold 2/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.817 at threshold 0.40
+    Acc: 88.8%, Prec: 87.9%, Rec: 76.3%
+
+  Fold 3/5:
+    Train: 462 TAZs (150 paid, 312 free)
+    Test:  116 TAZs (38 paid, 78 free)
+    Best F1: 0.765 at threshold 0.70
+    Acc: 86.2%, Prec: 86.7%, Rec: 68.4%
+
+  Fold 4/5:
+    Train: 463 TAZs (151 paid, 312 free)
+    Test:  115 TAZs (37 paid, 78 free)
+    Best F1: 0.883 at threshold 0.30
+    Acc: 92.2%, Prec: 85.0%, Rec: 91.9%
+
+  Fold 5/5:
+    Train: 463 TAZs (151 paid, 312 free)
+    Test:  115 TAZs (37 paid, 78 free)
+    Best F1: 0.667 at threshold 0.30
+    Acc: 80.0%, Prec: 71.9%, Rec: 62.2%
+
+  ──────────────────────────────────────────────────────────────────────
+  Average across 5 folds:
+    F1: 0.783 ± 0.071
+    Accuracy: 86.8% ± 4.0%
+    Precision: 83.7%
+    Recall: 74.0%
+    Avg threshold: 0.42
+
+================================================================================
+STRATIFIED K-FOLD VALIDATION SUMMARY
+================================================================================
+
+Model                           Avg F1     Std F1   Accuracy  Precision     Recall
+------------------------------------------------------------------------------------------
+Logistic Regression              0.787      0.053     86.7%     82.3%     75.6%
+Random Forest                    0.824      0.043     88.9%     85.6%     79.8%
+Gradient Boosting                0.817      0.047     88.4%     85.0%     78.7%
+SVM (RBF)                        0.783      0.071     86.8%     83.7%     74.0%
+------------------------------------------------------------------------------------------
+
+✓ BEST MODEL: Random Forest (F1=0.824 ± 0.043)
+  Recommended threshold: 0.52
+  Improvement over Logistic Regression: +4.7%
+
+Note: Stratified k-fold uses all data efficiently and avoids city-specific biases.
+Results are more stable than leave-one-city-out with small sample sizes.
+
+================================================================================
+MODEL SELECTION FOR PRODUCTION
+================================================================================
+
+Comparing 4 models:
+  Random Forest             F1=0.8240 ± 0.0434 ← SELECTED
+  Gradient Boosting         F1=0.8166 ± 0.0469 
+  Logistic Regression       F1=0.7867 ± 0.0531 
+  SVM (RBF)                 F1=0.7828 ± 0.0708 
+
+Using Random Forest for hourly parking estimation (F1=0.8240 ± 0.0434)
+Optimal probability threshold: 0.52 (from cross-validation)
+================================================================================
+
+Using validated optimal threshold: 0.52 for production predictions
+
+Estimating parking costs for TAZs without observed data...
+  Model: Random Forest
+  Approach: Binary classification + flat rates
+  Excluding from prediction: San Francisco, Oakland, San Jose, Berkeley (observed data only)
+  Commercial density threshold: 0.50 jobs/acre
+  Probability threshold: 0.52
+  Using 7 features: commercial_emp_den, downtown_emp_den, pop_den...
+
+  Processing OPRKCST...
+    Training samples (SF/Oakland/SJ/Berkeley): 578
+    Using hourly flat rate: $2.00
+    Training data - Paid: 188 (32.5%), Free: 390 (67.5%)
+    Feature importances:
+      commercial_emp_den: 0.1883
+      downtown_emp_den: 0.2777
+      pop_den: 0.1911
+      edhealthrec_emp_den: 0.2770
+      areatype_cbd: 0.0365
+      areatype_urban_business: 0.0151
+      areatype_urban: 0.0143
+    TAZs eligible for prediction (other cities): 80
+    Predicted paid parking: 26 TAZs at $2.00
+    Predicted free parking: 54 TAZs
+
+  Enforced zero OPRKCST for 962 suburban/rural TAZs (AREATYPE 4-5)
+
+  Final OPRKCST: 207 TAZs with cost > $0 (mean=$1.45)
+
+======================================================================
+Merging Scraped Parking Costs (SpotHero)
+======================================================================
+
+  Loading scraped parking data from: E:\Box\Modeling and Surveys\Development\Travel Model Two Conversion\Model Inputs\2023-tm22-dev-version-05\landuse\interim_cache\parking_scrape_location_cost.parquet
+  Loaded 112 daily parking locations and 194 monthly parking locations
+  Converting daily rates: price / 8 hours
+  Converting monthly rates: price / 176 hours (22 days × 8 hrs)
+  Total parking locations with hourly rates: 306
+  Scraped costs merged
+  TAZs with long-term parking cost (PRKCST): 75
+  Average hourly rate: $2.08
+  Median hourly rate: $2.16
+
+================================================================================
+LONG-TERM PARKING ESTIMATION (PRKCST)
+================================================================================
+
+Estimating long-term parking costs using county-level thresholds...
+  Long-term parking (PRKCST): 95th percentile of commercial_emp_den per county
+  Excluding from prediction: Berkeley, Concord, Millbrae, Oakland, Palo Alto, San Francisco, San Jose, Walnut Creek (observed data only)
+  Observed median long-term cost: $2.16
+  Suburban discount factor: 65%
+  Predicted long-term rate for other cities: $1.40
+
+  County-Level Thresholds:
+  ──────────────────────────────────────────────────
+  County                 N_TAZs LongTerm_P{int(percentile*100)}
+  ──────────────────────────────────────────────────
+  Alameda                    34               2.15
+  Contra Costa               11               0.75
+  Marin                       5               1.74
+  Napa                        1               0.89
+  San Mateo                  47               3.49
+  Santa Clara                48               2.18
+  Solano                      6               2.00
+  Sonoma                      6               2.27
+  ──────────────────────────────────────────────────
+  Alameda: Predicted 2 long-term paid parking TAZs
+  Contra Costa: Predicted 1 long-term paid parking TAZs
+  Marin: Predicted 1 long-term paid parking TAZs
+  Napa: Predicted 1 long-term paid parking TAZs
+  San Mateo: Predicted 3 long-term paid parking TAZs
+  Santa Clara: Predicted 3 long-term paid parking TAZs
+  Solano: Predicted 1 long-term paid parking TAZs
+  Sonoma: Predicted 1 long-term paid parking TAZs
+
+  Enforced zero PRKCST for 962 suburban/rural TAZs (AREATYPE 4-5)
+
+  Summary:
+    Total predicted long-term paid parking: 13 TAZs at $1.40
+
+  Final PRKCST: 69 TAZs with cost > $0 (mean=$2.09)
+
+================================================================================
+BACKFILLING DOWNTOWN LONG-TERM PARKING COSTS
+================================================================================
+For core city downtowns (AREATYPE 0-1) with parking capacity but missing costs
+
+  San Francisco: Backfilled 30 downtown TAZs with $2.37 (median from 38 observed)
+  Oakland: Backfilled 1 downtown TAZs with $1.32 (median from 13 observed)
+  San Jose: Backfilled 2 downtown TAZs with $1.74 (median from 7 observed)
+  Berkeley: No eligible TAZs for backfill (median=$1.99 from 8 observed)
+
+  Total downtown TAZs backfilled: 33
+
+  Final PRKCST: 102 TAZs with cost > $0 (mean=$2.16)
+================================================================================
+
+
+======================================================================
+Long-Term Parking Cost Summary
+======================================================================
+
+  TAZs with long-term parking costs: 102/1,454
+  Total off-street capacity (off_nres): 252,454 stalls
+  Average long-term cost: $2.16
+======================================================================
+
+
+================================================================================
+WRITING OUTPUT FILES
+================================================================================
+
+Converting parking costs to year 2000 cents...
+  Source year: 2023 (CPI-U: 304.702)
+  Target year: 2000 (CPI-U: 172.2)
+  Conversion factor: 56.5142 (2023 dollars → 2000 cents)
+
+  Example conversion (TAZ 999):
+    OPRKCST: $0.43 (2023) → 24.30 cents (2000)
+
+  Conversion complete. All costs now in year 2000 cents.
+
+Wrote CSV: C:\Users\jahrenholtz\Documents\GitHub\travel-model-one\utilities\taz-data-baseyears\2023\Parking\parking_costs_taz.csv
+  Columns: TAZ1454, OPRKCST, PRKCST
+  Records: 1,454
+
+Wrote GeoPackage: C:\Users\jahrenholtz\Documents\GitHub\travel-model-one\utilities\taz-data-baseyears\2023\Parking\parking_costs_taz.gpkg
+  Columns: TAZ1454, OPRKCST, PRKCST + geometry
+  Records: 1,454
+
+================================================================================
+FINAL SUMMARY (costs in year 2000 cents)
+================================================================================
+
+Hourly parking (OPRKCST):
+  TAZs with cost > 0: 207 (14.2%)
+  Mean cost: 82.19 cents ($0.82 in year 2000 dollars)
+  Median cost: 73.47 cents ($0.73 in year 2000 dollars)
+
+Long-term parking (PRKCST):
+  TAZs with cost > 0: 102 (7.0%)
+  Mean cost: 121.80 cents ($1.22 in year 2000 dollars)
+  Median cost: 132.81 cents ($1.33 in year 2000 dollars)
+
+================================================================================
+PARKING COST ESTIMATION COMPLETE
+================================================================================

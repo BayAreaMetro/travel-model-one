@@ -381,7 +381,7 @@ Each row corresponds to an individual tour or joint tour.  Note that each joint 
 | wtr_trip          | Walk to transit trip mode | Integer, 1=walk to and from transit, 0 otherwise |
 | dtr_trip          | Drive to transit trip mode | Integer, 1=drive from transit, 6=drive to transit, 0 otherwise |
 | active            | Active transportation time for the trip, in minutes | Float
-| costMode          | (doc to be added) | |
+| costMode          | Cost mode, [based on trip mode](https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/core_summaries/CoreSummaries.R#L887-L894) | Integer, 1 to 8=trip mode 1 to 8, 9=walk to transit (trip_mode in [9, 10, 11, 12, 13]), 10=drive to transit leaving home (trip_mode in [14, 15, 16, 17, 18] and orig_purpose=="home"), 11=drvie to transit returning home (trip_mode [14, 15, 16, 17, 18] and dest_purpose=="home"), 19=taxi, 20=TNC single, 21=TNC shared |
 | cost              | (doc to be added) | |
 | cost_fail         | (doc to be added) | |
 | time              | (doc to be added) | |
