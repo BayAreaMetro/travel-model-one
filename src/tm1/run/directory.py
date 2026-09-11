@@ -1,9 +1,16 @@
 """Where does this run go?
 
-A run directory is ``{runs_root}/{project}/{scenario}-{NNN}``. ``NNN`` is the run
+A run directory is ``{runs_root}/{scenario}-{NNN}``. ``NNN`` is the run
 iteration -- the same scenario run again after an input is refreshed -- and it
 exists so that nothing is ever deleted or moved aside to make room. A land use
 update gives you ``-002`` beside an intact ``-001``.
+
+No project segment: every run on a machine sits flat under one ``runs_root``,
+visible with one directory listing instead of one per project -- both to see
+what has run recently and to find what is safe to archive off and delete when
+disk space runs short. The cost is that every scenario ID is unique across
+every project sharing a ``runs_root``, not just within its own project, so two
+projects must not declare the same ID.
 
 Which one a run uses is decided by its fingerprint::
 

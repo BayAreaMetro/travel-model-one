@@ -36,7 +36,7 @@ instead of in a project's config. See [README.md#setup](../README.md#setup).
 
 **2. The run does not execute in the working directory.**
 `RunModel.bat` ran in the directory containing it. A run now executes in
-`{TM1_RUNS_ROOT}/{project}/{scenario}-{NNN}`, a new numbered directory each time.
+`{TM1_RUNS_ROOT}/{scenario}-{NNN}`, a new numbered directory each time.
 
 No existing run is deleted or overwritten. Re-running after a land use update produces
 `-002` alongside an intact `-001`.
@@ -421,7 +421,7 @@ tm1 run my_project --scenario NOPK-2035
 ## What the run leaves behind
 
 ```
-{TM1_RUNS_ROOT}/{project}/{scenario}-001/
+{TM1_RUNS_ROOT}/{scenario}-001/
   INPUT/          every input staged in, as the run's record of what it consumed
   hwy/ trn/ skims/ landuse/ popsyn/ nonres/ main/ database/ logsums/ metrics/
   logs/           the run log

@@ -27,7 +27,7 @@ m_drive: "{env:TM1_M_DRIVE}"        # M: = \\models.ad.mtc.ca.gov\data\models
 model_year: "REQUIRED: override model_year"
 
 # Injected per run -- usable below, not settable:
-#   run_dir = {env:TM1_RUNS_ROOT}/{project}/{scenario}-{NNN}, plus runs_root, project, scenario, run
+#   run_dir = {env:TM1_RUNS_ROOT}/{scenario}-{NNN}, plus runs_root, project, scenario, run
 # {PERIOD} and {iteration} are expanded per step.
 
 # The legacy jobs take parameters from the environment, not argv.  ITER, PREV_ITER, WGT,

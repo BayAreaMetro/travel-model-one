@@ -92,7 +92,7 @@ def prepare_run(
     project = config_dir.name
     runs_root = Path(env_value(RUNS_ROOT_VAR, "runs_root"))
     run_no, run_dir, state = run_directory.allocate(
-        runs_root / project, scenario.id, stamp, rerun=rerun,
+        runs_root, scenario.id, stamp, rerun=rerun,
     )
     run_directory.check_length(run_dir)
 
@@ -130,7 +130,7 @@ def latest_run(config_dir: Path, scenario_id: str | None = None) -> PreparedRun 
 
     project = config_dir.name
     runs_root = Path(env_value(RUNS_ROOT_VAR, "runs_root"))
-    existing = run_directory.existing_runs(runs_root / project, scenario.id)
+    existing = run_directory.existing_runs(runs_root, scenario.id)
     if not existing:
         return None
     run_no, run_dir = existing[-1]
