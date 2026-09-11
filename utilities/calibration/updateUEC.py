@@ -47,7 +47,7 @@ def get_config(submodel, version):
         uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "DestinationChoice_TM1.6.1.xls"
         calib_workbook = CALIB_DIR / "01 Usual Work and School Location" / f"01_UsualWorkAndSchoolLocation_2023_{version}.xlsx"
         
-        # sheet, column, startRow, endRow
+        # sheet, column, startRow, endRow of calib_workbook
         copy_src = {
             "work":        ("calibration",  4,  4,  8),
             "work_county": ("calibration", 10,  4, 13),
@@ -55,7 +55,7 @@ def get_config(submodel, version):
             "highschool":  ("calibration", 33,  4,  8),
             "gradeschool": ("calibration", 34,  4,  8)
         }
-        
+        # uec_src_workbook
         copy_dst = {
             "work":        [("Work",        7, 22, 26)],
             "work_county": [("Work",        7, 38, 47)],

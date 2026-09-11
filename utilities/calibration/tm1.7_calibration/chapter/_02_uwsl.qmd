@@ -2,7 +2,7 @@
 
 The usual work and school location choice model assigns a usual location for the primary mandatory activity of each employed person, school-aged child, and university student in the synethetic population. For _TM1.7_, calibration was focused primarily on the distance correction factors and the county-to-county constants. 
 
-The COVID-19 pandemic brought about changes in travel patterns and commuting. The previous travel model update, _TM1.6_, updated the work from home submodel to reflect the widespread adoption of remote and hybrid work. As part of the _TM1.7_ effort, staff explored the magnitude of different worker personas, specifically those who live outside the region and work remotely within the region. Using a multitude of datasets such as ACS, BATS 2023, SWAA, staff created the following table with different workers personas and estimated magnitude, noting that each dataset has its own constraints. However,  it was decided since there is not enough concrete data to support the magntitude of remote workers, no change was made to the model as part of calibration. 
+The COVID-19 pandemic brought about changes in travel patterns and commuting. The previous travel model update, _TM1.6_, updated the work from home submodel to reflect the widespread adoption of remote and hybrid work. As part of the _TM1.7_ effort, staff explored the more complex remote and hybrid work patterns through worker personas, including workers without a fixed workplace location within the region (either live within the region or outside of the region). Some of these personas are not explicitly represented in _TM1.6_. Staff attempted to quantify the magnitude of these different worker personas using a multitude of datasets such as ACS, BATS 2023, and SWAA. However, due to a lack of sufficient and consistent data to accurately estimate the magnitude of all worker personas, no structural change was made to the model to explicitly represent new worker personas. The following table shows the estimated magnitude of different worker personas, along with the limitations of each dataset.
 
 <Add persona table here - do we re-calculate it in python or just format the persona table?>
 
@@ -25,7 +25,7 @@ from calib_report import figures, config
 ```
 
 #### Work Location
-ACS 2023 PUMS data was used established targets for the county-to-county commuter flow. The PUMS county-to-county flow were scaled up slightly to match the modeled 2023 employed residents. 
+ACS 2023 PUMS data was used to establish targets for the county-to-county commuter flow. The PUMS county-to-county flow were scaled up slightly to match the modeled 2023 employed residents. 
 
 ```{python}
 #| label: tbl-worker-flow
