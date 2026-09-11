@@ -279,11 +279,31 @@ def test_a_generated_id_colliding_with_an_explicit_one_is_refused() -> None:
         })
 
 
-@pytest.mark.parametrize("bad", ["a001-nopk", "A001_NOPK", "A001 NOPK"])
+@pytest.mark.parametrize("bad", ["A001 NOPK", "A001-NOPK!", "A001.NOPK"])
 def test_a_malformed_id_is_refused(bad: str) -> None:
-    """IDs read as identifiers, not prose -- and not as two names differing by case."""
-    with pytest.raises(ValueError, match="uppercase segments"):
+    """IDs are segments of letters, digits, underscores or hyphens -- not prose."""
+    with pytest.raises(ValueError, match="letters, digits"):
         expand({"scenarios": {bad: None}})
+
+
+def test_an_id_may_use_underscores() -> None:
+    """Legacy-style names (`2050_TM161_FBP_Plan_16`) are valid IDs too."""
+    out = expand({"scenarios": {"2050_TM161_FBP_Plan_16": None}})
+    assert [c.id for c in out.scenarios] == ["2050_TM161_FBP_Plan_16"]
+
+
+def test_an_id_may_be_camel_case() -> None:
+    """A multi-part last segment reads better as camelCase than ALLCAPS."""
+    out = expand({"scenarios": {"A001-NopkBart": None}})
+    assert [c.id for c in out.scenarios] == ["A001-NopkBart"]
+
+
+def test_ids_differing_only_by_case_collide() -> None:
+    """Case is preserved, but two spellings would still name the same run
+    directory on a filesystem that does not distinguish them.
+    """
+    with pytest.raises(ValueError, match="collides"):
+        expand({"scenarios": {"A001-NOPK": None, "a001-nopk": None}})
 
 
 def test_a_trailing_three_digit_segment_is_refused() -> None:

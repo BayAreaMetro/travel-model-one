@@ -391,7 +391,12 @@ description, leaving the ID as the only identifying information in a large sweep
 
 ### Scenario IDs
 
-`SERIES-TOKENS-YEAR` — uppercase, hyphen-separated, e.g. `A001-NOPK-2035`.
+`YEAR_MODELVERSION_SERIES_SCENARIO_VERSION` — e.g. `2050_TM161_FBP_Plan_16` --
+letters, digits, underscores or hyphens. `VERSION` is the scenario's own revision
+number, not the run-iteration `-{NNN}` suffix a run directory carries on top of
+the whole ID. Case is preserved, but two IDs differing only by case collide --
+they would name the same run directory on a filesystem that does not
+distinguish them.
 
 **IDs are permanent.** The ID names the run directory, so renaming a scenario converts a
 completed run into an unrun one, at the cost of the full run time. Descriptive text belongs

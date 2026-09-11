@@ -30,9 +30,10 @@ its addresses resolve -- is :mod:`tm1.project.overrides`.
 
 Scenario IDs
 ------------
-``SERIES-TOKENS-YEAR`` -- ``A001-NOPK-2035`` -- unique within the project and
-stable forever, because the ID names the run directory: a renamed scenario is an
-unrun scenario, and that is fifteen hours. ``description:`` carries the prose.
+``YEAR_MODELVERSION_SERIES_SCENARIO_VERSION`` -- ``2050_TM161_FBP_Plan_16`` --
+unique within the project and stable forever, because the ID names the run
+directory: a renamed scenario is an unrun scenario, and that is fifteen hours.
+``description:`` carries the prose.
 Ladder and matrix generate IDs from an ``id:`` template whose tokens are their
 part names, so adding a matrix axis value never renames an existing scenario.
 Ladder IDs carry the rung index and *do* shift when a rung is inserted --
@@ -46,10 +47,11 @@ from pathlib import Path
 
 import yaml
 
-#: A scenario ID: uppercase segments joined by hyphens.  Lowercase and
-#: underscores are refused so IDs read as identifiers rather than prose, and so
-#: two scenarios cannot differ only by case on a filesystem that does not.
-_ID = re.compile(r"^[A-Z0-9]+(-[A-Z0-9]+)*$")
+#: A scenario ID: segments of letters, digits, underscores or hyphens -- case is
+#: preserved, so a multi-part last segment may be camelCase.  Two IDs differing
+#: only by case still collide (see _check_id): the run directory they name is
+#: the same one on a filesystem that does not distinguish them.
+_ID = re.compile(r"^[A-Za-z0-9_]+(-[A-Za-z0-9_]+)*$")
 
 #: A trailing three-digit segment would be ambiguous with the run-iteration suffix
 #: a run directory carries (``A001-NOPK-2035-001``).
@@ -100,8 +102,9 @@ def _check_id(scenario_id: str, seen: dict[str, str], source: str) -> None:
     """Refuse a malformed ID, or one that collides with a scenario already made."""
     if not _ID.match(scenario_id):
         msg = (
-            f"Scenario ID {scenario_id!r} ({source}): use uppercase segments "
-            f"joined by hyphens, e.g. A001-NOPK-2035."
+            f"Scenario ID {scenario_id!r} ({source}): use segments of letters, "
+            f"digits, underscores or hyphens, e.g. A001-NOPK-2035 or "
+            f"2050_TM161_FBP_Plan_16."
         )
         raise ValueError(msg)
     if _ID_TAIL.search(scenario_id):
@@ -111,14 +114,15 @@ def _check_id(scenario_id: str, seen: dict[str, str], source: str) -> None:
             f"carries."
         )
         raise ValueError(msg)
-    if scenario_id in seen:
+    folded = scenario_id.upper()
+    if folded in seen:
         msg = (
             f"Scenario ID {scenario_id!r} ({source}) collides with "
-            f"{seen[scenario_id]}. An ID names a run directory, so two scenarios "
-            f"cannot share one."
+            f"{seen[folded]}: run directories are case-insensitive on Windows, "
+            f"so IDs differing only by case would land in the same folder."
         )
         raise ValueError(msg)
-    seen[scenario_id] = f"{scenario_id} ({source})"
+    seen[folded] = f"{scenario_id} ({source})"
 
 
 def _split_meta(entry: object) -> tuple[str, dict]:
