@@ -78,7 +78,7 @@ uwsl.plot_tlfd(
 observed_school_file = config.BATS_DIR / "schoolTLFD.csv"
 
 uwsl.plot_tlfd(
-   observed_univ_file,
+   observed_school_file,
    "Percent of School Students"
    )
 
