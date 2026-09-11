@@ -145,6 +145,10 @@ scenarios:
     # The versioned name this project's INPUT/popsyn ships under.
     filter_unconnected_households.skip_if_exists: "popsyn/hhFile.2023_v12.csv"
 
+    # RunPrepareEmfac.bat's MODEL_YEAR lookup table, evaluated for 2023.
+    emfac_sb375_version: "2014"
+    emfac_eir_version:   "2017"
+
   2050_TM162_FBP_Plan:
     description: >
       Plan Bay Area 2050+ Final Blueprint run. Equivalent to 2050_TM161_FBP_Plan_16
@@ -180,6 +184,10 @@ scenarios:
 
     # The versioned name this project's INPUT/popsyn ships under.
     filter_unconnected_households.skip_if_exists: "popsyn/hhFile.2023_v12.csv"
+
+    # RunPrepareEmfac.bat's MODEL_YEAR lookup table, evaluated for 2050.
+    emfac_sb375_version: "2014"
+    emfac_eir_version:   "2017"
 
     # Blueprint strategy overrides (this project's own copy_project_inputs, see
     # top-level `steps:` above), all off by default; MODEL_YEAR 2050 qualifies

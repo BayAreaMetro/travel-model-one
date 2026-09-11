@@ -26,6 +26,12 @@ m_drive: "{env:TM1_M_DRIVE}"        # M: = \\models.ad.mtc.ca.gov\data\models
 # scenario must override it (and keep it in step with env.MODEL_YEAR below).
 model_year: "REQUIRED: override model_year"
 
+# RunPrepareEmfac.bat picks these from MODEL_YEAR through a table (see the .bat,
+# and Asana task "EMFAC version for next SCS") -- a scenario states the looked-up
+# value directly rather than this config repeating that table in a second place.
+emfac_sb375_version: "REQUIRED: override emfac_sb375_version"
+emfac_eir_version: "REQUIRED: override emfac_eir_version"
+
 # Injected per run -- usable below, not settable:
 #   run_dir = {env:TM1_RUNS_ROOT}/{scenario}-{NNN}, plus runs_root, project, scenario, run
 # {PERIOD} and {iteration} are expanded per step.
@@ -434,6 +440,83 @@ steps:
       job: "CTRAMP/scripts/database/SkimsDatabase.job"
   - net2csv_avgload5period:
       job: "CTRAMP/scripts/metrics/net2csv_avgload5period.job"
+
+  # ── EMFAC prep · once, at the end (RunModel.bat step 12; RunPrepareEmfac.bat) ──────────
+  # RunPrepareEmfac.bat also has an "on M" branch (its own EMFAC_DIR/EMFAC_SCRIPT_DIR,
+  # picked when an OUTPUT\ directory exists) for running against a robocopied M-drive
+  # extraction rather than a live run directory.  Not reachable from this harness --
+  # every run works from its own run_dir -- so it has no equivalent here.  The .bat's
+  # freight-variant rename (setting aside whichever of the with/without-truck speed-bin
+  # files WithFreight/NoFreight did not select) is dropped too: purely cosmetic, nothing
+  # downstream reads the file it renames.
+  - emfac_prep_between_zones:
+      command: "CTRAMP/scripts/emfac/BetweenZonesVMT.py"
+      skip_if_exists: "emfac/emfac_prep/CreateSpeedBinsBetweenZones_sums.csv"
+  - emfac_prep_within_zones:
+      job: "CTRAMP/scripts/emfac/CreateSpeedBinsWithinZones.job"
+      skip_if_exists: "emfac/emfac_prep/CreateSpeedBinsWithinZones_sums.csv"
+
+  # RunModel.bat 369-370: `call RunPrepareEmfac.bat SB375 WithFreight` / `... EIR
+  # WithFreight` -- WithFreight is the only argument either call ever uses, so it
+  # is not a config key, just what these steps do.  Five steps, not two calls: the
+  # EIR call runs the SB375 call's one invocation, then three more for
+  # season=winter and EMFAC2021 (see the .bat's comment "also run SEASON=winter
+  # and EMFAC2021") -- each is a distinct argv, so each is its own step.
+  #
+  # `--emfac_version`, not the .bat's `--emfac`: the script itself only defines
+  # the former (argparse resolves the .bat's shorter form by unambiguous
+  # prefix, since nothing else starts with `--emfac`), and there is no reason
+  # to depend on that abbreviation matching here.
+  - prepare_emfac_sb375:
+      command: "CTRAMP/scripts/emfac/create_EMFAC_custom_activity_file.py"
+      args:
+        - "--analysis_type=SB375"
+        - "--emfac_version={emfac_sb375_version}"
+        - "--run_mode=emissions"
+        - "--sub_area=MPO-MTC"
+        - "--season=annual"
+        - "--VMT_data_type=totalDailyVMT"
+        - "--custom_hourly_speed_fractions"
+  - prepare_emfac_eir_annual:
+      command: "CTRAMP/scripts/emfac/create_EMFAC_custom_activity_file.py"
+      args:
+        - "--analysis_type=EIR"
+        - "--emfac_version={emfac_eir_version}"
+        - "--run_mode=emissions"
+        - "--sub_area=MPO-MTC"
+        - "--season=annual"
+        - "--VMT_data_type=totalDailyVMT"
+        - "--custom_hourly_speed_fractions"
+  - prepare_emfac_eir_winter:
+      command: "CTRAMP/scripts/emfac/create_EMFAC_custom_activity_file.py"
+      args:
+        - "--analysis_type=EIR"
+        - "--emfac_version={emfac_eir_version}"
+        - "--run_mode=emissions"
+        - "--sub_area=MPO-MTC"
+        - "--season=winter"
+        - "--VMT_data_type=totalDailyVMT"
+        - "--custom_hourly_speed_fractions"
+  - prepare_emfac_eir_winter_2021:
+      command: "CTRAMP/scripts/emfac/create_EMFAC_custom_activity_file.py"
+      args:
+        - "--analysis_type=EIR"
+        - "--emfac_version=2021"
+        - "--run_mode=emissions"
+        - "--sub_area=MPO-MTC"
+        - "--season=winter"
+        - "--VMT_data_type=totalDailyVMT"
+        - "--custom_hourly_speed_fractions"
+  - prepare_emfac_eir_annual_2021:
+      command: "CTRAMP/scripts/emfac/create_EMFAC_custom_activity_file.py"
+      args:
+        - "--analysis_type=EIR"
+        - "--emfac_version=2021"
+        - "--run_mode=emissions"
+        - "--sub_area=MPO-MTC"
+        - "--season=annual"
+        - "--VMT_data_type=totalDailyVMT"
+        - "--custom_hourly_speed_fractions"
 
   # ── Cleanup · once, at the end (RunModel.bat step 18) ──────────────────────────────────
   - cleanup_logs:          # sweeps TPPL*.PRN / _cube_*.log out of run_dir into logs/
