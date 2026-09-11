@@ -201,6 +201,39 @@ logging:
 This replaces `RunModel.bat`'s `echo ... >> logs\feedback.rpt`, which recorded
 only start and finish milestones.
 
+### Template Placeholders
+
+Three different things all look like `{...}`, resolved in different places:
+
+| Placeholder | Resolved | Works |
+|---|---|---|
+| `{env:NAME}` | first, from the environment | anywhere in the config |
+| `{key}` | after `{env:...}`, from any top-level scalar in the resolved config | anywhere in the config |
+| `{iteration}`, `{PERIOD}` | later, per step invocation | only inside the step that declares them |
+
+`{key}` is not a fixed list -- any top-level scalar the config has becomes a
+placeholder everywhere below it, whether a scenario/model file wrote it (`m_drive`,
+`model_year`, `slack`, `logging`) or the runner injects it right before resolving
+templates, and so is **not settable** by a scenario:
+
+| Key | Value |
+|---|---|
+| `run_dir` | `{runs_root}/{scenario}-{NNN}` |
+| `runs_root` | `TM1_RUNS_ROOT` (from `.env`) |
+| `project` | the project's folder name, e.g. `PBA50+_FBP` |
+| `scenario` | the scenario's own `id`, e.g. `PLAN-2050-V16` |
+| `run` | `{scenario}-{NNN}`, e.g. `PLAN-2050-V16-002` -- `run_dir`'s last segment |
+
+`{iteration}` and `{PERIOD}` are different: they survive config loading unexpanded
+and are filled in later, once per step invocation -- `{iteration}` to whichever
+round is currently running, `{PERIOD}` once per assignment period
+(`EA`/`AM`/`MD`/`PM`/`EV`). They only work inside a step's own block (e.g.
+`cwd: "trn/TransitAssignment.iter{iteration}"`), not as a top-level config value.
+
+Set in `src/tm1/run/prepare.py` (`run_dir`/`runs_root`/`project`/`scenario`/`run`),
+`src/tm1/project/config.py` (`{env:...}`/`{key}` resolution), and
+`src/tm1/steps/external.py` (`{iteration}`/`{PERIOD}`).
+
 ### Adding Your Own Pre- or Post-Processing
 
 Steps are flat — every step is a top-level key under `steps:`, and they run in the
