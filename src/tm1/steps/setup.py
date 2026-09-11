@@ -60,6 +60,7 @@ depending on a global flag.
 
 import fnmatch
 import logging
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -75,9 +76,47 @@ _ENTRY_KEYS = frozenset(
 )
 
 
+def _winlong(path: Path) -> str:
+    r"""*path*, in Windows' extended-length form once it is worth the trouble.
+
+    ``CreateFileW`` -- and so ``open()``, ``os.makedirs``, ``shutil.copy2`` --
+    refuses any path over ``MAX_PATH`` (~260 characters) unless it opts into the
+    NT kernel's own, much larger limit by starting with ``\\?\`` (``\\?\UNC\``
+    for a path that is itself a UNC share, e.g. ``\\server\share\...``).
+    Nothing does this automatically, and every raw filesystem call below asks
+    for it explicitly rather than trusting a caller to remember: a run itself
+    stays short enough on purpose (``run_directory.MAX_RUN_DIR_LEN``), but
+    ``publish_outputs`` writes that same tree onto an M-drive path several
+    segments longer, and *that* is what finally goes over -- not anything Cube
+    or this run ever had to touch.
+
+    A no-op on any OS other than Windows, and on a path that already carries
+    the prefix.
+    """
+    text = str(path)
+    if os.name != "nt" or text.startswith("\\\\?\\"):
+        return text
+    # The `\\?\` prefix also turns off Windows' own path normalisation, so a
+    # forward slash stops being a separator -- Path str() otherwise leaves
+    # whichever ones the template that built it used.
+    text = text.replace("/", "\\")
+    if text.startswith("\\\\"):
+        return "\\\\?\\UNC\\" + text[2:]
+    return "\\\\?\\" + text
+
+
 def _strip_ctrl_z(path: Path) -> None:
-    """Remove trailing Ctrl-Z (0x1a) if present (legacy Windows EOF)."""
-    with path.open("r+b") as f:
+    """Remove a trailing Ctrl-Z (0x1a), the legacy MS-DOS EOF marker.
+
+    A few of the fixed-width inputs this repo inherited still carry one --
+    inert to Cube, but not to every text tool that might read the same file
+    later. Done here, after a single-file copy, rather than inside
+    ``_copy_tree``: a directory of ``.tpp``/``.dbf`` binaries has no text
+    convention to preserve, and scanning every byte of a whole tree for a
+    marker only ``_copy_file``/``_copy_variant`` ever produce would be wasted
+    work on files that need it least.
+    """
+    with open(_winlong(path), "r+b") as f:
         f.seek(-1, 2)
         if f.read(1) == b"\x1a":
             log.info("  Stripping trailing Ctrl-Z from %s", path.name)
@@ -103,18 +142,38 @@ def _selected(rel: Path, include: list[str], exclude: list[str]) -> bool:
 def _copy_tree(
     src: Path, dest: Path, *, include: list[str], exclude: list[str], overwrite: bool
 ) -> int:
-    """Copy a directory into *dest*, preserving shape, returning files written."""
-    dest.mkdir(parents=True, exist_ok=True)
+    """Copy a directory into *dest*, preserving shape, returning files written.
+
+    Not :func:`shutil.copytree`, deliberately -- see the module docstring's "Two
+    sources may merge" note. ``copytree`` copies a whole tree as one atomic unit
+    into a destination that either must not already exist, or (``dirs_exist_ok
+    =True``) gets silently overwritten wherever the two trees collide. Neither
+    gives "run entry A, then entry B, and let B fill gaps without touching what
+    A already wrote" -- two ``copy_inputs`` entries land in the same directory
+    (``nonres/`` from both ``input_nonres`` and ``input_warmstart_nonres``), and
+    a resumed run must not reclobber a strategy's ``overwrite: true`` swap with
+    the plain file underneath it. So this walks file by file instead, checking
+    ``overwrite`` per file rather than once for the whole tree, and returns a
+    count so the caller's log line means something on a resumed run -- "47
+    files" and "0" are the difference between "did something" and "already
+    done", which one number covering the whole tree cannot say.
+
+    Every path that touches the filesystem goes through :func:`_winlong` --
+    RunModel.bat never had to cross a share long enough to hit Windows' path
+    length limit, but ``publish_outputs`` archiving a run onto an M-drive path
+    several segments longer than the run itself does.
+    """
+    os.makedirs(_winlong(dest), exist_ok=True)
     written = 0
     for f in sorted(p for p in src.rglob("*") if p.is_file()):
         rel = f.relative_to(src)
         if not _selected(rel, include, exclude):
             continue
         target = dest / rel
-        if target.exists() and not overwrite:
+        if os.path.exists(_winlong(target)) and not overwrite:
             continue
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(f, target)
+        os.makedirs(_winlong(target.parent), exist_ok=True)
+        shutil.copy2(_winlong(f), _winlong(target))
         written += 1
 
     log.info("Copied %s -> %s (%d files)", src, dest, written)
@@ -122,13 +181,22 @@ def _copy_tree(
 
 
 def _copy_file(src: Path, dest: Path, *, overwrite: bool) -> int:
-    """Copy a single file, which may rename it.  Returns 1 if written."""
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.exists() and not overwrite:
+    """Copy a single file, which may rename it.  Returns 1 if written.
+
+    ``_copy_tree``'s one-file counterpart, kept separate rather than folding a
+    single file into a one-entry directory walk: a file entry's whole point is
+    that ``to:`` may name a *different* filename than ``from:`` (``SetUpModel
+    .bat`` turns ``2023b_tripsAirPaxEA.tpp`` into ``tripsAirPaxEA.tpp``), which
+    ``_copy_tree``'s "same relative path everywhere" contract has no room for.
+    Same ``overwrite`` behaviour as `_copy_tree` otherwise, so a file entry and
+    a directory entry read the same way in a project's config.
+    """
+    os.makedirs(_winlong(dest.parent), exist_ok=True)
+    if os.path.exists(_winlong(dest)) and not overwrite:
         log.info("Already exists: %s", dest)
         return 0
     log.info("Copying %s -> %s", src, dest)
-    shutil.copy2(src, dest)
+    shutil.copy2(_winlong(src), _winlong(dest))
     _strip_ctrl_z(dest)
     return 1
 
@@ -147,8 +215,8 @@ def _copy_variant(src: Path, dest: Path, variant: dict) -> int:
             msg = f"variant {rel_src!r} not found under {src}"
             raise FileNotFoundError(msg)
         target = dest / dest_name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+        os.makedirs(_winlong(target.parent), exist_ok=True)
+        shutil.copy2(_winlong(source), _winlong(target))
         _strip_ctrl_z(target)
         written += 1
         log.info("Copied variant %s -> %s", source, target)
@@ -158,17 +226,21 @@ def _copy_variant(src: Path, dest: Path, variant: dict) -> int:
 def _copy_concat(sources: list[Path], dest: Path, *, overwrite: bool) -> int:
     """Concatenate *sources* into *dest*, in order, byte for byte.
 
-    ``copy /b a+b c``, not a CSV-aware merge -- see the module docstring.
+    ``copy /b a+b c``, not a CSV-aware merge -- see the module docstring. Its
+    own function rather than a variant of ``_copy_file``/``_copy_tree``: there
+    is no single source to copy, and reading every source in full before
+    writing anything means a missing one is caught before the destination is
+    touched at all, rather than left half-written.
     """
-    if dest.exists() and not overwrite:
+    if os.path.exists(_winlong(dest)) and not overwrite:
         log.info("Already exists: %s", dest)
         return 0
     for source in sources:
         if not source.exists():
             msg = f"concat: source not found: {source}"
             raise FileNotFoundError(msg)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    with dest.open("wb") as out:
+    os.makedirs(_winlong(dest.parent), exist_ok=True)
+    with open(_winlong(dest), "wb") as out:
         for source in sources:
             out.write(source.read_bytes())
     log.info("Concatenated %d file(s) -> %s", len(sources), dest)

@@ -7,6 +7,7 @@ so, because entries later in the pipeline write into the same directories and a
 re-run must not undo them.
 """
 
+import os
 from pathlib import Path
 
 import pytest
@@ -188,3 +189,27 @@ def test_a_missing_source_stops_the_run(tree: Path) -> None:
     """Staging silently short of a directory would fail much later, inside Cube."""
     with pytest.raises(SystemExit):
         _run(tree, {"absent": {"from": str(tree / "nope"), "to": str(tree / "out")}})
+
+
+# --- Windows extended-length paths -------------------------------------------
+
+
+@pytest.mark.skipif(os.name != "nt", reason="the \\\\?\\ prefix is a Windows-only concept")
+def test_a_long_local_path_is_given_the_extended_length_prefix() -> None:
+    """Past this point CreateFileW ignores MAX_PATH instead of refusing the call."""
+    assert setup._winlong("C:/some/long/path") == "\\\\?\\C:\\some\\long\\path"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="the \\\\?\\ prefix is a Windows-only concept")
+def test_a_unc_path_gets_the_unc_form_of_the_prefix() -> None:
+    r"""``\\?\`` alone would treat the leading ``\\server`` as a drive letter."""
+    assert (
+        setup._winlong(r"\\models.ad.mtc.ca.gov\data\models")
+        == "\\\\?\\UNC\\models.ad.mtc.ca.gov\\data\\models"
+    )
+
+
+@pytest.mark.skipif(os.name != "nt", reason="the \\\\?\\ prefix is a Windows-only concept")
+def test_an_already_prefixed_path_is_left_alone() -> None:
+    """Doubling the prefix would make it part of the literal path instead."""
+    assert setup._winlong(r"\\?\C:\already\prefixed") == r"\\?\C:\already\prefixed"
