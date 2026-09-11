@@ -172,8 +172,9 @@ scenarios:
     copy_inputs.input_airpax_pm.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxPM.tpp"
     copy_inputs.input_airpax_ev.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEV.tpp"
 
-    copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/Blueprint/Archive_FBP/2050_TM161_FBP_Plan_15/OUTPUT/main"
-    copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/Archive_FBP/2050_TM161_FBP_Plan_15/OUTPUT/nonres"
+    # 2050_TM161_FBP_Plan_15 is archived so pull from 2050_TM161_FBP_Plan_16/INPUT/warmstart
+    copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/warmstart/main"
+    copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/warmstart/nonres"
 
     copy_inputs.input_params.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/params.properties"
 
