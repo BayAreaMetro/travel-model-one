@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
+from dataclasses import replace
 from pathlib import Path
 import re
 from typing import cast
@@ -26,15 +27,35 @@ class TransitLineReader:
 
         starts = list(_LINE_START.finditer(text))
         lines: list[TransitLine] = []
+        previous_end = 0
         for start in starts:
             remainder = text[start.start() :]
             end = _STATEMENT_END.search(remainder)
             statement = remainder[: end.start()] if end else remainder
             source_line = text.count("\n", 0, start.start()) + 1
-            lines.append(self._parse_statement(statement, source_line))
+            comments_before = self._comments(text[previous_end : start.start()])
+            comments_within = self._comments(statement)
+            lines.append(
+                self._parse_statement(
+                    statement,
+                    source_line,
+                    comments_before,
+                    comments_within,
+                )
+            )
+            previous_end = start.start() + (end.end() if end else len(remainder))
+        if lines:
+            trailing = self._comments(text[previous_end:])
+            lines[-1] = replace(lines[-1], comments_after=trailing)
         return tuple(lines)
 
-    def _parse_statement(self, statement: str, source_line: int) -> TransitLine:
+    def _parse_statement(
+        self,
+        statement: str,
+        source_line: int,
+        comments_before: tuple[str, ...],
+        comments_within: tuple[str, ...],
+    ) -> TransitLine:
         name = self._required_string(statement, "NAME", source_line)
         mode = self._required_integer(statement, "MODE", source_line)
         owner = self._optional_integer(statement, "OWNER", source_line)
@@ -51,7 +72,7 @@ class TransitLineReader:
         node_match = re.search(r"(?im)^[ \t]*N(?:ODES)?[ \t]*=", statement)
         if node_match is None:
             raise TranslationError(f"Line {name!r} at source line {source_line} has no nodes.")
-        node_text = statement[node_match.start() :].strip()
+        node_text = self._without_comments(statement[node_match.start() :]).strip()
         nodes = self._read_nodes(node_text)
         if len([node for node in nodes if node > 0]) < 2:
             raise TranslationError(
@@ -70,7 +91,26 @@ class TransitLineReader:
             long_name=long_name,
             runtime=runtime,
             source_line=source_line,
+            comments_before=comments_before,
+            comments_within=comments_within,
         )
+
+    @staticmethod
+    def _comments(text: str) -> tuple[str, ...]:
+        comments: list[str] = []
+        for raw in text.splitlines():
+            marker = raw.find(";")
+            if marker < 0:
+                continue
+            comment = raw[marker:].strip()
+            if re.fullmatch(r";;<<TRNBUILD>>;;", comment, re.IGNORECASE):
+                continue
+            comments.append(comment)
+        return tuple(comments)
+
+    @staticmethod
+    def _without_comments(text: str) -> str:
+        return "\n".join(raw.partition(";")[0].rstrip() for raw in text.splitlines())
 
     @staticmethod
     def _read_nodes(node_text: str) -> tuple[int, ...]:

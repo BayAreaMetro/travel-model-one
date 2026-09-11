@@ -1,4 +1,6 @@
-;;<<PT>>;;
+;;<<PT>><<LINE>>;;
+; Source: tests/fixtures/minimal_trn/example.tpl
+; important node note
 LINE NAME="TEST_BUS",
     COLOR=4,
     HEADWAY[1]=10.00,

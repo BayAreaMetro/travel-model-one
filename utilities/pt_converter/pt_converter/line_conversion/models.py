@@ -21,6 +21,28 @@ class TransitLine:
     long_name: str | None = None
     runtime: Decimal | None = None
     source_line: int = 0
+    comments_before: tuple[str, ...] = ()
+    comments_within: tuple[str, ...] = ()
+    comments_after: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class TransitMode:
+    """A published TM1 transit mode name and category."""
+
+    number: int
+    short_name: str
+    name: str
+    category: str
+
+
+@dataclass(frozen=True, slots=True)
+class TransitOperator:
+    """A PT operator number with short and descriptive names."""
+
+    number: int
+    short_name: str
+    name: str
 
 
 @dataclass(frozen=True, slots=True)

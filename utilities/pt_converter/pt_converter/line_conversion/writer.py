@@ -156,8 +156,10 @@ class PTInputWriter:
             )
 
     def _render_lines(self, lines: tuple[TransitLine, ...]) -> str:
-        rendered = [";;<<PT>>;;"]
+        rendered = [";;<<PT>><<LINE>>;;"]
         for line in lines:
+            rendered.extend(line.comments_before)
+            rendered.extend(line.comments_within)
             attributes = [f'LINE NAME="{_quoted(line.name)}"']
             if line.color is not None:
                 attributes.append(f"COLOR={line.color}")
@@ -177,6 +179,7 @@ class PTInputWriter:
             rendered.append(",\n    ".join(attributes) + ",")
             rendered.append(" " + line.node_text)
             rendered.append("")
+            rendered.extend(line.comments_after)
         return "\n".join(rendered).rstrip() + "\n"
 
     def _render_system(
