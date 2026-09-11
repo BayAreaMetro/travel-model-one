@@ -104,6 +104,45 @@ def test_command_uses_this_interpreter(proj: Path) -> None:
     assert (proj / "exe.txt").read_text() == sys.executable
 
 
+def test_an_r_script_runs_under_rscript_with_vanilla(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``--vanilla`` matters: without it R reads whatever profile is on the
+
+    machine that happened to start the run, not what the script expects.
+    """
+    monkeypatch.setenv("TM1_R_HOME", "C:/R/R-4.3.1")
+
+    argv = external._argv(Path("CoreSummaries.R"), ["arg1"])
+
+    assert argv == [
+        "C:\\R\\R-4.3.1\\bin\\x64\\Rscript.exe", "--vanilla", "CoreSummaries.R", "arg1",
+    ]
+
+
+def test_an_r_script_without_tm1_r_home_names_the_missing_setting(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R's install path carries its own version, so there is no default to guess."""
+    monkeypatch.delenv("TM1_R_HOME", raising=False)
+
+    with pytest.raises(ValueError, match="TM1_R_HOME"):
+        external._argv(Path("CoreSummaries.R"), [])
+
+
+def test_a_bat_file_runs_through_cmd_not_directly(proj: Path) -> None:
+    """Windows' CreateProcess cannot launch a .bat itself -- only cmd.exe can."""
+    rel = _write_script(
+        proj, "quickboards.bat",
+        '@echo off\r\necho ran > "%OUT%\\ran.txt"\r\n',
+    )
+    step = {"command": rel, "args": ["a.ctl"], "env": {"OUT": str(proj)}}
+
+    external.make_step("quickboards", step)(proj, _cfg(proj, "quickboards", step))
+
+    assert (proj / "ran.txt").read_text().strip() == "ran"
+
+
 def test_command_nonzero_exit_fails_the_step(proj: Path) -> None:
     """RunModel.bat guards every legacy script with ``if ERRORLEVEL 1 goto done``."""
     rel = _write_script(proj, "boom.py", _FAILING)

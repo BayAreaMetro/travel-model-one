@@ -286,16 +286,52 @@ def _write_output(run_dir: Path, step_name: str, text: str) -> Path:
     return path
 
 
+def _rscript() -> str:
+    """Path to ``Rscript.exe``, from ``TM1_R_HOME`` -- the R install root, the
+    same directory the legacy scripts call ``%R_HOME%``.
+
+    No hard-coded default the way Cube's paths have one: an R install's own
+    directory name carries its version (``R-4.3.1``), so there is nothing
+    stable to guess, unlike ``runtpp.exe``'s fixed installer location.
+    """
+    r_home = os.environ.get("TM1_R_HOME")
+    if not r_home:
+        msg = (
+            "An `.R`/`.r` step needs TM1_R_HOME set in .env -- the R install "
+            "root (e.g. C:/Program Files/R/R-4.3.1), the directory holding "
+            "bin/x64/Rscript.exe. There is no default: R's own install path "
+            "carries its version number, so nothing here can guess it."
+        )
+        raise ValueError(msg)
+    return str(Path(r_home) / "bin" / "x64" / "Rscript.exe")
+
+
 def _argv(program: Path, args: list[str]) -> list[str]:
     """The command line to spawn.
 
     A ``.py`` runs under :data:`sys.executable`, never a bare ``python``: the extras
     a legacy script needs (NetworkWrangler, dbfpy3, xlrd) are installed into *this*
     environment, and ``python`` would find whichever interpreter is first on PATH.
-    Anything else is assumed to be executable and runs itself.
+
+    An ``.R`` runs under ``Rscript.exe --vanilla`` -- ``--vanilla`` is what every
+    legacy caller passes, and matters: without it R reads a user ``.Rprofile``/
+    ``.Renviron`` that may set options a script does not expect, so the run
+    depends on whichever profile happens to be on the machine that started it.
+
+    A ``.bat``/``.cmd`` runs under the shell explicitly (``%ComSpec% /c``):
+    unlike ``.py``/``.exe``, Windows' ``CreateProcess`` does not know how to
+    launch a batch file itself -- only ``cmd.exe`` does -- so spawning one
+    directly (as every other suffix here does) raises ``WinError 193``.
+
+    Anything else is assumed to be a real executable and runs itself.
     """
-    if program.suffix.lower() == ".py":
+    suffix = program.suffix.lower()
+    if suffix == ".py":
         return [sys.executable, str(program), *args]
+    if suffix in (".r",):
+        return [_rscript(), "--vanilla", str(program), *args]
+    if suffix in (".bat", ".cmd"):
+        return [os.environ.get("ComSpec", "cmd.exe"), "/c", str(program), *args]
     return [str(program), *args]
 
 
