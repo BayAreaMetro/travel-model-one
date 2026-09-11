@@ -402,7 +402,7 @@ def run_model(
     # actually belongs to.  `--iterations N` overrides iterate.count.  Built
     # before the run log opens: a config error is a console conversation, not
     # a run.
-    full_plan, configs = iteration_plan(steps_cfg, override=kwargs.get("iterations"))
+    full_plan, configs, loop_entries = iteration_plan(steps_cfg, override=kwargs.get("iterations"))
 
     declared = list(dict.fromkeys(name for name, _ in full_plan))
     log_handler = _start_run_log(cfg, label, steps or declared)
@@ -415,18 +415,44 @@ def run_model(
         plan = apply_until(plan, kwargs.get("until"))
         _report_resume(full_plan, plan, n_iters)
         prev_iter = None
+        t0_iter = t0_total
         _notify_start(label, steps or declared, configs, n_iters, kwargs)
 
         for name, iteration in plan:
             step_cfg = configs[(name, iteration)]
+            in_loop = (name, iteration) in loop_entries
 
             # The step's declared product is already on disk: its work is done.
             # Announced before the skip check, not after: a skipped step still
             # belongs to its round, and anything placing it by the last banner --
             # a reader, or `tm1 status` -- would file it under the previous one.
-            if n_iters > 1 and iteration != prev_iter:
+            #
+            # Gated on `in_loop`, not just `iteration != prev_iter`: a flat step
+            # outside `iterate:` runs at iteration 1 (before the loop) or the final
+            # iteration (after it) -- see iteration_plan -- so its number collides
+            # with a real loop iteration. Without this, the setup steps ahead of
+            # the loop are misreported as "iteration 1", finished before iteration
+            # 0 (the warm start) has even started.
+            if n_iters > 1 and in_loop and iteration != prev_iter:
+                # Not verbose_only: an iteration is the coarse milestone a minimal
+                # run wants, unlike the per-step notifications below.
+                if prev_iter is not None:
+                    notify(
+                        f"[{label}] Iteration {prev_iter} of {n_iters} done "
+                        f"({fmt_elapsed(time.time() - t0_iter)})"
+                    )
                 log.info("=== Iteration %d of %d ===", iteration, n_iters)
                 prev_iter = iteration
+                t0_iter = time.time()
+            elif n_iters > 1 and not in_loop and prev_iter is not None:
+                # Left the loop for the flat steps after it (skims_database and
+                # friends) -- report the last iteration now, rather than waiting
+                # for those to finish too and folding their time into it.
+                notify(
+                    f"[{label}] Iteration {prev_iter} of {n_iters} done "
+                    f"({fmt_elapsed(time.time() - t0_iter)})"
+                )
+                prev_iter = None
 
             skip = skip_target(step_cfg, cfg)
             if skip is not None:
@@ -469,6 +495,15 @@ def run_model(
                 )
                 raise
             _report_step(label, name, result, time.time() - t0_step)
+
+        # Usually already flushed above, on the first flat step after the loop --
+        # this only fires when the plan ends inside the loop itself (e.g.
+        # `--until`), which leaves no such step to trigger it.
+        if n_iters > 1 and prev_iter is not None:
+            notify(
+                f"[{label}] Iteration {prev_iter} of {n_iters} done "
+                f"({fmt_elapsed(time.time() - t0_iter)})"
+            )
 
         total = time.time() - t0_total
         # Logged as well as notified: it is how `tm1 status` tells a finished run

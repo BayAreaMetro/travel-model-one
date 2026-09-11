@@ -96,11 +96,12 @@ def _step_enabled(step_cfg: object) -> bool:
 
 def iteration_plan(
     steps_cfg: object, override: int | None = None
-) -> tuple[list[tuple[str, int]], dict[tuple[str, int], dict]]:
+) -> tuple[list[tuple[str, int]], dict[tuple[str, int], dict], set[tuple[str, int]]]:
     """Expand the config into the execution plan, one entry per run of a step.
 
-    Returns ``(plan, configs)``: the ordered ``[(step, iteration)]`` list, and the
-    config block behind each entry.
+    Returns ``(plan, configs, loop_entries)``: the ordered ``[(step, iteration)]``
+    list, the config block behind each entry, and which entries actually came
+    from inside ``iterate:``.
 
     A step's iteration comes from where it is written inside ``iterate:``, and
     from nothing else:
@@ -109,14 +110,19 @@ def iteration_plan(
     - At or after it: every iteration 0..count, unless ``only_iteration:`` or
       ``skip_iteration:`` narrows that.
     - Anything outside ``iterate:`` runs once, where it is written: at
-      iteration 1 before the loop, at the final iteration after it.
+      iteration 1 before the loop, at the final iteration after it -- so a flat
+      step's own iteration number collides with a real one from the loop
+      (iteration 1, or the final iteration). ``loop_entries`` is how a caller
+      that cares about real iteration boundaries (e.g. reporting when one
+      finishes) tells the two apart; position in *plan* alone cannot.
     """
     plan: list[tuple[str, int]] = []
     configs: dict[tuple[str, int], dict] = {}
+    loop_entries: set[tuple[str, int]] = set()
     seen_iterate = False
     current = 1
 
-    def add(name: str, it: int, cfg: dict) -> None:
+    def add(name: str, it: int, cfg: dict, *, looped: bool = False) -> None:
         if (name, it) in configs:
             msg = (
                 f"Step {name!r} is defined twice for iteration {it}. Two runs "
@@ -126,6 +132,8 @@ def iteration_plan(
             raise ValueError(msg)
         configs[(name, it)] = cfg
         plan.append((name, it))
+        if looped:
+            loop_entries.add((name, it))
 
     for name, step_cfg in normalize_steps(steps_cfg):
         if name == _ITERATE:
@@ -146,13 +154,13 @@ def iteration_plan(
                         skip_it = body_cfg.get(_SKIP_ITERATION)
                         if skip_it is not None and i == int(skip_it):
                             continue
-                    add(body_name, i, body_cfg)
+                    add(body_name, i, body_cfg, looped=True)
             current = count
         else:
             _reject_iteration_key(name, step_cfg)
             add(name, current, step_cfg)
 
-    return plan, configs
+    return plan, configs, loop_entries
 
 
 def _reject_iteration_key(name: str, step_cfg: dict) -> None:

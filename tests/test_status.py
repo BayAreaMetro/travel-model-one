@@ -76,7 +76,7 @@ def test_sections_split_the_config_into_its_four_parts() -> None:
 
 def test_entries_reproduce_the_runners_execution_order() -> None:
     """Same entries, same order as `iteration_plan` -- the display cannot drift."""
-    plan, _ = iteration_plan(STEPS)
+    plan, _, _ = iteration_plan(STEPS)
 
     assert _plan().entries() == plan
 

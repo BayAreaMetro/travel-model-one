@@ -28,7 +28,7 @@ from tm1.run.iterations import (
 
 
 def _plan(steps_cfg: object, override: int | None = None) -> list[tuple[str, int]]:
-    plan, _ = iteration_plan(steps_cfg, override)
+    plan, _, _ = iteration_plan(steps_cfg, override)
     return plan
 
 
@@ -130,9 +130,26 @@ def test_only_iteration_pins_a_step_to_one_iteration() -> None:
     assert _iterations(plan, "hwy_assign") == [0]
 
 
+def test_loop_entries_exclude_flat_steps_that_share_their_iteration_number() -> None:
+    """A flat step's borrowed iteration number is not a real loop iteration.
+
+    `copy_inputs` runs at iteration 1 -- the same number `simulate_ctramp`'s
+    real iteration 1 uses -- and `summarize` at iteration 3, same as
+    `hwy_skims`'s real iteration 3. Position, not the number, is what a caller
+    reporting on iterations (e.g. the runner's Slack notifications) has to key
+    off; `loop_entries` is that distinction.
+    """
+    _, _, loop_entries = iteration_plan(_listform())
+
+    assert ("copy_inputs", 1) not in loop_entries
+    assert ("summarize", 3) not in loop_entries
+    assert ("simulate_ctramp", 1) in loop_entries
+    assert ("hwy_skims", 3) in loop_entries
+
+
 def test_a_pinned_step_may_declare_skip_if_exists() -> None:
     """Pinned to one iteration, its product is unambiguous."""
-    _, configs = iteration_plan(_listform())
+    _, configs, _ = iteration_plan(_listform())
 
     assert configs[("hwy_assign", 0)]["skip_if_exists"] == "hwy/iter0/LOADEA.net"
 
