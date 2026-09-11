@@ -17,6 +17,9 @@ Step                         ``RunIteration.bat``
 :func:`seed_average_networks`  177-181 -- the ``ELSE`` copy
 :func:`publish_networks`     193-200 -- five ``copy`` + ``del x*.net``
 ===========================  ==========================================
+
+:func:`cleanup_logs` is the exception: it runs once, at the very end of the whole
+pipeline, not per iteration -- see ``RunModel.bat`` 447-448.
 """
 
 import logging
@@ -198,4 +201,29 @@ def publish_networks(config_dir: Path, cfg: dict, **kwargs: object) -> str | Non
         "Published %d averaged networks to %s (removed %d scratch networks)",
         len(PERIODS), hwy, len(scratch),
     )
+    return None
+
+
+def cleanup_logs(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+    r"""Move Cube's stray print/job output into ``logs/``, ``RunModel.bat`` 447-448.
+
+    ``TPPL*.PRN`` -- Cube's own print files, written straight into ``cwd`` no matter
+    where stdout is redirected -- and ``_cube_*.log`` -- this runner's redirected job
+    output, see :mod:`cube.job` -- both land in ``run_dir`` itself, not ``logs/``.
+    ``RunModel.bat``'s last step swept them up with ``copy *.prn logs\*.prn`` /
+    ``copy *.log logs\*.log``; this does the same with a move, since nothing
+    downstream reads them in place.
+    """
+    run_dir = Path(cfg["run_dir"])
+    log_dir = run_dir / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    moved = 0
+    for pattern in ("*.PRN", "*.prn", "*.log"):
+        for f in run_dir.glob(pattern):
+            if f.is_file():
+                shutil.move(str(f), str(log_dir / f.name))
+                moved += 1
+
+    log.info("Moved %d Cube/job log file(s) into %s", moved, log_dir)
     return None

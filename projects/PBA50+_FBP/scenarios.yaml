@@ -88,10 +88,23 @@ steps:
       cluster_nodes: 15
       enabled: false
 
-  # Genuinely new: the shared model has no step named this, so it is appended
-  # after the shared pipeline's own steps rather than merged into a placeholder.
+  # Genuinely new: the shared model has no step named this, so it is inserted
+  # right after net2csv_avgload5period -- the shared pipeline's last summary step
+  # -- rather than merged into a placeholder.  Pinned with `after:` rather than a
+  # plain append so it still lands before cleanup_logs/publish_outputs, whatever
+  # else the shared pipeline appends there later.
   - vmt_vht_metrics:
+      after: net2csv_avgload5period
       script: "hooks.py:vmt_vht_metrics"
+
+  # Fills in the shared model's `publish_outputs: {}` placeholder: RunModel.bat's
+  # extractkeyfiles + Robocopy to %M_DIR%\OUTPUT, but archiving the whole run rather
+  # than a curated subset -- these are test/parity runs, not production deliverables.
+  # Declared last here since it is the shared pipeline's last step too.
+  - publish_outputs:
+      run_dir:
+        from: "{run_dir}"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}"
 
 scenarios:
 

@@ -44,10 +44,17 @@ STEPS: dict[str, Callable] = {
     "stage_loaded_networks": staging_step.stage_loaded_networks,
     "seed_average_networks": staging_step.seed_average_networks,
     "publish_networks": staging_step.publish_networks,
+    "cleanup_logs": staging_step.cleanup_logs,
     # The model itself.
     "copy_inputs": setup_step.run,
     "copy_project_inputs": setup_step.run,
     "copy_input_to_working": setup_step.run,
+    # Same from/to/include/exclude mechanism as copy_inputs, direction reversed --
+    # run_dir out to wherever a project wants its deliverables archived (RunModel.bat's
+    # extractkeyfiles + Robocopy to %M_DIR%\OUTPUT).  Empty here on purpose: no shared
+    # destination makes sense, a project fills it in the same way it fills in
+    # copy_project_inputs.
+    "publish_outputs": setup_step.run,
     "configure_ctramp": configure_ctramp_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
     "assignment": assignment_step.run,

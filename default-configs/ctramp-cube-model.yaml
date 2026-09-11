@@ -434,3 +434,8 @@ steps:
       job: "CTRAMP/scripts/database/SkimsDatabase.job"
   - net2csv_avgload5period:
       job: "CTRAMP/scripts/metrics/net2csv_avgload5period.job"
+
+  # ── Cleanup · once, at the end (RunModel.bat step 18) ──────────────────────────────────
+  - cleanup_logs:          # sweeps TPPL*.PRN / _cube_*.log out of run_dir into logs/
+  - publish_outputs: {}    # empty here on purpose -- a project fills in from/to entries,
+                           # same as copy_project_inputs above
