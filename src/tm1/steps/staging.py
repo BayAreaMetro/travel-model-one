@@ -227,3 +227,39 @@ def cleanup_logs(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  
 
     log.info("Moved %d Cube/job log file(s) into %s", moved, log_dir)
     return None
+
+
+def normalize_popsyn_names(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+    r"""Alias ``popsyn/{hhFile,personFile}.csv`` to their versioned files.
+
+    ``popsyn/`` ships a versioned name (``hhFile.2023_v12.csv``, matching
+    ``INPUT``'s own release), but ``CoreSummaries.R`` and ``MTCCreateLogsums``
+    hard-code the plain one -- ``RunCoreSummaries.bat``/``RunLogsums.bat`` both
+    carry the identical two ``copy popsyn\hhFile.*.csv popsyn\hhFile.csv`` lines
+    ("Rename these to standard names") rather than fixing the R/Java side, so
+    this reproduces the copy instead of chasing two callers into every version
+    that reads the versioned name correctly on its own.
+
+    A copy, not a move or a rename: the versioned file is still what a project's
+    ``filter_unconnected_households.skip_if_exists`` names, and later re-runs
+    must still find it there.
+    """
+    popsyn = Path(cfg["run_dir"]) / "popsyn"
+    written = 0
+    for stem in ("hhFile", "personFile"):
+        target = popsyn / f"{stem}.csv"
+        if target.exists():
+            continue
+        matches = sorted(popsyn.glob(f"{stem}.*.csv"))
+        if len(matches) != 1:
+            names = ", ".join(m.name for m in matches) or "none"
+            msg = (
+                f"Expected exactly one {popsyn}/{stem}.*.csv to alias to "
+                f"{stem}.csv; found: {names}"
+            )
+            raise FileNotFoundError(msg)
+        shutil.copy2(matches[0], target)
+        written += 1
+        log.info("Aliased %s -> %s", matches[0].name, target.name)
+
+    return "skipped" if written == 0 else None

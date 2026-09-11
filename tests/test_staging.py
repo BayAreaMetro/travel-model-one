@@ -176,3 +176,66 @@ def test_a_step_with_no_round_at_all_is_refused(proj: Path) -> None:
         staging.publish_networks(
             proj, _cfg(proj, "publish_networks"), step_name="publish_networks"
         )
+
+
+# --- normalize_popsyn_names --------------------------------------------------
+
+
+def test_a_versioned_popsyn_file_is_aliased_to_the_plain_name(proj: Path) -> None:
+    """CoreSummaries.R/MTCCreateLogsums hard-code the plain name, not the version."""
+    popsyn = proj / "popsyn"
+    popsyn.mkdir()
+    (popsyn / "hhFile.2023_v12.csv").write_text("households")
+    (popsyn / "personFile.2023_v12.csv").write_text("persons")
+
+    result = staging.normalize_popsyn_names(
+        proj, _cfg(proj, "normalize_popsyn_names"), step_name="normalize_popsyn_names",
+    )
+
+    assert result is None
+    assert (popsyn / "hhFile.csv").read_text() == "households"
+    assert (popsyn / "personFile.csv").read_text() == "persons"
+    assert (popsyn / "hhFile.2023_v12.csv").exists()  # copied, not moved/renamed
+
+
+def test_an_existing_plain_name_is_left_alone(proj: Path) -> None:
+    """A re-run must not overwrite whatever a prior aliasing pass already wrote."""
+    popsyn = proj / "popsyn"
+    popsyn.mkdir()
+    (popsyn / "hhFile.2023_v12.csv").write_text("new")
+    (popsyn / "hhFile.csv").write_text("already aliased")
+    (popsyn / "personFile.2023_v12.csv").write_text("persons")
+
+    result = staging.normalize_popsyn_names(
+        proj, _cfg(proj, "normalize_popsyn_names"), step_name="normalize_popsyn_names",
+    )
+
+    assert result is None  # personFile.csv still had to be written
+    assert (popsyn / "hhFile.csv").read_text() == "already aliased"
+
+
+def test_nothing_to_alias_reports_skipped(proj: Path) -> None:
+    """Both plain names already present -- the whole step did no work."""
+    popsyn = proj / "popsyn"
+    popsyn.mkdir()
+    (popsyn / "hhFile.csv").write_text("households")
+    (popsyn / "personFile.csv").write_text("persons")
+
+    result = staging.normalize_popsyn_names(
+        proj, _cfg(proj, "normalize_popsyn_names"), step_name="normalize_popsyn_names",
+    )
+
+    assert result == "skipped"
+
+
+def test_an_ambiguous_version_names_the_candidates(proj: Path) -> None:
+    """Two versioned files for one stem is not a version this can guess between."""
+    popsyn = proj / "popsyn"
+    popsyn.mkdir()
+    (popsyn / "hhFile.2023_v12.csv").write_text("v12")
+    (popsyn / "hhFile.2023_v13.csv").write_text("v13")
+
+    with pytest.raises(FileNotFoundError, match="hhFile.2023_v12.csv, hhFile.2023_v13.csv"):
+        staging.normalize_popsyn_names(
+            proj, _cfg(proj, "normalize_popsyn_names"), step_name="normalize_popsyn_names",
+        )

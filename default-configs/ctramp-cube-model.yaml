@@ -75,6 +75,7 @@ steps:
         - "{run_dir}/database"
         - "{run_dir}/logsums"
         - "{run_dir}/metrics"
+        - "{run_dir}/core_summaries"
 
   # SetUpModel.bat step 3: assembles INPUT/ from its real sources and kept as the run's
   # record of what went into it.  Entries run in order.  Directories merge file by file;
@@ -517,6 +518,23 @@ steps:
         - "--season=annual"
         - "--VMT_data_type=totalDailyVMT"
         - "--custom_hourly_speed_fractions"
+
+  # ── Core summaries · once, at the end (RunModel.bat step 14; RunCoreSummaries.bat) ─────
+  # "Rename these to standard names": RunLogsums.bat carries the identical two
+  # `copy popsyn\*File.*.csv popsyn\*File.csv` lines, so the step is shared rather
+  # than repeated once RunLogsums is ported too.
+  - normalize_popsyn_names:
+  - core_summaries:
+      command: "CTRAMP/scripts/core_summaries/CoreSummaries.R"
+      # One representative output stands for all eleven RDATA/csv pairs the script
+      # writes together in one pass -- the .bat's own NEED_SUMMARY count does the
+      # same thing, just checking all eleven instead of trusting them to be atomic.
+      skip_if_exists: "core_summaries/VehicleMilesTraveled.csv"
+  # commute_tours_by_inc_tp.r, RunCoreSummaries.bat's next call, is not in this
+  # checkout -- CommuteByIncomeByTPHousehold.csv has no script to reproduce it from.
+  - consolidate_loaded_transit:
+      command: "CTRAMP/scripts/core_summaries/ConsolidateLoadedTransit.R"
+      skip_if_exists: "trn/trnline.csv"
 
   # ── Cleanup · once, at the end (RunModel.bat step 18) ──────────────────────────────────
   - cleanup_logs:          # sweeps TPPL*.PRN / _cube_*.log out of run_dir into logs/

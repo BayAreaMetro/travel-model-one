@@ -45,6 +45,7 @@ STEPS: dict[str, Callable] = {
     "seed_average_networks": staging_step.seed_average_networks,
     "publish_networks": staging_step.publish_networks,
     "cleanup_logs": staging_step.cleanup_logs,
+    "normalize_popsyn_names": staging_step.normalize_popsyn_names,
     # The model itself.
     "copy_inputs": setup_step.run,
     "copy_project_inputs": setup_step.run,
