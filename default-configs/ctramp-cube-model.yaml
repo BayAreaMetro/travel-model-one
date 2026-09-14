@@ -610,6 +610,17 @@ steps:
       command: "CTRAMP/scripts/metrics/RunResults.py"
       args: ["metrics", "../all_project_metrics"]
 
+  # ── Scenario metrics · once, at the end (RunModel.bat step 16; RunScenarioMetrics.bat) ─
+  # RunScenarioMetrics.bat's first five calls (joinTripsWithIncome.R, countTrips.py,
+  # prepAssignIncome.job, sumTransitTimes.job, sumAutoTimes.job) and its
+  # net2csv_avgload5period.job check are the same work RunMetrics.bat's port already
+  # did above, guarded by the same (or an equivalent) skip_if_exists -- calling them
+  # again would just skip immediately. scenarioMetrics.py is the one genuinely new
+  # step: it reads what those already produced and rolls it into scenario_metrics.csv.
+  - scenario_metrics:
+      command: "CTRAMP/scripts/metrics/scenarioMetrics.py"
+      skip_if_exists: "metrics/scenario_metrics.csv"
+
   # ── Cleanup · once, at the end (RunModel.bat step 18) ──────────────────────────────────
   - cleanup_logs:          # sweeps TPPL*.PRN / _cube_*.log out of run_dir into logs/
   - publish_outputs: {}    # empty here on purpose -- a project fills in from/to entries,
