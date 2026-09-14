@@ -209,6 +209,9 @@ steps:
       logsums:
         from: "{run_dir}/INPUT/logsums"
         to: "{run_dir}/logsums"
+      metrics:                          # RunMetrics.bat's own `copy INPUT\metrics\BC_config.csv metrics`
+        from: "{run_dir}/INPUT/metrics"
+        to: "{run_dir}/metrics"
 
   - configure_ctramp:
       run_dir: "{run_dir}"
@@ -535,6 +538,77 @@ steps:
   - consolidate_loaded_transit:
       command: "CTRAMP/scripts/core_summaries/ConsolidateLoadedTransit.R"
       skip_if_exists: "trn/trnline.csv"
+
+  # ── Metrics · once, at the end (RunModel.bat step 15; RunMetrics.bat) ──────────────────
+  # `skip_if_exists:` is not `{iteration}`-aware (see docs/running-a-model.md) so
+  # these name the final iteration -- 3 -- literally, the same number `iterate.count`
+  # below states.  `--iterations N` would make a stale one of these look done when
+  # it is not; harmless (a step just re-runs) rather than wrong (nothing here feeds
+  # back into the model), so it is a known gap, not a blocker.
+  - tally_autos:
+      command: "CTRAMP/scripts/metrics/tallyAutos.py"
+      skip_if_exists: "metrics/autos_owned.csv"
+  - tally_parking:
+      command: "CTRAMP/scripts/metrics/tallyParking.R"
+      skip_if_exists: "metrics/parking_costs_tour.csv"
+  - join_trips_with_income:
+      command: "CTRAMP/scripts/metrics/joinTripsWithIncome.R"
+      skip_if_exists: "main/indivTripDataIncome_3.csv"
+  - count_trips:
+      command: "CTRAMP/scripts/metrics/countTrips.py"
+      skip_if_exists: "main/tripsEVinc1.dat"
+  - prep_assign_income:
+      job: "CTRAMP/scripts/metrics/prepAssignIncome.job"
+      skip_if_exists: "main/tripsAM_no_zpv_allinc.tpp"
+  - sum_transit_times:
+      job: "CTRAMP/scripts/metrics/sumTransitTimes.job"
+      skip_if_exists: "metrics/transit_times_by_mode_income.csv"
+  - sum_auto_times:
+      job: "CTRAMP/scripts/metrics/sumAutoTimes.job"
+      skip_if_exists: "metrics/auto_times.csv"
+  - sum_nonmot_times:
+      job: "CTRAMP/scripts/metrics/sumNonmotTimes.job"
+      skip_if_exists: "metrics/nonmot_times.csv"
+  # vmt_vht_metrics.csv (hwynet.py) is commented out in RunMetrics.bat itself --
+  # its inputs (CollisionLookupFINAL.xlsx, nonRecurringDelayLookup.csv,
+  # emissionsLookup.csv) have not been refreshed -- so there is nothing to port;
+  # this project's own vmt_vht_metrics (hooks.py) already covers the same ground.
+  - quickboards:
+      # Writes straight to trn/ rather than the .bat's write-then-move: the
+      # second argv is quickboards' own output path, not fixed to cwd.
+      command: "CTRAMP/scripts/metrics/quickboards.bat"
+      args: ["CTRAMP/scripts/metrics/quickboards.ctl", "trn/quickboards.xls"]
+      skip_if_exists: "trn/quickboards.xls"
+  - transit_boardings:
+      command: "CTRAMP/scripts/metrics/transit.py"
+      args: ["trn/quickboards.xls"]
+      skip_if_exists: "metrics/transit_boards_miles.csv"
+  - transit_crowding:
+      command: "CTRAMP/scripts/metrics/transitcrowding.py"
+      args: ["."]
+      skip_if_exists: "metrics/transit_crowding.csv"
+  # The shapefile export (cube_to_shapefile.py, correspond_link_to_TAZ.py) is not
+  # ported: neither script is staged by copy_inputs.ctramp_metrics (they live in
+  # utilities/cube-to-shapefile and utilities/geographies, not utilities/RTP/metrics),
+  # and cube_to_shapefile.py needs geopandas, not a dependency of this project today.
+  - topsheet:
+      command: "CTRAMP/scripts/metrics/topsheet.R"
+      skip_if_exists: "metrics/topsheet.csv"
+  - npa_metrics_goal_1a_to_1f:
+      command: "CTRAMP/scripts/metrics/NPA/NPA_metrics_Goal_1A_to_1F.py"
+      skip_if_exists: "metrics/NPA_Metrics_Goal_1A_to_1F.csv"
+  - npa_metrics_goal_2:
+      command: "CTRAMP/scripts/metrics/NPA/NPA_metrics_Goal_2.py"
+      skip_if_exists: "metrics/NPA_Metrics_Goal_2.csv"
+  - npa_metrics_goal_3:
+      command: "CTRAMP/scripts/metrics/NPA/NPA_metrics_Goal_3.py"
+      skip_if_exists: "metrics/NPA_metrics_Goal_3A_to_3D.csv"
+  - roll_up_metrics:
+      # ALL_PROJECT_METRICS_DIR=..\all_project_metrics -- one level above run_dir,
+      # which (run_dir having no project segment -- see run/directory.py) is now
+      # runs_root itself: one cross-run rollup directory, not one per project.
+      command: "CTRAMP/scripts/metrics/RunResults.py"
+      args: ["metrics", "../all_project_metrics"]
 
   # ── Cleanup · once, at the end (RunModel.bat step 18) ──────────────────────────────────
   - cleanup_logs:          # sweeps TPPL*.PRN / _cube_*.log out of run_dir into logs/
