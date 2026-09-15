@@ -5,6 +5,11 @@
 Launches the legacy Java model with configurable RunModel.* flags.
 Properties are patched in-place before each run.
 
+Also the home of ``compute_logsums`` (``RunLogsums.bat``'s Java accessibility
+calculator, ``com.pb.mtc.ctramp.MTCCreateLogsums``): a different Java class
+against the identical JPPF/matrix infrastructure, launched through the same
+:func:`run_java_class` this module's own CT-RAMP launch uses.
+
 Architecture
 ------------
 CTRAMP runs as multiple Java processes communicating via RMI:
@@ -848,15 +853,25 @@ def _monitor_logs(logs_dir: Path, stop: threading.Event) -> None:
 # ---------------------------------------------------------------------------
 
 
-def run_model(
+def run_java_class(
     run_dir: Path,
     runtime_dir: Path,
+    main_class: str,
+    java_args: list[str],
     *,
-    iteration: int = 3,
-    sample_rate: float = 0.5,
-    seed: int = 0,
+    xmx: str = "6000m",
 ) -> None:
-    """Run the MtcTourBasedModel Java process."""
+    """Run one Java class against already-started JPPF/matrix infrastructure.
+
+    Generalises what was ``run_model``'s whole body: same classpath, library
+    path, DLL preflight and log monitor, a different class and argv.
+    ``com.pb.mtc.ctramp.MtcTourBasedModel`` (CT-RAMP itself, via
+    :func:`run_model` below) and ``com.pb.mtc.ctramp.MTCCreateLogsums``
+    (``RunLogsums.bat``'s accessibility calculator) are both JPPF clients
+    launched this same way -- legacy's ``javaOnly_runMain.cmd``/
+    ``javaOnly_runNode0.cmd`` start the same driver/node/household-manager/
+    matrix-server quartet for either, via :func:`start_infrastructure`.
+    """
     cp = _classpath(runtime_dir)
     lib = _lib_path(runtime_dir)
     java_env = _env(cp, lib)
@@ -875,17 +890,14 @@ def run_model(
     log.info("Preflight OK: VoyagerFileAccess.dll found")
 
     cmd = [
-        "java", "-showversion", "-Xmx6000m",
+        "java", "-showversion", f"-Xmx{xmx}",
         "-cp", cp,
         "-Dlog4j.configuration=log4j.xml",
         f"-Djava.library.path={lib}",
         "-Djppf.config=jppf-clientDistributed.properties",
-        "com.pb.mtc.ctramp.MtcTourBasedModel", "mtcTourBased",
-        "-iteration", str(iteration),
-        "-sampleRate", str(sample_rate),
-        "-sampleSeed", str(seed),
+        main_class, *java_args,
     ]
-    log.info("CTRAMP: iter=%d sample=%s seed=%d", iteration, sample_rate, seed)
+    log.info("%s: %s", main_class, " ".join(java_args))
 
     # Start background log monitor
     logs_dir = run_dir / "logs"
@@ -907,8 +919,66 @@ def run_model(
     monitor.join(timeout=2)
 
     if proc.wait() != 0:
-        msg = f"CTRAMP exited with code {proc.returncode}"
+        msg = f"{main_class} exited with code {proc.returncode}"
         raise RuntimeError(msg)
+
+
+def run_model(
+    run_dir: Path,
+    runtime_dir: Path,
+    *,
+    iteration: int = 3,
+    sample_rate: float = 0.5,
+    seed: int = 0,
+) -> None:
+    """Run the MtcTourBasedModel Java process."""
+    log.info("CTRAMP: iter=%d sample=%s seed=%d", iteration, sample_rate, seed)
+    run_java_class(
+        run_dir, runtime_dir,
+        "com.pb.mtc.ctramp.MtcTourBasedModel",
+        [
+            "mtcTourBased",
+            "-iteration", str(iteration),
+            "-sampleRate", str(sample_rate),
+            "-sampleSeed", str(seed),
+        ],
+    )
+
+
+def run_accessibility_calc(run_dir: Path, runtime_dir: Path, host_ip: str = "localhost") -> None:
+    """Run ``com.pb.mtc.ctramp.MTCCreateLogsums`` -- ``RunLogsums.bat``'s Java step.
+
+    Mirrors :func:`run`'s local-session branch below: kill any orphaned java,
+    place the native DLLs, start the JPPF/matrix quartet, run the class, tear
+    the quartet back down. ``RunLogsums.bat``'s own ``javaOnly_runMain.cmd``/
+    ``javaOnly_runNode0.cmd`` + ``java ... MTCCreateLogsums logsums`` is exactly
+    this sequence.
+
+    Local sessions only, for now -- the schtasks path (:func:`_run_via_schtasks`)
+    is CT-RAMP-specific (its generated ``.bat`` hard-codes
+    ``MtcTourBasedModel``'s argv) and generalising it has not been needed yet,
+    since every run so far has had this run from an interactive desktop session.
+    A remote session gets a clear error instead of a silent wrong attempt.
+    """
+    if not _preflight_license():
+        msg = (
+            "MTCCreateLogsums needs a local (interactive desktop) session -- "
+            "unlike simulate_ctramp, it has no schtasks fallback yet. Run this "
+            "step from the interactive session directly."
+        )
+        raise RuntimeError(msg)
+
+    kill_infrastructure([])
+    _ensure_native_dlls(runtime_dir)
+
+    procs = start_infrastructure(runtime_dir, run_dir, host_ip)
+    try:
+        run_java_class(
+            run_dir, runtime_dir,
+            "com.pb.mtc.ctramp.MTCCreateLogsums", ["logsums"],
+        )
+    finally:
+        kill_infrastructure(procs)
 
 
 # ---------------------------------------------------------------------------
@@ -1050,3 +1120,26 @@ def run(config_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
             )
         finally:
             kill_infrastructure(procs)
+
+
+def compute_logsums(config_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
+    """Step entry point for ``RunLogsums.bat``'s Java accessibility calculator.
+
+    Distinct from :func:`run` (CT-RAMP itself): no properties patching, no
+    component flags, no shadow pricing -- ``logsums.properties`` is already on
+    disk by the time this runs, written by the ``logsums_runtime_configuration``
+    step (``RuntimeConfiguration.py --logsums``, run as-is rather than ported
+    natively).  Just start the infrastructure, run the class, tear it down.
+    """
+    step_cfg = step_config(cfg, "compute_logsums", kwargs)
+    run_dir = Path(cfg["run_dir"])
+    runtime_dir = Path(step_cfg.get("runtime_dir", str(run_dir / "CTRAMP" / "runtime")))
+    host_ip = step_cfg.get("host_ip", "localhost")
+
+    if host_ip.lower() == "localhost":
+        # Same reasoning as `run` above: the class always talks to an external
+        # matrix/household manager over RMI, so it needs a real address.
+        host_ip = socket.gethostbyname(socket.gethostname())
+        log.info("Resolved host_ip to %s", host_ip)
+
+    run_accessibility_calc(run_dir, runtime_dir, host_ip)

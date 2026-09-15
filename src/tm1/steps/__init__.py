@@ -50,6 +50,9 @@ STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
     "copy_project_inputs": setup_step.run,
     "copy_input_to_working": setup_step.run,
+    # Same from/to mechanism, one file: main/ShadowPricing_7.csv -> logsums/
+    # shadowPricing_7.csv, RunLogsums.bat's own "should come from baseline run" copy.
+    "stage_shadow_pricing_for_logsums": setup_step.run,
     # Same from/to/include/exclude mechanism as copy_inputs, direction reversed --
     # run_dir out to wherever a project wants its deliverables archived (RunModel.bat's
     # extractkeyfiles + Robocopy to %M_DIR%\OUTPUT).  Empty here on purpose: no shared
@@ -58,6 +61,9 @@ STEPS: dict[str, Callable] = {
     "publish_outputs": setup_step.run,
     "configure_ctramp": configure_ctramp_step.run,
     "simulate_ctramp": simulate_ctramp_step.run,
+    # RunLogsums.bat's Java step (MTCCreateLogsums) -- same JPPF/matrix quartet as
+    # simulate_ctramp, a different Java class; see simulate_ctramp.run_java_class.
+    "compute_logsums": simulate_ctramp_step.compute_logsums,
     "assignment": assignment_step.run,
 }
 

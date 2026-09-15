@@ -527,11 +527,42 @@ steps:
         - "--VMT_data_type=totalDailyVMT"
         - "--custom_hourly_speed_fractions"
 
-  # ── Core summaries · once, at the end (RunModel.bat step 14; RunCoreSummaries.bat) ─────
-  # "Rename these to standard names": RunLogsums.bat carries the identical two
-  # `copy popsyn\*File.*.csv popsyn\*File.csv` lines, so the step is shared rather
-  # than repeated once RunLogsums is ported too.
+  # ── Logsums · once, at the end (RunModel.bat step 13; RunLogsums.bat) ──────────────────
+  # find_no_access_zones/filter_unconnected_households (popsyn) above already produced
+  # skims/unconnected_zones.dbf and filtered popsyn/ once, at iteration 0 -- RunLogsums.bat
+  # calls FindNoAccessZones.job again unconditionally, but against the same skims it read
+  # the first time, so re-running it here would be identical work; not repeated.
+  - stage_shadow_pricing_for_logsums:
+      shadow_pricing_7:
+        from: "{run_dir}/main/ShadowPricing_7.csv"
+        to: "{run_dir}/logsums/shadowPricing_7.csv"
+  - logsums_runtime_configuration:
+      command: "CTRAMP/scripts/preprocess/RuntimeConfiguration.py"
+      args: ["--logsums"]
+  - filter_unconnected_households_for_logsums:
+      command: "CTRAMP/scripts/preprocess/filterUnconnectedHouseholds.py"
+      args: ["logsum"]
+      skip_if_exists: "logsums/accessibilities_dummy_indivTours.csv"
+  - compute_logsums:
+      runtime_dir: "{run_dir}/CTRAMP/runtime"
+      host_ip: "localhost"
+      # `skip_if_exists:` is not `{iteration}`-aware (see docs/running-a-model.md),
+      # so this names the final iteration -- 3 -- literally, same as the Metrics
+      # section below; `--iterations N` just costs a redundant re-run, not a
+      # wrong result.
+      skip_if_exists: "logsums/indivTripData_3.csv"
   - normalize_popsyn_names:
+  - logsum_joiner:
+      command: "CTRAMP/scripts/core_summaries/logsumJoiner.R"
+      skip_if_exists: "logsums/mandatoryAccessibilities.csv"
+  - accessibility_markets:
+      command: "CTRAMP/scripts/core_summaries/AccessibilityMarkets.R"
+      skip_if_exists: "core_summaries/AccessibilityMarkets.csv"
+  - accessibilities_for_baus:
+      command: "CTRAMP/scripts/core_summaries/createAccessibilitiesForBAUS.py"
+      skip_if_exists: "logsums/subzone_logsums_for_BAUS.csv"
+
+  # ── Core summaries · once, at the end (RunModel.bat step 14; RunCoreSummaries.bat) ─────
   - core_summaries:
       command: "CTRAMP/scripts/core_summaries/CoreSummaries.R"
       # One representative output stands for all eleven RDATA/csv pairs the script
