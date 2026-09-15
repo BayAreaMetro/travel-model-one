@@ -200,6 +200,10 @@ scenarios:
     copy_project_inputs.bp_regional_transit_fares_job.enabled:     true  # >= 2035
     iterate.apply_regional_transit_fares.enabled:                  true
 
+    # RunModel.bat's runOffModel=="Yes" gate: 2035 and 2050 only.
+    offmodel_prep.enabled:                                         true
+    run_offmodel_calculators.enabled:                               true
+
 # ── The other two pathways, for when this project grows past one scenario ──────────────
 # Both expand to the same thing `scenarios:` does, so the rules above apply unchanged.
 # Uncomment, adjust, and check with `tm1 scenarios PBA50+_FBP`.

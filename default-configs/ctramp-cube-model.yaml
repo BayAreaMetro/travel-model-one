@@ -76,6 +76,8 @@ steps:
         - "{run_dir}/logsums"
         - "{run_dir}/metrics"
         - "{run_dir}/core_summaries"
+        - "{run_dir}/offmodel/offmodel_prep"
+        - "{run_dir}/offmodel/offmodel_output"
 
   # SetUpModel.bat step 3: assembles INPUT/ from its real sources and kept as the run's
   # record of what went into it.  Entries run in order.  Directories merge file by file;
@@ -174,6 +176,9 @@ steps:
       ctramp_metrics:
         from: "utilities/RTP/metrics"
         to: "{run_dir}/CTRAMP/scripts/metrics"
+      ctramp_offmodel:
+        from: "utilities/RTP/Emissions/Off Model Calculators"
+        to: "{run_dir}/CTRAMP/scripts/offmodel"
 
   # Empty here on purpose: a project fills this in via its own `scenarios.yaml`
   # `steps:` -- entries it alone needs (a Blueprint strategy override, say), landed
@@ -620,6 +625,19 @@ steps:
   - scenario_metrics:
       command: "CTRAMP/scripts/metrics/scenarioMetrics.py"
       skip_if_exists: "metrics/scenario_metrics.csv"
+
+  # ── Off-model · once, at the end (RunModel.bat step 17; RunOffmodel.bat) ───────────────
+  # RunModel.bat runs this `if "%runOffModel%"=="Yes"` -- 2035 and 2050 only, per its
+  # own comment.  Off by default for the same reason a Blueprint strategy override is:
+  # a scenario turns it on for the model years it qualifies for, rather than this
+  # config guessing from model_year.  Neither call is skip_if_exists-guarded: the
+  # .bat runs both unconditionally every time, unlike everything staged above it.
+  - offmodel_prep:
+      command: "CTRAMP/scripts/offmodel/offmodel_prep.py"
+      enabled: false
+  - run_offmodel_calculators:
+      command: "CTRAMP/scripts/offmodel/run_offmodel_calculators.py"
+      enabled: false
 
   # ── Cleanup · once, at the end (RunModel.bat step 18) ──────────────────────────────────
   - cleanup_logs:          # sweeps TPPL*.PRN / _cube_*.log out of run_dir into logs/
