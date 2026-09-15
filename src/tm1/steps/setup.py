@@ -96,10 +96,11 @@ def _winlong(path: Path) -> str:
     text = str(path)
     if os.name != "nt" or text.startswith("\\\\?\\"):
         return text
-    # The `\\?\` prefix also turns off Windows' own path normalisation, so a
-    # forward slash stops being a separator -- Path str() otherwise leaves
-    # whichever ones the template that built it used.
-    text = text.replace("/", "\\")
+    # `\\?\` also turns off Windows' own path resolution -- CWD-relative lookup
+    # included -- so a relative `from:` (an entry sourced from within this
+    # checkout, e.g. `utilities/telecommute/...`) must be made absolute first,
+    # or it is taken as a literal, nonexistent path instead of one to resolve.
+    text = os.path.abspath(text).replace("/", "\\")
     if text.startswith("\\\\"):
         return "\\\\?\\UNC\\" + text[2:]
     return "\\\\?\\" + text

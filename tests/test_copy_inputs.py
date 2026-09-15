@@ -213,3 +213,14 @@ def test_a_unc_path_gets_the_unc_form_of_the_prefix() -> None:
 def test_an_already_prefixed_path_is_left_alone() -> None:
     """Doubling the prefix would make it part of the literal path instead."""
     assert setup._winlong(r"\\?\C:\already\prefixed") == r"\\?\C:\already\prefixed"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="the \\\\?\\ prefix is a Windows-only concept")
+def test_a_relative_path_is_made_absolute_before_prefixing(
+    tmp_path: Path, monkeypatch,
+) -> None:  # noqa: ANN001
+    """`\\?\` turns off CWD-relative lookup too -- a repo-relative `from:` needs this."""
+    monkeypatch.chdir(tmp_path)
+    expected = str(tmp_path / "utilities" / "telecommute" / "rates.csv")
+
+    assert setup._winlong("utilities/telecommute/rates.csv") == "\\\\?\\" + expected
