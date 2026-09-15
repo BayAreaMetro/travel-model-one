@@ -116,11 +116,15 @@ the default when neither is given.
 > share, and compiled packages (e.g. `psutil`) fail to import with `DLL load
 > failed ... The parameter is incorrect` — Windows can't load native `.pyd`/DLLs over
 > a network path. Point the venv at local disk instead:
-> ```cmd
-> set UV_PROJECT_ENVIRONMENT=E:\tm1-venv
+> ```powershell
+> $env:UV_PROJECT_ENVIRONMENT = "E:\tm1-venv"
 > uv sync
 > uv run tm1 --help
 > ```
+> In `cmd.exe` (not PowerShell) it's `set UV_PROJECT_ENVIRONMENT=E:\tm1-venv` instead --
+> PowerShell's own `set` is `Set-Variable`, an unrelated command that silently does not
+> set an environment variable, so `uv sync` still defaults to `.venv` on the network
+> share and may fail trying to remove or recreate files there.
 
 ### Running a Project
 
