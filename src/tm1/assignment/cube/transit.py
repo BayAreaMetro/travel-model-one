@@ -28,16 +28,17 @@ PERIODS: tuple[str, ...] = ("EA", "AM", "MD", "PM", "EV")
 # .awk) via Cube ``*`` SYS commands; gawk ships with Git for Windows but isn't on the
 # scheduled task's PATH, so we prepend its dir for the transit jobs.
 #
-#: Last-resort location, where Git for Windows puts it.  ``TM1_GAWK_DIR`` in `.env`
-#: is the declared answer; this is only what to try when nothing else says.
+#: Last-resort location, where Git for Windows puts it.  ``TM1_GAWK_DIR`` in
+#: ``mtc_env.yaml`` is the declared answer; this is only what to try when nothing
+#: else says.
 _DEFAULT_GAWK_DIR = r"C:\Program Files\Git\usr\bin"
 
 
 def _gawk_path() -> str:
     """PATH value that prepends gawk's directory.
 
-    Found on PATH first (the project config puts ``TM1_GAWK_DIR`` there), then the
-    ``.env`` value directly, then Git for Windows' default location.
+    Found on PATH first (the project config puts ``TM1_GAWK_DIR`` there), then
+    that same variable's value directly, then Git for Windows' default location.
     """
     found = shutil.which("gawk")
     gdir = (

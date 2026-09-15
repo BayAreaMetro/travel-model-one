@@ -127,7 +127,7 @@ Rejected, and why:
 
 | RunModel.bat | here |
 |---|---|
-| Step 1 — path variables | `.env` (machine-specific) + each scenario in `scenarios.yaml` |
+| Step 1 — path variables | `default-configs/environments/mtc.yaml` (machine-specific, MTC's own -- others pass `--env <name>`) + each scenario in `scenarios.yaml` |
 | Steps 2–3 — directories, pre-process | `steps/staging.py`, `steps/setup.py` |
 | Steps 4, 4.5 — non-motorized LOS, transit files | config-declared `job:` steps |
 | Steps 5–9 — iteration N | `run/iterations.py` drives the plan |
@@ -146,9 +146,10 @@ all edited the same dict in a 1,055-line module.
 transit engine is unsettled — Cube TRNBUILD today, Bentley PT likely, AequilibraE
 possible — so nothing above `steps/assign` may know which one is in use.
 
-**A machine-specific path**: `.env`, never code. Code may keep a `_DEFAULT_*` only as
-"what to try when `.env` says nothing". Point at *files*, not directories to be searched —
-the search is what breaks when a vendor moves something.
+**A machine-specific path**: `default-configs/environments/<name>.yaml`, never code. Code
+may keep a `_DEFAULT_*` only as "what to try when the environment file says nothing".
+Point at *files*, not directories to be searched — the search is what breaks when a
+vendor moves something.
 
 ## Deliberate exceptions
 

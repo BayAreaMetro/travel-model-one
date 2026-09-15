@@ -64,9 +64,9 @@ native Python — and retiring the `dbfpy3` and NetworkWrangler dependencies wit
 the next phase; see [`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
 
 Requires Cube Voyager and a licence, as before. Steps that run R (`.R`/`.r`) need
-`TM1_R_HOME` set in `.env`; the Java accessibility calculator (`compute_logsums`) needs a
-local (interactive desktop) session -- unlike `simulate_ctramp`, it has no remote-session
-fallback yet.
+`TM1_R_HOME` set in the active environment file; the Java accessibility calculator
+(`compute_logsums`) needs a local (interactive desktop) session -- unlike
+`simulate_ctramp`, it has no remote-session fallback yet.
 
 ### Repository Layout
 
@@ -86,13 +86,20 @@ pip install uv
 # Install project in dev mode
 uv sync
 
-# Machine-specific paths -- a drive letter, a UNC share, the location of gawk --
-# and nothing about the model itself. Copy once per machine, then edit it.
-cp .env.example .env
-
 # Verify (or activate .venv\Scripts\activate first, then call tm1 directly)
 uv run tm1 --help
 ```
+
+Machine-specific paths (M drive, gawk, R, Slack) live in
+[`default-configs/environments/mtc.yaml`](default-configs/environments/mtc.yaml), committed
+since they are the same on every MTC machine. The one exception is `TM1_RUNS_ROOT` --
+where runs go is local disk, so it is keyed there by hostname; add this machine's entry if
+it is missing.
+
+Running as a different agency or consultant, with your own machine-specific values? Add a
+sibling file (e.g. `default-configs/environments/caltrans.yaml`) instead of editing MTC's,
+and select it with `tm1 run --env caltrans` (or `TM1_ENV=caltrans`). MTC's own (`mtc`) is
+the default when neither is given.
 
 > **Windows note:** if `uv` is "not recognized" after `pip install uv`, pip installed
 > it under your user Python `Scripts` folder (e.g.
@@ -220,7 +227,7 @@ templates, and so is **not settable** by a scenario:
 | Key | Value |
 |---|---|
 | `run_dir` | `{runs_root}/{scenario}_{NNN}` |
-| `runs_root` | `TM1_RUNS_ROOT` (from `.env`) |
+| `runs_root` | `TM1_RUNS_ROOT` (from the active environment file, keyed by hostname) |
 | `project` | the project's folder name, e.g. `PBA50+_FBP` |
 | `scenario` | the scenario's own `id`, e.g. `PLAN-2050-V16` |
 | `run` | `{scenario}_{NNN}`, e.g. `PLAN-2050-V16_002` -- `run_dir`'s last segment |

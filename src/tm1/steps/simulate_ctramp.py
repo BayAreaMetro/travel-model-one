@@ -446,7 +446,7 @@ def _lib_path(runtime_dir: Path) -> str:
     """Build java.library.path: runtime dir + Cube Voyager DLL location."""
     paths = [str(runtime_dir)]
     # Cube's install dirs (they hold tppdlibx.dll for .tpp IO), from the one place
-    # that knows where Cube is -- see `cube.job` and TM1_CUBE_DIRS in .env.
+    # that knows where Cube is -- see `cube.job`.
     for candidate in [
         *(Path(d) for d in install_dirs()),
         # Repo-bundled DLLs (VoyagerFileAccess.dll, tppioNative.dll)

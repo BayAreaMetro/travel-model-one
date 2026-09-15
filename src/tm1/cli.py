@@ -23,9 +23,14 @@ Ask where a run got to -- from another shell, during or after it::
 List the scenarios a project declares, checking every address resolves::
 
     tm1 scenarios PBA50+_FBP
+
+Running outside MTC, or as a consultant with your own machine-specific values::
+
+    tm1 run PBA50+_FBP --env caltrans
 """
 
 import argparse
+import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -34,7 +39,7 @@ import yaml
 
 from tm1 import setup_logging
 from tm1.project import scenarios as scenarios_mod
-from tm1.project.config import load_config, missing_env
+from tm1.project.config import ENV_VAR, load_config, missing_env
 from tm1.project.overrides import validate as validate_scenarios
 from tm1.run.model import AlreadyCompleteError, run_model
 from tm1.run.prepare import RUNS_ROOT_VAR
@@ -162,7 +167,7 @@ def cmd_scenarios(args: argparse.Namespace) -> None:
     sys.stdout.write(f"\n{scenarios_mod.render(expansion)}\n")
 
     problems = [
-        f"{name} is not set (see .env.example)"
+        f"{name} is not set (see default-configs/environments/)"
         for name in missing_env(cfg, also=(RUNS_ROOT_VAR,))
     ]
     problems += validate_scenarios(cfg, expansion)
@@ -191,6 +196,20 @@ def _add_project_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_env_argument(parser: argparse.ArgumentParser) -> None:
+    """Which agency/consultant environment supplies machine-specific values."""
+    parser.add_argument(
+        "--env",
+        metavar="NAME",
+        default=None,
+        help=(
+            "Environment supplying machine-specific `{env:NAME}` values -- a file "
+            "under default-configs/environments/ (default: mtc, MTC's own). Same "
+            f"as setting {ENV_VAR}; this takes precedence over that if both are set."
+        ),
+    )
+
+
 def main() -> None:
     """Parse arguments and dispatch to subcommands."""
     setup_logging()
@@ -200,6 +219,7 @@ def main() -> None:
 
     run_parser = sub.add_parser("run", help="Run project pipeline (or selected steps)")
     _add_project_argument(run_parser)
+    _add_env_argument(run_parser)
     run_parser.add_argument(
         "--scenario",
         metavar="ID",
@@ -263,18 +283,23 @@ def main() -> None:
         help="List the scenarios a project declares, and check every address",
     )
     _add_project_argument(scenarios_parser)
+    _add_env_argument(scenarios_parser)
 
     status_parser = sub.add_parser(
         "status",
         help="Show where the newest run got to, and how to resume it",
     )
     _add_project_argument(status_parser)
+    _add_env_argument(status_parser)
     status_parser.add_argument(
         "--scenario", metavar="ID", default=None,
         help="Which scenario to report on, when the project declares more than one",
     )
 
     args = parser.parse_args()
+
+    if getattr(args, "env", None):
+        os.environ[ENV_VAR] = args.env
 
     if args.command == "run":
         _run_cleanly(lambda: cmd_run(args))

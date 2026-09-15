@@ -6,8 +6,9 @@ The webhook URL comes from one of two places, checked in order:
 2. ``TM1_SLACK_WEBHOOK_FILE`` -- a file holding it, for a shared team webhook
    nobody wants to paste onto every machine.
 
-Both live in `.env`.  With neither, runs log their milestones and send nothing,
-which is a working configuration and not an error.
+Both live in ``default-configs/mtc_env.yaml`` (the URL itself never committed --
+set it as a real environment variable instead). With neither, runs log their
+milestones and send nothing, which is a working configuration and not an error.
 """
 
 import logging
@@ -22,12 +23,12 @@ log = logging.getLogger(__name__)
 #: The file holding the webhook URL.  The **whole path** is configured, not a name
 #: under some assumed share: neither the share nor the file name is guaranteed to
 #: stay where it is, and a path this code cannot see is one nobody can fix from
-#: `.env`.
+#: ``mtc_env.yaml``.
 _WEBHOOK_FILE_VAR = "TM1_SLACK_WEBHOOK_FILE"
 
 
 def _webhook_file() -> Path | None:
-    """The file holding the webhook URL, or None when `.env` does not name one."""
+    """The file holding the webhook URL, or None when nothing names one."""
     configured = os.environ.get(_WEBHOOK_FILE_VAR)
     return Path(configured) if configured else None
 

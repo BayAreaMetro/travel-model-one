@@ -1,23 +1,26 @@
 """Tests for project config loading -- specifically `{env:NAME}`.
 
 This is what keeps a project's config machine-independent: every path that
-differs between machines is named in the config and set in `.env`, so moving a
-project to another box is an `.env` edit rather than a YAML edit.
+differs between machines is named in the config and set in
+`default-configs/mtc_env.yaml`, so moving a project to another box is an entry
+there rather than a YAML edit.
 
 The behaviour worth pinning is that an unset variable is an *error*.  Expanding
 it to an empty string would make `run_dir: ""` mean the current working
 directory, and a fifteen-hour run would happily write itself there.
 """
 
-import pytest
-
+import os
 from pathlib import Path
 
+import pytest
+
+import tm1.project.config as config_module
 from tm1.project.config import expand_env, load_config, resolve_templates
 
 
 def test_an_env_reference_is_replaced_by_its_value(monkeypatch) -> None:  # noqa: ANN001
-    """The whole mechanism: a path named in the config, valued in .env."""
+    """The whole mechanism: a path named in the config, valued in the environment."""
     monkeypatch.setenv("TM1_TEST_DIR", "E:/Tests/somewhere")
 
     assert expand_env("{env:TM1_TEST_DIR}") == "E:/Tests/somewhere"
@@ -57,8 +60,9 @@ def test_an_unset_variable_is_an_error_naming_it(monkeypatch) -> None:  # noqa: 
 def test_the_error_says_where_to_set_it(monkeypatch) -> None:  # noqa: ANN001
     """The fix is one file, so the message names it rather than the mechanism."""
     monkeypatch.delenv("TM1_NOT_SET", raising=False)
+    monkeypatch.delenv(config_module.ENV_VAR, raising=False)
 
-    with pytest.raises(ValueError, match=r"\.env\.example"):
+    with pytest.raises(ValueError, match=r"environments/mtc\.yaml"):
         expand_env("{env:TM1_NOT_SET}")
 
 
@@ -139,3 +143,89 @@ def test_a_projects_step_is_appended_when_the_shared_model_has_no_such_name(
     cfg = load_config(project)
 
     assert [next(iter(item)) for item in cfg["steps"]] == ["copy_inputs", "vmt_vht_metrics"]
+
+
+def _write_environment(tmp_path: Path, name: str, contents: str) -> None:
+    """A synthetic ``environments/<name>.yaml``, alongside a project's model file."""
+    env_dir = tmp_path / "default-configs" / "environments"
+    env_dir.mkdir(exist_ok=True)
+    (env_dir / f"{name}.yaml").write_text(contents, encoding="utf-8")
+
+
+def test_environment_sets_a_flat_value(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    """A plain scalar in an environment's YAML is the same on every machine in it."""
+    monkeypatch.delenv("TM1_M_DRIVE", raising=False)
+    monkeypatch.delenv(config_module.ENV_VAR, raising=False)
+    project = _model_and_project(tmp_path, "  - copy_inputs: {}\n", "")
+    _write_environment(tmp_path, "mtc", "TM1_M_DRIVE: //models.ad.mtc.ca.gov/data/models\n")
+
+    load_config(project)
+
+    assert os.environ["TM1_M_DRIVE"] == "//models.ad.mtc.ca.gov/data/models"
+
+
+def test_environment_keys_a_mapping_by_hostname(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    """TM1_RUNS_ROOT: one entry per machine, since where runs go is local disk."""
+    monkeypatch.delenv("TM1_RUNS_ROOT", raising=False)
+    monkeypatch.delenv(config_module.ENV_VAR, raising=False)
+    monkeypatch.setattr(config_module.platform, "node", lambda: "Model3-G")
+    project = _model_and_project(tmp_path, "  - copy_inputs: {}\n", "")
+    _write_environment(tmp_path, "mtc", "TM1_RUNS_ROOT:\n  model3-g: E:/Model3G-Share/runs\n")
+
+    load_config(project)
+
+    assert os.environ["TM1_RUNS_ROOT"] == "E:/Model3G-Share/runs"
+
+
+def test_unlisted_machine_is_an_error(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    """An unlisted machine is a clear error, not a silent KeyError."""
+    monkeypatch.delenv(config_module.ENV_VAR, raising=False)
+    monkeypatch.setattr(config_module.platform, "node", lambda: "some-other-box")
+    project = _model_and_project(tmp_path, "  - copy_inputs: {}\n", "")
+    _write_environment(tmp_path, "mtc", "TM1_RUNS_ROOT:\n  model3-g: E:/Model3G-Share/runs\n")
+
+    with pytest.raises(ValueError, match="some-other-box"):
+        load_config(project)
+
+
+def test_default_environment_is_optional(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    """A synthetic project (tests) has no environments/ -- load_config still works."""
+    monkeypatch.delenv(config_module.ENV_VAR, raising=False)
+    project = _model_and_project(tmp_path, "  - copy_inputs: {}\n", "")
+
+    cfg = load_config(project)
+
+    assert cfg["steps"]
+
+
+def test_a_named_environment_must_exist(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    """Asking for one that is not there is an error, not a silent fall-back to mtc."""
+    monkeypatch.setenv(config_module.ENV_VAR, "caltrans")
+    project = _model_and_project(tmp_path, "  - copy_inputs: {}\n", "")
+
+    with pytest.raises(FileNotFoundError, match="caltrans"):
+        load_config(project)
+
+
+def test_env_var_selects_environment(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    """A consultant's own environment, selected by TM1_ENV, does not touch mtc's."""
+    monkeypatch.delenv("TM1_M_DRIVE", raising=False)
+    monkeypatch.setenv(config_module.ENV_VAR, "caltrans")
+    project = _model_and_project(tmp_path, "  - copy_inputs: {}\n", "")
+    _write_environment(tmp_path, "caltrans", "TM1_M_DRIVE: Z:/caltrans-share\n")
+
+    load_config(project)
+
+    assert os.environ["TM1_M_DRIVE"] == "Z:/caltrans-share"
+
+
+def test_environment_keeps_an_already_set_variable(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    """A shell export (or a test's monkeypatch) wins over the environment's YAML."""
+    monkeypatch.setenv("TM1_M_DRIVE", "Z:/already-set")
+    monkeypatch.delenv(config_module.ENV_VAR, raising=False)
+    project = _model_and_project(tmp_path, "  - copy_inputs: {}\n", "")
+    _write_environment(tmp_path, "mtc", "TM1_M_DRIVE: //models.ad.mtc.ca.gov/data/models\n")
+
+    load_config(project)
+
+    assert os.environ["TM1_M_DRIVE"] == "Z:/already-set"

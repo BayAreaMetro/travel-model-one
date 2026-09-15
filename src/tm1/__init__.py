@@ -3,10 +3,6 @@
 import logging
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 #: Console: bare messages, so a run reads cleanly in a terminal.
 LOG_FORMAT = "%(message)s"
 

@@ -61,7 +61,8 @@ def install_dirs() -> tuple[str, ...]:
     """The directories Cube's files live in, for PATH and Java's library path.
 
     Public because CT-RAMP's Java needs the same ones. One source of truth: a Cube
-    that moves is a `.env` edit, not a hunt through the code for the other copy.
+    that moves is an ``mtc_env.yaml`` edit, not a hunt through the code for the
+    other copy.
     """
     return _CUBE_DIRS
 

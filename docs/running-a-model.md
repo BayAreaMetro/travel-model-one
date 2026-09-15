@@ -12,7 +12,7 @@ The sections below are ordered for a reader who knows `RunModel.bat`.
 
 | RunModel.bat | now |
 |---|---|
-| Step 1 — set path variables | `.env` (machine-specific) + each scenario in a project's `scenarios.yaml` (everything else) |
+| Step 1 — set path variables | `default-configs/environments/mtc.yaml` (machine-specific, MTC's own) + each scenario in a project's `scenarios.yaml` (everything else) |
 | Step 2 — create the directory structure | the `make_directories` step |
 | Step 3 — pre-process | the `copy_inputs` and `copy_input_to_working` steps, then the pre-process steps |
 | Steps 4, 4.5 — non-motorized LOS, transit files | steps in the shared pipeline, in order |
@@ -30,9 +30,13 @@ The sections below are ordered for a reader who knows `RunModel.bat`.
 
 Three, and they are the ones that change existing habits.
 
-**1. `.env` is configured once per machine.**
-Machine-specific roots — a drive letter, a UNC share, the location of gawk — live there
-instead of in a project's config. See [README.md#setup](../README.md#setup).
+**1. An environment file holds every machine's settings.**
+Machine-specific roots — a drive letter, a UNC share, the location of gawk — live in
+`default-configs/environments/mtc.yaml` instead of in a project's config, committed since
+they are the same on every MTC machine except `TM1_RUNS_ROOT`, which is keyed there by
+hostname. Another agency or consultant adds their own `environments/<name>.yaml` and
+selects it with `tm1 run --env <name>` (or `TM1_ENV=<name>`) rather than editing MTC's.
+See [README.md#setup](../README.md#setup).
 
 **2. The run does not execute in the working directory.**
 `RunModel.bat` ran in the directory containing it. A run now executes in
@@ -200,8 +204,8 @@ since iteration 0 is the only iteration it ever runs.
 ### Machine settings vs. model settings
 
 `cluster_nodes`, `threads`, `intrastep_processes` and `timeout` tune a machine. They are
-held in the config rather than `.env` because they are not paths, and they do not affect
-results — which is what allows runs from different machines to be compared.
+held in the config rather than an environment file because they are not paths, and they
+do not affect results — which is what allows runs from different machines to be compared.
 
 `intrastep_processes` is constrained: it selects a real file, and only
 `HwyIntraStep_48.block` and `HwyIntraStep_64.block` exist. A value that is too high does
@@ -266,7 +270,8 @@ rather than per scenario. Three shapes:
 > checks the three conditions that would otherwise surface part-way through a run:
 >
 > - the shared model file parses and `scenarios.yaml` expands
-> - every `.env` variable the project references is set
+> - every environment variable the project references is set (from
+>   `default-configs/environments/<name>.yaml`, or exported directly)
 > - every scenario's overrides resolve to a real value, and none leaves a `REQUIRED`
 >   placeholder unresolved
 >

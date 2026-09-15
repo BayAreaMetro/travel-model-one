@@ -98,7 +98,7 @@ The principles that follow, and which the port should hold to:
 - **Resolve paths in config** rather than copying a file to match an expected name.
 - **Machine differences belong in configuration.** `RunLogsums.bat` selects its host IP
   from eleven `if %computername%==...` lines, and `CopyFilesToM.bat`'s destination still
-  points at an RTP2017 path -- both are easier to keep current in a `.env`.
+  points at an RTP2017 path -- both are easier to keep current in an environment file.
 
 So phase 4 targets *parity of results*, not of file layout. Where a step exists to move data
 between tools, the port should reproduce the result rather than the step — and say so, with

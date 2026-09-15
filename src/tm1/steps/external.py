@@ -297,9 +297,9 @@ def _rscript() -> str:
     r_home = os.environ.get("TM1_R_HOME")
     if not r_home:
         msg = (
-            "An `.R`/`.r` step needs TM1_R_HOME set in .env -- the R install "
-            "root (e.g. C:/Program Files/R/R-4.3.1), the directory holding "
-            "bin/x64/Rscript.exe. There is no default: R's own install path "
+            "An `.R`/`.r` step needs TM1_R_HOME set -- in default-configs/mtc_env.yaml, "
+            "the R install root (e.g. C:/Program Files/R/R-4.3.1), the directory "
+            "holding bin/x64/Rscript.exe. There is no default: R's own install path "
             "carries its version number, so nothing here can guess it."
         )
         raise ValueError(msg)

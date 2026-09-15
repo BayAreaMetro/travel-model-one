@@ -1,6 +1,7 @@
 """Project configuration utilities for TM1."""
 
 import os
+import platform
 import re
 import sys
 from pathlib import Path
@@ -18,11 +19,75 @@ RUNS_ROOT_VAR = "TM1_RUNS_ROOT"
 #: need not say where its own checkout root is.
 _MODEL_FILE = Path("default-configs") / "ctramp-cube-model.yaml"
 
-#: ``{env:NAME}`` -- a value from the environment, which ``tm1`` populates from
-#: ``.env`` at import.  This is how a project config stays machine-independent:
-#: every path that differs between machines is named here and set in ``.env``,
-#: leaving the YAML as the model recipe and nothing else.
+#: Which environment's machine-specific values to load -- MTC's own by default,
+#: since this repo ships MTC's model. Another agency or a consultant running
+#: this adds their own file under ``_ENVIRONMENTS_DIR`` and either exports this
+#: or passes ``tm1 run --env <name>``, which sets it before config loads.
+ENV_VAR = "TM1_ENV"
+
+#: The environment every command uses unless told otherwise.
+DEFAULT_ENV = "mtc"
+
+#: Alongside the shared model file.  One YAML per environment -- the values a
+#: whole agency or consultant shares (an M drive, a gawk install, ...), committed
+#: rather than kept in a `.env` each machine edits for itself, plus the one
+#: genuine machine-specific exception (``TM1_RUNS_ROOT``), keyed there by
+#: hostname rather than one value for everyone in the environment.
+_ENVIRONMENTS_DIR = "environments"
+
+#: ``{env:NAME}`` -- a value from the environment, populated from the selected
+#: environment's YAML (see :func:`_load_environment`) before a project's config
+#: is read. This is how a project config stays independent of both machine and
+#: agency: every path that differs is named here, leaving the YAML as the model
+#: recipe and nothing else.
 _ENV_REF = re.compile(r"\{env:([A-Za-z_][A-Za-z0-9_]*)\}")
+
+
+def _load_environment(model_dir: Path) -> None:
+    """Populate ``os.environ`` from the selected environment's YAML, once per load.
+
+    Which environment is ``TM1_ENV`` (``tm1 run --env <name>`` sets it), or
+    :data:`DEFAULT_ENV` -- MTC's own -- when nothing names one. Values are set
+    with ``setdefault``, so a shell export or a test's monkeypatch still wins.
+
+    A missing file is only an error for a *named* environment -- asking for one
+    that does not exist should not run silently against MTC's. The default
+    environment being absent is not: a synthetic project (tests have no
+    ``environments/`` next to their model file) still works, falling back to
+    whatever the environment already has.
+
+    A mapping value (only ``TM1_RUNS_ROOT`` today, but this reads any of them
+    that way) is keyed by ``platform.node()``, lowercased, rather than one value
+    for every machine in the environment -- an unlisted machine is a clear error
+    naming it, not the hard-coded hostname whitelist ``config_machine_size``
+    deliberately avoids.
+    """
+    name = os.environ.get(ENV_VAR) or DEFAULT_ENV
+    path = model_dir / _ENVIRONMENTS_DIR / f"{name}.yaml"
+    if not path.is_file():
+        if name == DEFAULT_ENV:
+            return
+        msg = (
+            f"No environment named {name!r}: {path} does not exist. Add "
+            f"default-configs/environments/{name}.yaml, or unset {ENV_VAR} "
+            f"(or drop --env) to use {DEFAULT_ENV!r}."
+        )
+        raise FileNotFoundError(msg)
+    with path.open(encoding="utf-8") as f:
+        values = yaml.safe_load(f) or {}
+    machine = platform.node().lower()
+    for key, value in values.items():
+        resolved = value
+        if isinstance(value, dict):
+            if machine not in value:
+                msg = (
+                    f"{name}.yaml's {key} has no entry for this machine "
+                    f"({machine!r}). Known machines: {', '.join(sorted(value)) or 'none'}. "
+                    f"Add one."
+                )
+                raise ValueError(msg)
+            resolved = value[machine]
+        os.environ.setdefault(key, str(resolved))
 
 
 def _find_model_file(config_dir: Path) -> Path | None:
@@ -67,6 +132,8 @@ def load_config(config_dir: Path) -> dict:
     model_path = _find_model_file(config_dir)
     if model_path is None:
         sys.exit(f"No {_MODEL_FILE} above {config_dir}.")
+
+    _load_environment(model_path.parent)
 
     with model_path.open(encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
@@ -203,9 +270,9 @@ def env_references(obj: object) -> set[str]:
 def missing_env(cfg: dict, also: tuple[str, ...] = ()) -> list[str]:
     """Which of the variables this project needs are not set.
 
-    A pre-flight, so that a `.env` copied but not finished is caught in the second
-    `tm1 scenarios` takes rather than in hour nine of a run.  *also* names variables
-    the harness itself reads, which the config does not mention.
+    A pre-flight, so that an unlisted machine or a missing variable is caught in
+    the second `tm1 scenarios` takes rather than in hour nine of a run.  *also*
+    names variables the harness itself reads, which the config does not mention.
     """
     return sorted(n for n in env_references(cfg) | set(also) if os.environ.get(n) is None)
 
@@ -214,10 +281,12 @@ def env_value(name: str, context: str) -> str:
     """One environment variable, or an error naming it and where to set it."""
     value = os.environ.get(name)
     if value is None:
+        env_name = os.environ.get(ENV_VAR) or DEFAULT_ENV
         msg = (
-            f"{{env:{name}}} in {context!r}, but {name} is not set. Machine-specific "
-            f"paths live in .env at the repo root -- copy .env.example to .env and "
-            f"set {name} there, or export it before running."
+            f"{{env:{name}}} in {context!r}, but {name} is not set. Environment-wide "
+            f"values live in default-configs/environments/{env_name}.yaml -- add "
+            f"{name} there (or, if it is per-machine like TM1_RUNS_ROOT, add this "
+            f"machine's entry), or export it before running."
         )
         raise ValueError(msg)
     return value
@@ -230,8 +299,8 @@ def resolve_templates(
 
     If *variables* is None, top-level string values in *obj* are used (assuming
     *obj* is a dict) -- and the environment pass runs first, so a key whose own
-    value comes from ``.env`` (``run_dir``) is a real path by the time anything
-    interpolates ``{run_dir}``.
+    value comes from the environment (``run_dir``) is a real path by the time
+    anything interpolates ``{run_dir}``.
     """
     if variables is None:
         obj = expand_env(obj)
