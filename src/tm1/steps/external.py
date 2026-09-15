@@ -310,8 +310,8 @@ def _argv(program: Path, args: list[str]) -> list[str]:
     """The command line to spawn.
 
     A ``.py`` runs under :data:`sys.executable`, never a bare ``python``: the extras
-    a legacy script needs (NetworkWrangler, dbfpy3, xlrd) are installed into *this*
-    environment, and ``python`` would find whichever interpreter is first on PATH.
+    a legacy script needs (dbfpy3, xlrd) are installed into *this* environment, and
+    ``python`` would find whichever interpreter is first on PATH.
 
     An ``.R`` runs under ``Rscript.exe --vanilla`` -- ``--vanilla`` is what every
     legacy caller passes, and matters: without it R reads a user ``.Rprofile``/

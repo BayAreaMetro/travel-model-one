@@ -5,12 +5,12 @@ assignment/dwell loop converges in a single pass.  This module replays that sing
 pass with the as-is Cube jobs, run from a per-iteration working directory
 ``trn/TransitAssignment.iter{ITER}/`` exactly as the batch file does:
 
-    PrepHwyNet -> BuildTransitNetworks -> (TransitAssign -> TransitSkims ->
-    transitDwellAccess.py per period) -> copy trnskm*.tpp up to skims/
+    PrepHwyNet -> BuildTransitNetworks -> TransitAssign -> TransitSkims ->
+    copy trnskm*.tpp up to skims/
 
-``transitDwellAccess.py`` needs the (Python-3) NetworkWrangler library, which is
-not a package dependency of ``tm1``; its location is passed in via ``wrangler_path``
-and injected on the child process's ``PYTHONPATH``.
+The bus-dwell feedback (``transitDwellAccess.py`` Complex mode, which needs the
+NetworkWrangler library) only affects the *next* global iteration's bus speeds
+and is not yet wired -- see :func:`run_transit`.
 """
 
 import logging

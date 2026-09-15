@@ -20,13 +20,12 @@ dependencies = [
     # HwyAssign.job reads.  Phase 4 replaces it with a native step and deletes
     # this dependency outright; until then it is load-bearing, not optional, so
     # it lives here rather than in a `legacy` extra someone has to remember to
-    # ask for.  NetworkWrangler is not load-bearing for the shared pipeline
-    # (transitDwellAccess.py, its one unconditional caller, is gone as of
-    # simplify_transit_master) but several `utilities/` scripts a project may
-    # still point `command:`/`script:` at need it, so it stays a core dependency
-    # rather than an extra.
+    # ask for. NetworkWrangler is not: its one unconditional caller
+    # (transitDwellAccess.py) is gone as of simplify_transit_master, and no
+    # `command:`/`script:` step any project currently declares needs it either
+    # -- the couple of utilities/ scripts that still import it are run by hand,
+    # outside tm1 entirely, so it is not installed here at all.
     "dbfpy3>=2.3",
-    "NetworkWrangler @ git+https://github.com/BayAreaMetro/NetworkWrangler@c806951496126c6c5a3a37f5c325176aee91f31d",
 ]
 
 [project.scripts]
@@ -42,15 +41,6 @@ dev = [
     "pytest-coverage>=0.0",
     "ruff>=0.15.11",
 ]
-
-[tool.hatch.metadata]
-# NetworkWrangler is pinned to a git commit, not a branch, so `uv sync` on another
-# machine resolves to the same code -- c806951 is the commit that made it installable
-# at all (setup.py previously omitted the _static/ directory Wrangler imports at module
-# level). Hatchling refuses such direct references unless told to allow them, because
-# they cannot be published to PyPI -- which is fine here: this package is never
-# published, and NetworkWrangler is not on PyPI either.
-allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tm1", "src/cube"]

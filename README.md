@@ -60,8 +60,9 @@ carried over, each because there is nothing to port rather than because it was s
 | `RunMetrics.bat`'s shapefile export | its two scripts live outside `utilities/RTP/metrics` and are not staged; one needs `geopandas`, not a dependency here |
 
 The legacy preprocess scripts run here as-is, at the engine boundary. Replacing them with
-native Python — and retiring the `dbfpy3` and NetworkWrangler dependencies with them — is
-the next phase; see [`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
+native Python — and retiring the `dbfpy3` dependency with them — is the next phase; see
+[`MIGRATION_NOTES.md`](MIGRATION_NOTES.md). NetworkWrangler is already gone: nothing this
+harness runs needs it any more, so it is not installed at all.
 
 Requires Cube Voyager and a licence, as before. Steps that run R (`.R`/`.r`) need
 `TM1_R_HOME` set in the active environment file; the Java accessibility calculator
