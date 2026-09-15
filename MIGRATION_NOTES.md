@@ -17,7 +17,7 @@ production until its own phase lands and passes its own gate.
 | 1 | Runtime harness | `tm1` CLI, runner, project config chain; flat steps + project-supplied steps; `copy_inputs` / `simulate_ctramp` / `assignment`; `PBA50+_FBP`; target-layout scaffold | ~40 | **in progress** |
 | 2 | Cube matrix I/O | `cubeio` — pure-Python TPP ↔ OMX, no Cube install; bit-exact golden tests | ~30 | ready |
 | 3 | Calibration reporting | HTML calibration/validation report system (needs #2 to read `.tpp` skims) | ~37 | ready |
-| 4 | Model parity | the rest of `RunModel.bat`, ported for *equivalent results* rather than in kind (see [Port the intent, not the mechanism](#port-the-intent-not-the-mechanism)): preprocess (`SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`), inputs from the reference run's pristine `INPUT/`, then post-processing (EMFAC, logsums, core summaries, metrics) — dropping the steps that exist only to move data between Cube, R and batch | — | not started |
+| 4 | Model parity | the rest of `RunModel.bat`, ported for *equivalent results* rather than in kind (see [Port the intent, not the mechanism](#port-the-intent-not-the-mechanism)): preprocess (`SetTolls`, `SetHovXferPenalties`, `CreateFiveHighwayNetworks`, `HsrTripGeneration`, `CreateNonMotorizedNetwork`, `NonMotorizedSkims`, `csvToDbf.py`), inputs from the reference run's pristine `INPUT/`, then post-processing (EMFAC, logsums, core summaries, metrics) — dropping the steps that exist only to move data between Cube, R and batch. Orchestrating these (unmodified, in kind, as flat harness steps) landed inside phase 1's own scope instead of waiting for this phase; what phase 4 still owns is the deeper rewrite -- reading `.tpp` natively instead of round-tripping through `database/`'s CSV exports, joining income at read time instead of materialising `indivTripDataIncome_3.csv`, and the rest of this section's principles | — | not started |
 | 5 | ActivitySim swap-in | config corpus + projects + ActivitySim/PopulationSim steps + Cube harness and the ActivitySim↔Cube demand bridge | ~200 | pending full PBA50 review |
 | 6 | Assignment backend | AequilibraE engine, params, parity validation | ~25 | prototype — needs buy-in |
 | 7 | Housekeeping | legacy triage of `core/`, `model-files/`, `utilities/` (see [Diffs from legacy → target](#diffs-from-legacy--target)) | — | not started |
@@ -50,11 +50,12 @@ baseline". Establish parity, then swap components.
 Notes on the ordering:
 
 - **Phase 1 replaces `SetUpModel.bat`'s staging and all of `RunIteration.bat`** -- CT-RAMP
-  demand plus Cube assignment, feedback and skims, every `.job` script run unmodified. It
-  does *not* replace `RunModel.bat` end to end: that script's preprocess and post-processing
-  phases are phase 4. It needs no `cubeio`: CT-RAMP's demand reaches Cube through
-  `PrepAssign.job`, a Cube job, so no Python code touches matrix content. ActivitySim is the
-  case that needs a Python bridge (phase 5), because it emits OMX.
+  demand plus Cube assignment, feedback and skims, every `.job` script run unmodified. Its
+  scope grew to cover the rest of `RunModel.bat` too -- preprocess, EMFAC, logsums, core
+  summaries, metrics and off-model, each `.job`/`.py`/`.R` run unmodified as a flat step --
+  rather than waiting for phase 4. It needs no `cubeio`: CT-RAMP's demand reaches Cube
+  through `PrepAssign.job`, a Cube job, so no Python code touches matrix content.
+  ActivitySim is the case that needs a Python bridge (phase 5), because it emits OMX.
 - **Phase 5 is irreducibly large** — ~164 of its files are the ported UEC specs, which are
   validated by output comparison rather than by reading. It is a data drop, not a code review.
 - **Phases 2 and 3 are separable from 1** only because nothing in a CT-RAMP-only pipeline

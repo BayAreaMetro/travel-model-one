@@ -42,30 +42,31 @@ full phase plan and current status of each piece.
 ### Scope
 
 Runs the model end to end from pristine `INPUT/`: staging, preprocess, three global
-iterations of CT-RAMP demand → Cube assignment → feedback → skims, and the two Cube
-post-processing jobs. Every `.job` and `.py` is the stock one, run unmodified; only the
+iterations of CT-RAMP demand → Cube assignment → feedback → skims, EMFAC prep, logsums,
+core summaries, metrics, scenario metrics, and (for the model years that call for it)
+off-model. Every `.job`, `.py` and `.R` is the stock one, run unmodified; only the
 orchestration around them is new.
 
-That covers `SetUpModel.bat`'s staging, **all of `RunIteration.bat`**, and `RunModel.bat`
-down to `net2csv_avgload5period.job` (line 364). The seven `.bat` calls after it are *not*
-ported:
+That covers `SetUpModel.bat`'s staging, **all of `RunIteration.bat`**, and all of
+`RunModel.bat` except `RunNextGenFwysMetrics.bat` (NGF-only, not exercised by any
+project here yet). A handful of individual calls inside the ported `.bat`s are not
+carried over, each because there is nothing to port rather than because it was skipped:
 
-| Not yet ported | `RunModel.bat` |
-|----------------|----------------|
-| `RunPrepareEmfac.bat` | 369-370 |
-| `RunLogsums` | 383 |
-| `RunCoreSummaries` | 394 |
-| `RunMetrics`, `RunScenarioMetrics` | 403, 412 |
-| `RunNextGenFwysMetrics.bat`, `RunOffmodel` | 416, 427 |
-
-These are analysis rather than model: they run after results exist and do not feed back
-into them, so a run is complete without them.
+| Dropped call | Why |
+|---|---|
+| `RunPrepareEmfac.bat`'s "on M" branch | reads from a robocopied `OUTPUT\` extraction; this harness always runs from its own `run_dir` |
+| `RunCoreSummaries.bat`'s `commute_tours_by_inc_tp.r` | the script is not in this checkout |
+| `RunMetrics.bat`'s `vmt_vht_metrics.csv` (`hwynet.py`) | commented out in the `.bat` itself, its lookup tables not refreshed; `projects/PBA50+_FBP/hooks.py`'s `vmt_vht_metrics` covers the same ground |
+| `RunMetrics.bat`'s shapefile export | its two scripts live outside `utilities/RTP/metrics` and are not staged; one needs `geopandas`, not a dependency here |
 
 The legacy preprocess scripts run here as-is, at the engine boundary. Replacing them with
 native Python — and retiring the `dbfpy3` and NetworkWrangler dependencies with them — is
 the next phase; see [`MIGRATION_NOTES.md`](MIGRATION_NOTES.md).
 
-Requires Cube Voyager and a licence, as before.
+Requires Cube Voyager and a licence, as before. Steps that run R (`.R`/`.r`) need
+`TM1_R_HOME` set in `.env`; the Java accessibility calculator (`compute_logsums`) needs a
+local (interactive desktop) session -- unlike `simulate_ctramp`, it has no remote-session
+fallback yet.
 
 ### Repository Layout
 
