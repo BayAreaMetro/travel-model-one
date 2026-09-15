@@ -15,7 +15,7 @@
 :: Step 0:  If iteration equals zero, go to step four (i.e. skip the demand models)
 ::
 :: ------------------------------------------------------------------------------------------------------
-
+goto trucks
 if %ITER%==0 goto hwyAssign
 
 
@@ -106,21 +106,17 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\TruckTripDistribution.job
 if ERRORLEVEL 2 goto done
 
-:: Apply the special generator truck trip generation models
-runtpp CTRAMP\scripts\nonres\SpecialGeneratorTruckTripGeneration.job
-if ERRORLEVEL 2 goto done
-
-:: Apply the special generator truck trip distribution models
-runtpp CTRAMP\scripts\nonres\SpecialGeneratorTruckTripDistribution.job
-if ERRORLEVEL 2 goto done
-
 :: Apply the commercial vehicle diurnal factors
 runtpp CTRAMP\scripts\nonres\TruckTimeOfDay.job
 if ERRORLEVEL 2 goto done
 
+:trucks
+
 :: Apply a value toll choice model for eligibile commercial demand
 runtpp CTRAMP\scripts\nonres\TruckTollChoice.job
 if ERRORLEVEL 2 goto done
+
+goto hwyAssign
 
 :: Apply a transit submode choice model for transit trips to bay area HSR stations
 runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
@@ -129,7 +125,6 @@ if ERRORLEVEL 2 goto done
 :: Move air passenger trips from the free path to the tolled path, if the free path does not exist
 runtpp CTRAMP\scripts\nonres\MoveAirPaxTrips_IfNoFreePath.job
 if ERRORLEVEL 2 goto done
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 4:  Build matrices from trip lists and assign trips to the highway network
@@ -137,16 +132,17 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 
 :hwyAssign
-
 :: If demand models were executed, translate the trip lists to demand matrices
-if %ITER% GTR 0 (
-	runtpp CTRAMP\scripts\assign\PrepAssign.job
-	if ERRORLEVEL 2 goto done
-)
+:: if %ITER% GTR 0 (
+:: 	runtpp CTRAMP\scripts\assign\PrepAssign.job
+::	if ERRORLEVEL 2 goto done
+:: )
 
 :: Assign the demand matrices to the highway network
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
+
+goto feedback
 
 :trnAssignSkim
 :: copy a local version for easier restarting
@@ -176,18 +172,18 @@ move hwy\LOADEV.net hwy\iter%ITER%\LOADEV.net
 runtpp CTRAMP\scripts\feedback\RenameAssignmentVariables.job
 
 :: Average the demand for this and the previous iteration and compute a speed estimate for each link
-IF %ITER% GTR 1 (
-	runtpp CTRAMP\scripts\feedback\AverageNetworkVolumes.job
-	if ERRORLEVEL 2 goto done
-	runtpp CTRAMP\scripts\feedback\CalculateSpeeds.job
-	if ERRORLEVEL 2 goto done
-) ELSE (
-	copy hwy\iter%ITER%\LOADEA_renamed.net hwy\iter%ITER%\avgLOADEA.net /Y
-	copy hwy\iter%ITER%\LOADAM_renamed.net hwy\iter%ITER%\avgLOADAM.net /Y
-	copy hwy\iter%ITER%\LOADMD_renamed.net hwy\iter%ITER%\avgLOADMD.net /Y
-	copy hwy\iter%ITER%\LOADPM_renamed.net hwy\iter%ITER%\avgLOADPM.net /Y
-	copy hwy\iter%ITER%\LOADEV_renamed.net hwy\iter%ITER%\avgLOADEV.net /Y
-)
+:: IF %ITER% GTR 1 (
+::	runtpp CTRAMP\scripts\feedback\AverageNetworkVolumes.job
+::	if ERRORLEVEL 2 goto done
+::	runtpp CTRAMP\scripts\feedback\CalculateSpeeds.job
+::	if ERRORLEVEL 2 goto done
+::) ELSE (
+copy hwy\iter%ITER%\LOADEA_renamed.net hwy\iter%ITER%\avgLOADEA.net /Y
+copy hwy\iter%ITER%\LOADAM_renamed.net hwy\iter%ITER%\avgLOADAM.net /Y
+copy hwy\iter%ITER%\LOADMD_renamed.net hwy\iter%ITER%\avgLOADMD.net /Y
+copy hwy\iter%ITER%\LOADPM_renamed.net hwy\iter%ITER%\avgLOADPM.net /Y
+copy hwy\iter%ITER%\LOADEV_renamed.net hwy\iter%ITER%\avgLOADEV.net /Y
+::)
 
 :: Compute network statistics to measure convergence
 runtpp CTRAMP\scripts\feedback\TestNetworkConvergence.job
@@ -216,6 +212,6 @@ del hwy\iter%ITER%\x*.net
 
 echo FINISHED ITERATION %ITER%  %DATE% %TIME% >> logs\feedback.rpt
 
-python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
+::python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
 
 :done

@@ -1,0 +1,7 @@
+# utilities/.gitignore blanket-ignores *.html, which is right for generated
+# report output and wrong for this: page_template.html is the reviewer's page
+# source, and review/serve.py cannot build the page without it.
+!review/page_template.html
+
+# The built page and the working files beside it are output, and stay ignored.
+review.html

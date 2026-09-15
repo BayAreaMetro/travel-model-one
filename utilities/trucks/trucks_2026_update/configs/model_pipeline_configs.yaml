@@ -1,0 +1,14 @@
+data_sources:
+  features:
+    path: data/external/mtc/2023_TM161_IPA_35/landuse/tazData.csv
+    id: ZONE
+  targets:
+    path: data/processed/truck_trip_generation_zone.csv
+    id: TAZ1454
+
+output: models/truck_trip_generation
+
+additional_columns:
+  - TAZ1454
+  - COUNTY
+  - DISTRICT
