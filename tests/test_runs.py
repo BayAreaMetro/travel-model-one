@@ -118,7 +118,7 @@ def test_the_first_run_of_a_scenario_is_001(tmp_path: Path) -> None:
     """And the directory exists afterwards -- allocation is a claim, not a plan."""
     run_no, path, state = run_directory.allocate(tmp_path, "A001-NOPK-2035", "abc")
 
-    assert (run_no, path.name, state) == (1, "A001-NOPK-2035-001", run_directory.NEW)
+    assert (run_no, path.name, state) == (1, "A001-NOPK-2035_001", run_directory.NEW)
     assert path.is_dir()
 
 
@@ -156,12 +156,12 @@ def test_rerun_asks_for_one_anyway_and_keeps_the_finished_result(
 
     run_no, path, state = run_directory.allocate(tmp_path, "A", "abc", rerun=True)
 
-    assert (run_no, path.name, state) == (2, "A-002", run_directory.NEW)
+    assert (run_no, path.name, state) == (2, "A_002", run_directory.NEW)
     assert (first / "result.txt").read_text(encoding="utf-8") == "kept"
 
 
 def test_a_changed_scenario_lands_beside_its_predecessor(tmp_path: Path) -> None:
-    """The land use refresh: -002 appears, -001 stays intact.
+    """The land use refresh: _002 appears, _001 stays intact.
 
     Never on top: the old run's outputs are a result someone may still be using,
     and its per-step sentinels would make a half-overwrite look complete.
@@ -172,7 +172,7 @@ def test_a_changed_scenario_lands_beside_its_predecessor(tmp_path: Path) -> None
 
     run_no, second, state = run_directory.allocate(tmp_path, "A", "def")
 
-    assert (run_no, second.name, state) == (2, "A-002", run_directory.NEW)
+    assert (run_no, second.name, state) == (2, "A_002", run_directory.NEW)
     assert (first / "marker.txt").read_text(encoding="utf-8") == "round one"
 
 
@@ -189,11 +189,11 @@ def test_an_unreadable_receipt_does_not_block_the_project(tmp_path: Path) -> Non
 
 def test_a_directory_taken_between_check_and_create_is_skipped(tmp_path: Path) -> None:
     """Two machines forcing the same stale scenario must not both own the number."""
-    (tmp_path / "A-001").mkdir(parents=True)
+    (tmp_path / "A_001").mkdir(parents=True)
 
     run_no, path, _ = run_directory.allocate(tmp_path, "A", "abc")
 
-    assert (run_no, path.name) == (2, "A-002")
+    assert (run_no, path.name) == (2, "A_002")
 
 
 # --- the guards --------------------------------------------------------------
@@ -207,7 +207,7 @@ def test_a_long_run_directory_is_refused() -> None:
 
 def test_a_short_one_is_fine() -> None:
     """A realistic run directory has to pass, or the guard is just an outage."""
-    run_directory.check_length(Path("E:/runs/proj/A001-NOPK-2035-001"))
+    run_directory.check_length(Path("E:/runs/proj/A001-NOPK-2035_001"))
 
 
 def test_the_receipt_round_trips(tmp_path: Path) -> None:

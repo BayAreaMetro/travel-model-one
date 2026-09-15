@@ -54,8 +54,8 @@ import yaml
 _ID = re.compile(r"^[A-Za-z0-9_]+(-[A-Za-z0-9_]+)*$")
 
 #: A trailing three-digit segment would be ambiguous with the run-iteration suffix
-#: a run directory carries (``A001-NOPK-2035-001``).
-_ID_TAIL = re.compile(r"-[0-9]{3}$")
+#: a run directory carries (``A001-NOPK-2035_001``).
+_ID_TAIL = re.compile(r"_[0-9]{3}$")
 
 #: ``{token}`` in an ``id:`` template.
 _TOKEN = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")

@@ -1,9 +1,9 @@
 """Where does this run go?
 
-A run directory is ``{runs_root}/{scenario}-{NNN}``. ``NNN`` is the run
+A run directory is ``{runs_root}/{scenario}_{NNN}``. ``NNN`` is the run
 iteration -- the same scenario run again after an input is refreshed -- and it
 exists so that nothing is ever deleted or moved aside to make room. A land use
-update gives you ``-002`` beside an intact ``-001``.
+update gives you ``_002`` beside an intact ``_001``.
 
 No project segment: every run on a machine sits flat under one ``runs_root``,
 visible with one directory listing instead of one per project -- both to see
@@ -26,8 +26,8 @@ from pathlib import Path
 
 from tm1.run.receipt import read_receipt
 
-#: ``{scenario}-{NNN}``.
-_RUN_DIR = re.compile(r"^(?P<scenario>.+)-(?P<run>\d{3})$")
+#: ``{scenario}_{NNN}``.
+_RUN_DIR = re.compile(r"^(?P<scenario>.+)_(?P<run>\d{3})$")
 
 #: Cube and the Java stack are not long-path aware, and a full run nests roughly
 #: 160 characters below its own root.  Erroring at the start beats a Cube job
@@ -36,7 +36,7 @@ MAX_RUN_DIR_LEN = 70
 
 
 def existing_runs(project_root: Path, scenario: str) -> list[tuple[int, Path]]:
-    """Every ``{scenario}-{NNN}`` directory for *scenario*, oldest first."""
+    """Every ``{scenario}_{NNN}`` directory for *scenario*, oldest first."""
     root = Path(project_root)
     if not root.is_dir():
         return []
@@ -84,7 +84,7 @@ def allocate(
         return run_no, path, RESUME
 
     run_no = (runs[-1][0] + 1) if runs else 1
-    path = Path(project_root) / f"{scenario}-{run_no:03d}"
+    path = Path(project_root) / f"{scenario}_{run_no:03d}"
     # Exclusive create: two machines forcing the same stale scenario at once must
     # not both believe they own the number.  Never check-then-create.
     while True:
@@ -92,7 +92,7 @@ def allocate(
             path.mkdir(parents=True, exist_ok=False)
         except FileExistsError:
             run_no += 1
-            path = Path(project_root) / f"{scenario}-{run_no:03d}"
+            path = Path(project_root) / f"{scenario}_{run_no:03d}"
             continue
         return run_no, path, NEW
 

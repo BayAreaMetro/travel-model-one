@@ -4,7 +4,7 @@ A fingerprint is a stable hash of **what a run computes**, taken from the parsed
 config after the scenario's overrides and *before* ``{env:}`` expansion and
 ``{key}`` resolution. That ordering is the whole trick: template strings stay
 literal, so the same scenario fingerprints identically on every machine, and the
-``{scenario}-{NNN}`` inside ``run_dir`` cannot make every run look new.
+``{scenario}_{NNN}`` inside ``run_dir`` cannot make every run look new.
 
 Removed before hashing:
 

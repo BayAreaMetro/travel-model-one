@@ -78,7 +78,7 @@ def prepare_run(
     the fingerprint is taken, and the fingerprint is taken **before** ``{env:}``
     and ``{key}`` resolution -- so template strings are still literal and the same
     scenario fingerprints identically on every machine.  Only then is the run
-    directory allocated and injected, which is why ``{scenario}-{NNN}`` cannot
+    directory allocated and injected, which is why ``{scenario}_{NNN}`` cannot
     feed back into the fingerprint and make every run look new.
     """
     config_dir = Path(config_dir).resolve()

@@ -309,7 +309,7 @@ def test_ids_differing_only_by_case_collide() -> None:
 def test_a_trailing_three_digit_segment_is_refused() -> None:
     """It would be ambiguous with the run-iteration suffix on a run directory."""
     with pytest.raises(ValueError, match="run-iteration"):
-        expand({"scenarios": {"A001-NOPK-035": None}})
+        expand({"scenarios": {"A001-NOPK_035": None}})
 
 
 def test_an_unknown_pathway_is_refused_by_name() -> None:

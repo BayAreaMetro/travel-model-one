@@ -36,10 +36,10 @@ instead of in a project's config. See [README.md#setup](../README.md#setup).
 
 **2. The run does not execute in the working directory.**
 `RunModel.bat` ran in the directory containing it. A run now executes in
-`{TM1_RUNS_ROOT}/{scenario}-{NNN}`, a new numbered directory each time.
+`{TM1_RUNS_ROOT}/{scenario}_{NNN}`, a new numbered directory each time.
 
 No existing run is deleted or overwritten. Re-running after a land use update produces
-`-002` alongside an intact `-001`.
+`_002` alongside an intact `_001`.
 
 **3. A project's config is declarative.**
 It states what runs, not how. `default-configs/ctramp-cube-model.yaml` (the pipeline every
@@ -282,7 +282,7 @@ scenario states its own full set of overrides, including the values every scenar
 the project happens to share -- so it is readable on its own, without also reading a
 separate block to know what an apparently-empty scenario runs.
 
-Each scenario runs in its own directory, `{scenario}-{NNN}`, so scenarios never collide.
+Each scenario runs in its own directory, `{scenario}_{NNN}`, so scenarios never collide.
 
 ### Addressing a value
 
@@ -393,7 +393,7 @@ description, leaving the ID as the only identifying information in a large sweep
 
 `YEAR_MODELVERSION_SERIES_SCENARIO_VERSION` — e.g. `2050_TM161_FBP_Plan_16` --
 letters, digits, underscores or hyphens. `VERSION` is the scenario's own revision
-number, not the run-iteration `-{NNN}` suffix a run directory carries on top of
+number, not the run-iteration `_{NNN}` suffix a run directory carries on top of
 the whole ID. Case is preserved, but two IDs differing only by case collide --
 they would name the same run directory on a filesystem that does not
 distinguish them.
@@ -421,7 +421,7 @@ tm1 run my_project --scenario NOPK-2035
 ## What the run leaves behind
 
 ```
-{TM1_RUNS_ROOT}/{scenario}-001/
+{TM1_RUNS_ROOT}/{scenario}_001/
   INPUT/          every input staged in, as the run's record of what it consumed
   hwy/ trn/ skims/ landuse/ popsyn/ nonres/ main/ database/ logsums/ metrics/
   logs/           the run log

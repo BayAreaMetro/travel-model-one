@@ -33,7 +33,7 @@ emfac_sb375_version: "REQUIRED: override emfac_sb375_version"
 emfac_eir_version: "REQUIRED: override emfac_eir_version"
 
 # Injected per run -- usable below, not settable:
-#   run_dir = {env:TM1_RUNS_ROOT}/{scenario}-{NNN}, plus runs_root, project, scenario, run
+#   run_dir = {env:TM1_RUNS_ROOT}/{scenario}_{NNN}, plus runs_root, project, scenario, run
 # {PERIOD} and {iteration} are expanded per step.
 
 # The legacy jobs take parameters from the environment, not argv.  ITER, PREV_ITER, WGT,

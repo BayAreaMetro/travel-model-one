@@ -218,11 +218,11 @@ templates, and so is **not settable** by a scenario:
 
 | Key | Value |
 |---|---|
-| `run_dir` | `{runs_root}/{scenario}-{NNN}` |
+| `run_dir` | `{runs_root}/{scenario}_{NNN}` |
 | `runs_root` | `TM1_RUNS_ROOT` (from `.env`) |
 | `project` | the project's folder name, e.g. `PBA50+_FBP` |
 | `scenario` | the scenario's own `id`, e.g. `PLAN-2050-V16` |
-| `run` | `{scenario}-{NNN}`, e.g. `PLAN-2050-V16-002` -- `run_dir`'s last segment |
+| `run` | `{scenario}_{NNN}`, e.g. `PLAN-2050-V16_002` -- `run_dir`'s last segment |
 
 `{iteration}` and `{PERIOD}` are different: they survive config loading unexpanded
 and are filled in later, once per step invocation -- `{iteration}` to whichever
