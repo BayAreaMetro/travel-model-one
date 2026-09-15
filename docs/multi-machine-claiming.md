@@ -1,14 +1,14 @@
 # Multi-machine claiming
 
-Status: **not built.** This is the agreed scope; the code arrives in the commits listed
-at the end.
+Status: **not built.** This is the rough scope only so far.
 
 ## The problem
 
-A study is many cases. Eight cases at ~15 h each is five days on one box, and the runs
-are already independent and individually named — `tm1 cases` lists them, each gets its
+A study is many scenarios. Eight scenarios at ~15 h each is five days on one box, and the runs
+are already independent and individually named — `tm1 scenarios` lists them, each gets its
 own directory, nothing is shared. What is missing is a way to hand them out without two
-people starting the same one, and without logging into every machine to do it.
+people starting the same one, and without logging into every machine to do it manually.
+Defined once upfront in a yaml, then distributed.
 
 ## What the team requires
 
