@@ -1,0 +1,37 @@
+# MTC's own environment -- the `{env:NAME}` values every MTC machine shares,
+# loaded by default (TM1_ENV unset, or `tm1 run --env mtc`). Another agency or
+# a consultant running this model adds a sibling file here (e.g. `caltrans.yaml`)
+# with their own values, selected with `tm1 run --env caltrans` or by exporting
+# TM1_ENV=caltrans, rather than editing this one.
+#
+# Committed, since none of these differ machine to machine within an
+# environment -- unlike scenarios.yaml's `{key}` values, which are the model
+# recipe and reviewed there. `tm1.project.config` loads this before resolving a
+# project's config, and a variable already set (by a shell export, or a test)
+# is left alone.
+#
+# TM1_RUNS_ROOT is the one genuine exception -- where runs go is local disk, so
+# it is keyed by machine hostname (lowercased) rather than given one value. Add
+# this machine's own entry here, the same way, rather than a `.env` file nobody
+# else can see.
+
+TM1_M_DRIVE: //models.ad.mtc.ca.gov/data/models
+
+# gawk, which BuildTransitNetworks.job shells out to.  Windows has none; Git for
+# Windows bundles one.
+TM1_GAWK_DIR: C:/Program Files/Git/usr/bin
+
+# R, for the post-processing scripts (core summaries, metrics) that read Cube's
+# CSV exports rather than model anything themselves.  The install root -- the
+# directory holding bin/x64/Rscript.exe -- not Rscript.exe itself, since that is
+# where the legacy scripts' own %R_HOME% points.
+TM1_R_HOME: C:/Program Files/R/R-4.3.1
+
+# Either this, or SLACK_WEBHOOK_URL as a real environment variable -- never
+# committed, since it is a live credential.  With neither, runs log their
+# milestones and send nothing.  How much is sent is `slack:` in the project
+# config, not here.
+TM1_SLACK_WEBHOOK_FILE: //models.ad.mtc.ca.gov/data/models/Software/Slack/TravelModel_SlackWebhook.txt
+
+TM1_RUNS_ROOT:
+  model3-g: E:/Model3G-Share/runs
