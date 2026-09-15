@@ -101,20 +101,57 @@ steps:
       script: "hooks.py:vmt_vht_metrics"
 
   # Fills in the shared model's `publish_outputs: {}` placeholder: RunModel.bat's
-  # extractkeyfiles + Robocopy to %M_DIR%\OUTPUT, but archiving the whole run rather
-  # than a curated subset -- these are test/parity runs, not production deliverables.
-  # Declared last here since it is the shared pipeline's last step too.
+  # extractkeyfiles + Robocopy to %M_DIR%\OUTPUT, curated the same way rather than
+  # archiving the whole run -- hwy/trn/main results, logs, EMFAC/logsums/core
+  # summaries/metrics/offmodel (all now produced by this pipeline), and CTRAMP/
+  # and INPUT/ in full (beyond extractkeyfiles' own scope) so this run's code
+  # and inputs are reproducible years later even if the checkout or M-drive
+  # sources have since moved on. Final iteration only for everything else,
+  # matching extractkeyfiles' own scope. Declared last here since it is the
+  # shared pipeline's last step too.
   - publish_outputs:
       run_dir:
         from: "{run_dir}"
         to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}"
+        include:
+          - "CTRAMP/*"
+          - "INPUT/*"
+          - "hwy/iter3/avgload5period*"
+          - "trn/trnline*.csv"
+          - "trn/trnlink*.dbf"
+          - "trn/trnlink.csv"
+          - "trn/trnline.csv"
+          - "trn/quickboards.xls"
+          - "trn/TransitAssignment.iter3/trnline*.csv"
+          - "main/householdData_3.csv"
+          - "main/personData_3.csv"
+          - "main/indivTripData_3.csv"
+          - "main/indivTourData_3.csv"
+          - "main/jointTripData_3.csv"
+          - "main/jointTourData_3.csv"
+          - "main/wsLocResults_3.csv"
+          - "main/trips??.tpp"
+          - "main/ShadowPricing_7.csv"
+          - "logs/HwySkims.debug"
+          - "logs/feedback.rpt"
+          - "logs/SpeedErrors*.log"
+          - "nonres/ixDaily2015.tpp"
+          - "nonres/ixDailyx4.tpp"
+          - "nonres/tripsIX*.tpp"
+          - "nonres/tripsTrk*.tpp"
+          - "emfac/*"
+          - "core_summaries/*"
+          - "updated_output/*"
+          - "metrics/*"
+          - "offmodel/*"
+          - "logsums/*"
 
 scenarios:
 
   2023_TM162_IPA:
     description: >
-      RunModel.bat parity: adopted 2023 networks and land use, no strategies
-      applied.  The run the harness is measured against.
+      Plan Bay Area 2050+ 2023 base run. Equivalent to 2023_TM161_IPA_35
+
     model_year: 2023
     env.MODEL_YEAR: 2023
     env.FUTURE: PBA50
