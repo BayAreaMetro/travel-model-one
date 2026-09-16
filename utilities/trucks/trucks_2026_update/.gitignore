@@ -3,6 +3,14 @@
 /model/truck_trip_generation
 /model/evaluation
 
+# Keep this file tracked
+!models/trip_distribution/truckFF_distance_based.dat
+!models/truck_trip_generation/model_coefficients.csv
+!models/truck_trip_generation/model_comparison.csv
+!models/truck_trip_generation/model_predictions.csv
+!models/truck_trip_generation/used_model_specs.csv
+
+
 # Cube log files 
 *.PRN
 *.VAR
