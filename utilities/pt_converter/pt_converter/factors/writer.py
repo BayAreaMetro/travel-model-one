@@ -79,13 +79,22 @@ class FactorWriter:
         source: FactorSource,
         output_directory: Path,
         maximum_stop_node: int,
+        fare_system_by_mode: dict[int, int] | None = None,
     ) -> FactorWriteResult:
         self._validate(source, maximum_stop_node)
         output_directory.mkdir(parents=True, exist_ok=True)
         factor_paths: list[Path] = []
         for factor_class in source.classes:
             path = output_directory / f"{factor_class.name}.fac"
-            self._write_text(path, self._render(source, factor_class, maximum_stop_node))
+            self._write_text(
+                path,
+                self._render(
+                    source,
+                    factor_class,
+                    maximum_stop_node,
+                    fare_system_by_mode or {},
+                ),
+            )
             factor_paths.append(path)
 
         report_path = output_directory / "factor_conversion_report.json"
@@ -109,7 +118,12 @@ class FactorWriter:
             raise ValidationError(f"TM1 requires 15 PT factor classes; found {len(source.classes)}.")
 
     @staticmethod
-    def _render(source: FactorSource, item: FactorClass, maximum_stop_node: int) -> str:
+    def _render(
+        source: FactorSource,
+        item: FactorClass,
+        maximum_stop_node: int,
+        fare_system_by_mode: dict[int, int],
+    ) -> str:
         node_range = f"1-{maximum_stop_node}"
         rendered = [
             ";;<<PT>><<FACTORS>>;;",
@@ -128,6 +142,12 @@ class FactorWriter:
                 "SERVICEMODEL=FREQUENCY",
             )
         )
+        for mode, fare_system in sorted(fare_system_by_mode.items()):
+            if mode < 10:
+                raise ValidationError(
+                    f"NT mode {mode} cannot have a PT fare-system assignment."
+                )
+            rendered.append(f"FARESYSTEM={fare_system}, MODE={mode}")
         return "\n".join(rendered) + "\n"
 
     @staticmethod
