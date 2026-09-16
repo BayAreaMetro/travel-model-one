@@ -1,0 +1,5 @@
+/*
+This block is documentation, not an active record.
+ZONEACCESS LINK=999-998 MODE=5
+*/
+ZONEACCESS LINK=400-500 MODE=5 ; walk funnel

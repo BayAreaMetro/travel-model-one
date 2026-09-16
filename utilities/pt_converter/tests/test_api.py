@@ -44,6 +44,25 @@ class ConversionTests(unittest.TestCase):
             )
             self.assertTrue((inventory_path.parent / "transitLinkFactors.csv").is_file())
             self.assertTrue((inventory_path.parent / "link_conversion_report.json").is_file())
+            self.assertTrue((inventory_path.parent / "transitAccess.NTL").is_file())
+            self.assertTrue((inventory_path.parent / "walkAccessCrosswalk.csv").is_file())
+            self.assertTrue((inventory_path.parent / "zoneAccessRules.csv").is_file())
+            self.assertTrue((inventory_path.parent / "pnrFacilities.csv").is_file())
+            self.assertTrue((inventory_path.parent / "connector_conversion_report.json").is_file())
+            self.assertFalse((inventory_path.parent / "accessNetworkLinks.csv").exists())
+            self.assertFalse((inventory_path.parent / "transferNetworkLinks.csv").exists())
+            system = (inventory_path.parent / "transitSystem.pts").read_text(encoding="utf-8")
+            self.assertIn(
+                'MODE NUMBER=1, NAME="WALK ACCESS", LONGNAME="Walk access connector"',
+                system,
+            )
+            self.assertIn(
+                'MODE NUMBER=7, NAME="DRIVE EGRESS", LONGNAME="Drive egress connector"',
+                system,
+            )
+            self.assertIn(
+                'MODE NUMBER=120, NAME="BR", LONGNAME="BART & E-BART"', system
+            )
             self.assertFalse((inventory_path.parent / "buildPTNetwork.job").exists())
 
     def test_unsupported_source_fails_clearly(self) -> None:

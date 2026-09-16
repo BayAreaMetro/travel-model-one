@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .config import ConverterConfig
+from .connectors import ConnectorInputReader, ConnectorWriter
 from .errors import ConfigurationError, SourceReadError, ValidationError
 from .inventory import IssueSeverity, NetworkWranglerInputReader, write_inventory
 from .line_conversion import (
@@ -64,6 +65,7 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
         operator_table = source_directory / "transit_operators.csv"
         operators = TransitOperatorReader().read(operator_table)
         link_source = TransitLinkReader().read(source_directory / "transitLines.link")
+        connector_source = ConnectorInputReader().read(source_directory)
         written = PTInputWriter().write(
             lines,
             vehicles,
@@ -72,6 +74,7 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
             output_directory,
         )
         topology = TopologyWriter().write(link_source, lines, output_directory)
+        connectors = ConnectorWriter().write(connector_source, output_directory)
         return ConversionResult(
             action="convert-network-wrangler-inputs",
             output_directory=output_directory,
@@ -79,9 +82,12 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
                 f"Inspected {len(inventory.files)} source file(s) and "
                 f"converted {written.line_count} transit line(s) and "
                 f"{written.vehicle_type_count} vehicle type(s), and prepared "
-                f"{topology.source_link_count} transit link rule(s). "
+                f"{topology.source_link_count} transit link rule(s), "
+                f"{connectors.ntleg_count} explicit PT access leg(s), and "
+                f"{connectors.crosswalk_record_count} connector crosswalk record(s). "
                 f"Inventory: {inventory_path}. Conversion report: {written.report_path}. "
-                f"Link translation report: {topology.report_path}."
+                f"Link translation report: {topology.report_path}. "
+                f"Connector translation report: {connectors.report_path}."
             ),
         )
 
