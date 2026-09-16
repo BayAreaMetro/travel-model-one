@@ -76,6 +76,7 @@ steps:
         - "{run_dir}/logsums"
         - "{run_dir}/metrics"
         - "{run_dir}/core_summaries"
+        - "{run_dir}/emfac/emfac_prep"
         - "{run_dir}/offmodel/offmodel_prep"
         - "{run_dir}/offmodel/offmodel_output"
 

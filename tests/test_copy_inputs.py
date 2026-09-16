@@ -219,7 +219,7 @@ def test_an_already_prefixed_path_is_left_alone() -> None:
 def test_a_relative_path_is_made_absolute_before_prefixing(
     tmp_path: Path, monkeypatch,
 ) -> None:  # noqa: ANN001
-    """`\\?\` turns off CWD-relative lookup too -- a repo-relative `from:` needs this."""
+    r"""`\\?\` turns off CWD-relative lookup too -- a repo-relative `from:` needs this."""
     monkeypatch.chdir(tmp_path)
     expected = str(tmp_path / "utilities" / "telecommute" / "rates.csv")
 
