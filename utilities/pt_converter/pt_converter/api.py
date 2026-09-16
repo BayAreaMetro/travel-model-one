@@ -8,6 +8,7 @@ from pathlib import Path
 from .config import ConverterConfig
 from .connectors import ConnectorInputReader, ConnectorWriter
 from .errors import ConfigurationError, SourceReadError, ValidationError
+from .factors import FactorWriter, tm1_factor_source
 from .inventory import IssueSeverity, NetworkWranglerInputReader, write_inventory
 from .line_conversion import (
     PTInputWriter,
@@ -75,6 +76,10 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
         )
         topology = TopologyWriter().write(link_source, lines, output_directory)
         connectors = ConnectorWriter().write(connector_source, output_directory)
+        maximum_stop_node = max(abs(node) for line in lines for node in line.nodes)
+        factors = FactorWriter().write(
+            tm1_factor_source(), output_directory, maximum_stop_node
+        )
         return ConversionResult(
             action="convert-network-wrangler-inputs",
             output_directory=output_directory,
@@ -84,6 +89,7 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
                 f"{written.vehicle_type_count} vehicle type(s), and prepared "
                 f"{topology.source_link_count} transit link rule(s), "
                 f"{connectors.ntleg_count} explicit PT access leg(s), and "
+                f"{factors.factor_count} PT user-class factor file(s). "
                 f"{connectors.crosswalk_record_count} connector crosswalk record(s). "
                 f"Inventory: {inventory_path}. Conversion report: {written.report_path}. "
                 f"Link translation report: {topology.report_path}. "
