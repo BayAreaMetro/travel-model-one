@@ -1,7 +1,7 @@
 """Generic table formatting helpers for Quarto output"""
 
 import pandas as pd
-from IPython.display import Markdown
+from IPython.display import Markdown, display
 
 def format_numeric(
         df: pd.DataFrame,
@@ -69,4 +69,4 @@ def to_quarto(df: pd.DataFrame) -> Markdown:
         IPython.display.Markdown: A Markdown object containing a pipe table,
         suitable for display in a Quarto code cell.
     """
-    return Markdown(df.to_markdown(index=False))
+    return display(Markdown(df.to_markdown(index=False)))

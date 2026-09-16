@@ -3,8 +3,77 @@
 - Include something about using BATS data to re-calibrate the wait times for taxi and tnc modes
 - Something about calibration targets - updated from both BATS 
 
+```{python}
+from calib_report import config, tables
+from calib_report.data import tour_mode
+import pandas as pd
 
-```{dot}
+chts_file = config.CHTS_DIR / "tourModeChoice_1.5.2.csv"
+bats_file = config.BATS_DIR / "BATS2023_tour_mode_summary_long_all.csv"
+chts_tour_mode = tour_mode.format_tour_mode_file(chts_file, tour_mode.CHTS_MODE_MAP)
+bats_tour_mode = tour_mode.format_tour_mode_file(bats_file, tour_mode.BATS_MODE_MAP)
+
+```
+
+``` {python}
+#| label: tbl-tour-mode-work
+#| tbl-cap: "Work Tour Mode Choice Targets"
+#| tbl-subcap:
+#|  - "TM1.5.2 Targets"
+#|  - "Current Targets"
+#| layout-ncol: 2
+
+chts_work = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "work")
+bats_work = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "work")
+
+tables.to_quarto(chts_work)
+tables.to_quarto(bats_work)
+
+```
+
+``` {python}
+#| label: tbl-tour-mode-uni
+#| tbl-cap: "University Tour Mode Choice Targets"
+#| tbl-subcap:
+#|  - "TM1.5.2 Targets"
+#|  - "Current Targets"
+#| layout-ncol: 2
+#| layout-nrow: 2
+
+chts_uni = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "university")
+bats_uni = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "university")
+chts_uni_share = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "university", as_share = True)
+bats_uni_share = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "university", as_share = True)
+
+tables.to_quarto(chts_uni)
+tables.to_quarto(bats_uni)
+tables.to_quarto(chts_uni_share)
+tables.to_quarto(bats_uni_share)
+
+```
+
+``` {python}
+#| label: tbl-tour-mode-sch
+#| tbl-cap: "School Tour Mode Choice Targets"
+#| tbl-subcap:
+#|  - "TM1.5.2 Targets"
+#|  - "Current Targets"
+#| layout-ncol: 2
+#| layout-nrow: 2
+
+chts_sch = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "school")
+bats_sch = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "school")
+chts_sch_share = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "school", as_share = True)
+bats_sch_share = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "school", as_share = True)
+
+tables.to_quarto(chts_sch)
+tables.to_quarto(bats_sch)
+tables.to_quarto(chts_sch_share)
+tables.to_quarto(bats_sch_share)
+
+```
+
+<!-- ```{dot}
 //| label: fig-tour-mode
 //| fig-cap: "Tour Mode Alternative"
 
@@ -171,4 +240,4 @@ digraph TourModeChoice {
     RideHail -> TNCSingle
     RideHail -> TNCShared
 }
-```
+``` -->
