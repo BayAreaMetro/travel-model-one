@@ -1,7 +1,7 @@
 /data
 /models/trip_distribution
-/model/truck_trip_generation
-/model/evaluation
+/models/trip_generation
+/models/evaluation
 
 # Keep this file tracked
 !models/trip_distribution/truckFF_distance_based.dat
