@@ -1,5 +1,6 @@
 import pandas as pd
 from calib_report import tables, figures
+from matplotlib.ticker import PercentFormatter
 
 
 ## Process - need to load tlfd for each tour/trip purpose which includes distance and then numbers
@@ -32,16 +33,41 @@ def format_distance_freq(file):
 
     return out
 
-def plot_tlfd(observed_file, ylabel, modeled_file=None, ax=None):
-    """Format observed (and optionally modeled) TLFD distance-share distribution
-    
+def plot_tlfd(observed_file, 
+              ylabel, 
+              observed_label="Observed", 
+              additional_file=None, 
+              additional_label="Modeled", 
+              ax=None):
+    """Plot one or two distance-frequency distributions as shares.
+
+    Each input file is converted from counts by distance bins to shares of the
+    total distribution before plotting. The observed distribution is plotted
+    first, followed optionally by a second distribution for comparison.
+
     Parameters
     ----------
-        observed_file: Path to the observed TLFD csv
-        ylabel: Y-axis label for the plot
-        modeled_file Optional path to the modeled TLFD csv. When provided, a
-            second "Modeled" series is drawn on the same axes.
-        ax: Optional matplotlib axes to draw on.
+        observed_file: path-like
+            Path to the observed TLFD CSV file. The file must contain a 
+            ``distbin`` column and either a ``Total`` column or numeric count
+            columns that can be summed across rows.
+
+        ylabel: str
+            Label for the y-axis. Defaults to ``"Observed"`` when not specified
+
+        observed_label: str, default = "Observed"
+            Legend label for the first, observed distribution.
+
+        additional_file: path-like, optional
+            Path to an optional second TLFD CSV file to plot
+
+        additional_label: str, optional
+            Legend label for the second series. Defaults to ``"Modeled"`` when ``additional_file`` 
+            is provided and ``file_label`` is not specified
+
+        ax: matplotlib.axes.Axes, optional 
+            Existing axes on which to draw the plot. If not provided, a new figure
+            and axes are created
 
     Returns
     ----------
@@ -49,11 +75,11 @@ def plot_tlfd(observed_file, ylabel, modeled_file=None, ax=None):
     """
 
     dataframes = [format_distance_freq(observed_file)]
-    labels = ["Observed"]
+    labels = [observed_label]
 
-    if modeled_file is not None:
-        dataframes.append(format_distance_freq(modeled_file))
-        labels.append("Modeled")
+    if additional_file is not None:
+        dataframes.append(format_distance_freq(additional_file))
+        labels.append(additional_label)
 
     return figures.create_line_plot(
         dataframes=dataframes,
@@ -62,7 +88,7 @@ def plot_tlfd(observed_file, ylabel, modeled_file=None, ax=None):
         labels=labels,
         xlabel="Distance (miles)",
         ylabel=ylabel,
-        ylabel_format="{x:.1%}",
+        ylabel_format=PercentFormatter(1.0),
         linestyle="-",
         marker="o",
         ax=ax,

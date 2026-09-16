@@ -78,7 +78,7 @@ x = np.linspace(0.01, 25, 250)
 fig, ax = plt.subplots()
 for label, vot, m in zip(INCOME_LABELS, MEAN_VOT, MU):
     dist = stats.lognorm(s=SIGMA, scale=np.exp(m))
-    ax.plot(x, dist.pdf(x), label=f"{label} (Mean: ${vot:.2f}/hr")
+    ax.plot(x, dist.pdf(x), label=f"{label} (Mean: ${vot:.2f}/hr)")
 ax.set_xlabel("Value of Time ($/hr)")
 ax.set_ylabel("Probability")
 ax.legend(title="Income")

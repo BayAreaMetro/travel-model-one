@@ -35,7 +35,7 @@ ACS 2023 PUMS data was used to establish targets for the county-to-county commut
 
 ```
 
-Calibration of the mandatory location choice model focused on matching the observed 
+Comparing Targets between 1.5.2 and 1.7 
 
 ```{python}
 #| label: fig-work-tlfd
@@ -43,10 +43,14 @@ Calibration of the mandatory location choice model focused on matching the obser
 
 # TODO: Config with BATS directory? For all the BATS observed processing?
 observed_work_file = config.BATS_DIR / "workTLFD.csv"
+previous_observed_work_file = config.CHTS_DIR / "workTLFD.csv"
 
 uwsl.plot_tlfd(
    observed_work_file,
-   "Percent of Workers"
+   "Percent of Workers",
+   "Observed",
+   previous_observed_work_file,
+   "1.5.2 Observed"
    )
 
 ```
@@ -57,16 +61,21 @@ County to County Flows
 Distance Frequency Distributions
 
 #### School Location
+<Comparison between previous targets (1.5.2) and curent targets>
 
 ```{python}
 #| label: fig-univ-tlfd
 #| fig-cap: "University Location Origin-Destination Distance Frequency Distributions"
 
 observed_univ_file = config.BATS_DIR / "univTLFD.csv"
+previous_observed_univ_file = config.CHTS_DIR / "univTLFD.csv"
 
 uwsl.plot_tlfd(
    observed_univ_file,
-   "Percent of University Students"
+   "Percent of University Students",
+   "Observed",
+   previous_observed_univ_file,
+   "1.5.2 Observed"
    )
 
 ```
@@ -76,10 +85,16 @@ uwsl.plot_tlfd(
 #| fig-cap: "School Location Origin-Destination Distance Frequency Distributions"
 
 observed_school_file = config.BATS_DIR / "schoolTLFD.csv"
+previous_observed_school_file = config.CHTS_DIR / "schlTLFD.csv"
 
 uwsl.plot_tlfd(
    observed_school_file,
-   "Percent of School Students"
+   "Percent of School Students",
+   "Observed",
+   previous_observed_school_file,
+   "1.5.2 Observed"
    )
 
 ```
+
+Calibration of the mandatory location choice model focused on matching the observed 
