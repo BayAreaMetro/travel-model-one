@@ -1,5 +1,7 @@
 /data
-/models/assignment
+/models/trip_distribution
+/model/truck_trip_generation
+/model/evaluation
 
 # Cube log files 
 *.PRN
@@ -12,3 +14,4 @@ __pycache__/
 .python-version
 
 **/assigned_volumnes/
+

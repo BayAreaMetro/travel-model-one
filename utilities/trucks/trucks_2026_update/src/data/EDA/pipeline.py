@@ -168,7 +168,7 @@ def run_eda():
     None
     """
     tables_outpath = Path("data/interim/eda/")
-    figures_outpath = Path("reports/eda/")
+    figures_outpath = Path("docs/assets/eda/")
     tables_outpath.mkdir(parents=True, exist_ok=True)
     figures_outpath.mkdir(parents=True, exist_ok=True)
 
