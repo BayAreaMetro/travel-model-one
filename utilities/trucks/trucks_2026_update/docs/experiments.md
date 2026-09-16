@@ -7,7 +7,7 @@ This document summarizes the experimental model runs conducted during the TM-1.7
 
 All experiments were performed as incremental modifications to a 2023 TM-1.6 baseline model run ([2023_TM161_IPA_35](https://mtcdrive.box.com/s/rrgnyrc73uogqvxtzvkihxz8cqlyeg67)). Each experiment isolates one or more model changes to quantify their effect on validation performance.
 
-Experiment configurations, scenario definitions, and model scripts are maintained [travel_model_scenarios.yaml](../configs/travel_model_scenarios.yaml). The scenario configuration files document the specific model components, inputs, and scripts used for each experiment and provide a reproducible record of the testing process. 
+Experiment configurations, scenario definitions, and model scripts are maintained [experiments_configs.yaml](../configs/experiments_configs.yaml). The scenario configuration files document the specific model components, inputs, and scripts used for each experiment and provide a reproducible record of the testing process. 
 
 The table below summarizes the progression of experiments evaluated during development of TM-1.7 and identifies the model components modified in each scenario.
 
