@@ -48,6 +48,10 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
     output_directory = model_directory / request.config.output_directory
 
     if request.config.source == "network_wrangler":
+        link_directory = output_directory / "links"
+        connector_directory = output_directory / "ntlegs"
+        fare_directory = output_directory / "fares"
+        factor_directory = output_directory / "factors"
         inventory = NetworkWranglerInputReader().inspect(model_directory)
         inventory_path = output_directory / "source_inventory.json"
         write_inventory(inventory, inventory_path)
@@ -77,18 +81,18 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
             operators,
             output_directory,
         )
-        topology = TopologyWriter().write(link_source, lines, output_directory)
-        connectors = ConnectorWriter().write(connector_source, output_directory)
+        topology = TopologyWriter().write(link_source, lines, link_directory)
+        connectors = ConnectorWriter().write(connector_source, connector_directory)
         fares = FareWriter().write(
             fare_source,
             modes,
             used_transit_modes,
-            output_directory,
+            fare_directory,
         )
         maximum_stop_node = max(abs(node) for line in lines for node in line.nodes)
         factors = FactorWriter().write(
             tm1_factor_source(),
-            output_directory,
+            factor_directory,
             maximum_stop_node,
             fares.fare_system_by_mode,
         )
