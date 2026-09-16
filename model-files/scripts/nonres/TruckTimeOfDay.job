@@ -2,30 +2,41 @@
 ;
 ; TruckTimeOfDay.job
 ;
-; TP+ script to segment daily estimates of truck flows into time-period-specific flows.  The time periods are: 
-; early AM, 3 am to 6 am; AM peak, 6 am to 10 am; midday, 10 am to 3 pm; PM peak, 3 pm to 7 pm; and evening, 
-; 7 pm to 3 am the next day. The four truck types are: very small trucks (two-axle, four-tire), small trucks 
-; (two-axle, six-tire), medium trucks (three-axle), and large or combination (four or more axle) trucks.
+; TP+ script to segment daily estimates of truck flows into time-period-specific flows.  The time periods are:
+; early AM, 3 am to 6 am; AM peak, 6 am to 10 am; midday, 10 am to 3 pm; PM peak, 3 pm to 7 pm; and evening,
+; 7 pm to 3 am the next day.  The four truck types are: very small trucks (two-axle, four-tire), small trucks
+; (two-axle, six-tire), medium trucks (three-axle), and large or combination (four-or-more-axle) trucks.
 ;
-; The diurnal factors are taken from the BAYCAST-90 model with adjustments made during calibration to the very
-; small truck values to better match counts. 
+; As part of the TM-1.7 Freight Model Update, the diurnal (time-of-day) factors were re-estimated from observed
+; truck counts: Caltrans 2018 counts, which provide FHWA vehicle classification, and Bay Area Toll Authority
+; (BATA) 2023 bridge-level counts.  The BATA 2023 2-axle observations were excluded from the estimation because
+; BATA reports a single two-axle class that conflates passenger vehicles, very small trucks, and small trucks. For
+; each truck class, the factors are daily-to-period shares that sum to 1.0 across the five periods.  See the truck
+; time-of-day calibration memo (reports/tod/truck_tod_report.pdf) and notebooks/tod.ipynb in
+; utilities/trucks/trucks_2026_update for the estimation and the TM-1.6 vs TM-1.7 comparison.
 ;
-; Input:   A four-table production/attraction trip table matrix of daily class-specific truck trips (in units 
-;          of trips x 100, to be consistent with the previous application)with a table for (a) very small trucks,
-;          (b) small trucks, (c) medium trucks, and (d) large trucks.
+; Previously, the diurnal factors were taken from the BAYCAST-90 model, with calibration adjustments to the very
+; small truck values to better match counts.  The TM-1.7 re-estimation described above supersedes those factors.
 ;
-; Output: Five, time-of-day-specific trip table matrices, each containing the following four tables: (a) vstruck,
+; Input:  (1) A four-table production/attraction trip table matrix of daily class-specific truck trips (in units
+;             of trips x 100, to be consistent with the outputs of the trip distribution model) with a table
+;             for (a) very small trucks, (b) small trucks, (c) medium trucks, and (d) large trucks.
+;         (2) Daily internal-external (IX) truck trips from IxTimeOfDay.job.
+;         (3) Daily special-generator truck trips from SpecialGeneratorTruckTripDistribution.job.
+;
+; Output: Five time-of-day-specific trip table matrices, each containing the following four tables: (a) vstruck,
 ;         for very small trucks, (b) struck, for small trucks, (c) mtruck, for medium trucks, and (d) ctruck,
-;         for combination truck. 
+;         for combination trucks.
 ;
-; Notes:  (1) These scripts do not update the BAYCAST truck model; rather, the model is simply implemented in a
-;             manner consistent with the Travel Model One implementation
+; Notes:  (1) The diurnal factors were re-estimated for TM-1.7 from observed Caltrans (2018) and BATA (2023)
+;             truck counts; the very small and small classes rely primarily on Caltrans (2018), since BATA
+;             cannot separate the two two-axle classes.
 ;
 ; See also: (1) TruckTripDistribution.job, which applies a gravity distribution model and precedes this script.
 ;           (2) TruckTollChoice.job, which applies a toll/no toll logit model and follows this script.
 ;
-; version:  Travel Model One
-; authors:  dto (2011 06 24); jh (2010)
+; version:  Travel Model One (1.7+)
+; authors:  Juan Caicedo — WSP (2026 08 10); dto (2011 06 24); jh (2010)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -39,56 +50,60 @@ run pgm = matrix
    ; Daily Ix truck trips from IxTimeOfDay.job
    filei mati[2] = nonres\ixDailyx4_truck.tpp
 
+   ; Added in Agu 2026 as part of TM-1.7 Updates
+   ; Daily trips from SpecialGeneratorTruckTripDistribution
+   filei mati[3] = nonres\DailySGTruckTrips.tpp
+
    ; Time-of-day specific truck tables
-   fileo mato[1] = nonres\TripsTrkEAx.tpp, mo=11-14, name = vstruck, struck, mtruck, ctruck
-   fileo mato[2] = nonres\TripsTrkAMx.tpp, mo=15-18, name = vstruck, struck, mtruck, ctruck
-   fileo mato[3] = nonres\TripsTrkMDx.tpp, mo=19-22, name = vstruck, struck, mtruck, ctruck
-   fileo mato[4] = nonres\TripsTrkPMx.tpp, mo=23-26, name = vstruck, struck, mtruck, ctruck
-   fileo mato[5] = nonres\TripsTrkEVx.tpp, mo=27-30, name = vstruck, struck, mtruck, ctruck
+   fileo mato[1] = nonres\TripsTrkEAx.tpp, mo=11-14, name = vstruck, struck, mtruck, ctruck DEC=4*S
+   fileo mato[2] = nonres\TripsTrkAMx.tpp, mo=15-18, name = vstruck, struck, mtruck, ctruck DEC=4*S
+   fileo mato[3] = nonres\TripsTrkMDx.tpp, mo=19-22, name = vstruck, struck, mtruck, ctruck DEC=4*S
+   fileo mato[4] = nonres\TripsTrkPMx.tpp, mo=23-26, name = vstruck, struck, mtruck, ctruck DEC=4*S
+   fileo mato[5] = nonres\TripsTrkEVx.tpp, mo=27-30, name = vstruck, struck, mtruck, ctruck DEC=4*S
    
    ; convert the P/A matrices to O/D (and scale DailyTruckTrips by 100, as distribution outputs trips x 100)
    mw[1] = (0.5 * mi.1.1 + 0.5 * mi.1.1.T)/100.0 + (0.5 * mi.2.vsm_daily + 0.5*mi.2.vsm_daily.T)
    mw[2] = (0.5 * mi.1.2 + 0.5 * mi.1.2.T)/100.0 + (0.5 * mi.2.sml_daily + 0.5*mi.2.sml_daily.T)
-   mw[3] = (0.5 * mi.1.3 + 0.5 * mi.1.3.T)/100.0 + (0.5 * mi.2.med_daily + 0.5*mi.2.med_daily.T)
-   mw[4] = (0.5 * mi.1.4 + 0.5 * mi.1.4.T)/100.0 + (0.5 * mi.2.lrg_daily + 0.5*mi.2.lrg_daily.T)
+   mw[3] = (0.5 * mi.1.3 + 0.5 * mi.1.3.T)/100.0 + (0.5 * mi.2.med_daily + 0.5*mi.2.med_daily.T) + (0.5 * mi.3.medium + 0.5*mi.3.medium.T)/100.0
+   mw[4] = (0.5 * mi.1.4 + 0.5 * mi.1.4.T)/100.0 + (0.5 * mi.2.lrg_daily + 0.5*mi.2.lrg_daily.T) + (0.5 * mi.3.large + 0.5*mi.3.large.T)/100.0
    
    ; apply class-specific diurnal factors - very small truck factors adjusted during calibration
    
    ;     - early AM
    ;          - very small trucks
-   mw[11] = 0.0235 * mw[1]     
+   mw[11] = 0.0916 * mw[1]     
    
    ;          - small trucks
-   mw[12] = 0.0765 * mw[2]      
+   mw[12] = 0.0967 * mw[2]      
    
    ;          - medium trucks
-   mw[13] = 0.0665 * mw[3]     
+   mw[13] = 0.0953 * mw[3]     
    
    ;          - combination trucks
-   mw[14] = 0.1430 * mw[4]      
+   mw[14] = 0.1340 * mw[4]      
    
    ;     - AM peak
-   mw[15] = 0.0000 * mw[1]      
-   mw[16] = 0.2440 * mw[2]      
-   mw[17] = 0.2930 * mw[3]      
-   mw[18] = 0.2320 * mw[4] 
+   mw[15] = 0.2379 * mw[1]      
+   mw[16] = 0.2713 * mw[2]      
+   mw[17] = 0.3252 * mw[3]      
+   mw[18] = 0.2520 * mw[4] 
    
    ;     - midday
-   mw[19] = 0.6080 * mw[1]     
-   mw[20] = 0.3710 * mw[2]      
-   mw[21] = 0.3935 * mw[3]  
-   mw[22] = 0.3315 * mw[4]      
+   mw[19] = 0.3023 * mw[1]     
+   mw[20] = 0.3442 * mw[2]      
+   mw[21] = 0.3459 * mw[3]  
+   mw[22] = 0.3341 * mw[4]      
    
    ;     - PM peak
-   mw[23] = 0.1980 * mw[1]      
-   mw[24] = 0.2180 * mw[2]     
-   mw[25] = 0.1730 * mw[3]      
-   mw[26] = 0.1750 * mw[4]     
+   mw[23] = 0.2389 * mw[1]      
+   mw[24] = 0.1932 * mw[2]     
+   mw[25] = 0.1500 * mw[3]      
+   mw[26] = 0.1163 * mw[4]     
    
    ;     - evening
-   mw[27] = 0.1705 * mw[1]      
-   mw[28] = 0.0905 * mw[2]      
-   mw[29] = 0.0740 * mw[3]     
-   mw[30] = 0.1185 * mw[4]      
+   mw[27] = 0.1293 * mw[1]      
+   mw[28] = 0.0946 * mw[2]      
+   mw[29] = 0.0836 * mw[3]     
+   mw[30] = 0.1636 * mw[4]      
   
 endrun

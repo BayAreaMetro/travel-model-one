@@ -106,6 +106,14 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\TruckTripDistribution.job
 if ERRORLEVEL 2 goto done
 
+:: Apply the special generator truck trip generation models
+runtpp CTRAMP\scripts\nonres\SpecialGeneratorTruckTripGeneration.job
+if ERRORLEVEL 2 goto done
+
+:: Apply the special generator truck trip distribution models
+runtpp CTRAMP\scripts\nonres\SpecialGeneratorTruckTripDistribution.job
+if ERRORLEVEL 2 goto done
+
 :: Apply the commercial vehicle diurnal factors
 runtpp CTRAMP\scripts\nonres\TruckTimeOfDay.job
 if ERRORLEVEL 2 goto done
