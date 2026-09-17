@@ -15,14 +15,14 @@ cd trn\TransitAssignment.iter%ITER%
 echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
 :: Prepare the highway network for use by the transit network
-runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
+voyagercli ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
 
 :: Create the transit networks
-runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
+voyagercli ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
@@ -34,7 +34,8 @@ echo START TRNASSIGN TransitAsign %DATE% %TIME% >> ..\..\logs\feedback.rpt
 :: Outputs: 
 ::    trnlink[ea|am|md|pm|ev]_[wlk|drv]_[loc|lrf|exp|hvy|com]_[wlk|drv].[csv,dbf]
 ::    trnline[ea|am|md|pm|ev]_[wlk|drv]_[loc|lrf|exp|hvy|com]_[wlk|drv].csv
-runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
+voyagercli ..\..\CTRAMP\scripts\assign\TransitAssign.job
+
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   echo ERRORLEVEL is %ERRORLEVEL%
@@ -46,7 +47,7 @@ echo START TRNASSIGN TransitSkims %DATE% %TIME% >> ..\..\logs\feedback.rpt
 :: And skims
 :: Outputs:
 ::    trnskm[ea|am|md|pm|ev]_[wlk|drv]_[loc|lrf|exp|hvy|com|trn]_[wlk|drv].tpp
-runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
+voyagercli ..\..\CTRAMP\scripts\skims\TransitSkims.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   echo ERRORLEVEL is %ERRORLEVEL%
@@ -56,7 +57,7 @@ if ERRORLEVEL 2 (
 :: Apply Regional Transit Fare Strategy
 :: This file should only be present if the Strategy is meant to be applied
 if exist "..\..\CTRAMP\scripts\skims\apply_regional_transit_fares_to_skims.job" (
-  runtpp "..\..\CTRAMP\scripts\skims\apply_regional_transit_fares_to_skims.job"
+  voyagercli "..\..\CTRAMP\scripts\skims\apply_regional_transit_fares_to_skims.job"
   if ERRORLEVEL 2 (
     set TRN_ERRORLEVEL=2
     echo ERRORLEVEL is %ERRORLEVEL%

@@ -1,0 +1,16 @@
+;;<<PT>><<LINE>>;;
+; Source: tests/fixtures/minimal_trn/example.tpl
+; important node note
+LINE NAME="TEST_BUS",
+    COLOR=4,
+    HEADWAY[1]=10.00,
+    HEADWAY[2]=12.35,
+    HEADWAY[3]=15.00,
+    HEADWAY[4]=20.00,
+    HEADWAY[5]=30.00,
+    LONGNAME="Test bus route",
+    MODE=11,
+    ONEWAY=T,
+    OPERATOR=7,
+ N=1, 2, -3,
+    ACCESS=2, 1

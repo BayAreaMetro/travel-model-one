@@ -1,0 +1,17 @@
+[project]
+name = "trnbuild-pt-converter"
+version = "0.1.0"
+description = "Convert TRNBUILD inputs to OpenPaths PT inputs."
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.coverage.run]
+branch = true
+source = ["pt_converter"]
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"

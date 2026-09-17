@@ -1,0 +1,2 @@
+; commuter rail source marker
+PNR NODE=600-601 TIME=1.00 COST=0.75 ZONES=1-1454 ; commuter rail
