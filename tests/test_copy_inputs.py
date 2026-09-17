@@ -86,6 +86,39 @@ def test_overwrite_is_declared_by_the_entry_that_needs_it(tree: Path) -> None:
     assert (tree / "out" / "ixDaily.tpp").read_text() == "ix"
 
 
+def test_error_if_exists_refuses_a_populated_destination(tree: Path) -> None:
+    """A publish entry lands once; finding it already there is a mistake, not a merge."""
+    entry = {"from": str(tree / "src_a"), "to": str(tree / "out"), "error_if_exists": True}
+    _run(tree, {"archive": entry})
+
+    with pytest.raises(FileExistsError, match="already exists"):
+        _run(tree, {"archive": entry})
+
+
+def test_error_if_exists_allows_an_empty_or_absent_destination(tree: Path) -> None:
+    """The ordinary case: nothing there yet, so publishing proceeds normally."""
+    (tree / "out").mkdir()  # exists, but empty -- not "already published"
+
+    _run(tree, {
+        "archive": {
+            "from": str(tree / "src_a"), "to": str(tree / "out"), "error_if_exists": True,
+        },
+    })
+
+    assert (tree / "out" / "ixDaily.tpp").is_file()
+
+
+def test_overwrite_and_error_if_exists_conflict(tree: Path) -> None:
+    """Clobber it, or refuse if it is there -- not both at once."""
+    with pytest.raises(ValueError, match="not both"):
+        _run(tree, {
+            "archive": {
+                "from": str(tree / "src_a"), "to": str(tree / "out"),
+                "overwrite": True, "error_if_exists": True,
+            },
+        })
+
+
 def test_include_selects_and_exclude_wins(tree: Path) -> None:
     """The warmstart entry: only *.tpp, minus the two ixDaily files.
 

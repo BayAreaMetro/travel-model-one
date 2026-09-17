@@ -50,6 +50,11 @@ STEPS: dict[str, Callable] = {
     "copy_inputs": setup_step.run,
     "copy_project_inputs": setup_step.run,
     "copy_input_to_working": setup_step.run,
+    # Same from/to mechanism as copy_inputs, direction reversed -- INPUT/ out to
+    # wherever a project archives it, as soon as copy_inputs/copy_project_inputs
+    # finish writing it rather than waiting for publish_outputs at the end. Empty
+    # here on purpose, filled in the same way as copy_project_inputs/publish_outputs.
+    "publish_inputs": setup_step.run,
     # Same from/to mechanism, one file: main/ShadowPricing_7.csv -> logsums/
     # shadowPricing_7.csv, RunLogsums.bat's own "should come from baseline run" copy.
     "stage_shadow_pricing_for_logsums": setup_step.run,

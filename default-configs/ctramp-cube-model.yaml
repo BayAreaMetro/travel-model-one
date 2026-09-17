@@ -188,6 +188,13 @@ steps:
   # copy_inputs, under a name reserved for exactly this.
   - copy_project_inputs: {}
 
+  # INPUT/ is complete the moment copy_inputs/copy_project_inputs finish writing
+  # it -- nothing later ever touches it -- so it is published here rather than
+  # waiting for publish_outputs at the very end: a run that fails hours later
+  # still leaves its input record behind.  Empty here on purpose, same mechanism
+  # as publish_outputs, filled in by a project.
+  - publish_inputs: {}
+
   # RunModel.bat 172-178.  A distinct step from copy_inputs above -- that one reaches
   # outside the run for its sources; this one reshuffles what copy_inputs already
   # staged into INPUT/.  Same entry shape, same mechanism (src/tm1/steps/setup.py),

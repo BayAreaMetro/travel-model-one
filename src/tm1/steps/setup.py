@@ -16,6 +16,7 @@ An entry::
       include: ["*.tpp"]        # optional; only these, matched against the path
       exclude: ["ixDaily*.tpp"] #   relative to `from`.  exclude wins.
       overwrite: true           # optional; default is never to clobber
+      error_if_exists: true     # optional; refuse instead of merging into `to:`
       variant:                  # optional; {dest name: path relative to `from`},
         tazData.csv: "parking_strategy/tazData_v01.csv"  #   copied on top after
       enabled: true             # optional; false skips the entry entirely
@@ -56,6 +57,12 @@ Nothing is overwritten unless the entry says ``overwrite: true``.  Re-running
 staging therefore never clobbers what a later step built on top of it, and the
 files a strategy deliberately swaps in say so in the config rather than
 depending on a global flag.
+
+``error_if_exists: true`` is the opposite case -- for an entry that must land on
+nothing, not merge with something, such as a publish step's archive copy.  Finding
+``to:`` already there means this destination was published to before (the same
+``--run-number`` reused, or two runs racing for the same one), which is a mistake
+to stop and report, not a reason to continue on top of whatever is already there.
 """
 
 import fnmatch
@@ -72,7 +79,8 @@ log = logging.getLogger(__name__)
 #: Keys an entry may declare.  Anything else is refused by name, so a typo is an
 #: error rather than a silently ignored instruction.
 _ENTRY_KEYS = frozenset(
-    {"from", "to", "include", "exclude", "overwrite", "variant", "concat", "enabled"},
+    {"from", "to", "include", "exclude", "overwrite", "error_if_exists", "variant",
+     "concat", "enabled"},
 )
 
 
@@ -263,6 +271,26 @@ def _check_keys(name: str, entry: dict) -> None:
     if "concat" not in entry and "from" not in entry:
         msg = f"entry {name!r}: needs `from` or `concat`."
         raise ValueError(msg)
+    if entry.get("overwrite") and entry.get("error_if_exists"):
+        msg = f"entry {name!r}: declare `overwrite` or `error_if_exists`, not both."
+        raise ValueError(msg)
+
+
+def _refuse_if_exists(name: str, dest: Path) -> None:
+    """Error out rather than land on top of *dest*, if anything is there already.
+
+    For an entry that must publish once, not merge -- a publish step's archive
+    copy, say. Finding ``to:`` already there means this destination was written
+    to before (the same ``--run-number`` reused, two runs racing for the same
+    one), which is a mistake to stop and report, not something to continue past.
+    """
+    already = any(dest.iterdir()) if dest.is_dir() else dest.exists()
+    if already:
+        msg = (
+            f"entry {name!r}: {dest} already exists -- refusing to publish over "
+            f"it. Remove it, or point `to:` somewhere new."
+        )
+        raise FileExistsError(msg)
 
 
 def run(
@@ -290,6 +318,11 @@ def run(
 
         dest = Path(entry["to"])
         overwrite = bool(entry.get("overwrite", False))
+        if entry.get("error_if_exists"):
+            try:
+                _refuse_if_exists(name, dest)
+            except FileExistsError as exc:
+                raise FileExistsError(f"{step_name} {exc}") from exc
 
         concat = entry.get("concat")
         if concat is not None:

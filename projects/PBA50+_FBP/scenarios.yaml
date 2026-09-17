@@ -78,6 +78,18 @@ steps:
         to: "{run_dir}/CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
         enabled: false                  # run by the apply_regional_transit_fares step
 
+  # Fills in the shared model's `publish_inputs: {}` placeholder: INPUT/'s own
+  # copy out to the archive, split out of publish_outputs below so it lands as
+  # soon as INPUT/ is finished writing rather than waiting for the whole run.
+  # error_if_exists: a --run-number is only ever published once; finding the
+  # archive already there means this number is reused, not that this run's
+  # INPUT/ has changed.
+  - publish_inputs:
+      input_dir:
+        from: "{run_dir}/INPUT"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/INPUT"
+        error_if_exists: true
+
   # T2 fare integration: specific to this project, so not part of the shared
   # pipeline -- inserted right after transit_skims, where trnAssign.bat runs it,
   # via `after:` rather than a shared placeholder.  Off by default; a scenario
@@ -104,9 +116,9 @@ steps:
   # extractkeyfiles + Robocopy to %M_DIR%\OUTPUT, curated the same way rather than
   # archiving the whole run -- hwy/trn/main results, logs, EMFAC/logsums/core
   # summaries/metrics/offmodel (all now produced by this pipeline), and CTRAMP/
-  # and INPUT/ in full (beyond extractkeyfiles' own scope) so this run's code
-  # and inputs are reproducible years later even if the checkout or M-drive
-  # sources have since moved on. Final iteration only for everything else,
+  # in full (beyond extractkeyfiles' own scope) so this run's code is
+  # reproducible years later even if the checkout has since moved on. INPUT/ is
+  # publish_inputs' own step, above. Final iteration only for everything else,
   # matching extractkeyfiles' own scope. Declared last here since it is the
   # shared pipeline's last step too.
   - publish_outputs:
@@ -115,7 +127,6 @@ steps:
         to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}"
         include:
           - "CTRAMP/*"
-          - "INPUT/*"
           - "hwy/iter3/avgload5period*"
           - "trn/trnline*.csv"
           - "trn/trnlink*.dbf"
