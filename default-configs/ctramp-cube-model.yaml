@@ -666,10 +666,16 @@ steps:
   # emissionsLookup.csv) have not been refreshed -- so there is nothing to port;
   # this project's own vmt_vht_metrics (hooks.py) already covers the same ground.
   - quickboards:
-      # Writes straight to trn/ rather than the .bat's write-then-move: the
-      # second argv is quickboards' own output path, not fixed to cwd.
+      # A bare filename, not "trn/quickboards.xls": QuickBoards.jar derives its own
+      # base directory for the ctl's FilePrefix/NodesFile entries from the output
+      # file's own directory, not cwd, so a "trn/" prefix here doubles into every
+      # relative path the ctl declares. RunMetrics.bat avoids this the same way --
+      # a bare name, then its own `move quickboards.xls trn` -- which
+      # stage_quickboards below repeats.
       command: "CTRAMP/scripts/metrics/quickboards.bat"
-      args: ["CTRAMP/scripts/metrics/quickboards.ctl", "trn/quickboards.xls"]
+      args: ["CTRAMP/scripts/metrics/quickboards.ctl", "quickboards.xls"]
+      skip_if_exists: "trn/quickboards.xls"
+  - stage_quickboards:
       skip_if_exists: "trn/quickboards.xls"
   - transit_boardings:
       command: "CTRAMP/scripts/metrics/transit.py"

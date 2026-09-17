@@ -177,6 +177,27 @@ def test_publishing_drops_the_scratch_networks(proj: Path) -> None:
     assert len(list(iter_dir.glob("avgLOAD*.net"))) == len(PERIODS)
 
 
+# --- stage_quickboards -------------------------------------------------------
+
+
+def test_quickboards_moves_into_trn(proj: Path) -> None:
+    """RunMetrics.bat's own `move quickboards.xls trn`, after the bare-name write."""
+    (proj / "quickboards.xls").write_text("summary")
+
+    staging.stage_quickboards(proj, _cfg(proj, "stage_quickboards"), step_name="stage_quickboards")
+
+    assert (proj / "trn" / "quickboards.xls").read_text() == "summary"
+    assert not (proj / "quickboards.xls").exists()  # moved, not copied
+
+
+def test_missing_quickboards_output_names_the_step_that_writes_it(proj: Path) -> None:
+    """A silent skip here would surface much later as a missing trn/quickboards.xls."""
+    with pytest.raises(FileNotFoundError, match="quickboards"):
+        staging.stage_quickboards(
+            proj, _cfg(proj, "stage_quickboards"), step_name="stage_quickboards"
+        )
+
+
 # --- which round a step belongs to -----------------------------------------
 
 

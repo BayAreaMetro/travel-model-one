@@ -17,6 +17,7 @@ Step                         ``RunIteration.bat``
 :func:`stage_loaded_networks`  159-164 -- ``mkdir`` + five ``move``
 :func:`seed_average_networks`  177-181 -- the ``ELSE`` copy
 :func:`publish_networks`     193-200 -- five ``copy`` + ``del x*.net``
+:func:`stage_quickboards`    ``RunMetrics.bat``'s ``move quickboards.xls trn``
 ===========================  ==========================================
 
 :func:`cleanup_logs` is the exception: it runs once, at the very end of the whole
@@ -257,6 +258,32 @@ def cleanup_logs(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  
                 moved += 1
 
     log.info("Moved %d Cube/job log file(s) into %s", moved, log_dir)
+    return None
+
+
+def stage_quickboards(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+    r"""Move ``quickboards.xls`` into ``trn/``, ``RunMetrics.bat``'s own two lines.
+
+    QuickBoards.jar derives its own base directory for the ctl's ``FilePrefix``/
+    ``NodesFile`` entries from the *output* file's own directory, not the process's
+    cwd -- pointing it at ``trn/quickboards.xls`` directly doubles ``trn/`` into
+    every relative path the ctl declares (``trn\trn\trnlink...``, file not found).
+    ``RunMetrics.bat`` never hits this: it passes a bare ``quickboards.xls``, then
+    ``move``s it into ``trn/`` itself once QuickBoards is done. The step above
+    does the same; this is that second line.
+    """
+    run_dir = Path(cfg["run_dir"])
+    source = run_dir / "quickboards.xls"
+    if not source.is_file():
+        msg = (
+            f"quickboards.xls missing in {run_dir}. "
+            f"The quickboards step writes it there; check that it ran."
+        )
+        raise FileNotFoundError(msg)
+    dest = run_dir / "trn" / "quickboards.xls"
+    shutil.move(str(source), str(dest))
+
+    log.info("Moved quickboards.xls into %s", dest.parent)
     return None
 
 
