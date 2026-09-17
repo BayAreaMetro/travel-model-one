@@ -104,7 +104,7 @@ def format_tour_mode_file(file, mode_map, mode_col="tour_mode") -> pd.DataFrame:
     return df
 
 
-def build_mode_purpose_table(df: pd.DataFrame, purpose: str, mode_col="tour_mode", as_share: bool = False):
+def build_tour_mode_purpose_table(df: pd.DataFrame, purpose: str, mode_col="tour_mode", as_share: bool = False):
     """Filter tour mode choice by purpose and pivot auto_sufficiency into columns
     
     Parameters
@@ -144,3 +144,40 @@ def build_mode_purpose_table(df: pd.DataFrame, purpose: str, mode_col="tour_mode
     formatted = formatted.rename(columns={mode_col: "Tour Mode"})
 
     return formatted
+
+
+def format_trip_mode_file(file, mode_map):
+    df = pd.read_csv(file)
+
+    df["tour_mode"] = df["tour_mode"].map(mode_map)
+    df["tour_mode_label"] = df["tour_mode"].map(CANONICAL_TOUR_MODE)
+
+    df["trip_mode"] = df["trip_mode"].map(mode_map)
+    df["trip_mode_label"] = df["trip_mode"].map(CANONICAL_TOUR_MODE)
+
+    return df
+
+def build_trip_mode_purpose_table(df, purpose: str, as_share: bool = False):
+    df_purpose = df[df["simple_purpose"].str.lower() == purpose]
+
+    pivoted = df_purpose.pivot_table(
+        index = "trip_mode",
+        columns = "tour_mode",
+        values = "num_trips_weighted",
+        aggfunc = "sum",
+        fill_value = 0
+    )
+
+    if as_share:
+            pivoted = tables.to_shares(pivoted, axis = 0)
+            formatted = tables.format_numeric(pivoted, num_fmt=".1%")
+    else:
+        formatted = tables.format_numeric(pivoted,num_fmt=",.0f")
+
+    formatted = formatted.reset_index()
+    formatted["trip_mode"] = formatted["trip_mode"].map(CANONICAL_TOUR_MODE)
+    formatted = formatted.rename(columns = CANONICAL_TOUR_MODE)
+    formatted = formatted.rename(columns={"trip_mode": "Trip Mode"})
+
+    return formatted
+
