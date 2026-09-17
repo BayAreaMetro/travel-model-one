@@ -45,8 +45,7 @@ src/
       overrides.py    215    how a scenario changes a value, and whether it resolves
 
     run/                     DOING ONE RUN                    <- RunModel.bat
-      directory.py     83    where does this run go?
-      fingerprint.py   87    has anything changed since last time?
+      directory.py     83    where does {scenario}_NNN go, and is it already there?
       receipt.py       81    what ran, on what machine, how it ended
       prepare.py      132    project + scenario -> a run ready to start
       iterations.py   381    which steps, which round, which of them you asked for

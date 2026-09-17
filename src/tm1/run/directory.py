@@ -1,9 +1,10 @@
 """Where does this run go?
 
-A run directory is ``{runs_root}/{scenario}_{NNN}``. ``NNN`` is the run
-iteration -- the same scenario run again after an input is refreshed -- and it
-exists so that nothing is ever deleted or moved aside to make room. A land use
-update gives you ``_002`` beside an intact ``_001``.
+A run directory is ``{runs_root}/{scenario}_{NNN}``. ``NNN`` -- the run number
+-- is given with ``--run-number``, not guessed by this tool.
+
+Nothing is ever deleted or moved aside to make room: a land use update is
+``--run-number 2`` beside an intact ``_001``, never a rewrite of it.
 
 No project segment: every run on a machine sits flat under one ``runs_root``,
 visible with one directory listing instead of one per project -- both to see
@@ -11,20 +12,10 @@ what has run recently and to find what is safe to archive off and delete when
 disk space runs short. The cost is that every scenario ID is unique across
 every project sharing a ``runs_root``, not just within its own project, so two
 projects must not declare the same ID.
-
-Which one a run uses is decided by its fingerprint::
-
-    the newest -NNN whose fingerprint matches and is not complete   -> resume it
-    otherwise                                                       -> max + 1
-
-So re-running an unchanged scenario continues where it stopped, and running a
-changed one starts somewhere new rather than half-overwriting the old result.
 """
 
 import re
 from pathlib import Path
-
-from tm1.run.receipt import read_receipt
 
 #: ``{scenario}_{NNN}``.
 _RUN_DIR = re.compile(r"^(?P<scenario>.+)_(?P<run>\d{3})$")
@@ -48,53 +39,43 @@ def existing_runs(project_root: Path, scenario: str) -> list[tuple[int, Path]]:
     return sorted(out)
 
 
-#: What :func:`allocate` decided, and what the caller should do about it.
-NEW = "new"          #: nothing matching on disk -- a fresh directory was made
-RESUME = "resume"    #: same fingerprint, unfinished -- continue where it stopped
-COMPLETE = "complete"  #: same fingerprint, already finished -- there is nothing to do
+#: What :func:`resolve` found, and what the caller should do about it.
+NEW = "new"          #: nothing there yet -- a fresh directory was made
+RESUME = "resume"    #: already there -- *resume* said to continue it
 
 
-def allocate(
-    project_root: Path, scenario: str, fingerprint_: str, *, rerun: bool = False
-) -> tuple[int, Path, str]:
-    """The run directory for this scenario, as ``(run_no, path, state)``.
+def resolve(
+    project_root: Path, scenario: str, run_number: int, *, resume: bool
+) -> tuple[Path, str]:
+    """``{scenario}_{run_number:03d}``, and whether it already existed.
 
-    Reuses the newest run whose fingerprint matches and which did not finish --
-    that is a resume, and it is what makes ``--resume-at`` and the per-step
-    ``skip_if_exists`` sentinels mean what they say.
+    Existence is the only question asked here -- not what is inside, not
+    whether the config that made it matches this one:
 
-    A matching run that *did* finish is reported as :data:`COMPLETE` rather than
-    reopened or duplicated: re-running an unchanged scenario by accident would
-    otherwise start a second hundred-gigabyte run and take fifteen hours to say
-    what it could have said immediately.  *rerun* is how a caller asks for one
-    anyway, and it lands on a fresh number so the finished result stays intact.
-
-    Anything else allocates a fresh number, so a changed scenario never lands half
-    on top of an old result.
+    - already there, and *resume* -> :data:`RESUME`, used as is.
+    - already there, and not *resume* -> an error. Running the full pipeline
+      into a directory something has already written to would not fail --
+      it would just silently mix two attempts together.
+    - nothing there, and *resume* -> an error. There is nothing to resume.
+    - nothing there, and not *resume* -> a fresh directory, created here.
     """
-    runs = existing_runs(project_root, scenario)
-    for run_no, path in reversed(runs):
-        receipt = read_receipt(path)
-        if receipt is None or receipt.get("fingerprint") != fingerprint_:
-            continue
-        if receipt.get("status") == "complete":
-            if not rerun:
-                return run_no, path, COMPLETE
-            break
-        return run_no, path, RESUME
-
-    run_no = (runs[-1][0] + 1) if runs else 1
-    path = Path(project_root) / f"{scenario}_{run_no:03d}"
-    # Exclusive create: two machines forcing the same stale scenario at once must
-    # not both believe they own the number.  Never check-then-create.
-    while True:
-        try:
-            path.mkdir(parents=True, exist_ok=False)
-        except FileExistsError:
-            run_no += 1
-            path = Path(project_root) / f"{scenario}_{run_no:03d}"
-            continue
-        return run_no, path, NEW
+    path = Path(project_root) / f"{scenario}_{run_number:03d}"
+    exists = path.is_dir() and any(path.iterdir())
+    if exists and not resume:
+        msg = (
+            f"{path} already has a run in it. Pass --resume-at to continue it, "
+            f"or a different --run-number to start somewhere new."
+        )
+        raise ValueError(msg)
+    if not exists and resume:
+        state = "missing" if not path.is_dir() else "empty"
+        msg = (
+            f"--resume-at needs a run already under way; {path} is {state}. "
+            f"Drop --resume-at to start run {run_number:03d} fresh."
+        )
+        raise ValueError(msg)
+    path.mkdir(parents=True, exist_ok=True)
+    return path, (RESUME if exists else NEW)
 
 
 def check_length(run_dir: Path) -> None:

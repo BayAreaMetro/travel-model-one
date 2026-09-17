@@ -58,13 +58,13 @@ Setup (installing `uv` and the project) is in the top-level
 [README.md](../README.md#setup) -- one copy, so the two cannot drift apart.
 
 ```bash
-uv run tm1 run PBA50+_FBP
+uv run tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1
 ```
 
 To report on a run, from any shell, during it or after it:
 
 ```bash
-uv run tm1 status PBA50+_FBP
+uv run tm1 status PBA50+_FBP --scenario 2050_TM162_FBP_Plan
 ```
 
 To list the scenarios a project declares and check that the project is runnable:
@@ -77,7 +77,7 @@ A project is a directory under `projects/` containing a `scenarios.yaml`. A path
 accepted, so a project may live outside the repository:
 
 ```bash
-uv run tm1 run E:/my_projects/cordon_pricing
+uv run tm1 run E:/my_projects/cordon_pricing --run-number 1
 ```
 
 ### About `uv run`
@@ -92,7 +92,7 @@ equivalent:
 
 ```bash
 .venv\Scripts\activate        # Windows
-tm1 run PBA50+_FBP           # no prefix needed from here on
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1   # no prefix needed from here on
 ```
 
 The remainder of this document writes `tm1 …` without the prefix. Add `uv run` in front
@@ -106,21 +106,21 @@ A run can be interrupted by a lost Cube licence, an unavailable network path, or
 restart. The run directory survives, and completed steps remain completed.
 
 ```bash
-tm1 status PBA50+_FBP        # what ran, what failed, and how to resume
+tm1 status PBA50+_FBP --scenario 2050_TM162_FBP_Plan        # what ran, what failed, and how to resume
 ```
 
 `status` reports the command that resumes the run, normally one of:
 
 ```bash
-tm1 run PBA50+_FBP --resume-at hwy_assign
-tm1 run PBA50+_FBP --resume-at 2:hwy_assign   # when the step runs in several iterations
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at hwy_assign
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at 2:hwy_assign   # when the step runs in several iterations
 ```
 
 The named step re-runs from its beginning, never part-way through, and every step before
 it is skipped. `--until` is the converse; the two combine to run any contiguous slice:
 
 ```bash
-tm1 run PBA50+_FBP --until 0:publish_networks   # just the warm start
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --until 0:publish_networks   # just the warm start
 ```
 
 ---
@@ -418,7 +418,7 @@ Ladder and matrix generate IDs from the `id:` template, with two consequences:
 
 ```bash
 tm1 scenarios my_project           # what the project declares, and whether it resolves
-tm1 run my_project --scenario NOPK-2035
+tm1 run my_project --scenario NOPK-2035 --run-number 1
 ```
 
 ---

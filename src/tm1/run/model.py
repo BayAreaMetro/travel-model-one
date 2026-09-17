@@ -94,7 +94,6 @@ from tm1 import add_run_logfile, fmt_elapsed, remove_run_logfile
 from tm1.project import scenarios as scenarios_mod
 from tm1.project.config import load_config
 from tm1.project.overrides import validate as validate_scenarios
-from tm1.run import directory as run_directory
 from tm1.run import receipt as run_receipt
 from tm1.run.iterations import (
     apply_resume,
@@ -245,14 +244,6 @@ def _check_scenarios(config_dir: Path) -> None:
         raise ValueError(msg)
 
 
-class AlreadyCompleteError(Exception):
-    """Raised when a run is asked for that has already finished unchanged.
-
-    Its own type so the CLI can report it as an ordinary answer -- the run is
-    done -- rather than as a failure with a traceback.
-    """
-
-
 def _begin_run(config_dir: Path, kwargs: dict) -> tuple[PreparedRun, str]:
     """Settle which scenario runs where, and stamp the directory before anything else.
 
@@ -266,17 +257,15 @@ def _begin_run(config_dir: Path, kwargs: dict) -> tuple[PreparedRun, str]:
     say which one they mean.
     """
     _check_scenarios(config_dir)
+    run_number = kwargs.get("run_number")
+    if run_number is None:
+        msg = "tm1 run needs --run-number: which {scenario}_NNN this run uses or continues."
+        raise ValueError(msg)
     prepared = prepare_run(
-        config_dir, kwargs.get("scenario"), rerun=bool(kwargs.get("rerun")),
+        config_dir, kwargs.get("scenario"),
+        run_number=int(run_number), resume=bool(kwargs.get("resume_at")),
     )
     label = f"{config_dir.name}:{prepared.run_dir.name}"
-    if prepared.state == run_directory.COMPLETE:
-        msg = (
-            f"{label} is already complete, and nothing has changed since it ran:\n"
-            f"  {prepared.run_dir}\nPass --rerun to run it again anyway, which "
-            f"writes a new run beside this one rather than over it."
-        )
-        raise AlreadyCompleteError(msg)
     _open_run(config_dir, prepared, label, kwargs.get("base_model_dir"))
     return prepared, label
 
@@ -328,7 +317,6 @@ def _open_run(
         project=config_dir.name,
         scenario=prepared.scenario.id,
         run=prepared.run_no,
-        fingerprint=prepared.fingerprint,
         machine=run_receipt.machine_name(),
         pid=os.getpid(),
         started=datetime.now().astimezone().isoformat(timespec="seconds"),

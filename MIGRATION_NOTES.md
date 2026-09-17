@@ -161,14 +161,17 @@ no launcher script to keep in sync. The project argument takes a name under `pro
 or a path, so a project can live outside the repo.
 
 ```
-tm1 run PBA50+_FBP                        # the whole pipeline
-tm1 run PBA50+_FBP --steps assignment     # one step
-tm1 run PBA50+_FBP --iterations 3         # override iterate.count
-tm1 run E:/runs/one_off                         # a project outside the repo
-tm1 run PBA50+_FBP --slack verbose
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1               # the whole pipeline
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --steps assignment     # one step
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --iterations 3         # override iterate.count
+tm1 run E:/runs/one_off --run-number 1          # a project outside the repo
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --slack verbose
 ```
 
-Flags: `--steps`, `--iterations`, `--resume-at`, `--until`, `--slack {off,minimal,verbose}`.
+`--run-number` says which `{scenario}_NNN` this run uses or continues.
+
+Flags: `--run-number`, `--steps`, `--iterations`, `--resume-at`, `--until`,
+`--slack {off,minimal,verbose}`.
 
 `scenarios.yaml` declares the runs a project defines -- explicit, ladder (cumulative)
 or matrix (cross product) -- each a set of overrides addressed by where the value

@@ -35,7 +35,7 @@ full phase plan and current status of each piece.
 
 | Legacy                        | New                                     |
 |-------------------------------|-----------------------------------------|
-| `RunModel.bat`                | `tm1 run PBA50+_FBP`              |
+| `RunModel.bat`                | `tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1` |
 | Hand-edited properties files  | `scenarios.yaml` (its own values) |
 | Paths edited in-place per run | Templated (`{run_dir}`, `{m_drive}`)      |
 
@@ -129,14 +129,20 @@ the default when neither is given.
 ### Running a Project
 
 ```bash
-tm1 run PBA50+_FBP
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1
 
 # a single step
-tm1 run PBA50+_FBP --steps simulate_ctramp
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --steps simulate_ctramp
 
 # a project kept outside the repo
-tm1 run E:/runs/my_project
+tm1 run E:/runs/my_project --run-number 1
 ```
+
+`--scenario` is required whenever a project declares more than one, which
+PBA50+_FBP does (`tm1 scenarios PBA50+_FBP` lists them). `--run-number` says
+which `{scenario}_NNN` this run uses or continues. An unused number starts
+fresh there; an existing one needs `--resume-at` too, or it is refused rather
+than silently mixed with whatever is already in it.
 
 ### Restarting a Failed Run
 
@@ -145,8 +151,8 @@ instead of from the beginning. **The named step runs** — everything before it 
 skipped:
 
 ```bash
-tm1 run PBA50+_FBP --resume-at assignment
-tm1 run PBA50+_FBP --resume-at 2:assignment   # iteration 2's
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at assignment
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at 2:assignment   # iteration 2's
 ```
 
 The `N:` prefix is needed only when a step runs more than once — that is, inside
@@ -159,7 +165,7 @@ You rarely type it: a failure prints the exact command.
 --- Step: assignment ---
 ERROR  Cube job HwyAssign.job failed (exit=2, engine ReturnCode=2)
        Full Cube log: E:/Tests/PBA50+_FBP/_cube_HwyAssign_18004_1785277879.log
-       Resume with: tm1 run PBA50+_FBP --resume-at 2:assignment
+       Resume with: tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at 2:assignment
 ```
 
 And the resumed run states what it is doing before doing any of it:
@@ -173,8 +179,8 @@ Resuming at assignment, iteration 2 of 3
 Two things it deliberately does not do. The named step **re-runs from the start**
 rather than continuing part-way — Cube jobs are not transactional, so a killed
 `HwyAssign` leaves partial `.net` files that only a fresh run overwrites. And it
-refuses to resume into an empty project directory, since "resume" presupposes a
-previous run; without that check it would skip staging and demand, then assign
+refuses to resume a run number with nothing under it, since "resume" presupposes
+a previous run; without that check it would skip staging and demand, then assign
 whatever stale matrices happened to be lying around.
 
 ### Creating a New Project
@@ -186,7 +192,7 @@ whatever stale matrices happened to be lying around.
    see [`default-configs/ctramp-cube-model.yaml`](default-configs/ctramp-cube-model.yaml)
 4. Declare the runs under `scenarios:`; `tm1 scenarios <name>` checks every address,
    including that no `REQUIRED` placeholder is left unresolved
-5. Run with `tm1 run <name>`
+5. Run with `tm1 run <name> --run-number 1`
 
 ### Run Logs
 

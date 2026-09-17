@@ -1,13 +1,9 @@
 """What a run records about itself: what ran, where, and how it ended.
 
 The receipt is a run's own account of itself, written into its ``.tm1/``. It is
-what :mod:`tm1.run.directory` reads to decide whether a directory holds a
-finished run, an interrupted one, or something it does not recognise -- and what
-a shared index across machines will read for the same reason.
+what a shared index across machines would read to say what happened, and where.
 
-The git commit is **recorded, not fingerprinted**. Hashing it would mark every
-scenario in the project stale on every commit, which trains people to ignore the
-signal.
+The git commit is recorded for traceability, not compared to anything.
 """
 
 import json
@@ -39,7 +35,6 @@ class Receipt:
     project: str
     scenario: str
     run: int
-    fingerprint: str
     machine: str
     pid: int
     status: str = "running"
@@ -74,11 +69,7 @@ def read_receipt(run_dir: Path) -> dict | None:
 
 
 def git_state(repo_root: Path) -> dict[str, object]:
-    """The commit a run was launched from, and whether the tree was dirty.
-
-    Recorded for traceability, never fingerprinted: hashing it would mark every
-    scenario in the project stale on every commit.
-    """
+    """The commit a run was launched from, and whether the tree was dirty."""
     def _git(*args: str) -> str | None:
         try:
             out = subprocess.run(  # noqa: S603

@@ -27,10 +27,11 @@ to know what it runs. Shared model configuration lives in
 |---|---|---|
 | `PBA50+_FBP` | Java CT-RAMP | Plan Bay Area 2050+ Final Blueprint |
 
-Run every scenario in a project, or one by name:
+Run a scenario by name -- required whenever a project declares more than one, which
+`PBA50+_FBP` does (`tm1 scenarios PBA50+_FBP` lists them):
 
 ```
-tm1 run PBA50+_FBP
-tm1 status PBA50+_FBP
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1
+tm1 status PBA50+_FBP --scenario 2050_TM162_FBP_Plan
 ```
 

@@ -2,23 +2,27 @@
 
 Usage::
 
-    tm1 run PBA50+_FBP
-    tm1 run PBA50+_FBP --steps setup
-    tm1 run PBA50+_FBP --iterations 3
-    tm1 run PBA50+_FBP --slack verbose
+    tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1
+    tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --steps setup
+    tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --iterations 3
+    tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --slack verbose
+
+``--scenario`` is required whenever a project declares more than one, which
+PBA50+_FBP does (`tm1 scenarios PBA50+_FBP` lists them). ``--run-number`` says
+which ``{scenario}_NNN`` this run uses or continues.
 
 Restart a failed run at the step that died, rather than from the beginning::
 
-    tm1 run PBA50+_FBP --resume-at assignment
-    tm1 run PBA50+_FBP --resume-at 2:assignment
+    tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at assignment
+    tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at 2:assignment
 
 The project also takes a path, so it can live outside the repo::
 
-    tm1 run E:/runs/my_project
+    tm1 run E:/runs/my_project --run-number 1
 
 Ask where a run got to -- from another shell, during or after it::
 
-    tm1 status PBA50+_FBP
+    tm1 status PBA50+_FBP --scenario 2050_TM162_FBP_Plan
 
 List the scenarios a project declares, checking every address resolves::
 
@@ -26,7 +30,7 @@ List the scenarios a project declares, checking every address resolves::
 
 Running outside MTC, or as a consultant with your own machine-specific values::
 
-    tm1 run PBA50+_FBP --env caltrans
+    tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --env caltrans
 """
 
 import argparse
@@ -41,7 +45,7 @@ from tm1 import setup_logging
 from tm1.project import scenarios as scenarios_mod
 from tm1.project.config import ENV_VAR, load_config, missing_env
 from tm1.project.overrides import validate as validate_scenarios
-from tm1.run.model import AlreadyCompleteError, run_model
+from tm1.run.model import run_model
 from tm1.run.prepare import RUNS_ROOT_VAR
 from tm1.status import status
 
@@ -139,20 +143,17 @@ def cmd_run(args: argparse.Namespace) -> None:
     """Execute the 'run' subcommand."""
     repo_root = _find_repo_root()
     config_dir = _resolve_config_dir(_project_arg(args), repo_root)
-    try:
-        run_model(
-            config_dir=config_dir,
-            steps=args.steps or None,
-            slack_level=args.slack,
-            base_model_dir=repo_root,
-            scenario=args.scenario,
-            rerun=args.rerun,
-            iterations=args.iterations,
-            resume_at=args.resume_at,
-            until=args.until,
-        )
-    except AlreadyCompleteError as done:
-        sys.exit(str(done))
+    run_model(
+        config_dir=config_dir,
+        steps=args.steps or None,
+        slack_level=args.slack,
+        base_model_dir=repo_root,
+        scenario=args.scenario,
+        run_number=args.run_number,
+        iterations=args.iterations,
+        resume_at=args.resume_at,
+        until=args.until,
+    )
 
 
 def cmd_scenarios(args: argparse.Namespace) -> None:
@@ -221,20 +222,23 @@ def main() -> None:
     _add_project_argument(run_parser)
     _add_env_argument(run_parser)
     run_parser.add_argument(
+        "--run-number",
+        metavar="NNN",
+        type=int,
+        required=True,
+        help=(
+            "Which {scenario}_NNN this run uses or continues. An existing, "
+            "populated directory needs --resume-at too; a number with nothing "
+            "there yet must not have it."
+        ),
+    )
+    run_parser.add_argument(
         "--scenario",
         metavar="ID",
         default=None,
         help=(
             "Which scenario to run, when the project declares more than one "
             "(`tm1 scenarios <project>` lists them)"
-        ),
-    )
-    run_parser.add_argument(
-        "--rerun",
-        action="store_true",
-        help=(
-            "Run a scenario again even though it finished unchanged; the new run "
-            "lands beside the old one rather than over it"
         ),
     )
     run_parser.add_argument(
