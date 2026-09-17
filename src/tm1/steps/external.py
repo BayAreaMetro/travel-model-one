@@ -305,13 +305,24 @@ def _rscript() -> str:
     r_home = os.environ.get("TM1_R_HOME")
     if not r_home:
         msg = (
-            "An `.R`/`.r` step needs TM1_R_HOME set -- in default-configs/mtc_env.yaml, "
-            "the R install root (e.g. C:/Program Files/R/R-4.3.1), the directory "
-            "holding bin/x64/Rscript.exe. There is no default: R's own install path "
-            "carries its version number, so nothing here can guess it."
+            "An `.R`/`.r` step needs TM1_R_HOME set -- in "
+            "default-configs/environments/<name>.yaml, the R install root (e.g. "
+            "C:/Program Files/R/R-4.2.1), the directory holding bin/x64/Rscript.exe. "
+            "There is no default: R's own install path carries its version number, "
+            "so nothing here can guess it."
         )
         raise ValueError(msg)
-    return str(Path(r_home) / "bin" / "x64" / "Rscript.exe")
+    path = Path(r_home) / "bin" / "x64" / "Rscript.exe"
+    if not path.is_file():
+        msg = (
+            f"TM1_R_HOME is {r_home!r}, but {path} does not exist. Check which R "
+            f"version is actually installed on this machine (this checkout's "
+            f"default-configs/environments/<name>.yaml may assume a different one "
+            f"than this machine has), and correct it there -- or, if it genuinely "
+            f"differs per machine, key it by hostname the same way TM1_RUNS_ROOT is."
+        )
+        raise FileNotFoundError(msg)
+    return str(path)
 
 
 def _argv(program: Path, args: list[str]) -> list[str]:

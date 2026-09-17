@@ -24,8 +24,10 @@ TM1_GAWK_DIR: C:/Program Files/Git/usr/bin
 # R, for the post-processing scripts (core summaries, metrics) that read Cube's
 # CSV exports rather than model anything themselves.  The install root -- the
 # directory holding bin/x64/Rscript.exe -- not Rscript.exe itself, since that is
-# where the legacy scripts' own %R_HOME% points.
-TM1_R_HOME: C:/Program Files/R/R-4.3.1
+# where the legacy scripts' own %R_HOME% points. model3-g has 4.2.1, not the
+# 4.3.1 every other machine was assumed to share -- if another machine turns
+# out to differ too, key this by hostname the same way TM1_RUNS_ROOT is below.
+TM1_R_HOME: C:/Program Files/R/R-4.2.1
 
 # Either this, or SLACK_WEBHOOK_URL as a real environment variable -- never
 # committed, since it is a live credential.  With neither, runs log their

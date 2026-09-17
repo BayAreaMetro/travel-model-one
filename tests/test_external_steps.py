@@ -106,19 +106,21 @@ def test_command_uses_this_interpreter(proj: Path) -> None:
 
 
 def test_an_r_script_runs_under_rscript_with_vanilla(
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """``--vanilla`` matters: without it R reads whatever profile is on the
+    """``--vanilla`` matters.
 
-    machine that happened to start the run, not what the script expects.
+    Without it R reads whatever profile is on the machine that happened to
+    start the run, not what the script expects.
     """
-    monkeypatch.setenv("TM1_R_HOME", "C:/R/R-4.3.1")
+    rscript = tmp_path / "bin" / "x64" / "Rscript.exe"
+    rscript.parent.mkdir(parents=True)
+    rscript.write_text("")
+    monkeypatch.setenv("TM1_R_HOME", str(tmp_path))
 
     argv = external._argv(Path("CoreSummaries.R"), ["arg1"])
 
-    assert argv == [
-        "C:\\R\\R-4.3.1\\bin\\x64\\Rscript.exe", "--vanilla", "CoreSummaries.R", "arg1",
-    ]
+    assert argv == [str(rscript), "--vanilla", "CoreSummaries.R", "arg1"]
 
 
 def test_an_r_script_without_tm1_r_home_names_the_missing_setting(
@@ -128,6 +130,19 @@ def test_an_r_script_without_tm1_r_home_names_the_missing_setting(
     monkeypatch.delenv("TM1_R_HOME", raising=False)
 
     with pytest.raises(ValueError, match="TM1_R_HOME"):
+        external._argv(Path("CoreSummaries.R"), [])
+
+
+def test_an_r_script_with_a_wrong_tm1_r_home_names_the_missing_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A version mismatch is a clear error, not a bare WinError 2.
+
+    This machine's R differs from what the environment file assumes.
+    """
+    monkeypatch.setenv("TM1_R_HOME", str(tmp_path / "R-4.3.1"))
+
+    with pytest.raises(FileNotFoundError, match="does not exist"):
         external._argv(Path("CoreSummaries.R"), [])
 
 
