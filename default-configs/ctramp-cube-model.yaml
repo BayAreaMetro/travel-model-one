@@ -562,9 +562,11 @@ steps:
   - normalize_popsyn_names:
   - logsum_joiner:
       command: "CTRAMP/scripts/core_summaries/logsumJoiner.R"
+      env: {TARGET_DIR: "{run_dir}"}    # RunLogsums.bat's own `set TARGET_DIR=%CD%`
       skip_if_exists: "logsums/mandatoryAccessibilities.csv"
   - accessibility_markets:
       command: "CTRAMP/scripts/core_summaries/AccessibilityMarkets.R"
+      env: {TARGET_DIR: "{run_dir}"}
       skip_if_exists: "core_summaries/AccessibilityMarkets.csv"
   - accessibilities_for_baus:
       command: "CTRAMP/scripts/core_summaries/createAccessibilitiesForBAUS.py"
@@ -573,6 +575,7 @@ steps:
   # ── Core summaries · once, at the end (RunModel.bat step 14; RunCoreSummaries.bat) ─────
   - core_summaries:
       command: "CTRAMP/scripts/core_summaries/CoreSummaries.R"
+      env: {TARGET_DIR: "{run_dir}"}    # RunCoreSummaries.bat's own `set TARGET_DIR=%CD%`
       # One representative output stands for all eleven RDATA/csv pairs the script
       # writes together in one pass -- the .bat's own NEED_SUMMARY count does the
       # same thing, just checking all eleven instead of trusting them to be atomic.
@@ -581,6 +584,7 @@ steps:
   # checkout -- CommuteByIncomeByTPHousehold.csv has no script to reproduce it from.
   - consolidate_loaded_transit:
       command: "CTRAMP/scripts/core_summaries/ConsolidateLoadedTransit.R"
+      env: {TARGET_DIR: "{run_dir}"}
       skip_if_exists: "trn/trnline.csv"
 
   # ── Metrics · once, at the end (RunModel.bat step 15; RunMetrics.bat) ──────────────────
