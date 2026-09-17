@@ -207,6 +207,22 @@ wheels = [
 ]
 
 [[package]]
+name = "pyreadr"
+version = "0.5.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pandas" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f5/a8/6235ba50870da6b9b5b1d651ff64fdfb36716e1c2d63b347f1abe9c7ce3b/pyreadr-0.5.6.tar.gz", hash = "sha256:ec10bef1798a4d9e91ff75ab69fbcd009a3fad2250c79f5377e19e787c949b8f", size = 1300692, upload-time = "2026-04-13T16:57:32.922Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/73/ef/ff734bfce765a87adcc06dc3fed9fe8e8b4a65637eb9423306c45f7d43a6/pyreadr-0.5.6-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:fd58ef8fdacd5d04543dc81e1168bc6e1812a1f0e46eb2b0cd85527000c754a0", size = 318002, upload-time = "2026-04-13T16:56:58.222Z" },
+    { url = "https://files.pythonhosted.org/packages/39/18/0520f2ec8380cf3c7aaca28c089d07a8c4378071d7e5b06ae49958b89d8e/pyreadr-0.5.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:7a0ebc7c4897ccff75b228f7c7a2414f8a31a4cb38aed070269a4565068ad709", size = 319519, upload-time = "2026-04-13T16:56:59.618Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/ec/153a7c69a471bb5492c05d680b90fcb84af12b5b7e5097e57c9d1db9bcc9/pyreadr-0.5.6-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0c583ec41ef03902e2f81f7d1c8a3a24a0e2ea25f45f7dd20ac1a01a8c72be31", size = 809699, upload-time = "2026-04-13T16:57:01.002Z" },
+    { url = "https://files.pythonhosted.org/packages/33/e8/7c71f2ce20141207a86ea2714acb7cd1c8f437e823a372f20c736914aa86/pyreadr-0.5.6-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:09d41870a3c1f6df12352e25e800bedfa633d5bf2177381748a46e65ccd4cf8d", size = 809036, upload-time = "2026-04-13T16:57:02.679Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/47/20f5544a20073af354231cb78026c8be0cfa840cec485876da8744dae849/pyreadr-0.5.6-cp311-cp311-win_amd64.whl", hash = "sha256:cd2551051521cde33c491a6054d68dfd3a2dafa97b9909bbc1c63d95bd23d18a", size = 2360322, upload-time = "2026-04-13T16:57:04.326Z" },
+]
+
+[[package]]
 name = "pytest"
 version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -380,6 +396,7 @@ dependencies = [
     { name = "openpyxl" },
     { name = "pandas" },
     { name = "psutil" },
+    { name = "pyreadr" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "simpledbf" },
@@ -401,6 +418,7 @@ requires-dist = [
     { name = "openpyxl", specifier = ">=3.1" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "psutil", specifier = ">=5.9" },
+    { name = "pyreadr", specifier = ">=0.5.3" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31" },
     { name = "simpledbf", specifier = ">=0.2.6" },

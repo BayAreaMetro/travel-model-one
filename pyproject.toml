@@ -35,6 +35,10 @@ dependencies = [
     # dbfpy3 (above) cannot be reused for this: its validation is too strict for the
     # files Cube writes, which is why the script needs both packages, one per direction.
     "simpledbf>=0.2.6",
+    # pyreadr backs npa_metrics_goal_2 (NPA_metrics_Goal_2.py), a `command:` step
+    # every project's pipeline runs unconditionally -- it reads updated_output/
+    # trips.rdata, which core_summaries writes as R's native format, not a csv.
+    "pyreadr>=0.5.3",
 ]
 
 [project.scripts]
