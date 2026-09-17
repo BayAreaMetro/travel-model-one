@@ -31,6 +31,10 @@ dependencies = [
     # -- the couple of utilities/ scripts that still import it are run by hand,
     # outside tm1 entirely, so it is not installed here at all.
     "dbfpy3>=2.3",
+    # simpledbf backs aggregateTransitLinks.py's *reads* of Cube's own DBF output --
+    # dbfpy3 (above) cannot be reused for this: its validation is too strict for the
+    # files Cube writes, which is why the script needs both packages, one per direction.
+    "simpledbf>=0.2.6",
 ]
 
 [project.scripts]

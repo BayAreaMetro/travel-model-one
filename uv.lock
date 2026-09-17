@@ -339,6 +339,12 @@ wheels = [
 ]
 
 [[package]]
+name = "simpledbf"
+version = "0.2.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/d3/e4c25cd8f739dd7ddd19c255cd5552e08cdd439ac51a36ae12640ce8a748/simpledbf-0.2.6.tar.gz", hash = "sha256:345d4f1e58549c4a6ad8079d6ed65ad8550ccdc1acd8444a946cdb04d0212af4", size = 17823, upload-time = "2015-05-13T22:42:06.234Z" }
+
+[[package]]
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -376,6 +382,7 @@ dependencies = [
     { name = "psutil" },
     { name = "pyyaml" },
     { name = "requests" },
+    { name = "simpledbf" },
     { name = "xlrd" },
     { name = "xlutils" },
     { name = "xlwt" },
@@ -396,6 +403,7 @@ requires-dist = [
     { name = "psutil", specifier = ">=5.9" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31" },
+    { name = "simpledbf", specifier = ">=0.2.6" },
     { name = "xlrd", specifier = ">=2.0" },
     { name = "xlutils", specifier = ">=2.0" },
     { name = "xlwt", specifier = ">=1.3" },
