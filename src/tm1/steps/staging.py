@@ -13,6 +13,7 @@ Each step takes its iteration from where it sits inside ``iterate:`` -- before
 Step                         ``RunIteration.bat``
 ===========================  ==========================================
 :func:`copy_transit_skims`   ``trnAssign.bat``'s copy-up
+:func:`copy_transit_links`   ``trnAssign.bat``'s final-iteration-only copy-up
 :func:`stage_loaded_networks`  159-164 -- ``mkdir`` + five ``move``
 :func:`seed_average_networks`  177-181 -- the ``ELSE`` copy
 :func:`publish_networks`     193-200 -- five ``copy`` + ``del x*.net``
@@ -119,6 +120,36 @@ def copy_transit_skims(config_dir: Path, cfg: dict, **kwargs: object) -> str | N
         shutil.copy2(path, skims / path.name)
 
     log.info("Copied %d transit skims to %s", len(files), skims)
+    return None
+
+
+def copy_transit_links(config_dir: Path, cfg: dict, **kwargs: object) -> str | None:  # noqa: ARG001
+    """Lift each period's ``trnlink{PERIOD}.dbf`` into ``trn/`` itself.
+
+    ``trnAssign.bat``'s own final-iteration-only copy-up, right after the five
+    ``aggregate_transit_links_*`` steps build one per period (via
+    ``aggregateTransitLinks.py``, the ``NetworkWrangler``-free replacement for
+    the legacy per-submode merge). ``ConsolidateLoadedTransit.R`` reads these
+    straight from ``trn/``, not the iteration directory that produced them.
+    """
+    run_dir = Path(cfg["run_dir"])
+    iteration = _iteration(cfg, kwargs)
+    ta_dir = run_dir / "trn" / f"TransitAssignment.iter{iteration}"
+    trn = run_dir / "trn"
+
+    copied = 0
+    for period in PERIODS:
+        src = ta_dir / f"trnlink{period}.dbf"
+        if not src.is_file():
+            msg = (
+                f"No {src.name} in {ta_dir}. aggregateTransitLinks.py writes it "
+                f"there; check that it ran for this round."
+            )
+            raise FileNotFoundError(msg)
+        shutil.copy2(src, trn / src.name)
+        copied += 1
+
+    log.info("Copied %d transit link file(s) to %s", copied, trn)
     return None
 
 

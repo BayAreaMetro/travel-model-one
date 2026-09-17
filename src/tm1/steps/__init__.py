@@ -41,6 +41,7 @@ STEPS: dict[str, Callable] = {
     # Staging: file shuffling the legacy .bat files did inline, between the jobs.
     "make_directories": staging_step.make_directories,
     "copy_transit_skims": staging_step.copy_transit_skims,
+    "copy_transit_links": staging_step.copy_transit_links,
     "stage_loaded_networks": staging_step.stage_loaded_networks,
     "seed_average_networks": staging_step.seed_average_networks,
     "publish_networks": staging_step.publish_networks,

@@ -387,6 +387,43 @@ steps:
             cluster_nodes: 15
         - copy_transit_skims:        # trnAssign.bat copy-up: iteration dir -> skims/
 
+        # trnAssign.bat's own final-iteration-only block: aggregates each period's
+        # per-submode transit links into trnlink{PERIOD}.dbf (aggregateTransitLinks.py,
+        # the NetworkWrangler-free replacement for the legacy per-submode merge), then
+        # copy_transit_links lifts each up to trn/ -- ConsolidateLoadedTransit.R reads
+        # them from there, not the iteration directory. Five steps, not a loop:
+        # aggregateTransitLinks.py takes exactly one period per invocation, the same
+        # reasoning behind the five prepare_emfac_* steps below. only_iteration: 3
+        # matches iterate.count above literally -- like skip_if_exists elsewhere, not
+        # `{iteration}`-aware, so --iterations N would need updating too; a known gap.
+        - aggregate_transit_links_ea:
+            only_iteration: 3
+            command: "CTRAMP/scripts/skims/aggregateTransitLinks.py"
+            args: ["EA"]
+            cwd: "trn/TransitAssignment.iter{iteration}"
+        - aggregate_transit_links_am:
+            only_iteration: 3
+            command: "CTRAMP/scripts/skims/aggregateTransitLinks.py"
+            args: ["AM"]
+            cwd: "trn/TransitAssignment.iter{iteration}"
+        - aggregate_transit_links_md:
+            only_iteration: 3
+            command: "CTRAMP/scripts/skims/aggregateTransitLinks.py"
+            args: ["MD"]
+            cwd: "trn/TransitAssignment.iter{iteration}"
+        - aggregate_transit_links_pm:
+            only_iteration: 3
+            command: "CTRAMP/scripts/skims/aggregateTransitLinks.py"
+            args: ["PM"]
+            cwd: "trn/TransitAssignment.iter{iteration}"
+        - aggregate_transit_links_ev:
+            only_iteration: 3
+            command: "CTRAMP/scripts/skims/aggregateTransitLinks.py"
+            args: ["EV"]
+            cwd: "trn/TransitAssignment.iter{iteration}"
+        - copy_transit_links:
+            only_iteration: 3
+
         # Feedback.  AverageNetworkVolumes runs every iteration; the .bat skips it at
         # iteration 1 and copies instead, and PREV_ITER=0 makes the two equivalent:
         # WGT=1.0/PREV_WGT=0.00 at iteration 1 turns the weighted average into the

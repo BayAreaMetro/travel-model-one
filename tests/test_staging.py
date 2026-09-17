@@ -100,6 +100,34 @@ def test_missing_transit_skims_name_the_job_that_writes_them(proj: Path) -> None
         _call(staging.copy_transit_skims, proj, "copy_transit_skims", iteration=1)
 
 
+# --- copy_transit_links -----------------------------------------------------
+
+
+def test_transit_links_copy_up_to_trn(proj: Path) -> None:
+    """trnlink{PERIOD}.dbf moves from the iteration directory to trn/ itself.
+
+    ConsolidateLoadedTransit.R reads it from there, not the iteration
+    directory aggregateTransitLinks.py wrote it into.
+    """
+    ta = proj / "trn" / "TransitAssignment.iter3"
+    ta.mkdir()
+    for period in PERIODS:
+        (ta / f"trnlink{period}.dbf").write_text(period)
+
+    _call(staging.copy_transit_links, proj, "copy_transit_links", iteration=3)
+
+    for period in PERIODS:
+        assert (proj / "trn" / f"trnlink{period}.dbf").read_text() == period
+
+
+def test_missing_transit_link_names_the_script_that_writes_it(proj: Path) -> None:
+    """An empty iteration directory means aggregateTransitLinks.py never ran."""
+    (proj / "trn" / "TransitAssignment.iter3").mkdir()
+
+    with pytest.raises(FileNotFoundError, match=r"aggregateTransitLinks\.py"):
+        _call(staging.copy_transit_links, proj, "copy_transit_links", iteration=3)
+
+
 # --- seed_average_networks -------------------------------------------------
 
 
