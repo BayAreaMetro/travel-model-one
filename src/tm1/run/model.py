@@ -171,9 +171,18 @@ def _notify_start(
 ) -> None:
     """Announce what is about to run.
 
+    A resume names the step it continues at rather than restating the
+    steps/sample/iteration detail below -- that describes a fresh run, and a
+    resume already ran it once; the fact worth a Slack message now is just
+    where picking back up starts.
+
     Reads the demand step's config off the plan entries: it sits inside
     ``iterate``, so a top-level lookup would silently report defaults.
     """
+    resume_at = kwargs.get("resume_at")
+    if resume_at:
+        notify(f":rabbit2: Resuming {label} at {resume_at}")
+        return
     sim_cfg = next(
         (
             entry_cfg for (name, _), entry_cfg in configs.items()
