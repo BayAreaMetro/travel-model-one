@@ -180,6 +180,13 @@ steps:
       ctramp_offmodel:
         from: "utilities/RTP/Emissions/Off Model Calculators"
         to: "{run_dir}/CTRAMP/scripts/offmodel"
+      # NPA_metrics_Goal_1A_to_1F.py/NPA_metrics_Goal_2.py's own taz -> county
+      # lookup, read relative to their own file location (CTRAMP/geographies/,
+      # not scripts/metrics/NPA/geographies/) -- not part of ctramp_metrics above,
+      # which stops at scripts/metrics/.
+      ctramp_geographies:
+        from: "utilities/geographies/taz-superdistrict-county.csv"
+        to: "{run_dir}/CTRAMP/geographies/taz-superdistrict-county.csv"
 
   # Empty here on purpose: a project fills this in via its own `scenarios.yaml`
   # `steps:` -- entries it alone needs (a Blueprint strategy override, say), landed
