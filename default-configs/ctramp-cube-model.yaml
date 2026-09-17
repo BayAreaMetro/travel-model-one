@@ -644,6 +644,7 @@ steps:
       skip_if_exists: "metrics/parking_costs_tour.csv"
   - join_trips_with_income:
       command: "CTRAMP/scripts/metrics/joinTripsWithIncome.R"
+      env: {TARGET_DIR: "{run_dir}"}
       skip_if_exists: "main/indivTripDataIncome_3.csv"
   - count_trips:
       command: "CTRAMP/scripts/metrics/countTrips.py"
@@ -684,6 +685,7 @@ steps:
   # and cube_to_shapefile.py needs geopandas, not a dependency of this project today.
   - topsheet:
       command: "CTRAMP/scripts/metrics/topsheet.R"
+      env: {TARGET_DIR: "{run_dir}"}
       skip_if_exists: "metrics/topsheet.csv"
   - npa_metrics_goal_1a_to_1f:
       command: "CTRAMP/scripts/metrics/NPA/NPA_metrics_Goal_1A_to_1F.py"
