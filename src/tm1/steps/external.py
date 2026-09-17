@@ -94,6 +94,7 @@ does.
 import logging
 import os
 import re
+import socket
 import subprocess
 import sys
 from collections.abc import Callable
@@ -235,6 +236,13 @@ def model_environment(cfg: dict, iteration: object = None) -> dict[str, str]:
     """
     env = dict(_BAT_DEFAULTS)
     env["MODEL_DIR"] = str(Path(cfg["run_dir"]))
+    # RunModel.bat/RunLogsums.bat picked this from a hard-coded `if %computername%==`
+    # table, one line per known machine -- the same hostname whitelist
+    # config_machine_size avoids by taking machine size from the config instead.
+    # Computed here for the same reason: an unlisted machine should not be the
+    # failure mode, and RuntimeConfiguration.py's own config_host_ip only checks
+    # that this is *an* IP address of the local machine, not a specific one.
+    env["HOST_IP_ADDRESS"] = socket.gethostbyname(socket.gethostname())
 
     if iteration is not None and str(iteration) != "":
         round_ = int(iteration)

@@ -11,6 +11,7 @@ right job path, cwd and environment.
 """
 
 import json
+import socket
 import sys
 from pathlib import Path
 
@@ -395,6 +396,25 @@ def test_env_block_overrides_the_derived_values(proj: Path) -> None:
     cfg["env"]["TRNCONFIG"] = "STANDARD"
 
     assert external.model_environment(cfg, 1)["TRNCONFIG"] == "STANDARD"
+
+
+def test_host_ip_address_is_computed_not_looked_up_by_hostname(proj: Path) -> None:
+    """RuntimeConfiguration.py --logsums needs this.
+
+    RunLogsums.bat set it from a hard-coded `if %computername%==` table instead,
+    one line per known machine.
+    """
+    env = external.model_environment(_cfg(proj, "x", {}))
+
+    assert env["HOST_IP_ADDRESS"] == socket.gethostbyname(socket.gethostname())
+
+
+def test_host_ip_address_can_still_be_overridden(proj: Path) -> None:
+    """The escape hatch applies here too, for the rare machine it guesses wrong on."""
+    cfg = _cfg(proj, "x", {})
+    cfg["env"]["HOST_IP_ADDRESS"] = "10.0.0.1"
+
+    assert external.model_environment(cfg)["HOST_IP_ADDRESS"] == "10.0.0.1"
 
 
 def test_complex_modes_default_to_a_space_not_empty(proj: Path) -> None:
