@@ -401,6 +401,11 @@ def run_model(
         Common: ``base_model_dir``.
     """
     config_dir = Path(config_dir).resolve()
+    # `steps` is its own parameter, not folded into `**kwargs` -- but naming
+    # existing steps to rerun means "continue this run", the same as
+    # --resume-at, so everything downstream that checks `kwargs` needs to see
+    # it too.
+    kwargs["steps"] = steps
     prepared, label = _begin_run(config_dir, kwargs)
     cfg = prepared.cfg
 

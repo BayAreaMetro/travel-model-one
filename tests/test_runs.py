@@ -18,7 +18,7 @@ import pytest
 
 from tm1.run import directory as run_directory
 from tm1.run import receipt as run_receipt
-from tm1.run.model import _begin_run
+from tm1.run.model import _begin_run, run_model
 
 
 def _receipt(run_dir: Path, status: str = "running") -> None:
@@ -206,6 +206,21 @@ def test_a_full_run_into_an_existing_run_number_is_refused(
 
     with pytest.raises(ValueError, match="already has a run in it"):
         _begin_run(project, {"run_number": 1})
+
+
+def test_cli_steps_reaches_run_model_not_just_begin_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, runs_root: Path,
+) -> None:
+    """run_model's own `steps` parameter, not just _begin_run's kwargs dict.
+
+    cli.cmd_run passes `steps` to run_model as its own named parameter, not
+    folded into the kwargs run_model forwards to _begin_run -- a run_model-level
+    regression that a _begin_run-only test cannot see.
+    """
+    project = _project(tmp_path, monkeypatch, runs_root, steps="  - copy_inputs: {}\n")
+    _begin_run(project, {"run_number": 1})
+
+    run_model(project, steps=["copy_inputs"], run_number=1)  # must not raise
 
 
 def test_resume_at_on_an_unused_run_number_is_refused(
