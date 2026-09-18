@@ -70,6 +70,14 @@ the fault is.  ``{PERIOD}`` expands over the five assignment periods, which keep
 the common case one line.  This is only for external steps: a ``module:`` or
 ``script:`` step is called in-process and raises.
 
+``continue_on_error: true`` is the opposite of the usual rule that any nonzero
+exit is fatal.  ``RunMetrics.bat``'s own NPA metrics block is the reason it
+exists: unlike everything else in that file, its three calls carry no
+``if ERRORLEVEL 1 goto error`` guard at all -- the comment above them reads
+"Do not crash on these but try to run them."  A ``command:``/``job:`` step
+that fails with this set logs the failure and reports it, but the run itself
+continues to the next step rather than stopping.
+
 **``args:`` is the argv the program receives, not a transliteration of the ``.bat``
 line.**  ``RunModel.bat`` sets its empty variables to a single space on purpose
 ("NOTE the blank ones should have a space"), and ``cmd`` collapses those on
@@ -503,12 +511,18 @@ def make_step(step_name: str, step_cfg: dict) -> Callable[..., str | None]:
         iteration = step_cfg.get("iteration", kwargs.get("iteration", ""))
         values = {"iteration": iteration}
         env = _step_env(cfg, step_cfg, values)
-        if key == JOB_KEY:
-            _run_job(step_name, step_cfg, run_dir, Path(config_dir), env, values)
-        else:
-            _run_command(
-                step_name, step_cfg, run_dir, Path(config_dir), env, values
-            )
+        try:
+            if key == JOB_KEY:
+                _run_job(step_name, step_cfg, run_dir, Path(config_dir), env, values)
+            else:
+                _run_command(
+                    step_name, step_cfg, run_dir, Path(config_dir), env, values
+                )
+        except RuntimeError as exc:
+            if not step_cfg.get("continue_on_error"):
+                raise
+            log.warning("%s: continuing past a failure (continue_on_error) -- %s", step_name, exc)
+            return "failed"
         _verify_outputs(step_name, step_cfg, run_dir, values)
         return None
 

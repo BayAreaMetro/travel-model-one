@@ -42,3 +42,15 @@ def test_notify_start_reports_the_full_plan_when_not_resuming(
 
     assert "steps: copy_inputs, simulate_ctramp" in sent[0]
     assert "iterations: 3" in sent[0]
+
+
+def test_report_step_warns_but_does_not_look_like_success_when_failed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """continue_on_error (src/tm1/steps/external.py) returns "failed", not None."""
+    sent = []
+    monkeypatch.setattr(run_model, "notify", lambda msg, **_: sent.append(msg))
+
+    run_model._report_step("proj:A_001", "npa_metrics_goal_3", "failed", 1.0)
+
+    assert "failed" in sent[0]

@@ -168,6 +168,16 @@ def test_command_nonzero_exit_fails_the_step(proj: Path) -> None:
         external.make_step("boom", step)(proj, _cfg(proj, "boom", step))
 
 
+def test_continue_on_error_reports_instead_of_raising(proj: Path) -> None:
+    """RunMetrics.bat's NPA metrics calls carry no ERRORLEVEL guard at all."""
+    rel = _write_script(proj, "boom.py", _FAILING)
+    step = {"command": rel, "continue_on_error": True}
+
+    result = external.make_step("boom", step)(proj, _cfg(proj, "boom", step))
+
+    assert result == "failed"
+
+
 def test_command_output_is_kept_on_disk(proj: Path) -> None:
     """Captured output survives the failure that makes it worth reading."""
     rel = _write_script(proj, "boom.py", _FAILING)

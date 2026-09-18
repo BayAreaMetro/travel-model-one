@@ -127,6 +127,13 @@ def _report_step(label: str, name: str, result: object, elapsed: float) -> None:
         notify(f"[{label}] {name} already done, skipped", verbose_only=True)
         log.info("--- Skipped: %s ---", name)
         return
+    if result == "failed":
+        # continue_on_error (src/tm1/steps/external.py) already logged the
+        # failure itself; this just makes sure it isn't reported as a plain
+        # success too.
+        notify(f":warning: [{label}] {name} failed, continuing")
+        log.warning("--- Failed, continuing: %s ---", name)
+        return
     elapsed_str = fmt_elapsed(elapsed)
     notify(f"[{label}] {name} done ({elapsed_str})", verbose_only=True)
     log.info("--- Done: %s (%s) ---", name, elapsed_str)

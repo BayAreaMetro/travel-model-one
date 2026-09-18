@@ -701,14 +701,23 @@ steps:
       env: {TARGET_DIR: "{run_dir}"}
       skip_if_exists: "metrics/topsheet.csv"
   - npa_metrics_goal_1a_to_1f:
+      # RunMetrics.bat's own NPA_metrics block: none of its three calls carry an
+      # ERRORLEVEL guard -- "Do not crash on these but try to run them" -- so a
+      # failure here does not stop the run.
       command: "CTRAMP/scripts/metrics/NPA/NPA_metrics_Goal_1A_to_1F.py"
       skip_if_exists: "metrics/NPA_Metrics_Goal_1A_to_1F.csv"
+      continue_on_error: true
   - npa_metrics_goal_2:
       command: "CTRAMP/scripts/metrics/NPA/NPA_metrics_Goal_2.py"
       skip_if_exists: "metrics/NPA_Metrics_Goal_2.csv"
+      continue_on_error: true
   - npa_metrics_goal_3:
+      # network_trn_links.shp is never produced (cube_to_shapefile.py needs
+      # MTC's NetworkWrangler, not a dependency here), so this one always fails --
+      # continue_on_error is why that is fine.
       command: "CTRAMP/scripts/metrics/NPA/NPA_metrics_Goal_3.py"
       skip_if_exists: "metrics/NPA_metrics_Goal_3A_to_3D.csv"
+      continue_on_error: true
   - roll_up_metrics:
       # ALL_PROJECT_METRICS_DIR=..\all_project_metrics -- one level above run_dir,
       # which (run_dir having no project segment -- see run/directory.py) is now
