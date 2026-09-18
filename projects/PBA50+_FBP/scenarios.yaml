@@ -118,39 +118,28 @@ steps:
       script: "hooks.py:vmt_vht_metrics"
 
   # Fills in the shared model's `publish_outputs: {}` placeholder: RunModel.bat's
-  # extractkeyfiles + Robocopy to %M_DIR%\OUTPUT, curated the same way rather than
-  # archiving the whole run -- hwy/trn/main results, logs, EMFAC/logsums/core
-  # summaries/metrics/offmodel (all now produced by this pipeline), and CTRAMP/
-  # in full (beyond extractkeyfiles' own scope) so this run's code is
-  # reproducible years later even if the checkout has since moved on. INPUT/ is
-  # publish_inputs' own step, above. Final iteration only for everything else,
-  # matching extractkeyfiles' own scope. Declared last here since it is the
-  # shared pipeline's last step too.
+  # ExtractKeyFiles.bat + Robocopy to %M_DIR%\OUTPUT, matched file for file against
+  # an actual published run (M:\...\2050_TM161_FBP_Plan_16\OUTPUT) rather than
+  # archiving the whole run -- CTRAMP/ is not part of it: ExtractKeyFiles.bat never
+  # copies CTRAMP into OUTPUT, only the separate, no-longer-used CopyFilesToM.bat
+  # did that. OUTPUT/ is its own subdirectory of the published run, a sibling of
+  # publish_inputs' own INPUT/ above and config_record's config.resolved.yaml
+  # below -- matching M:\...\<run>\{INPUT,OUTPUT,SetUpModel_<run>.txt} exactly,
+  # config.resolved.yaml being this harness's equivalent of that last one: every
+  # value the run actually used, rather than a copy of the .bat that set them.
+  # Final iteration (3) only, matching ExtractKeyFiles.bat's own scope.
   - publish_outputs:
       run_dir:
         from: "{run_dir}"
-        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT"
         include:
-          - "CTRAMP/*"
-          - "hwy/iter3/avgload5period*"
           - "trn/trnline*.csv"
           - "trn/trnlink*.dbf"
           - "trn/trnlink.csv"
           - "trn/trnline.csv"
           - "trn/quickboards.xls"
-          - "trn/TransitAssignment.iter3/trnline*.csv"
-          - "main/householdData_3.csv"
-          - "main/personData_3.csv"
-          - "main/indivTripData_3.csv"
-          - "main/indivTourData_3.csv"
-          - "main/jointTripData_3.csv"
-          - "main/jointTourData_3.csv"
-          - "main/wsLocResults_3.csv"
           - "main/trips??.tpp"
           - "main/ShadowPricing_7.csv"
-          - "logs/HwySkims.debug"
-          - "logs/feedback.rpt"
-          - "logs/SpeedErrors*.log"
           - "nonres/ixDaily2015.tpp"
           - "nonres/ixDailyx4.tpp"
           - "nonres/tripsIX*.tpp"
@@ -161,6 +150,34 @@ steps:
           - "metrics/*"
           - "offmodel/*"
           - "logsums/*"
+          - "shapefile/*"
+      # hwy/iter3, trn/TransitAssignment.iter3 and logs/ all land flat under
+      # OUTPUT itself -- ExtractKeyFiles.bat drops the round number and the logs/
+      # directory the same way (`copy hwy\iter%ITER%\avgload5period.net
+      # extractor\avgload5period.net`, `copy logs\feedback.rpt extractor\feedback.rpt`).
+      hwy_iter3:
+        from: "{run_dir}/hwy/iter3"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT"
+        include: ["avgload5period*"]
+      trn_iter3_lines:
+        from: "{run_dir}/trn/TransitAssignment.iter3"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT/trn"
+        include: ["trnline*.csv"]
+      logs:
+        from: "{run_dir}/logs"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT"
+        include: ["HwySkims.debug", "feedback.rpt", "SpeedErrors*.log"]
+      # ExtractKeyFiles.bat's own two `copy` lines for this one source file, under
+      # two different destination names.
+      mtc_tour_based_properties:
+        from: "{run_dir}/CTRAMP/runtime/mtcTourBased.properties"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT/mtcTourBased.properties"
+      logsums_properties:
+        from: "{run_dir}/CTRAMP/runtime/mtcTourBased.properties"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT/logsums.properties"
+      config_record:
+        from: "{run_dir}/.tm1/config.resolved.yaml"
+        to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/config.resolved.yaml"
 
 scenarios:
 
