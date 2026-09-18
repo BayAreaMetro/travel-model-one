@@ -78,6 +78,11 @@ steps:
         to: "{run_dir}/CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
         enabled: false                  # run by the apply_regional_transit_fares step
 
+      bp_offmodel_calculators:           # master calculator workbooks run_offmodel_calculators.py copies from
+        from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/offmodel_calculators/FBP_v3_update2005"
+        to: "{run_dir}/CTRAMP/scripts/offmodel/calculators"
+        enabled: false                  # on with offmodel_prep/run_offmodel_calculators below
+
   # Fills in the shared model's `publish_inputs: {}` placeholder: INPUT/'s own
   # copy out to the archive, split out of publish_outputs below so it lands as
   # soon as INPUT/ is finished writing rather than waiting for the whole run.
@@ -251,6 +256,7 @@ scenarios:
     # RunModel.bat's runOffModel=="Yes" gate: 2035 and 2050 only.
     offmodel_prep.enabled:                                         true
     run_offmodel_calculators.enabled:                               true
+    copy_project_inputs.bp_offmodel_calculators.enabled:            true
 
 # ── The other two pathways, for when this project grows past one scenario ──────────────
 # Both expand to the same thing `scenarios:` does, so the rules above apply unchanged.
