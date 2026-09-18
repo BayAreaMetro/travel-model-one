@@ -184,6 +184,19 @@ def test_resume_at_continues_an_existing_run(
     assert resumed.state == run_directory.RESUME
 
 
+def test_steps_alone_continues_an_existing_run_too(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, runs_root: Path,
+) -> None:
+    """--steps names existing steps to rerun -- the same as --resume-at, not a fresh start."""
+    project = _project(tmp_path, monkeypatch, runs_root, steps="  - copy_inputs: {}\n")
+    prepared, _label = _begin_run(project, {"run_number": 1})
+
+    resumed, _label = _begin_run(project, {"run_number": 1, "steps": ["copy_inputs"]})
+
+    assert resumed.run_dir == prepared.run_dir
+    assert resumed.state == run_directory.RESUME
+
+
 def test_a_full_run_into_an_existing_run_number_is_refused(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, runs_root: Path,
 ) -> None:

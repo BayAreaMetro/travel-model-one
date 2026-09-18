@@ -190,6 +190,10 @@ def _notify_start(
     if resume_at:
         notify(f":rabbit2: Resuming {label} at {resume_at}")
         return
+    steps_only = kwargs.get("steps")
+    if steps_only:
+        notify(f":rabbit2: Running {label} steps: {', '.join(steps_only)}")
+        return
     sim_cfg = next(
         (
             entry_cfg for (name, _), entry_cfg in configs.items()
@@ -279,7 +283,10 @@ def _begin_run(config_dir: Path, kwargs: dict) -> tuple[PreparedRun, str]:
         raise ValueError(msg)
     prepared = prepare_run(
         config_dir, kwargs.get("scenario"),
-        run_number=int(run_number), resume=bool(kwargs.get("resume_at")),
+        # --steps names existing steps to (re)run, the same as --resume-at
+        # picking up an existing run -- neither one means "start fresh".
+        run_number=int(run_number),
+        resume=bool(kwargs.get("resume_at") or kwargs.get("steps")),
     )
     label = f"{config_dir.name}:{prepared.run_dir.name}"
     _open_run(config_dir, prepared, label, kwargs.get("base_model_dir"))

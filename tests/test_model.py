@@ -28,6 +28,21 @@ def test_notify_start_names_the_resume_step_not_the_full_plan(
     assert sent == [":rabbit2: Resuming proj:A_001 at 2:assignment"]
 
 
+def test_notify_start_names_the_steps_alone_not_the_full_plan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """--steps names existing steps to rerun, the same as --resume-at."""
+    sent = []
+    monkeypatch.setattr(run_model, "notify", lambda msg, **_: sent.append(msg))
+
+    run_model._notify_start(
+        "proj:A_001", ["copy_inputs", "simulate_ctramp"], {}, 3,
+        {"steps": ["publish_outputs"]},
+    )
+
+    assert sent == [":rabbit2: Running proj:A_001 steps: publish_outputs"]
+
+
 def test_notify_start_reports_the_full_plan_when_not_resuming(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
