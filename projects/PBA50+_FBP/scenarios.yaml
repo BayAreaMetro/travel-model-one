@@ -149,7 +149,22 @@ steps:
           - "updated_output/*"
           - "metrics/*"
           - "offmodel/*"
-          - "logsums/*"
+          # Named individually, not "logsums/*": logsums/ also holds the dummy
+          # INPUT files copy_input_to_working merged in (e.g.
+          # accessibilities_dummy_indivTours.csv), which are never published --
+          # confirmed against the M reference, which has none of them either.
+          - "logsums/householdData_3.csv"
+          - "logsums/personData_3.csv"
+          - "logsums/indivTripData_3.csv"
+          - "logsums/indivTourData_3.csv"
+          - "logsums/mandatoryAccessibilities.csv"
+          - "logsums/nonMandatoryAccessibilities.csv"
+          - "logsums/shopDCLogsum.csv"
+          - "logsums/tour_shopDCLogsum.csv"
+          - "logsums/workDCLogsum.csv"
+          - "logsums/person_workDCLogsum.csv"
+          - "logsums/subzone_logsums_for_BAUS.csv"
+          - "logsums/taz_logsums_for_BAUS.csv"
           - "shapefile/*"
       # hwy/iter3, trn/TransitAssignment.iter3 and logs/ all land flat under
       # OUTPUT itself -- ExtractKeyFiles.bat drops the round number and the logs/
