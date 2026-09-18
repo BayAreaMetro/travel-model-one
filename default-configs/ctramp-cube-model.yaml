@@ -724,6 +724,12 @@ steps:
       # runs_root itself: one cross-run rollup directory, not one per project.
       command: "CTRAMP/scripts/metrics/RunResults.py"
       args: ["metrics", "../all_project_metrics"]
+      # RunResults.py is the PPA benefit-cost comparison script -- it wants a
+      # baseline run and PPAMasterInput.xlsx, neither of which a standalone
+      # Blueprint run like this one has, and it needs xlwings (Excel COM
+      # automation) just to import. RunMetrics.bat calls it with no ERRORLEVEL
+      # guard either -- straight through to :cleanup/:success regardless.
+      continue_on_error: true
 
   # ── Scenario metrics · once, at the end (RunModel.bat step 16; RunScenarioMetrics.bat) ─
   # RunScenarioMetrics.bat's first five calls (joinTripsWithIncome.R, countTrips.py,
