@@ -39,6 +39,11 @@ dependencies = [
     # every project's pipeline runs unconditionally -- it reads updated_output/
     # trips.rdata, which core_summaries writes as R's native format, not a csv.
     "pyreadr>=0.5.3",
+    # geopandas backs npa_metrics_goal_3 (NPA_metrics_Goal_3.py), a `command:` step
+    # every project's pipeline runs unconditionally -- it joins metrics onto TAZ
+    # geometry. cube_to_shapefile.py also wants it, but that script is not staged
+    # by ctramp_metrics and no step calls it, so it stays unported.
+    "geopandas>=0.14",
 ]
 
 [project.scripts]

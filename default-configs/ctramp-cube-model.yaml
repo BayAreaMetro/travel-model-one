@@ -694,8 +694,8 @@ steps:
       skip_if_exists: "metrics/transit_crowding.csv"
   # The shapefile export (cube_to_shapefile.py, correspond_link_to_TAZ.py) is not
   # ported: neither script is staged by copy_inputs.ctramp_metrics (they live in
-  # utilities/cube-to-shapefile and utilities/geographies, not utilities/RTP/metrics),
-  # and cube_to_shapefile.py needs geopandas, not a dependency of this project today.
+  # utilities/cube-to-shapefile and utilities/geographies, not utilities/RTP/metrics).
+  # geopandas is a dependency regardless -- npa_metrics_goal_3 below needs it.
   - topsheet:
       command: "CTRAMP/scripts/metrics/topsheet.R"
       env: {TARGET_DIR: "{run_dir}"}
