@@ -53,7 +53,8 @@ class ConversionTests(unittest.TestCase):
             self.assertTrue((inventory_path.parent / "factors" / "wlk_com_drv.fac").is_file())
             self.assertTrue((inventory_path.parent / "factors" / "factor_conversion_report.json").is_file())
             self.assertTrue((inventory_path.parent / "fares" / "transitFares.far").is_file())
-            self.assertFalse((inventory_path.parent / "fares" / "fareZoneCrosswalk.csv").exists())
+            self.assertTrue((inventory_path.parent / "fares" / "fareZoneCrosswalk.csv").is_file())
+            self.assertTrue((inventory_path.parent / "fares" / "fare_matrices.block").is_file())
             self.assertTrue((inventory_path.parent / "fares" / "fare_matrix_manifest.json").is_file())
             self.assertTrue((inventory_path.parent / "fares" / "fare_conversion_report.json").is_file())
             factor = (inventory_path.parent / "factors" / "wlk_loc_wlk.fac").read_text(

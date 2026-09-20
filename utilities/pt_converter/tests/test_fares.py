@@ -31,7 +31,7 @@ class FareTests(unittest.TestCase):
             self.assertEqual(report["fare_system_assignment"], "MODE only")
             self.assertEqual(report["nontransit_modes_assigned"], [])
 
-    def test_od_fare_uses_network_node_numbers_as_fare_zones(self) -> None:
+    def test_od_fare_uses_one_global_compact_fare_zone_system(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             source_directory = Path(temp) / "source"
             shutil.copytree(FIXTURE, source_directory)
@@ -50,17 +50,43 @@ class FareTests(unittest.TestCase):
 
             fares = result.fare_path.read_text(encoding="utf-8")
             self.assertIn("STRUCTURE=FROMTO", fares)
-            self.assertIn("FAREMATRIX=FMI.1.FMTEST", fares)
-            self.assertIn("FAREZONES=NI.N", fares)
-            with (output / "fareMatrix_Test.csv").open(
+            self.assertIn("FAREMATRIX=FMI.1.1", fares)
+            self.assertIn("FAREZONES=NI.PTFAREZONE", fares)
+            with (output / "prepared" / "fareMatrix_Test.csv").open(
                 newline="", encoding="utf-8"
             ) as stream:
                 rows = list(csv.DictReader(stream))
             self.assertEqual(len(rows), 2)
-            self.assertEqual(rows[0]["FROM_FARE_ZONE"], "100")
-            self.assertEqual(rows[0]["TO_FARE_ZONE"], "200")
+            self.assertEqual(rows[0]["FROM_FARE_ZONE"], "1")
+            self.assertEqual(rows[0]["TO_FARE_ZONE"], "2")
             self.assertEqual(rows[0]["FARE"], "250")
-            self.assertFalse((output / "fareZoneCrosswalk.csv").exists())
+            self.assertEqual(rows[1]["FROM_FARE_ZONE"], "2")
+            self.assertEqual(rows[1]["TO_FARE_ZONE"], "1")
+            self.assertEqual(rows[1]["FARE"], "250")
+            with (output / "fareZoneCrosswalk.csv").open(
+                newline="", encoding="utf-8"
+            ) as stream:
+                crosswalk = list(csv.DictReader(stream))
+            self.assertEqual(
+                crosswalk,
+                [
+                    {
+                        "NETWORK_NODE": "100",
+                        "PT_FARE_ZONE": "1",
+                        "SOURCE_FILES": "Test.far",
+                    },
+                    {
+                        "NETWORK_NODE": "200",
+                        "PT_FARE_ZONE": "2",
+                        "SOURCE_FILES": "Test.far",
+                    },
+                ],
+            )
+            block = (output / "fare_matrices.block").read_text(encoding="utf-8")
+            self.assertIn(
+                'FILEI FAREMATI[1]="@token_model_dir@\\trn\\pt\\fares\\matrices\\fareMatrix_Test.mat"',
+                block,
+            )
 
     def test_legacy_one_unit_sentinel_becomes_free_service(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
