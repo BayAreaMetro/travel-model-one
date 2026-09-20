@@ -73,9 +73,35 @@ class ConversionTests(unittest.TestCase):
                 system,
             )
             self.assertIn(
-                'MODE NUMBER=120, NAME="BR", LONGNAME="BART & E-BART"', system
+                'MODE NUMBER=11, NAME="B", LONGNAME="Broadway Shuttle"', system
             )
+            self.assertNotIn("MODE NUMBER=120", system)
             self.assertFalse((inventory_path.parent / "buildPTNetwork.job").exists())
+
+    def test_conversion_does_not_require_optional_name_crosswalks(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            model_dir = Path(temp)
+            source_dir = model_dir / "INPUT" / "trn"
+            shutil.copytree(
+                Path(__file__).parent / "fixtures" / "minimal_trn", source_dir
+            )
+            for filename in (
+                "transit_modes.csv",
+                "transit_operators.csv",
+                "transit_vehicle_types.csv",
+            ):
+                (source_dir / filename).unlink()
+
+            convert_transit_network(
+                ConversionRequest(model_dir, self.config("network_wrangler"))
+            )
+            system = (model_dir / "trn" / "pt" / "transitSystem.pts").read_text(
+                encoding="utf-8"
+            )
+
+            self.assertIn('MODE NUMBER=11, NAME="MODE_11"', system)
+            self.assertIn('OPERATOR NUMBER=7, NAME="OPERATOR_7"', system)
+            self.assertIn('VEHICLETYPE NUMBER=1, NAME="VEHICLE_1"', system)
 
     def test_unsupported_source_fails_clearly(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

@@ -107,8 +107,9 @@ class PTInputWriter:
                 for operator in sorted(operators, key=lambda item: item.number)
             ],
             "operator_name_rule": (
-                "CSV short_name becomes PT NAME. CSV operator_name becomes PT "
-                "LONGNAME and is cropped to 40 characters."
+                "Raw operator numbers receive OPERATOR_<number> names. When the "
+                "optional CSV is present, short_name replaces PT NAME and "
+                "operator_name replaces PT LONGNAME."
             ),
             "wait_curve_definitions": [
                 {

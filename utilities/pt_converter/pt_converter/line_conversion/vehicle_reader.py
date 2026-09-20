@@ -22,8 +22,12 @@ class VehicleCatalogReader:
         line_rows = self._dict_rows(source_directory / "transitLineToVehicle.csv")
         prefix_rows = self._dict_rows(source_directory / "transitPrefixToVehicle.csv")
         capacity_rows = self._dict_rows(source_directory / "transitVehicleToCapacity.csv")
-        name_rows = self._dict_rows(source_directory / "transit_vehicle_types.csv")
-        names = self._vehicle_names(name_rows, source_directory)
+        name_path = source_directory / "transit_vehicle_types.csv"
+        names = (
+            self._vehicle_names(self._dict_rows(name_path), source_directory)
+            if name_path.is_file()
+            else {}
+        )
 
         line_assignments = tuple(
             LineVehicleAssignment(
@@ -46,7 +50,7 @@ class VehicleCatalogReader:
             if row.get("Prefix") and row["Prefix"].strip().casefold() != "prefix"
         )
 
-        vehicles: list[VehicleType] = []
+        raw_vehicles: list[tuple[str, int, int]] = []
         for row in capacity_rows:
             name = row.get("VehicleType", "").strip()
             if not name or name.casefold() == "vehicletype":
@@ -56,13 +60,18 @@ class VehicleCatalogReader:
                 capacity_85 = int(float(row["85%Capacity"]))
             except (KeyError, ValueError) as error:
                 raise TranslationError(f"Invalid capacity values for vehicle {name!r}.") from error
-            lookup = names.get(name.casefold())
-            if lookup is None:
-                raise TranslationError(
-                    f"Vehicle {name!r} is missing from transit_vehicle_types.csv."
-                )
+            raw_vehicles.append((name, capacity_100, capacity_85))
+
+        raw_vehicles.sort(key=lambda item: item[0].casefold())
+        vehicles = []
+        for number, (name, capacity_100, capacity_85) in enumerate(
+            raw_vehicles, start=1
+        ):
+            short_name, long_name = names.get(
+                name.casefold(), (f"VEHICLE_{number}", name)
+            )
             vehicles.append(
-                VehicleType(name, capacity_100, capacity_85, lookup[0], lookup[1])
+                VehicleType(name, capacity_100, capacity_85, short_name, long_name)
             )
 
         capacity_names = {vehicle.name.casefold() for vehicle in vehicles}

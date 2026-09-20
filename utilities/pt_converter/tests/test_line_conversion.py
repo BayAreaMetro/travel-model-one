@@ -194,6 +194,44 @@ class LineConversionTests(unittest.TestCase):
             [[1, 0.5], [180, 90.0]],
         )
 
+    def test_optional_name_tables_fall_back_to_raw_identifiers(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "trn"
+            output = Path(temp) / "output"
+            shutil.copytree(FIXTURE, source)
+            (source / "transit_modes.csv").unlink()
+            (source / "transit_operators.csv").unlink()
+            (source / "transit_vehicle_types.csv").unlink()
+
+            lines = TransitLineReader().read(source / "transitLines.lin")
+            vehicles = VehicleCatalogReader().read(source)
+            modes = TransitModeReader().read_optional(
+                source / "transit_modes.csv",
+                {line.mode for line in lines} | set(range(1, 8)),
+            )
+            operators = TransitOperatorReader().read_optional(
+                source / "transit_operators.csv",
+                {line.operator for line in lines if line.operator is not None},
+            )
+            result = PTInputWriter().write(
+                lines, vehicles, modes, operators, output
+            )
+            system_text = result.system_path.read_text(encoding="utf-8")
+
+        self.assertIn('MODE NUMBER=1, NAME="MODE_1", LONGNAME="MODE_1"', system_text)
+        self.assertIn(
+            'MODE NUMBER=11, NAME="MODE_11", LONGNAME="MODE_11"', system_text
+        )
+        self.assertIn(
+            'OPERATOR NUMBER=7, NAME="OPERATOR_7", LONGNAME="OPERATOR_7"',
+            system_text,
+        )
+        self.assertIn(
+            'VEHICLETYPE NUMBER=1, NAME="VEHICLE_1", '
+            'LONGNAME="Standard Bus", CRUSHCAP=60',
+            system_text,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

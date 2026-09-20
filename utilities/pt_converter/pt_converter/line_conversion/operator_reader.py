@@ -84,3 +84,25 @@ class TransitOperatorReader:
                 + "."
             )
         return tuple(operators)
+
+    def read_optional(
+        self, path: Path, operator_numbers: set[int]
+    ) -> tuple[TransitOperator, ...]:
+        """Build required operator definitions, optionally replacing their names."""
+
+        published = (
+            {operator.number: operator for operator in self.read(path)}
+            if path.is_file()
+            else {}
+        )
+        return tuple(
+            published.get(
+                number,
+                TransitOperator(
+                    number,
+                    f"OPERATOR_{number}",
+                    f"OPERATOR_{number}",
+                ),
+            )
+            for number in sorted(operator_numbers)
+        )

@@ -67,9 +67,15 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
         lines = TransitLineReader().read(source_directory / "transitLines.lin")
         vehicles = VehicleCatalogReader().read(source_directory)
         mode_table = source_directory / "transit_modes.csv"
-        modes = TransitModeReader().read(mode_table)
+        required_modes = {line.mode for line in lines} | set(range(1, 8))
+        modes = TransitModeReader().read_optional(mode_table, required_modes)
         operator_table = source_directory / "transit_operators.csv"
-        operators = TransitOperatorReader().read(operator_table)
+        required_operators = {
+            line.operator for line in lines if line.operator is not None
+        }
+        operators = TransitOperatorReader().read_optional(
+            operator_table, required_operators
+        )
         link_source = TransitLinkReader().read(source_directory / "transitLines.link")
         connector_source = ConnectorInputReader().read(source_directory)
         used_transit_modes = {line.mode for line in lines}

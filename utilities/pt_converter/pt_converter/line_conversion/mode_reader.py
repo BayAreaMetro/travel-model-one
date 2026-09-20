@@ -76,3 +76,19 @@ class TransitModeReader:
                 f"Invalid transit mode table {path}: " + "; ".join(problems) + "."
             )
         return tuple(modes)
+
+    def read_optional(
+        self, path: Path, mode_numbers: set[int]
+    ) -> tuple[TransitMode, ...]:
+        """Build required mode definitions, optionally replacing their names."""
+
+        published = (
+            {mode.number: mode for mode in self.read(path)} if path.is_file() else {}
+        )
+        return tuple(
+            published.get(
+                number,
+                TransitMode(number, f"MODE_{number}", f"MODE_{number}", ""),
+            )
+            for number in sorted(mode_numbers)
+        )
