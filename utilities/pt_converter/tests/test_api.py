@@ -45,6 +45,8 @@ class ConversionTests(unittest.TestCase):
             self.assertTrue((inventory_path.parent / "links" / "transitLinkFactors.csv").is_file())
             self.assertTrue((inventory_path.parent / "links" / "link_conversion_report.json").is_file())
             self.assertTrue((inventory_path.parent / "ntlegs" / "transitAccess.NTL").is_file())
+            self.assertTrue((inventory_path.parent / "ntlegs" / "generate_walk_funnels.block").is_file())
+            self.assertTrue((inventory_path.parent / "ntlegs" / "generate_drive_funnel.block").is_file())
             self.assertTrue((inventory_path.parent / "ntlegs" / "walkAccessCrosswalk.csv").is_file())
             self.assertTrue((inventory_path.parent / "ntlegs" / "zoneAccessRules.csv").is_file())
             self.assertTrue((inventory_path.parent / "ntlegs" / "pnrFacilities.csv").is_file())
