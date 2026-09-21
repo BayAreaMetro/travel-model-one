@@ -1,0 +1,9 @@
+[project]
+name = "mtc-air-passenger"
+version = "0.1.0"
+description = "Build Bay Area airport ground-access OD matrices (SFO / OAK / SJC) for 2023 and 2050."
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+    "openpyxl>=3.1",
+]
