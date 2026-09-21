@@ -2,7 +2,7 @@
 Author: Sujith Rapolu
 Date: August 2026
 
-Inputs
+input
 ------
 * ``parameters/*.csv`` - model configuration, assumptions, and derived shares.
 * ``../../geographies/taz-superdistrict-county.csv`` - model TAZ geography.
@@ -45,25 +45,25 @@ HERE = Path(__file__).resolve().parent
 
 # Default project paths.
 DEFAULT_PARAMETERS_DIR = HERE / "parameters"
-DEFAULT_GOSLING_DIR = HERE / "inputs" / "gosling_summaries"
-DEFAULT_TRANSIT_SOURCE = HERE / "inputs" / "TPS_TAZ_airport_TOD.xlsx"
+DEFAULT_GOSLING_DIR = HERE / "input" / "gosling_summaries"
+DEFAULT_TRANSIT_SOURCE = HERE / "input" / "TPS_TAZ_airport_TOD.xlsx"
 CORRESPONDENCE_CSV = HERE.parent.parent / "geographies" / "taz-superdistrict-county.csv"
 OUTPUT_DIR = HERE / "output"
 
 # Parameter tables read by the demand calculation. The TOD/access/submode
 # combination tables are assembled in memory from these component files.
 PARAMETER_FILES = {
-    "airport_output_file_map": "airport_output_file_map.csv",
-    "airport_passenger_targets": "airport_passenger_targets.csv",
-    "super_district_shares": "airport_non_transit_super_district_shares.csv",
-    "airport_non_transit_zone_access_mode_shares": "airport_non_transit_zone_access_mode_shares.csv",
-    "airport_non_transit_submode_shares": "airport_non_transit_submode_shares.csv",
-    "airport_non_transit_tod_shares": "airport_non_transit_tod_shares.csv",
-    "airport_non_transit_access_mode_shares": "airport_non_transit_access_mode_shares.csv",
-    "airport_transit_tod_shares": "airport_transit_tod_shares.csv",
-    "airport_transit_mode_shares": "airport_transit_mode_shares.csv",
-    "airport_transit_zone_shares": "airport_transit_zone_shares.csv",
-    "vehicle_occupancy": "airport_non_transit_vehicle_occupancy.csv",
+    "airport_output_file_map": "user_input_airport_output_file_map.csv",
+    "airport_passenger_targets": "user_input_airport_passenger_targets.csv",
+    "super_district_shares": "derived_airport_non_transit_super_district_shares.csv",
+    "airport_non_transit_zone_access_mode_shares": "derived_airport_non_transit_zone_access_mode_shares.csv",
+    "airport_non_transit_submode_shares": "derived_airport_non_transit_submode_shares.csv",
+    "airport_non_transit_tod_shares": "user_input_airport_non_transit_tod_shares.csv",
+    "airport_non_transit_access_mode_shares": "user_input_airport_non_transit_access_mode_shares.csv",
+    "airport_transit_tod_shares": "user_input_airport_transit_tod_shares.csv",
+    "airport_transit_mode_shares": "user_input_airport_transit_mode_shares.csv",
+    "airport_transit_zone_shares": "derived_airport_transit_zone_shares.csv",
+    "vehicle_occupancy": "user_input_airport_non_transit_vehicle_occupancy.csv",
 }
 
 EXPECTED_N_TAZ = 1454
@@ -275,43 +275,43 @@ def load_and_prepare(parameters_dir: Path) -> dict:
     conv_df = _clean_names_upper(raw["vehicle_occupancy"])
 
     required = {
-        "airport_output_file_map.csv": (
+        "user_input_airport_output_file_map.csv": (
             zone_def,
             ["FILE_NAME", "AIRPORT", "DIRECTION", "YEAR", "AIRPORT_TAZ",
              "TAZ_MIN", "TAZ_MAX"],
         ),
-        "airport_passenger_targets.csv": (
+        "user_input_airport_passenger_targets.csv": (
             target_df, ["FILE_NAME", "AIRPORT", "DIRECTION", "YEAR", "TARGET"]
         ),
-        "airport_non_transit_super_district_shares.csv": (
+        "derived_airport_non_transit_super_district_shares.csv": (
             zone_share,
             ["FILE_NAME", "AIRPORT", "DIRECTION", "YEAR", "DISTRICT", "SHARE"],
         ),
-        "airport_non_transit_zone_access_mode_shares.csv": (
+        "derived_airport_non_transit_zone_access_mode_shares.csv": (
             zone_share_detail,
             ["AIRPORT", "DIRECTION", "ZONE", "DISTRICT"] +
             [f"ZDIST_SHARE_{m}" for m in ACCESS_MODES],
         ),
-        "airport_non_transit_submode_shares.csv": (
+        "derived_airport_non_transit_submode_shares.csv": (
             submode_share,
             ["AIRPORT", "DIRECTION", "YEAR", "ACCESS_MODE", "SUBMODE", "SHARE_SUBMODE"],
         ),
-        "airport_non_transit_tod_shares.csv": (
+        "user_input_airport_non_transit_tod_shares.csv": (
             nontransit_tod, ["AIRPORT", "DIRECTION", "TOD", "SHARE_TOD"]
         ),
-        "airport_non_transit_access_mode_shares.csv": (
+        "user_input_airport_non_transit_access_mode_shares.csv": (
             nontransit_access, ["AIRPORT", "DIRECTION", "ACCESS_MODE", "SHARE_ACCESSMODE"]
         ),
-        "airport_transit_tod_shares.csv": (
+        "user_input_airport_transit_tod_shares.csv": (
             transit_tod, ["AIRPORT", "DIRECTION", "TOD", "SHARE_TOD"]
         ),
-        "airport_transit_mode_shares.csv": (
+        "user_input_airport_transit_mode_shares.csv": (
             transit_mode, ["AIRPORT", "DIRECTION", "SHARE_ACCESSMODE"]
         ),
-        "airport_transit_zone_shares.csv": (
+        "derived_airport_transit_zone_shares.csv": (
             transit_zone_share_raw, ["AIRPORT", "DIRECTION", "ZONE", "ZSHARE_TR"]
         ),
-        "airport_non_transit_vehicle_occupancy.csv": (
+        "user_input_airport_non_transit_vehicle_occupancy.csv": (
             conv_df, ["SUBMODE", "CONVERSION_FACTOR"]
         ),
     }
@@ -324,7 +324,7 @@ def load_and_prepare(parameters_dir: Path) -> dict:
     conv_df["SUBMODE"] = conv_df["SUBMODE"].astype(str)
     if "VN_HT_CH_S3" not in set(conv_df["SUBMODE"]):
         print(
-            "WARNING: airport_non_transit_vehicle_occupancy.csv has no "
+            "WARNING: user_input_airport_non_transit_vehicle_occupancy.csv has no "
             "SUBMODE='VN_HT_CH_S3'; VN/HT/CH S3 trips will use the default S3 factor."
         )
 
@@ -431,7 +431,7 @@ def load_taz_lookup(csv_path: Path) -> pd.DataFrame:
 
     # The authoritative correspondence includes 21 external zones (1455-1475).
     # The airport matrices use the 1..1454 internal TAZ system, matching the
-    # supplied Gosling tables and airport_output_file_map.csv.
+    # supplied Gosling tables and user_input_airport_output_file_map.csv.
     lookup = lookup.loc[lookup["TAZ"].between(1, EXPECTED_N_TAZ)].copy()
     if set(lookup["TAZ"]) != set(range(1, EXPECTED_N_TAZ + 1)):
         raise ValueError(f"{csv_path.name} must contain every internal TAZ 1..{EXPECTED_N_TAZ}")

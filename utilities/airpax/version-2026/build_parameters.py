@@ -11,10 +11,10 @@ Inputs
 
 Outputs
 -------
-* ``parameters/airport_non_transit_super_district_shares.csv``
-* ``parameters/airport_non_transit_submode_shares.csv``
-* ``parameters/airport_non_transit_zone_access_mode_shares.csv``
-* ``parameters/airport_transit_zone_shares.csv``
+* ``parameters/derived_airport_non_transit_super_district_shares.csv``
+* ``parameters/derived_airport_non_transit_submode_shares.csv``
+* ``parameters/derived_airport_non_transit_zone_access_mode_shares.csv``
+* ``parameters/derived_airport_transit_zone_shares.csv``
 
 Model year 2023 district and submode shares use the 2007 Gosling summaries;
 model year 2050 uses the 2035b summaries. Non-transit within-district zonal
@@ -68,21 +68,21 @@ GOSLING_ZONE_SHARE_SOURCE_YEAR = "2007"
 
 # User-maintained configuration and assumption files.
 INPUT_PARAMETER_FILES = {
-    "airport_output_file_map": "airport_output_file_map.csv",
-    "airport_passenger_targets": "airport_passenger_targets.csv",
-    "vehicle_occupancy": "airport_non_transit_vehicle_occupancy.csv",
-    "airport_non_transit_tod_shares": "airport_non_transit_tod_shares.csv",
-    "airport_non_transit_access_mode_shares": "airport_non_transit_access_mode_shares.csv",
-    "airport_transit_tod_shares": "airport_transit_tod_shares.csv",
-    "airport_transit_mode_shares": "airport_transit_mode_shares.csv",
+    "airport_output_file_map": "user_input_airport_output_file_map.csv",
+    "airport_passenger_targets": "user_input_airport_passenger_targets.csv",
+    "vehicle_occupancy": "user_input_airport_non_transit_vehicle_occupancy.csv",
+    "airport_non_transit_tod_shares": "user_input_airport_non_transit_tod_shares.csv",
+    "airport_non_transit_access_mode_shares": "user_input_airport_non_transit_access_mode_shares.csv",
+    "airport_transit_tod_shares": "user_input_airport_transit_tod_shares.csv",
+    "airport_transit_mode_shares": "user_input_airport_transit_mode_shares.csv",
 }
 
 # Parameter files built from the source data.
 OUTPUT_PARAMETER_FILES = {
-    "super_district_shares": "airport_non_transit_super_district_shares.csv",
-    "airport_non_transit_submode_shares": "airport_non_transit_submode_shares.csv",
-    "airport_non_transit_zone_access_mode_shares": "airport_non_transit_zone_access_mode_shares.csv",
-    "airport_transit_zone_shares": "airport_transit_zone_shares.csv",
+    "super_district_shares": "derived_airport_non_transit_super_district_shares.csv",
+    "airport_non_transit_submode_shares": "derived_airport_non_transit_submode_shares.csv",
+    "airport_non_transit_zone_access_mode_shares": "derived_airport_non_transit_zone_access_mode_shares.csv",
+    "airport_transit_zone_shares": "derived_airport_transit_zone_shares.csv",
 }
 
 SHARE_COLUMNS_BY_INPUT = {
@@ -189,7 +189,7 @@ def _write_share_csv(df: pd.DataFrame, path: Path, share_columns: list[str]) -> 
 
 
 # ---------------------------------------------------------------------------
-# Primitive parameter inputs
+# Primitive parameter input
 # ---------------------------------------------------------------------------
 def load_primitive_parameters(parameters_dir: Path) -> dict[str, pd.DataFrame]:
     """Load and validate the seven user-maintained primitive parameter CSVs."""
@@ -280,7 +280,7 @@ def load_primitive_parameters(parameters_dir: Path) -> dict[str, pd.DataFrame]:
     map_meta = p["airport_output_file_map"][["file_name", "airport", "direction", "year"]].sort_values("file_name")
     target_meta = p["airport_passenger_targets"][["file_name", "airport", "direction", "year"]].sort_values("file_name")
     if not map_meta.reset_index(drop=True).equals(target_meta.reset_index(drop=True)):
-        raise ValueError("airport_passenger_targets.csv metadata does not match airport_output_file_map.csv")
+        raise ValueError("user_input_airport_passenger_targets.csv metadata does not match user_input_airport_output_file_map.csv")
 
     unsupported_years = sorted(
         set(p["airport_output_file_map"]["year"]) - set(GOSLING_SUPER_DIST_SOURCE_BY_MODEL_YEAR)
@@ -982,7 +982,7 @@ def build_all_parameters(
         print(f"  {len(generated['airport_transit_zone_shares']):,} transit zone records")
         print("  All validation checks passed")
     else:
-        print("All parameter inputs and generated tables passed validation; no files written.")
+        print("All parameter input and generated tables passed validation; no files written.")
 
     return {
         **p,

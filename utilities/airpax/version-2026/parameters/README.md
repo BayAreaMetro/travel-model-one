@@ -2,21 +2,23 @@
 
 The CSV files in this directory provide the configuration, assumptions, and source-derived distributions used to create the airport passenger demand matrices. Files identified as user-maintained may be edited when model assumptions or targets change. Source-derived files should be regenerated with `build_parameters.py` rather than edited directly.
 
+File prefixes identify how each parameter is maintained: `user_input_` files are specified or maintained by the user, while `derived_` files are generated from the source datasets by `build_parameters.py`.
+
 ## Parameter manifest
 
 | File | User editable? | Description | Source |
 |---|---|---|---|
-| `airport_output_file_map.csv` | Yes | Defines each airport demand output, including airport, direction, model year, airport TAZ, and modeled TAZ range. | Model configuration maintained by the user. |
-| `airport_passenger_targets.csv` | Yes | Airport passenger ground-access person-trip target for each airport, direction, and model year. | Model configuration maintained by the user. |
-| `airport_non_transit_vehicle_occupancy.csv` | Yes | Person-to-vehicle conversion factors used to convert non-transit person trips to vehicle trips. | Model assumptions. |
-| `airport_non_transit_tod_shares.csv` | Yes | Time-of-day distribution for non-transit airport ground-access trips by airport and direction. | 2023: FourAirportStudy (2023). The 2050 assumptions use the same TOD distributions as 2023. |
-| `airport_non_transit_access_mode_shares.csv` | Yes | Non-transit airport access-mode distribution by airport and direction. | `from` shares are assumed to be same as `to`. OAK `to`: SFO Ground Access Survey 2024. SFO `to`: Ground Access Survey 2024. SJC `to`: ASQ Departures Survey (2025). |
-| `airport_transit_tod_shares.csv` | Yes | Time-of-day distribution for transit airport ground-access trips by airport and direction. | Transit passenger survey (TPS) summaries supplied by MTC for non-work trips: 2022 SamTrans and 2024 BART summaries for OAK/SFO and 2017 VTA for SJC. |
-| `airport_transit_mode_shares.csv` | Yes | Overall transit share of airport ground-access trips by airport and direction. | Airport access-mode assumptions using the airport-specific survey sources described above. |
-| `airport_non_transit_super_district_shares.csv` | No | Super-district distribution for each airport, direction, and model year. | Gosling airport summary DBFs in `../inputs/gosling_summaries/` and the model TAZ-to-super-district correspondence. Model year 2023 uses the 2007 Gosling summaries; model year 2050 uses the 2035b summaries. |
-| `airport_non_transit_submode_shares.csv` | No | DA/S2/S3 person-trip distribution by airport, direction, model year, and non-transit access mode. | Gosling airport summary DBFs in `../inputs/gosling_summaries/`. Model year 2023 uses the 2007 summaries and model year 2050 uses the 2035b summaries. |
-| `airport_non_transit_zone_access_mode_shares.csv` | No | Within-super-district TAZ distribution for each non-transit airport access mode. | 2007 Gosling airport summary DBFs in `../inputs/gosling_summaries/` and the model TAZ-to-super-district correspondence. |
-| `airport_transit_zone_shares.csv` | No | TAZ distribution of transit airport trips by airport and direction. | `../inputs/TPS_TAZ_airport_TOD.xlsx`. The `TAZ from Airport` and `TAZ to Airport` worksheets are aggregated to airport totals by TAZ before zonal shares are calculated. Transit-operator columns serving the same airport are combined before the shares are calculated. |
+| `user_input_airport_output_file_map.csv` | Yes | Defines each airport demand output, including airport, direction, model year, airport TAZ, and modeled TAZ range. | Model configuration maintained by the user. |
+| `user_input_airport_passenger_targets.csv` | Yes | Airport passenger ground-access person-trip target for each airport, direction, and model year. | Model configuration maintained by the user. |
+| `user_input_airport_non_transit_vehicle_occupancy.csv` | Yes | Person-to-vehicle conversion factors used to convert non-transit person trips to vehicle trips. | Model assumptions. |
+| `user_input_airport_non_transit_tod_shares.csv` | Yes | Time-of-day distribution for non-transit airport ground-access trips by airport and direction. | 2023: FourAirportStudy (2023). The 2050 assumptions use the same TOD distributions as 2023. |
+| `user_input_airport_non_transit_access_mode_shares.csv` | Yes | Non-transit airport access-mode distribution by airport and direction. | `from` shares are assumed to be same as `to`. OAK `to`: SFO Ground Access Survey 2024. SFO `to`: Ground Access Survey 2024. SJC `to`: ASQ Departures Survey (2025). |
+| `user_input_airport_transit_tod_shares.csv` | Yes | Time-of-day distribution for transit airport ground-access trips by airport and direction. | Transit passenger survey (TPS) summaries supplied by MTC for non-work trips: 2022 SamTrans and 2024 BART summaries for OAK/SFO and 2017 VTA for SJC. |
+| `user_input_airport_transit_mode_shares.csv` | Yes | Overall transit share of airport ground-access trips by airport and direction. | Airport access-mode assumptions using the airport-specific survey sources described above. |
+| `derived_airport_non_transit_super_district_shares.csv` | No | Super-district distribution for each airport, direction, and model year. | Gosling airport summary DBFs in `../input/gosling_summaries/` and the model TAZ-to-super-district correspondence. Model year 2023 uses the 2007 Gosling summaries; model year 2050 uses the 2035b summaries. |
+| `derived_airport_non_transit_submode_shares.csv` | No | DA/S2/S3 person-trip distribution by airport, direction, model year, and non-transit access mode. | Gosling airport summary DBFs in `../input/gosling_summaries/`. Model year 2023 uses the 2007 summaries and model year 2050 uses the 2035b summaries. |
+| `derived_airport_non_transit_zone_access_mode_shares.csv` | No | Within-super-district TAZ distribution for each non-transit airport access mode. | 2007 Gosling airport summary DBFs in `../input/gosling_summaries/` and the model TAZ-to-super-district correspondence. |
+| `derived_airport_transit_zone_shares.csv` | No | TAZ distribution of transit airport trips by airport and direction. | `../input/TPS_TAZ_airport_TOD.xlsx`. The `TAZ from Airport` and `TAZ to Airport` worksheets are aggregated to airport totals by TAZ before zonal shares are calculated. Transit-operator columns serving the same airport are combined before the shares are calculated. |
 
 ## Source data outside the parameters directory
 
