@@ -31,6 +31,7 @@ class PTInputWriter:
     LINE_FILENAME = "transitLines.lin"
     SYSTEM_FILENAME = "transitSystem.pts"
     REPORT_FILENAME = "line_conversion_report.json"
+    XY_SPEED_MPH = 30
 
     def write(
         self,
@@ -243,6 +244,7 @@ class PTInputWriter:
                 attributes.append(f"OPERATOR={line.operator}")
             if line.runtime is not None:
                 attributes.append(f"RUNTIME={_decimal(line.runtime)}")
+            attributes.append(f"XYSPEED={self.XY_SPEED_MPH}")
 
             rendered.append(",\n    ".join(attributes) + ",")
             rendered.append(" " + line.node_text)

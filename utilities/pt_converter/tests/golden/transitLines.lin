@@ -12,5 +12,6 @@ LINE NAME="TEST_BUS",
     MODE=11,
     ONEWAY=T,
     OPERATOR=7,
+    XYSPEED=30,
  N=1, 2, -3,
     ACCESS=2, 1

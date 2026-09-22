@@ -134,6 +134,7 @@ class LineConversionTests(unittest.TestCase):
 
         self.assertIn("HEADWAY[2]=12.35", line_text)
         self.assertIn("OPERATOR=7", line_text)
+        self.assertIn("XYSPEED=30", line_text)
         self.assertNotIn("FREQ[", line_text)
         self.assertNotIn("OWNER=", line_text)
         self.assertTrue(line_text.startswith(";;<<PT>><<LINE>>;;\n"))
