@@ -3,18 +3,18 @@
 
 The model system uses a synthetic population as a base input. It is then followed by long-term choices that relate to the usual workplace/university/school for each worker and student, household car ownership, and the availability of free parking at workplaces.
 
-The daily activity pattern type of each household model is the first travel-related sub-model in the hierarchy. The model classifies daily patterns by three types:
-- **Mandatory**: Includes at least one out-of-home mandatory activity (work or school)
+The daily activity pattern type of each household model (CDAP) is the first travel-related sub-model in the hierarchy. It represents the primary daily activity pattern (at home versus on tour) of household members. The model classifies daily patterns by three types:
+- **Mandatory**: Includes at least one out-of-home mandatory activity (work or school). Note that the destinations of mandatory tours have already been determined in long-term choice model.
 - **Non-Mandatory**: Includes at least one out-of-home non-mandatory activity but does not include out-of-home mandatory activites
 - **Home**: Does not include any out-of-home activity or travel
 
-Prior to the CDAP choice model, the work from home (WFH) choice model will run which determines if a worker will work from home based on person's income, home county, and employment industry. If the worker is predicted to work from home, the mandatory activity pattern is not available for that work. 
+Prior to the CDAP choice model, the work from home (WFH) choice model will run which determines if a worker will work from home based on person's income, home county, and employment industry. If the worker is predicted to work from home, the mandatory activity pattern is not available for that work. This component was added in Travel Model 1.6.
 
 Daily pattern-type choices of the household members are linked in such a way that decisions made by members are reflected in the decisions made by other members.
 
 After frequency and scheduling for work and school tours are determined, the next major model component relates to joint household travel. This component produces a number of joint tours by travel purpose for the entire household, travel party composition in terms of adults and children, and then defines the partricipation of each household member in each joint household tour. It is then followed by choice of destination and scheduling. 
 
-The next components aare related to non-mandatory tours modeled at a individual person level. Individul non-mandatory tours are any maintenance and discretionary tours while at-work subtours are any non-mandatory tours that originate and end at the work location. At-work subtours only occur for workers at their work locations. For both components, the models include tour frequency, destination location, and scheduling. 
+The next components are related to non-mandatory tours modeled at a individual person level. Individul non-mandatory tours are any maintenance and discretionary tours while at-work subtours are any non-mandatory tours that originate and end at the work location. At-work subtours only occur for workers at their work locations. For both components, the models include tour frequency, destination location, and scheduling. 
 
 After the daily decisions, tour-level decisions like tour mode, stop frequency, and stop location are decided. It is then followed by the last set of submodels - trip-level decisions - which adds details for each individual trip include trip departure time and trip mode. The trips are then assigned to highway and transit networks depending on the trip mode. 
 
@@ -78,7 +78,7 @@ graph TB
             3h1 --> 3h2
             3h2 --> 3h3
         end
-        subgraph 3i["At-Work Subtours"]
+        subgraph 3i["Individual At-Work Subtours"]
             direction TB
             3i1[Frequency]
             3i2[Location]
@@ -112,6 +112,8 @@ graph TB
         direction LR
         5a[Departure Time]
         5b[Trip mode]
+        5c[Trip Assignment]
+        5a --> 5b --> 5c
     end
     
     %% gray full-width bands
