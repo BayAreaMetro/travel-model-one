@@ -5,13 +5,13 @@
 
 ```{python}
 from calib_report import config, tables
-from calib_report.data import tour_mode
+from calib_report.data import mode_choice
 import pandas as pd
 
 chts_file = config.CHTS_DIR / "tourModeChoice_1.5.2.csv"
-bats_file = config.BATS_DIR / "BATS2023_tour_mode_summary_long_all.csv"
-chts_tour_mode = tour_mode.format_tour_mode_file(chts_file, tour_mode.CHTS_MODE_MAP)
-bats_tour_mode = tour_mode.format_tour_mode_file(bats_file, tour_mode.BATS_MODE_MAP)
+bats_file = config.BATS_DIR / "BATS2023 mode_choice_summary_long_all.csv"
+chts_tour_mode = mode_choice.format mode_choice_file(chts_file, mode_choice.CHTS_MODE_MAP)
+bats_tour_mode = mode_choice.format mode_choice_file(bats_file, mode_choice.BATS_MODE_MAP)
 
 ```
 
@@ -23,8 +23,8 @@ bats_tour_mode = tour_mode.format_tour_mode_file(bats_file, tour_mode.BATS_MODE_
 #|  - "Current Targets"
 #| layout-ncol: 2
 
-chts_work = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "work")
-bats_work = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "work")
+chts_work = mode_choice.build_mode_purpose_table(chts_tour_mode, purpose = "work")
+bats_work = mode_choice.build_mode_purpose_table(bats_tour_mode, purpose = "work")
 
 tables.to_quarto(chts_work)
 tables.to_quarto(bats_work)
@@ -40,10 +40,10 @@ tables.to_quarto(bats_work)
 #| layout-ncol: 2
 #| layout-nrow: 2
 
-chts_uni = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "university")
-bats_uni = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "university")
-chts_uni_share = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "university", as_share = True)
-bats_uni_share = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "university", as_share = True)
+chts_uni = mode_choice.build_mode_purpose_table(chts_tour_mode, purpose = "university")
+bats_uni = mode_choice.build_mode_purpose_table(bats_tour_mode, purpose = "university")
+chts_uni_share = mode_choice.build_mode_purpose_table(chts_tour_mode, purpose = "university", as_share = True)
+bats_uni_share = mode_choice.build_mode_purpose_table(bats_tour_mode, purpose = "university", as_share = True)
 
 tables.to_quarto(chts_uni)
 tables.to_quarto(bats_uni)
@@ -61,10 +61,10 @@ tables.to_quarto(bats_uni_share)
 #| layout-ncol: 2
 #| layout-nrow: 2
 
-chts_sch = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "school")
-bats_sch = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "school")
-chts_sch_share = tour_mode.build_mode_purpose_table(chts_tour_mode, purpose = "school", as_share = True)
-bats_sch_share = tour_mode.build_mode_purpose_table(bats_tour_mode, purpose = "school", as_share = True)
+chts_sch = mode_choice.build_mode_purpose_table(chts_tour_mode, purpose = "school")
+bats_sch = mode_choice.build_mode_purpose_table(bats_tour_mode, purpose = "school")
+chts_sch_share = mode_choice.build_mode_purpose_table(chts_tour_mode, purpose = "school", as_share = True)
+bats_sch_share = mode_choice.build_mode_purpose_table(bats_tour_mode, purpose = "school", as_share = True)
 
 tables.to_quarto(chts_sch)
 tables.to_quarto(bats_sch)
