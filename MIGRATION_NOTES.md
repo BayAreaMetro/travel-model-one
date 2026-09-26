@@ -433,6 +433,12 @@ extend past the original scope. Engineering detail, not a second phase numbering
 across phases 1–3 and 5, with Bonus 3 (AequilibraE) being phase 6 prototyping done ahead of
 schedule.
 
+**Scope note:** "DONE"/"IN VALIDATION" below tracks engineering progress on the exploratory
+`activitysim_revival` branch, ahead of the reviewed, per-phase PRs the [Phases](#phases) table
+tracks against this repo. A phase's Status there only changes once its own PR has landed here
+-- as phase 1's (Bonus 1 below) now has, via this PR -- so it is normal for a step below to
+read DONE while its phase above still reads `ready` or `not started`.
+
 ### 1. Port the skims — cubeless TPP ↔ OMX converter — **DONE**
 
 * Pure-Python Cube Voyager matrix I/O, no DLLs and no Cube install (`src/cubeio/`):
@@ -488,11 +494,14 @@ in a stage's output sent me back to fix a coefficient or expression, then re-run
 Rather than reimplement Cube assignment first, drive the *existing* Cube `.job` scripts from
 Python and close the loop: ActivitySim trip OMX → TPP demand → Cube assignment → skims back.
 
-- `src/tm1/cube.py` — runs Cube Voyager jobs over SSH via the `schtasks` interactive-session
-  launcher (the Bentley license pipe is unreachable from SSH/VS Code), with license recovery
-  and MatReaderOpen hang detection. Cluster jobs go through `DistributeMultistep`.
-- `src/tm1/assignment/cube/{highway,transit,runner}.py` — faithful Cube highway + transit
-  assignment and network prep, wired into the feedback loop in `simulate_activitysim`.
+- `src/cube/job.py` (+ `process.py`) — runs Cube Voyager jobs over SSH via the `schtasks`
+  interactive-session launcher (the Bentley license pipe is unreachable from SSH/VS Code),
+  with license recovery and MatReaderOpen hang detection. Cluster jobs go through
+  `DistributeMultistep`. Landed in this repo as phase 1's `src/cube/` (see [Repo layout](#repo-layout)
+  and `ARCHITECTURE.md`) -- this bullet described it under its pre-split name before that move.
+- `src/tm1/assignment/cube/{highway,transit,ctramp}.py` — faithful Cube highway + transit
+  assignment and network prep. `ctramp.py` wires the CT-RAMP-only pipeline in this PR;
+  wiring the same modules into ActivitySim's `simulate_activitysim` feedback loop is phase 5.
 
 
 ### BONUSES

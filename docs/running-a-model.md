@@ -57,6 +57,9 @@ to be read from top to bottom.
 Setup (installing `uv` and the project) is in the top-level
 [README.md](../README.md#setup) -- one copy, so the two cannot drift apart.
 
+Everything below runs on a modeling machine, cwd'd into the mapped clone -- see
+[README.md#where-the-clone-lives](../README.md#where-the-clone-lives).
+
 ```bash
 uv run tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1
 ```
@@ -91,7 +94,7 @@ If the environment is already activated, the prefix is unnecessary and `tm1 …`
 equivalent:
 
 ```bash
-.venv\Scripts\activate        # Windows
+E:\tm1-venv\Scripts\activate   # Windows -- by convention, not .venv; see README.md#setup
 tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1   # no prefix needed from here on
 ```
 
@@ -103,7 +106,8 @@ of any of them if the environment is not activated.
 ## Recovering an interrupted run
 
 A run can be interrupted by a lost Cube licence, an unavailable network path, or a machine
-restart. The run directory survives, and completed steps remain completed.
+restart. The run directory survives, and completed steps remain completed. Same machine
+and cwd as [Quickstart](#quickstart) -- the modeling machine, in the mapped clone.
 
 ```bash
 tm1 status PBA50+_FBP --scenario 2050_TM162_FBP_Plan        # what ran, what failed, and how to resume
@@ -226,8 +230,16 @@ projects/my_project/
 Copy the nearest existing project and edit it. `PBA50+_FBP` is the RunModel.bat
 parity run and the usual starting point.
 
+Do this in your own clone (see [README.md#where-the-clone-lives](../README.md#where-the-clone-lives)):
+
 ```bash
 cp -r projects/PBA50+_FBP projects/my_project
+```
+
+Commit and push it (GitHub Desktop or VS Code), then verify from a modeling machine,
+cwd'd into the mapped clone:
+
+```bash
 tm1 scenarios my_project      # verify before committing to a full run
 ```
 
@@ -415,6 +427,8 @@ Ladder and matrix generate IDs from the `id:` template, with two consequences:
   each later rung represents.
 
 ### Running one
+
+Modeling machine, mapped clone:
 
 ```bash
 tm1 scenarios my_project           # what the project declares, and whether it resolves

@@ -105,6 +105,7 @@ RUN_SET_MODEL_PATHS = {
     'RTP2025_IP'    :'M:\\Application\\Model One\\RTP2025\\IncrementalProgress',
     'STIP2024'      :'M:\\Application\\Model One\\STIP2024',
     'STIP2026'      :'M:\\Application\\Model One\\STIP2026',
+    'python_runner' :'M:\\Application\\Model One\\RTP2025\\python_runner_tests',
 }
 
 if __name__ == '__main__':

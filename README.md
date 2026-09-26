@@ -78,18 +78,51 @@ default-configs/      # Shared model configs — the CT-RAMP+Cube pipeline every
 model-files/, core/   # Legacy CT-RAMP/Cube assets, unchanged, still in production
 ```
 
+### Where the Clone Lives
+
+Modeling machines (`model3-g`, `model3-c`, ...) are shared -- several modelers use the
+same Windows login -- so this repo is never cloned there, and nobody signs into GitHub on
+one. Two machines are involved instead:
+
+| Machine | Holds | Reached as |
+|---|---|---|
+| Your own VM (e.g. `lzorn-vm`) | your clone -- `E:\GitHub\travel-model-one` (local disk), or the shared mirror at `X:\travel-model-one-master` | yourself, via GitHub Desktop or VS Code, signed in as you |
+| A modeling machine (e.g. `model3-g`) | no clone of its own -- it reaches one of the above over a mapped drive, and keeps its own venv locally | whoever is logged into its shared account |
+
+**Changing code or config** -- a new project, an edited `scenarios.yaml` -- happens in
+your own clone, committed and pushed with GitHub Desktop or VS Code, never on a modeling
+machine. **Running a model** happens on a modeling machine: map a drive to reach the
+clone, `cd` into it, and follow Setup below -- but see its Windows note for where the
+venv itself goes, which is not the mapped drive.
+
 ### Setup
 
-```bash
+Run this on the modeling machine, cwd'd into the mapped clone. The clone lives on a
+mapped network drive (see [Where the Clone Lives](#where-the-clone-lives)), so
+`uv sync`'s default `.venv` is pointed at local disk instead, by convention
+`E:\tm1-venv` -- left on the mapped drive, compiled packages (e.g. `psutil`) fail to
+import with `DLL load failed ... The parameter is incorrect`, since Windows can't load
+native `.pyd`/DLLs over a network path:
+
+```powershell
 # Install uv (one-time)
 pip install uv
+
+# Point the venv at local disk, not the mapped drive
+$env:UV_PROJECT_ENVIRONMENT = "E:\tm1-venv"
 
 # Install project in dev mode
 uv sync
 
-# Verify (or activate .venv\Scripts\activate first, then call tm1 directly)
+# Verify (or activate E:\tm1-venv\Scripts\activate first, then call tm1 directly)
 uv run tm1 --help
 ```
+
+> **cmd.exe note:** use `set UV_PROJECT_ENVIRONMENT=E:\tm1-venv` instead of the
+> PowerShell line above -- PowerShell's own `set` is `Set-Variable`, an unrelated
+> command that silently does not set an environment variable, so `uv sync` would still
+> default to `.venv` on the mapped drive and may fail trying to remove or recreate
+> files there.
 
 Machine-specific paths (M drive, gawk, R, Slack) live in
 [`default-configs/environments/mtc.yaml`](default-configs/environments/mtc.yaml), committed
@@ -111,22 +144,9 @@ the default when neither is given.
 > powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 > ```
 
-> **Windows note:** if the project lives on a mapped network drive (e.g. `X:\` backed
-> by a `\\server\share` UNC path), `uv sync`'s default `.venv` will be on that same
-> share, and compiled packages (e.g. `psutil`) fail to import with `DLL load
-> failed ... The parameter is incorrect` — Windows can't load native `.pyd`/DLLs over
-> a network path. Point the venv at local disk instead:
-> ```powershell
-> $env:UV_PROJECT_ENVIRONMENT = "E:\tm1-venv"
-> uv sync
-> uv run tm1 --help
-> ```
-> In `cmd.exe` (not PowerShell) it's `set UV_PROJECT_ENVIRONMENT=E:\tm1-venv` instead --
-> PowerShell's own `set` is `Set-Variable`, an unrelated command that silently does not
-> set an environment variable, so `uv sync` still defaults to `.venv` on the network
-> share and may fail trying to remove or recreate files there.
-
 ### Running a Project
+
+Same machine and cwd as [Setup](#setup) -- the modeling machine, in the mapped clone:
 
 ```bash
 tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1
@@ -151,8 +171,8 @@ instead of from the beginning. **The named step runs** — everything before it 
 skipped:
 
 ```bash
-tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at assignment
-tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at 2:assignment   # iteration 2's
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at hwy_assign
+tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at 2:hwy_assign   # iteration 2's
 ```
 
 The `N:` prefix is needed only when a step runs more than once — that is, inside
@@ -162,18 +182,18 @@ listing the candidates, not a guess, since picking the wrong one costs hours.
 You rarely type it: a failure prints the exact command.
 
 ```
---- Step: assignment ---
+--- Step: hwy_assign ---
 ERROR  Cube job HwyAssign.job failed (exit=2, engine ReturnCode=2)
        Full Cube log: E:/Tests/PBA50+_FBP/_cube_HwyAssign_18004_1785277879.log
-       Resume with: tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at 2:assignment
+       Resume with: tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --resume-at 2:hwy_assign
 ```
 
 And the resumed run states what it is doing before doing any of it:
 
 ```
-Resuming at assignment, iteration 2 of 3
-  skipping 4 already-completed step(s): copy_inputs@1, simulate_ctramp@1, assignment@1, simulate_ctramp@2
-  running 4: assignment@2, simulate_ctramp@3, assignment@3, vmt_vht_metrics@3
+Resuming at hwy_assign, iteration 2 of 3
+  skipping 4 already-completed step(s): copy_inputs@1, simulate_ctramp@1, hwy_assign@1, simulate_ctramp@2
+  running 4: hwy_assign@2, simulate_ctramp@3, hwy_assign@3, vmt_vht_metrics@3
 ```
 
 Two things it deliberately does not do. The named step **re-runs from the start**
@@ -184,6 +204,9 @@ a previous run; without that check it would skip staging and demand, then assign
 whatever stale matrices happened to be lying around.
 
 ### Creating a New Project
+
+Steps 1-4 edit the repo -- do them in your own clone, then commit and push. Step 5 runs
+the model -- do it on a modeling machine, cwd'd into the mapped clone.
 
 1. Copy `projects/PBA50+_FBP/scenarios.yaml` to `projects/<name>/`
 2. Update each scenario's `copy_inputs` sources for your environment -- there is no
