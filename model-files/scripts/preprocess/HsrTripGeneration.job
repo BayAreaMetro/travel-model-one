@@ -22,8 +22,8 @@
 ;           (2) HsrTransitSubmodeChoice.job, which chooses the transit submode for the transit trips and
 ;               also follows.
 ;
-; version:  Travel Model One v1.6
-; authors:  lmz (2023 11 07), lmz (2016 06 21)
+; version:  Travel Model One v1.7
+; authors:  mlt (2026 04 03), lmz (2023 11 07), lmz (2016 06 21)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 model_year = %MODEL_YEAR%
@@ -45,7 +45,7 @@ loop tpnum=1,5
     time_period = 'EV'
   endif
 
-  DistributeMultistep processid = 'ctramp', processNum = tpnum, commpath = '%COMMPATH%'
+  DistributeMultistep Alias = 'ctramp@tpnum@'
 
   RUN PGM=MATRIX
     filei mati[1] = 'INPUT\nonres\tripsHsr@time_period@_2040.tpp'
@@ -103,8 +103,7 @@ loop tpnum=1,5
 
 endloop
 
-Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
-           printfiles=merge, deldistribfiles=t, CheckReturnCode=t
+BARRIER IDLIST=CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5, printfiles=merge, CheckReturnCode=t
 
 ; delete intermediate files
 *del nonres\tripsHsrEA_intermediate.tpp

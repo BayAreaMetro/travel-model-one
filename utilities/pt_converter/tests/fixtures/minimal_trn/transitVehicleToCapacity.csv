@@ -1,0 +1,2 @@
+VehicleType,100%Capacity,85%Capacity,VehicleCategory,SimpleDelayPerStop,ConstDelayPerStop,DelayPerBoard,DelayPerAlight
+Standard Bus,60,51,bus,0,0,0,0
