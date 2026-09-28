@@ -734,6 +734,16 @@ class CalibrationBase(ABC):
         return values
 
     @staticmethod
+    def _read_xls_block(worksheet, start_row: int, end_row: int, start_col: int, end_col: int) -> list:
+        """Read a block column-by-column using 1-based coordinates"""
+        return [
+            worksheet.cell_value(row - 1, col - 1)
+            for col in range(start_col, end_col + 1)
+            for row in range(start_row, end_row + 1)
+        ]
+
+
+    @staticmethod
     def _read_xlsx_range(worksheet, column: int, start_row: int, end_row: int) -> list:
         """Read a 1-based row/column slice from an openpyxl worksheet."""
         values = []
@@ -746,6 +756,22 @@ class CalibrationBase(ABC):
         """Write values to a 1-based row/column slice in an openpyxl worksheet."""
         for offset, value in enumerate(values):
             worksheet.cell(row=start_row + offset, column=column).value = value
+
+    @staticmethod
+    def _write_xlsx_block(
+        worksheet,
+        start_row: int,
+        end_row: int,
+        start_col: int,
+        end_col: int,
+        values: list
+    ) -> None:
+
+        index = 0
+        for col in range(start_col, end_col + 1):
+            for row in range(start_row, end_row + 1):
+                worksheet.cell(row = row, column = col).value = values[index]
+                index += 1
     
     def save_workbook(self):
         """Save the open calibration workbook.
@@ -835,10 +861,10 @@ class CalibrationBase(ABC):
 
         Subclasses opt in by defining two class attributes:
 
-        * ``UEC_SOURCE_RANGES``: mapping key -> ``(sheet, column, start_row, end_row)``
+        * ``UEC_SOURCE_RANGES``: mapping key -> ``(sheet, column, start_row, end_row)`` OR ``(sheet, start_column, end column, start_row, end_row)``
           for the source ``.xls`` workbook. (1-based index)
         * ``CALIBRATION_DESTINATION_RANGES``: mapping key ->
-          ``(sheet, column, start_row, end_row)`` for the destination ``.xlsx`` workbook. (1-based index)
+          ``(sheet, column, start_row, end_row)`` OR ``(sheet, start_column, end_column, start_row, end_row)`` for the destination ``.xlsx`` workbook. (1-based index)
 
         If either mapping is missing/empty, population is skipped.
 
@@ -886,31 +912,66 @@ class CalibrationBase(ABC):
         dst_workbook_obj = load_workbook(dst_path)
         total_written = 0
 
-        for name, (src_sheet_name, src_column, src_start_row, src_end_row) in source_ranges.items():
+        for name, source_range in source_ranges.items():
             if name not in destination_ranges:
                 raise KeyError(f"Missing destination mapping for UEC key: {name}")
-
-            dst_sheet_name, dst_column, dst_start_row, dst_end_row = destination_ranges[name]
-            src_values = self._read_xls_range(
-                src_workbook_obj.sheet_by_name(src_sheet_name),
-                src_column,
-                src_start_row,
-                src_end_row,
-            )
-            expected_dst_len = dst_end_row - dst_start_row + 1
-            if len(src_values) != expected_dst_len:
-                raise ValueError(
-                    f"Population length mismatch for {name}: "
-                    f"source has {len(src_values)} values and destination range has {expected_dst_len} rows"
+            if len(source_range) == 4:
+                src_sheet_name, src_column, src_start_row, src_end_row = source_range
+                src_values = self._read_xls_range(
+                    src_workbook_obj.sheet_by_name(src_sheet_name),
+                    src_column,
+                    src_start_row,
+                    src_end_row,
                 )
+            elif len(source_range) == 5:
+                src_sheet_name, start_col, end_col, start_row, end_row,  = source_range
+                src_values = self._read_xls_block(
+                    src_workbook_obj.sheet_by_name(src_sheet_name),
+                    start_row,
+                    end_row,
+                    start_col,
+                    end_col,
+                )
+            else:
+                raise ValueError(f"Invalid UEC source range for {name}: {source_range}")
 
-            self._write_xlsx_range(
-                dst_workbook_obj[dst_sheet_name],
-                dst_column,
-                dst_start_row,
-                src_values,
-            )
-            total_written += len(src_values)
+            if len(destination_ranges[name])  == 4:
+                dst_sheet_name, dst_column, dst_start_row, dst_end_row = destination_ranges[name]
+                expected_dst_len = dst_end_row - dst_start_row + 1
+                if len(src_values) != expected_dst_len:
+                    raise ValueError(
+                        f"Population length mismatch for {name}: "
+                        f"source has {len(src_values)} values and destination range has {expected_dst_len} rows"
+                    )
+
+                self._write_xlsx_range(
+                    dst_workbook_obj[dst_sheet_name],
+                    dst_column,
+                    dst_start_row,
+                    src_values,
+                )
+                total_written += len(src_values)
+
+            elif len(destination_ranges[name]) == 5:
+                dst_sheet_name, dst_start_col, dst_end_col, dst_start_row, dst_end_row,  = destination_ranges[name]
+                expected_dst_len = (dst_end_row - dst_start_row + 1) * (dst_end_col - dst_start_col + 1)
+                if len(src_values) != expected_dst_len:
+                    raise ValueError(
+                        f"Population length mismatch for {name}: "
+                        f"source has {len(src_values)} values and destination range has {expected_dst_len} rows"
+                    )
+
+                self._write_xlsx_block(
+                    dst_workbook_obj[dst_sheet_name],
+                    dst_start_row,
+                    dst_end_row,
+                    dst_start_col,
+                    dst_end_col,
+                    src_values,
+                )
+                total_written += len(src_values)
+
+
 
         self.logger.info(f"Populated {total_written} UEC cells into {dst_path}.")
         dst_workbook_obj.save(dst_path)

@@ -67,26 +67,38 @@ class TourModeChoiceCalibration(CalibrationBase):
 
     # UEC Source and Calibration Destination
     UEC_SOURCE_RANGES = {
-        "work_ivt": ("Work", 5, 42, 42),
-        "work": ("Work", 5, 414, 475),
-        "university_ivt": ("University", 5, 42, 42),
-        "university": ("University", 5, 414, 475),
-        "school_ivt": ("School", 5, 42, 42),
-        "school": ("School", 5, 414, 475),
-        "escort_ivt":("Escort", 5, 42, 42),
-        "escort": ("Escort", 5, 414, 475),
-        "shopping_ivt": ("Shopping", 5, 42, 42),
-        "shopping": ("Shopping", 5, 414, 475),
-        "eatout_ivt": ("EatOut", 5, 42, 42 ),
-        "eatout": ("EatOut", 5, 414, 475),
-        "othmaint_ivt": ("OthMaint", 5, 42, 42),
-        "othmaint": ("OthMaint", 5, 414, 475),
-        "social_ivt": ("Social", 5, 42, 42),
-        "social": ("Social", 5, 414, 475),
-        "othdiscr_ivt": ("OthDiscr", 5, 42, 42),
-        "othdiscr": ("OthDiscr", 5, 414, 475),
-        "workbased_ivt": ("WorkBased", 5, 11, 11),
-        "workbased": ("WorkBased", 5, 417, 478)
+        "work_ivt":         ("Work", 5, 42, 42),
+        "work":             ("Work", 5, 414, 475),
+        "university_ivt":   ("University", 5, 42, 42),
+        "university":       ("University", 5, 414, 475),
+        "school_ivt":       ("School", 5, 42, 42),
+        "school":           ("School", 5, 414, 475),
+        "escort_ivt":       ("Escort", 5, 42, 42),
+        "escort":           ("Escort", 5, 414, 475),
+        "shopping_ivt":     ("Shopping", 5, 42, 42),
+        "shopping":         ("Shopping", 5, 414, 475),
+        "eatout_ivt":       ("EatOut", 5, 42, 42 ),
+        "eatout":           ("EatOut", 5, 414, 475),
+        "othmaint_ivt":     ("OthMaint", 5, 42, 42),
+        "othmaint":         ("OthMaint", 5, 414, 475),
+        "social_ivt":       ("Social", 5, 42, 42),
+        "social":           ("Social", 5, 414, 475),
+        "othdiscr_ivt":     ("OthDiscr", 5, 42, 42),
+        "othdiscr":         ("OthDiscr", 5, 414, 475),
+        "workbased_ivt":    ("WorkBased", 5, 11, 11),
+        "workbased":        ("WorkBased", 5, 417, 478),
+
+        "cbd_work":      ("Work",       5, 476, 483),
+        "cbd_university":("University", 5, 476, 483),
+        "cbd_school":    ("School",     5, 476, 483),
+        "cbd_escort":    ("Escort",     5, 476, 483),
+        "cbd_shopping":  ("Shopping",   5, 476, 483),
+        "cbd_eatout":    ("EatOut",     5, 476, 483),
+        "cbd_othmaint":  ("OthMaint",   5, 476, 483),
+        "cbd_social":    ("Social",     5, 476, 483),
+        "cbd_othdiscr":  ("OthDiscr",   5, 476, 483),
+        "cbd_workbased": ("WorkBased",  5, 479, 486)
+
     }
     
     CALIBRATION_DESTINATION_RANGES = {
@@ -109,8 +121,18 @@ class TourModeChoiceCalibration(CalibrationBase):
         "othdiscr_ivt": ("constants", 37, 1, 1),
         "othdiscr": ("constants", 35, 3, 64),
         "workbased_ivt": ("constants", 41, 1, 1),
-        "workbased": ("constants", 39, 3, 64)
-        
+        "workbased": ("constants", 39, 3, 64),
+
+        "cbd_work":      ("CBD_SF",     9,  3, 10),
+        "cbd_university":("CBD_SF",     9, 11, 18),
+        "cbd_school":    ("CBD_SF",     9, 19, 26),
+        "cbd_escort":    ("CBD_SF",     9, 27, 34),
+        "cbd_shopping":  ("CBD_SF",     9, 27, 34),
+        "cbd_eatout":    ("CBD_SF",     9, 35, 42),
+        "cbd_othmaint":  ("CBD_SF",     9, 27, 34),
+        "cbd_social":    ("CBD_SF",     9, 35, 42),
+        "cbd_othdiscr":  ("CBD_SF",     9, 35, 42),
+        "cbd_workbased": ("CBD_SF",     9, 43, 50)
     }
 
 
@@ -448,7 +470,7 @@ class TourModeChoiceCalibration(CalibrationBase):
         return simple
 
     def _load_taz_sd(self) -> pd.DataFrame:
-        taz_sd_file = self.submodel_config.get("taz_sd_file", str(self._default_taz_sd_file))
+        taz_sd_file = self.config.get("data_sources", "taz_sd_file")
         if not Path(taz_sd_file).exists():
             raise FileNotFoundError(f"TAZ superdistrict file not found: {taz_sd_file}")
 
@@ -672,14 +694,14 @@ class TourModeChoiceCalibration(CalibrationBase):
             "auto_suff", "num_tours", self._auto_suff_cols, add_total=False,
         )
 
-        # trn_od_summary = self._build_transit_od_summary(transit)
-        # auto_od_summary = self._build_auto_od_summary(tours)
+        trn_od_summary = self._build_transit_od_summary(transit)
+        auto_od_summary = self._build_auto_od_summary(tours)
 
         return {
             "tour_mode_summary": mode_summary,
             "transit_mode_summary": trn_summary,
-            # "transit_od_summary": trn_od_summary,
-            # "auto_od_summary": auto_od_summary,
+            "transit_od_summary": trn_od_summary,
+            "auto_od_summary": auto_od_summary,
         }
 
     def validate_outputs(self, results: dict):

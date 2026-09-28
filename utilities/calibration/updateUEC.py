@@ -66,7 +66,7 @@ def get_config(submodel, version):
         
 
     elif submodel == 'NonworkDestinationChoice':
-        uec_src_workbook = UEC_DIR / "TM1.0 version" / "DestinationChoice_TM1.xls"
+        uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "DestinationChoice_TM1.6.1.xls"
         calib_workbook = CALIB_DIR / "09 Non-Work Destination Choice" / f"09_NonWorkDestinationChoice_2023_{version}.xlsx"
         # sheet, column, startRow, endRow
         copy_src = {
@@ -160,14 +160,15 @@ def get_config(submodel, version):
         }
 
     elif submodel == "TourModeChoice":
-        calib_workbook = CALIB_DIR / "11 Tour Mode Choice" / f"11_TourModeChoice_{version}.xlsx"
-        uec_src_workbook = UEC_DIR / "TM1.5.1 version" / "ModeChoice_TM1.5.1.xls"
+        calib_workbook = CALIB_DIR / "11 Tour Mode Choice" / f"11_TourModeChoice_2023_{version}.xlsx"
+        uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "ModeChoice_TM1.6.1.xls"
         
         # sheet, column, startRow, endRow
         copy_src = {
             "work":          ("constants",  4,  3, 64),
-            "university":    ("constants",  8,  3, 64),
-            "school":        ("constants", 12,  3, 64),
+            ## Leaving university and school as is
+            # "university":    ("constants",  8,  3, 64),
+            # "school":        ("constants", 12,  3, 64),
             "escort":        ("constants", 16,  3, 64),
             "shopping":      ("constants", 20,  3, 64),
             "eatout":        ("constants", 24,  3, 64),
@@ -189,38 +190,39 @@ def get_config(submodel, version):
         }
         
         copy_dst = {
-            "work":          [("Work",       5, 408, 469)],
-            "university":    [("University", 5, 408, 469)],
-            "school":        [("School",     5, 408, 469)],
-            "escort":        [("Escort",     5, 408, 469)],
-            "shopping":      [("Shopping",   5, 408, 469)],
-            "eatout":        [("EatOut",     5, 408, 469)],
-            "othmaint":      [("OthMaint",   5, 408, 469)],
-            "social":        [("Social",     5, 408, 469)],
-            "othdiscr":      [("OthDiscr",   5, 408, 469)],
-            "workbased":     [("WorkBased",  5, 411, 472)],
+            "work":          [("Work",       5, 414, 475)],
+            ## Leaving university and school UEC as is
+            # "university":    [("University", 5, 414, 475)],
+            # "school":        [("School",     5, 414, 475)],
+            "escort":        [("Escort",     5, 414, 475)],
+            "shopping":      [("Shopping",   5, 414, 475)],
+            "eatout":        [("EatOut",     5, 414, 475)],
+            "othmaint":      [("OthMaint",   5, 414, 475)],
+            "social":        [("Social",     5, 414, 475)],
+            "othdiscr":      [("OthDiscr",   5, 414, 475)],
+            "workbased":     [("WorkBased",  5, 417, 478)],
             
-            "cbd_work":      [("Work",       5, 470, 477)],
-            "cbd_university":[("University", 5, 470, 477)],
-            "cbd_school":    [("School",     5, 470, 477)],
-            "cbd_escort":    [("Escort",     5, 470, 477)],
-            "cbd_shopping":  [("Shopping",   5, 470, 477)],
-            "cbd_eatout":    [("EatOut",     5, 470, 477)],
-            "cbd_othmaint":  [("OthMaint",   5, 470, 477)],
-            "cbd_social":    [("Social",     5, 470, 477)],
-            "cbd_othdiscr":  [("OthDiscr",   5, 470, 477)],
-            "cbd_workbased": [("WorkBased",  5, 473, 480)]
+            "cbd_work":      [("Work",       5, 476, 483)],
+            "cbd_university":[("University", 5, 476, 483)],
+            "cbd_school":    [("School",     5, 476, 483)],
+            "cbd_escort":    [("Escort",     5, 476, 483)],
+            "cbd_shopping":  [("Shopping",   5, 476, 483)],
+            "cbd_eatout":    [("EatOut",     5, 476, 483)],
+            "cbd_othmaint":  [("OthMaint",   5, 476, 483)],
+            "cbd_social":    [("Social",     5, 476, 483)],
+            "cbd_othdiscr":  [("OthDiscr",   5, 476, 483)],
+            "cbd_workbased": [("WorkBased",  5, 479, 486)]
         }
         
     elif submodel == "TripModeChoice":
-        calib_workbook = CALIB_DIR / "15 Trip Mode Choice" / f"15_TripModeChoice_{version}.xlsx"
-        uec_src_workbook = UEC_DIR / "TM1.5.1 version" / "TripModeChoice_TM1.5.1.xls"
+        calib_workbook = CALIB_DIR / "15 Trip Mode Choice" / f"15_TripModeChoice_2023_{version}.xlsx"
+        uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "TripModeChoice_TM1.6.1.xls"
         
         # sheet, column, startRow, endRow
         copy_src = {
             "work":       ("constants",  7,  3, 39),
-            "university": ("constants", 15,  3, 39),
-            "school":     ("constants", 23,  3, 39),
+            # "university": ("constants", 15,  3, 39),
+            # "school":     ("constants", 23,  3, 39),
             "escort":     ("constants", 31,  3, 39),  # indiv maint, indiv
             "shopping":   ("constants", 31,  3, 68),  # indiv maint, joint
             "eatout":     ("constants", 39,  3, 68),  # indiv disc, joint
@@ -232,8 +234,8 @@ def get_config(submodel, version):
         
         copy_dst = {
             "work":       [("Work",       5, 509, 545)],
-            "university": [("University", 5, 512, 548)],
-            "school":     [("School",     5, 512, 548)],
+            # "university": [("University", 5, 512, 548)],
+            # "school":     [("School",     5, 512, 548)],
             "escort":     [("Escort",     5, 512, 548)],
             "shopping":   [("Shopping",   5, 512, 577)],
             "eatout":     [("EatOut",     5, 512, 577)],

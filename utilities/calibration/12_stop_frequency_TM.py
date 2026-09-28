@@ -28,11 +28,31 @@ class StopFrequencyCalibration(CalibrationBase):
 
     # UEC Source and Calibration Destination
     UEC_SOURCE_RANGES = {
-
+        "work": ("Work", 8, 22, 57, 59), 
+        "univ": ("univ", 8, 22, 56, 58),
+        "school": ("scho", 8, 22, 56, 58),
+        "escort": ("escort", 8, 22, 57, 59),
+        "shop": ("shop", 8, 22, 60, 62),
+        "eat": ("eat", 8, 22, 64, 66),
+        "maintenance": ("maint", 8, 22, 60, 62),
+        "social": ("visit", 8, 22, 64, 66),
+        "discretionary": ("discr", 8, 22, 59, 61),
+        "atwork": ("subtour", 8, 22, 19, 21),
+        "joint": ("escort", 8, 22, 60, 62)
     }
     
     CALIBRATION_DESTINATION_RANGES = {
-    
+        "work": ("constants", 4, 18, 6, 8), 
+        "univ": ("constants", 4, 18, 9, 11), 
+        "school": ("constants", 4, 18, 12, 14), 
+        "escort": ("constants", 4, 18, 15, 17), 
+        "shop": ("constants", 4, 18, 18, 20), 
+        "eat": ("constants", 4, 18, 21, 23), 
+        "maintenance":("constants", 4, 18, 24, 26), 
+        "social": ("constants", 4, 18, 27, 29), 
+        "discretionary": ("constants", 4, 18, 30, 32), 
+        "atwork": ("constants", 4, 18, 33, 35), 
+        "joint": ("constants", 4, 18, 36, 38), 
     }
 
 
