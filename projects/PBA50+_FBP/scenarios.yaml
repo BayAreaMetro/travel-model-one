@@ -234,6 +234,51 @@ scenarios:
     emfac_sb375_version: "2014"
     emfac_eir_version:   "2017"
 
+  2050_TM162_FBP_NoProject:
+    description: >
+      Plan Bay Area 2050+ Final Blueprint no-project run. Equivalent to 2050_TM161_FBP_NoProject_17
+    model_year:     2050
+    env.MODEL_YEAR: 2050
+    env.FUTURE: PBA50
+    # SetUpModel_2050_TM161_FBP_NoProject_17.txt's AddStrategies=No: env.EN7 stays at the
+    # shared model's own default (DISABLED) and none of the Blueprint strategy overrides
+    # below are turned on -- that's the whole difference from 2050_TM162_FBP_Plan.
+
+    copy_inputs.input_hwy.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Baseline/hwy"
+    copy_inputs.input_trn.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Baseline/trn"
+    copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_NoProject_v10/2050/popsyn"
+    copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_NoProject_v10/2050/landuse"
+    # No parking-strategy variant here (En9 is a Blueprint strategy, off for NoProject) --
+    # the shared model's own default `variant: {}` applies, unlike 2050_TM162_FBP_Plan.
+    copy_inputs.input_nonres.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+    copy_inputs.input_logsums.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
+    copy_inputs.input_metrics.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
+
+    copy_inputs.input_airpax_ea.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEA.tpp"
+    copy_inputs.input_airpax_am.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxAM.tpp"
+    copy_inputs.input_airpax_md.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxMD.tpp"
+    copy_inputs.input_airpax_pm.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxPM.tpp"
+    copy_inputs.input_airpax_ev.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEV.tpp"
+
+    # PREV_RUN_DIR (Archive_FBP/2050_TM161_FBP_NoProject_15/OUTPUT) is zipped away
+    # (Archive_FBP.7z) -- pulling from NoProject_17's own INPUT/warmstart instead, the
+    # same workaround 2050_TM162_FBP_Plan uses for its own archived predecessor.
+    copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_NoProject_17/INPUT/warmstart/main"
+    copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_NoProject_17/INPUT/warmstart/nonres"
+
+    copy_inputs.input_params.from: "utilities/RTP/config_RTP2025/params_2050_NoProject.properties"
+
+    # The versioned name this project's INPUT/popsyn ships under.
+    filter_unconnected_households.skip_if_exists: "popsyn/hhFile.FBP.2050.PBA50Plus_NoProject_v38.csv"
+
+    # RunPrepareEmfac.bat's MODEL_YEAR lookup table, evaluated for 2050 -- keyed on year,
+    # not Project/NoProject, so the same as 2050_TM162_FBP_Plan.
+    emfac_sb375_version: "2014"
+    emfac_eir_version:   "2017"
+
+    # AddStrategies=No: every Blueprint strategy override and off-model calculator this
+    # project declares stays at its shared default (false/disabled) -- nothing to turn on.
+
   2050_TM162_FBP_Plan:
     description: >
       Plan Bay Area 2050+ Final Blueprint run. Equivalent to 2050_TM161_FBP_Plan_16
@@ -268,7 +313,7 @@ scenarios:
     copy_inputs.input_params.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/params.properties"
 
     # The versioned name this project's INPUT/popsyn ships under.
-    filter_unconnected_households.skip_if_exists: "popsyn/hhFile.2023_v12.csv"
+    filter_unconnected_households.skip_if_exists: "popsyn/hhFile.FBP.2050.PBA50Plus_Final_Blueprint_v65.csv"
 
     # RunPrepareEmfac.bat's MODEL_YEAR lookup table, evaluated for 2050.
     emfac_sb375_version: "2014"
