@@ -1,4 +1,4 @@
-# Transit line link inventory
+# Transit network link inventories
 
 This standalone diagnostic utility expands every route in a CUBE `.lin` file
 into its directed node-to-node links and saves the result as Parquet.
@@ -43,6 +43,31 @@ The default output is:
 ```
 
 Use `--output-name another_name.parquet` to change the filename.
+
+## Convert `transitLines.link`
+
+The companion utility converts the explicitly coded physical transit links and
+expands `ONEWAY=NO` into both directed node pairs:
+
+```bash
+uv run python transit_link_file.py /path/to/transitLines.link /path/to/output
+```
+
+It writes:
+
+```text
+/path/to/output/transit_physical_links.parquet
+/path/to/output/transit_link_controls.parquet
+```
+
+`transit_physical_links.parquet` contains `A`, `B`, direction, the original
+`NODES`, `DIST`, `MODES`, `ONEWAY`, `TIME` or `SPEED`, calculated miles and
+effective speed, every additional source attribute, and source provenance. It
+also includes inline comments and the full comments preceding each record.
+
+`transit_link_controls.parquet` preserves non-link records such as `FACTOR` so
+the conversion does not silently discard them. Keeping these records separate
+makes the physical-link output ready to join to a directed highway-link table.
 
 ## Test
 
