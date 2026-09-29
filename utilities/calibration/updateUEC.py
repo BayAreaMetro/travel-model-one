@@ -233,16 +233,16 @@ def get_config(submodel, version):
         }
         
         copy_dst = {
-            "work":       [("Work",       5, 509, 545)],
-            # "university": [("University", 5, 512, 548)],
-            # "school":     [("School",     5, 512, 548)],
-            "escort":     [("Escort",     5, 512, 548)],
-            "shopping":   [("Shopping",   5, 512, 577)],
-            "eatout":     [("EatOut",     5, 512, 577)],
-            "othmaint":   [("OthMaint",   5, 512, 577)],
-            "social":     [("Social",     5, 512, 577)],
-            "othdiscr":   [("OthDiscr",   5, 512, 577)],
-            "workbased":  [("WorkBased",  5, 511, 547)]
+            "work":       [("Work",       5, 514, 550)],
+            # "university": [("University", 5, 517, 553)],
+            # "school":     [("School",     5, 517, 553)],
+            "escort":     [("Escort",     5, 517, 553)],
+            "shopping":   [("Shopping",   5, 517, 582)],
+            "eatout":     [("EatOut",     5, 517, 582)],
+            "othmaint":   [("OthMaint",   5, 517, 582)],
+            "social":     [("Social",     5, 517, 582)],
+            "othdiscr":   [("OthDiscr",   5, 517, 582)],
+            "workbased":  [("WorkBased",  5, 516, 552)]
         }
         
     else:
