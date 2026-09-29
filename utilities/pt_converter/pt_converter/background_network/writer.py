@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 import csv
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 import json
 import os
 from pathlib import Path
@@ -78,6 +78,7 @@ class BackgroundNetworkWriter:
         )
         directed_rows: list[tuple[object, ...]] = []
         for link in source.transit_only_links:
+            time_minutes, speed_mph = self._complete_time_and_speed(link)
             directions = ((link.a, link.b, "N"),)
             if not link.one_way:
                 directions += ((link.b, link.a, "Y"),)
@@ -89,8 +90,8 @@ class BackgroundNetworkWriter:
                         b,
                         self._number(link.distance_miles),
                         link.modes,
-                        self._optional(link.time_minutes),
-                        self._optional(link.speed_mph),
+                        self._number(time_minutes),
+                        self._number(speed_mph),
                         generated_reverse,
                         *(attribute_map.get(key, "") for key in extra_attributes),
                         *self._context(link.context),
@@ -180,8 +181,24 @@ class BackgroundNetworkWriter:
     def _number(value: Decimal) -> str:
         return format(value, "f")
 
-    def _optional(self, value: Decimal | None) -> str:
-        return "" if value is None else self._number(value)
+    @staticmethod
+    def _complete_time_and_speed(link: TransitOnlyLink) -> tuple[Decimal, Decimal]:
+        """Return minutes and mph, calculating whichever source value is absent."""
+
+        if link.time_minutes is not None:
+            speed = link.speed_mph or (
+                link.distance_miles * Decimal(60) / link.time_minutes
+            ).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+            return link.time_minutes, speed
+        if link.speed_mph is not None:
+            time = (
+                link.distance_miles * Decimal(60) / link.speed_mph
+            ).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+            return time, link.speed_mph
+        raise OutputWriteError(
+            f"Transit-only link at source line {link.context.source_line} "
+            "has neither TIME nor SPEED."
+        )
 
     @staticmethod
     def _write_rows(

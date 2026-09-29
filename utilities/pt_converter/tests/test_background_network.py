@@ -21,6 +21,7 @@ class BackgroundNetworkTests(unittest.TestCase):
         self.assertEqual(len(source.transfer_links), 2)
         self.assertEqual(str(source.transfer_links[1].distance_miles), "0.00")
         self.assertEqual(len(source.transit_only_links), 2)
+        self.assertEqual(source.transit_only_links[1].modes, "10-12")
         self.assertEqual(source.transit_only_links[0].context.leading_comments[0],
                          "A bidirectional fixed-time link and one directional speed-based link.")
         self.assertEqual(len(source.transit_link_controls), 1)
@@ -46,7 +47,13 @@ class BackgroundNetworkTests(unittest.TestCase):
         )
         reverse = next(row for row in transit_only if row["A"] == "2" and row["B"] == "1")
         self.assertEqual(reverse["GENERATED_REVERSE"], "Y")
+        self.assertEqual(reverse["MODES"], "11")
+        self.assertEqual(reverse["SPEED"], "21.428571")
         self.assertIn("bidirectional fixed-time", reverse["LEADING_COMMENTS"])
+        speed_based = next(row for row in transit_only if row["A"] == "2" and row["B"] == "3")
+        self.assertEqual(speed_based["MODES"], "10-12")
+        self.assertEqual(speed_based["TIME"], "1.200000")
+        self.assertEqual(speed_based["SPEED"], "25")
         self.assertEqual(report["access_link_count"], 1)
         self.assertEqual(report["transit_only_directed_link_count"], 3)
 
