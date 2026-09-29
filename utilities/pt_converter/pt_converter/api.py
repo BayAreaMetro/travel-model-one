@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .background_network import BackgroundNetworkReader, BackgroundNetworkWriter
 from .config import ConverterConfig
 from .connectors import ConnectorInputReader, ConnectorWriter
 from .errors import ConfigurationError, SourceReadError, ValidationError
@@ -18,7 +19,6 @@ from .line_conversion import (
     TransitOperatorReader,
     VehicleCatalogReader,
 )
-from .topology import TopologyWriter, TransitLinkReader
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +48,7 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
     output_directory = model_directory / request.config.output_directory
 
     if request.config.source == "network_wrangler":
-        link_directory = output_directory / "links"
+        background_network_directory = output_directory / "background_network"
         connector_directory = output_directory / "ntlegs"
         fare_directory = output_directory / "fares"
         factor_directory = output_directory / "factors"
@@ -76,7 +76,7 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
         operators = TransitOperatorReader().read_optional(
             operator_table, required_operators
         )
-        link_source = TransitLinkReader().read(source_directory / "transitLines.link")
+        background_network_source = BackgroundNetworkReader().read(source_directory)
         connector_source = ConnectorInputReader().read(source_directory)
         used_transit_modes = {line.mode for line in lines}
         fare_source = FareInputReader().read(source_directory, used_transit_modes)
@@ -87,7 +87,9 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
             operators,
             output_directory,
         )
-        topology = TopologyWriter().write(link_source, lines, link_directory)
+        background_network = BackgroundNetworkWriter().write(
+            background_network_source, background_network_directory
+        )
         connectors = ConnectorWriter().write(connector_source, connector_directory)
         fares = FareWriter().write(
             fare_source,
@@ -109,13 +111,16 @@ def convert_transit_network(request: ConversionRequest) -> ConversionResult:
                 f"Inspected {len(inventory.files)} source file(s) and "
                 f"converted {written.line_count} transit line(s) and "
                 f"{written.vehicle_type_count} vehicle type(s), and prepared "
-                f"{topology.source_link_count} transit link rule(s), "
+                f"{background_network.access_count} access link(s), "
+                f"{background_network.transfer_count} transfer link(s), and "
+                f"{background_network.transit_only_directed_count} directed "
+                f"transit-only link record(s), "
                 f"{connectors.ntleg_count} explicit PT access leg(s), and "
                 f"{factors.factor_count} PT user-class factor file(s). "
                 f"Prepared {len(fares.fare_system_by_mode)} mode-based fare system(s). "
                 f"{connectors.crosswalk_record_count} connector crosswalk record(s). "
                 f"Inventory: {inventory_path}. Conversion report: {written.report_path}. "
-                f"Link translation report: {topology.report_path}. "
+                f"Background network report: {background_network.report_path}. "
                 f"Connector translation report: {connectors.report_path}."
             ),
         )
