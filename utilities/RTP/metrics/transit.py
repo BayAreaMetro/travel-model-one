@@ -65,7 +65,7 @@ while True:
 	
 	rownum+=1
 
-print boardings
+print(boardings)
 
 outfile = open(outputfile, 'w')
 writer = csv.writer(outfile,lineterminator='\n')
