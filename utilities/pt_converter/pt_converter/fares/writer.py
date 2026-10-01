@@ -67,8 +67,8 @@ class FareWriter:
         self._write_rows(
             output_directory / "fareZoneCrosswalk.csv",
             (
-                "NETWORK_NODE",
-                "PT_FARE_ZONE",
+                "N",
+                "FAREZONE",
                 "SOURCE_FILES",
             ),
             (
