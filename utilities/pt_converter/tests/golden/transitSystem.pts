@@ -1,0 +1,18 @@
+;;<<PT>><<SYSTEM>>;;
+MODE NUMBER=1, NAME="WALK ACCESS", LONGNAME="Walk access connector"
+MODE NUMBER=2, NAME="DRIVE ACCESS", LONGNAME="Drive access connector"
+MODE NUMBER=3, NAME="XFER", LONGNAME="Stop-to-stop or stop-to-station transfer"
+MODE NUMBER=4, NAME="DRIVE FUNNEL", LONGNAME="Drive access funnel link"
+MODE NUMBER=5, NAME="WALK FUNNEL", LONGNAME="Walk access funnel link"
+MODE NUMBER=6, NAME="WALK EGRESS", LONGNAME="Walk egress connector"
+MODE NUMBER=7, NAME="DRIVE EGRESS", LONGNAME="Drive egress connector"
+MODE NUMBER=11, NAME="B", LONGNAME="Broadway Shuttle"
+MODE NUMBER=30, NAME="P", LONGNAME="AC Transit - Local"
+MODE NUMBER=120, NAME="BR", LONGNAME="BART & E-BART"
+
+OPERATOR NUMBER=7, NAME="BWAY SHUTTLE", LONGNAME="Broadway Shuttle"
+
+WAITCRVDEF NUMBER=1, NAME="HALF HEADWAY", LONGNAME="Wait equals half the headway",
+    CURVE=1-0.50, 180-90.00
+
+VEHICLETYPE NUMBER=1, NAME="STD BUS", LONGNAME="Standard Bus", CRUSHCAP=60

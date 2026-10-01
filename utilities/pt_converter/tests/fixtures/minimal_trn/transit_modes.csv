@@ -1,0 +1,11 @@
+mode_number,short_name,mode_name,mode_category
+1,WALK ACCESS,Walk access connector,Support
+2,DRIVE ACCESS,Drive access connector,Support
+3,XFER,Stop-to-stop or stop-to-station transfer link,Support
+4,DRIVE FUNNEL,Drive access funnel link,Support
+5,WALK FUNNEL,Walk access funnel link,Support
+6,WALK EGRESS,Walk egress connector,Support
+7,DRIVE EGRESS,Drive egress connector,Support
+11,B,Broadway Shuttle,Local
+30,P,AC Transit - Local,Local
+120,BR,BART & E-BART,Heavy Rail

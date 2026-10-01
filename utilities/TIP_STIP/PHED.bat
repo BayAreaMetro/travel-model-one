@@ -26,7 +26,7 @@ set NET_INFILE=freeflow.net
 set NODE_OUTFILE=forPHED\freeflow_nodes.shp
 set LINK_OUTFILE=forPHED\freeflow_links.shp
 
-runtpp X:\travel-model-one-master\utilities\cube-to-shapefile\export_network.job
+voyagercli X:\travel-model-one-master\utilities\cube-to-shapefile\export_network.job
 
 :: add projection
 :: ----------------------------------------------------------------

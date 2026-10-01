@@ -37,7 +37,7 @@ IF ERRORLEVEL 1 goto done
 :: Summary: Sets the prices in the roadway network
 ::          Based on columns TOLLCLASS, DISTANCE
 ::          Updates columns: TOLL[EA,AM,MD,PM,EV]_[DA,S2,S3,VSM,SML,MED,LRG]
-runtpp "%CODE_DIR%\model-files\scripts\preprocess\SetTolls.job"
+voyagercli "%CODE_DIR%\model-files\scripts\preprocess\SetTolls.job"
 if ERRORLEVEL 2 goto done
 
 :: name this more clearly and keep in source

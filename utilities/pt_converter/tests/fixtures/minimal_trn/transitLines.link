@@ -1,0 +1,4 @@
+; A bidirectional fixed-time link and one directional speed-based link.
+LINK NODES=1,2, DIST=125, MODES=11, ONEWAY=NO, TIME=3.5
+LINK NODES=2,3, DIST=50, MODES=10-12, ONEWAY=YES, SPEED=25
+FACTOR MAXWAITTIME=1, NODES=2

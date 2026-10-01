@@ -154,7 +154,7 @@ loop period = 1, 5
    endif
    
    ; do each time of day as a separate process
-   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = '%COMMPATH%'
+   DistributeMultistep Alias = 'ctramp@period@'
    
    ; do, more or less, the same skim procedure for each of seven classes of vehicles
    loop class = 1, 7
@@ -569,8 +569,8 @@ loop period = 1, 5
 
 endloop ; token_period
 
-Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
-           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+BARRIER IDLIST = CTRAMP1, CTRAMP2, CTRAMP3, CTRAMP4, CTRAMP5, 
+           printfiles = merge, CheckReturnCode = t
            
 ; combine and delete the debug files
 * copy @token_debug_filename@.EA.debug+@token_debug_filename@.AM.debug+@token_debug_filename@.MD.debug+@token_debug_filename@.PM.debug+@token_debug_filename@.EV.debug @token_debug_filename@.debug

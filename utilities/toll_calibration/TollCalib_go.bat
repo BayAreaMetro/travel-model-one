@@ -59,7 +59,7 @@ rem generate network_links.dbf
 rem -------------------------------------
 copy \\tsclient\X\travel-model-one-master\utilities\cube-to-shapefile\export_network.job  tollcalib_iter\export_network.job
 
-:: The location of the RUNTPP executable from Citilabs
+:: The location of the voyagercli executable from Citilabs
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
 :: Add these variables to the PATH environment variable, moving the current path to the back
 set PATH=%path%;%TPP_PATH%
@@ -67,7 +67,7 @@ set PATH=%path%;%TPP_PATH%
 set NET_INFILE=%MODEL_BASE_DIR%\INPUT\hwy\freeflow.net
 set NODE_OUTFILE=tollcalib_iter\network_nodes.shp
 set LINK_OUTFILE=tollcalib_iter\network_links.shp
-runtpp tollcalib_iter\export_network.job
+voyagercli tollcalib_iter\export_network.job
 
 rem generate a tolls_iter4.csv
 rem -------------------------------------

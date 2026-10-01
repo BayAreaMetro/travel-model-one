@@ -1,0 +1,2 @@
+200 300 0.05 ; station transfer
+201 301 0.00 ; zero-length station transfer retained for network construction

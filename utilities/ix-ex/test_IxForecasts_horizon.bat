@@ -20,7 +20,7 @@ FOR %%H in (CleanAndGreen BackToTheFuture RisingTidesFallingFortunes) DO (
     set MODEL_YEAR=%%G
     echo FUTURE=[!FUTURE!] MODEL_YEAR=[!MODEL_YEAR!]
 
-    runtpp "%CODE_DIR%\model-files\scripts\nonres\IxForecasts_horizon.job"
+    voyagercli "%CODE_DIR%\model-files\scripts\nonres\IxForecasts_horizon.job"
     IF ERRORLEVEL 1 goto done
     move nonres\ixDailyx4.tpp nonres\ixDailyx4_!MODEL_YEAR!_!FUTURE!.tpp
   )
@@ -31,12 +31,12 @@ SET FUTURE=PBA50
 
 FOR %%G in (2015 2019 2021 2022 2035 2050 2005) DO (
   set MODEL_YEAR=%%G
-  runtpp "%CODE_DIR%\model-files\scripts\nonres\IxForecasts_horizon.job"
+  voyagercli "%CODE_DIR%\model-files\scripts\nonres\IxForecasts_horizon.job"
   rem IF ERRORLEVEL 1 goto done
   rem Testing error with 2019 so don't goto done
 
   IF !MODEL_YEAR! NEQ 2019 (
-    runtpp "%CODE_DIR%\model-files\scripts\nonres\IxTimeOfDay.job
+    voyagercli "%CODE_DIR%\model-files\scripts\nonres\IxTimeOfDay.job
   )
   move nonres\ixDailyx4.tpp nonres\ixDailyx4_!MODEL_YEAR!.tpp
 

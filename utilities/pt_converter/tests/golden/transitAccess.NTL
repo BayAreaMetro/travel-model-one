@@ -1,0 +1,2 @@
+;;<<PT>><<NT>>;;
+NT LEG=10-20, MODE=1, COST=6.00, DIST=0.30, ONEWAY=T, SPEED=3.00 ; explicit walk

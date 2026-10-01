@@ -75,7 +75,7 @@ IF ERRORLEVEL 1 goto done
 :: Summary: Sets the prices in the roadway network
 ::          Based on columns TOLLCLASS, DISTANCE
 ::          Updates columns: TOLL[EA,AM,MD,PM,EV]_[DA,S2,S3,VSM,SML,MED,LRG]
-runtpp "CTRAMP\scripts\preprocess\SetTolls.job"
+voyagercli "CTRAMP\scripts\preprocess\SetTolls.job"
 if ERRORLEVEL 2 goto done
 
 ::   Input: hwy\withTolls.net
@@ -83,13 +83,13 @@ if ERRORLEVEL 2 goto done
 :: Summary: Set a penalty to dummy links connecting HOV/HOT lanes and general purpose lanes
 ::          Based on columns FT, A, B, DISTANCE
 ::          Updates column: HovXPen
-runtpp "CTRAMP\scripts\preprocess\SetHovXferPenalties.job"
+voyagercli "CTRAMP\scripts\preprocess\SetHovXferPenalties.job"
 if ERRORLEVEL 2 goto done
 
 ::   Input: hwy\withTolls.net
 ::  Output: hwy\avgload[EA,AM,MD,PM,EV].net
 :: Summary: Creates time-of-day-specific networks
-runtpp "CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job"
+voyagercli "CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job"
 if ERRORLEVEL 2 goto done
 
 
@@ -116,7 +116,7 @@ if %ITER%==4 (
 echo STARTED HIGHWAY ASSIGNMENT  %DATE% %TIME% >> logs\feedback.rpt 
 
 :: Assign the demand matrices to the highway network
-runtpp CTRAMP\scripts\assign\HwyAssign.job
+voyagercli CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
 
 :: Complete
@@ -148,13 +148,13 @@ move hwy\LOADPM.net hwy\iter%ITER%\LOADPM.net
 move hwy\LOADEV.net hwy\iter%ITER%\LOADEV.net
 
 :: Give the default TP+ variables more intuitive names
-runtpp CTRAMP\scripts\feedback\RenameAssignmentVariables.job
+voyagercli CTRAMP\scripts\feedback\RenameAssignmentVariables.job
 
 :: Average the demand for this and the previous iteration and compute a speed estimate for each link 
 IF %ITER% GTR 1 (
-	runtpp CTRAMP\scripts\feedback\AverageNetworkVolumes.job
+	voyagercli CTRAMP\scripts\feedback\AverageNetworkVolumes.job
 	if ERRORLEVEL 2 goto done
-	runtpp CTRAMP\scripts\feedback\CalculateSpeeds.job
+	voyagercli CTRAMP\scripts\feedback\CalculateSpeeds.job
 	if ERRORLEVEL 2 goto done
 ) ELSE (
 	copy hwy\iter%ITER%\LOADEA_renamed.net hwy\iter%ITER%\avgLOADEA.net /Y
@@ -165,11 +165,11 @@ IF %ITER% GTR 1 (
 )
 
 :: Compute network statistics to measure convergence
-runtpp CTRAMP\scripts\feedback\TestNetworkConvergence.job
+voyagercli CTRAMP\scripts\feedback\TestNetworkConvergence.job
 if ERRORLEVEL 2 goto done
 
 :: Combine the time-of-day-specific networks into a single network
-runtpp CTRAMP\scripts\feedback\MergeNetworks.job  
+voyagercli CTRAMP\scripts\feedback\MergeNetworks.job  
 if ERRORLEVEL 2 goto done                
 
 :: Place a copy of the loaded networks into the root \hwy directory for access by the next iteration
@@ -248,7 +248,7 @@ if %ITER%==4 (
 )
 
 :: Create the automobile level-of-service matrices
-runtpp CTRAMP\scripts\skims\HwySkims.job
+voyagercli CTRAMP\scripts\skims\HwySkims.job
 if ERRORLEVEL 2 goto done
 
 
@@ -355,7 +355,7 @@ if %ITER%==4 (
 
 
 :: after executing demand models, translate the trip lists to demand matrices
-runtpp CTRAMP\scripts\assign\PrepAssign.job
+voyagercli CTRAMP\scripts\assign\PrepAssign.job
 if ERRORLEVEL 2 goto done
 
 :: close the cluster

@@ -121,7 +121,7 @@ IF ERRORLEVEL 1 goto done
 :: Summary: Sets the prices in the roadway network
 ::          Based on columns TOLLCLASS, DISTANCE
 ::          Updates columns: TOLL[EA,AM,MD,PM,EV]_[DA,S2,S3,VSM,SML,MED,LRG]
-runtpp "CTRAMP\scripts\preprocess\SetTolls.job"
+voyagercli "CTRAMP\scripts\preprocess\SetTolls.job"
 if ERRORLEVEL 2 goto done
 
 ::   Input: hwy\withTolls.net
@@ -129,13 +129,13 @@ if ERRORLEVEL 2 goto done
 :: Summary: Set a penalty to dummy links connecting HOV/HOT lanes and general purpose lanes
 ::          Based on columns FT, A, B, DISTANCE
 ::          Updates column: HovXPen
-runtpp "CTRAMP\scripts\preprocess\SetHovXferPenalties.job"
+voyagercli "CTRAMP\scripts\preprocess\SetHovXferPenalties.job"
 if ERRORLEVEL 2 goto done
 
 ::   Input: hwy\withTolls.net
 ::  Output: hwy\avgload[EA,AM,MD,PM,EV].net
 :: Summary: Creates time-of-day-specific networks
-runtpp "CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job"
+voyagercli "CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job"
 if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
@@ -149,11 +149,11 @@ if ERRORLEVEL 2 goto done
 mkdir skims
 
 :: Translate the roadway network into a non-motorized network
-runtpp CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job
+voyagercli CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job
 if ERRORLEVEL 2 goto done
 
 :: Build the skim tables
-runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
+voyagercli CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ copy "%MODEL_BASE_DIR%\nonres\tripsTrk??.tpp"    nonres\
 copy "%MODEL_BASE_DIR%\nonres\tripsAirPax??.tpp" nonres\
 
 :: Assign the demand matrices to the highway network
-runtpp CTRAMP\scripts\assign\HwyAssign.job
+voyagercli CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
 
 echo FINISHED HIGHWAY ASGN  %DATE% %TIME% >> logs\feedback.rpt 
@@ -211,11 +211,11 @@ echo FINISHED TRN ASSIGN SKIMMING  %DATE% %TIME% >> logs\feedback.rpt
 :hwyskims
 
 :: Create the automobile level-of-service matrices
-runtpp CTRAMP\scripts\skims\HwySkims.job
+voyagercli CTRAMP\scripts\skims\HwySkims.job
 if ERRORLEVEL 2 goto done
 
 :: Create accessibility measures for use by ...
-runtpp CTRAMP\scripts\skims\Accessibility.job
+voyagercli CTRAMP\scripts\skims\Accessibility.job
 if ERRORLEVEL 2 goto done
 
 :: Add time step to the feedback report file
@@ -269,7 +269,7 @@ python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
 if ERRORLEVEL 1 goto done
 
 :: List unconnected zones in skims\unconnected_zones.csv
-runtpp CTRAMP\scripts\skims\FindNoAccessZones.job
+voyagercli CTRAMP\scripts\skims\FindNoAccessZones.job
 if ERRORLEVEL 2 goto done
 
 :: Filter out households in those unconnected zones

@@ -83,7 +83,7 @@ def runCubeScript(workingdir, script_filename):
     Returns the return code.
     """
     # run it
-    proc = subprocess.Popen("runtpp %s" % script_filename, cwd=workingdir,
+    proc = subprocess.Popen("voyagercli %s" % script_filename, cwd=workingdir,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout:
         line = line.strip('\r\n')
