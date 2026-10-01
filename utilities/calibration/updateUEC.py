@@ -28,7 +28,7 @@ def parse_arguments():
         description='Update UEC files from calibration workbooks'
     )
     parser.add_argument('submodel', type=str, 
-                        choices = ['UsualWorkSchool','NonworkDestinationChoice', 'AutomobileOwnership', 
+                        choices = ['DestinationChoice', 'AutomobileOwnership', 
                                    'TourModeChoice', 'TripModeChoice', 'CoordinatedDailyActivityPattern'  ],
                        help='Submodel name (e.g., DestinationChoice, AutomobileOwnership)')
     parser.add_argument('version', type=str,
@@ -41,56 +41,55 @@ def parse_arguments():
 def get_config(submodel, version):
     """Get configuration based on submodel type."""
     
-    if submodel == "UsualWorkSchool":
+    if submodel == "DestinationChoice":
         # Note: includes UsualWorkAndSchoolLocation AND NonWorkDestinationChoice
         # so the workbook numbers need to be in sync
         uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "DestinationChoice_TM1.6.1.xls"
-        calib_workbook = CALIB_DIR / "01 Usual Work and School Location" / f"01_UsualWorkAndSchoolLocation_2023_{version}.xlsx"
-        
-        # sheet, column, startRow, endRow of calib_workbook
-        copy_src = {
-            "work":        ("calibration",  4,  4,  8),
-            "work_county": ("calibration", 10,  4, 13),
-            "university":  ("calibration", 16,  4,  8),
-            "highschool":  ("calibration", 33,  4,  8),
-            "gradeschool": ("calibration", 34,  4,  8)
-        }
-        # uec_src_workbook
-        copy_dst = {
-            "work":        [("Work",        7, 22, 26)],
-            "work_county": [("Work",        7, 38, 47)],
-            "university":  [("University",  7, 12, 16)],
-            "highschool":  [("HighSchool",  7, 12, 16)],
-            "gradeschool": [("GradeSchool", 7, 12, 16)]
-        }
-        
+        usual_work_school = (
+        CALIB_DIR / "01 Usual Work and School Location"
+        / f"01_UsualWorkAndSchoolLocation_2023_{version}.xlsx",
+        {
+            "work": ("calibration", 4, 4, 8),
+            "work_county": ("calibration", 10, 4, 13),
+            "university": ("calibration", 16, 4, 8),
+            "highschool": ("calibration", 33, 4, 8),
+            "gradeschool": ("calibration", 34, 4, 8),
+        },
+        {
+            "work": [("Work", 7, 22, 26)],
+            "work_county": [("Work", 7, 38, 47)],
+            "university": [("University", 7, 12, 16)],
+            "highschool": [("HighSchool", 7, 12, 16)],
+            "gradeschool": [("GradeSchool", 7, 12, 16)],
+        },
+    )
 
-    elif submodel == 'NonworkDestinationChoice':
-        uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "DestinationChoice_TM1.6.1.xls"
-        calib_workbook = CALIB_DIR / "09 Non-Work Destination Choice" / f"09_NonWorkDestinationChoice_2023_{version}.xlsx"
-        # sheet, column, startRow, endRow
-        copy_src = {
-            "escort1":   ("calibration",  5,  4,  8),
-            "escort2":   ("calibration",  5,  4,  8),
-            "shopping":  ("calibration", 17,  4,  8),
-            "maint":     ("calibration", 29,  4,  8),
-            "eatout":    ("calibration", 41,  4,  8),
-            "social":    ("calibration", 53,  4,  8),
-            "discr":     ("calibration", 65,  4,  8),
-            "atwork":    ("calibration", 77,  4,  8)
-        }
-        
-        copy_dst = {
-            "escort1":   [("EscortKids",   7, 12, 16)],
-            "escort2":   [("EscortNoKids", 7, 12, 16)],
-            "shopping":  [("Shopping",     7, 12, 16)],
-            "maint":     [("OthMaint",     7, 12, 16)],
-            "eatout":    [("EatOut",       7, 12, 16)],
-            "social":    [("Social",       7, 12, 16)],
-            "discr":     [("OthDiscr",     7, 12, 16)],
-            "atwork":    [("WorkBased",    7, 12, 16)]
-        }
-        
+        nonwork_destination = (
+            CALIB_DIR / "09 Non-Work Destination Choice"
+            / f"09_NonWorkDestinationChoice_2023_{version}.xlsx",
+            {
+                "escort1": ("calibration", 5, 4, 8),
+                "escort2": ("calibration", 5, 4, 8),
+                "shopping": ("calibration", 17, 4, 8),
+                "maint": ("calibration", 29, 4, 8),
+                "eatout": ("calibration", 41, 4, 8),
+                "social": ("calibration", 53, 4, 8),
+                "discr": ("calibration", 65, 4, 8),
+                "atwork": ("calibration", 77, 4, 8),
+            },
+            {
+                "escort1": [("EscortKids", 7, 12, 16)],
+                "escort2": [("EscortNoKids", 7, 12, 16)],
+                "shopping": [("Shopping", 7, 12, 16)],
+                "maint": [("OthMaint", 7, 12, 16)],
+                "eatout": [("EatOut", 7, 12, 16)],
+                "social": [("Social", 7, 12, 16)],
+                "discr": [("OthDiscr", 7, 12, 16)],
+                "atwork": [("WorkBased", 7, 12, 16)],
+            },
+        )
+        return uec_src_workbook, [usual_work_school, nonwork_destination]
+
     elif submodel == "AutomobileOwnership":
         calib_workbook = CALIB_DIR / "02 Automobile Ownership" / f"02_AutoOwnership_2023_{version}.xlsx"
         uec_src_workbook = UEC_DIR / "TM1.6.1 version" / "AutoOwnership_TM1.6.1.xls"
@@ -259,7 +258,7 @@ def read_column_data(worksheet, column, start_row, end_row):
     for row in range(start_row, end_row + 1):
         cell_value = worksheet.cell(row=row, column=column).value
         if cell_value is None:
-            raise ValueError(f"Data contains None/NA at row {row}")
+            raise ValueError(f"Data contains None/NA at row {row}; Cell Value: {cell_value}")
         data.append(cell_value)
     return data
 
