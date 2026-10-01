@@ -52,16 +52,18 @@ class FareTests(unittest.TestCase):
             self.assertIn("STRUCTURE=FROMTO", fares)
             self.assertIn("FAREMATRIX=FMI.1.1", fares)
             self.assertIn("FAREZONES=NI.PTFAREZONE", fares)
-            with (output / "prepared" / "fareMatrix_Test.csv").open(
+            with (output / "prepared" / "fare_matrices.csv").open(
                 newline="", encoding="utf-8"
             ) as stream:
                 rows = list(csv.DictReader(stream))
             self.assertEqual(len(rows), 2)
             self.assertEqual(rows[0]["FROM_FARE_ZONE"], "1")
             self.assertEqual(rows[0]["TO_FARE_ZONE"], "2")
+            self.assertEqual(rows[0]["FARE_SYSTEM_ID"], "1")
             self.assertEqual(rows[0]["FARE"], "250")
             self.assertEqual(rows[1]["FROM_FARE_ZONE"], "2")
             self.assertEqual(rows[1]["TO_FARE_ZONE"], "1")
+            self.assertEqual(rows[1]["FARE_SYSTEM_ID"], "1")
             self.assertEqual(rows[1]["FARE"], "250")
             with (output / "fareZoneCrosswalk.csv").open(
                 newline="", encoding="utf-8"
@@ -84,7 +86,7 @@ class FareTests(unittest.TestCase):
             )
             block = (output / "fare_matrices.block").read_text(encoding="utf-8")
             self.assertIn(
-                'FILEI FAREMATI[1]="@token_model_dir@\\trn\\pt\\fares\\matrices\\fareMatrix_Test.mat"',
+                'FILEI FAREMATI[1]="@token_model_dir@\\trn\\pt\\fares\\matrices\\fare_matrices.mat"',
                 block,
             )
 
