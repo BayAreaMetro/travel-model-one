@@ -35,7 +35,6 @@ class DailyActivityPatternCalibration(CalibrationBase):
         "Home":             ("calibration", 5, 31, 38),
 
     }
-    
 
     def __init__(self, config_file: str = None):
         super().__init__("04", config_file)
@@ -47,7 +46,7 @@ class DailyActivityPatternCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nPROCESS DATA\n{sep}")
         cdap_results = pd.read_csv(self.submodel_config['input_file'])
-        self.logger.info(f"Reading in CDAP Input File: {self.submodel_config['input_file']}")
+        self.logger.info(f"Reading in Person Input File: {self.submodel_config['input_file']}")
         CTRAMPPersonTypeLookUp = {person.label: person.value for person in CTRAMPPersonType}
 
 
@@ -65,21 +64,33 @@ class DailyActivityPatternCalibration(CalibrationBase):
             # One summary per county filter ("all" = unfiltered); filter on home county only.
             results = {}
             for label, subset in self.iter_county_filters(cdap_results, orig_county_col="home_county", dest_county_col=None):
-                cdap_ptype = subset.groupby(['person_type', 'activity_pattern'])['person_weight'].sum().reset_index(name='num_pers')
+                cdap_ptype = subset.groupby(['person_type', 'activity_pattern', 'wfh_choice'])['person_weight'].sum().reset_index(name='num_pers')
                 results[f'person_type_summary_{label}'] = cdap_ptype
             return results
 
         else:
         # Summarize by person type and activity string
-            cdap_ptype = cdap_results.groupby(['PersonType', 'ActivityString']).size().reset_index(name='num_pers')
+            cdap_results["person_type"] = cdap_results["type"].map(CTRAMPPersonTypeLookUp)
+            cdap_ptype = cdap_results.groupby(['person_type', 'activity_pattern']).size().reset_index(name='num_pers')
             cdap_ptype['num_pers'] = cdap_ptype['num_pers'] / self.sampleshare
             
             # Pivot to spread format
-            cdap_ptype_spread = cdap_ptype.pivot(index='PersonType', columns='ActivityString', values='num_pers')
+            cdap_ptype_spread = cdap_ptype.pivot(index="person_type", columns='activity_pattern', values='num_pers')
             cdap_ptype_spread = cdap_ptype_spread.fillna(0).reset_index()
+
+            ## Person Type with WFH
+            cdap_ptype_wfh = cdap_results.groupby(["person_type", "activity_pattern", "wfh_choice"]).size().reset_index(name = "num_pers")
+
+            cdap_ptype_wfh_spread = cdap_ptype_wfh.pivot(index = "person_type", columns = ["activity_pattern", "wfh_choice"], values = "num_pers")
+            cdap_ptype_wfh_spread = cdap_ptype_wfh_spread.fillna(0).reset_index()
+            cdap_ptype_wfh_spread.columns = [
+                "person_type" if col[0] == "person_type" else f"{col[0]}_wfh_{col[1]}"
+                for col in cdap_ptype_wfh_spread.columns
+            ]
             
             return {
-                'person_type_summary': cdap_ptype_spread
+                'person_type_summary': cdap_ptype_spread,
+                "person_type_wfh_summary": cdap_ptype_wfh_spread
             }
     
     def validate_outputs(self, results:dict):
@@ -113,6 +124,13 @@ class DailyActivityPatternCalibration(CalibrationBase):
         else:
             targets = [SheetTarget("person_type_summary", "modeldata", 2, 1,
                                    f"{self.submodel}_daily_activity_pattern_TM.csv", (1, 1))]
+            targets.append(
+                SheetTarget(
+                    "person_type_wfh_summary", "modeldata", 14, 1,
+                    f"{self.submodel}_daily_activity_pattern_wfh.csv", (13, 1),
+                )
+            )
+
         self.write_results_to_workbook(results, targets)
 
 
