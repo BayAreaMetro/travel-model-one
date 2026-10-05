@@ -1,0 +1,15 @@
+; Extract non motorized table into a text file of condensed form
+;
+run PGM=MATRIX
+  filei mati[1] = "%MODEL_DIR%\skims\nonmotskm.tpp"
+  fileo mato[1] = "nonmotskm_noheader.csv", FORMAT=TXT, DELIMITER=",", PATTERN=IJM:V, MO=1-4, MAXFIELDS=8
+
+  MW[1] = 1
+  FILLMW MW[2] = MI.1.1(3)
+
+endrun
+
+; add header
+*echo orig, dest, one_a, one_b, DISTWALK, DISTBIKE, DIST > "nonmotskm.csv"
+*type "nonmotskm_noheader.csv" >> "nonmotskm.csv"
+*del "nonmotskm_noheader.csv"

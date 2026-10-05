@@ -1,10 +1,10 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=\\MODEL3-B\Model3B-Share\Projects\2023_TM170_IPA_00_calib_07
-set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.7\2023_TM170_IPA_00_Cube6
+set MODEL_DIR=\\MODEL3-H\Model3H-Share\Projects\2023_TM170_IPA_01_Cube6
+set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.7\2023_TM170_IPA_01_Cube6
 set CODE_DIR=E:\Github\travel-model-one\utilities\calibration
 rem start at 00 when INPUT or skims are updated
-set CALIB_ITER=07
+set CALIB_ITER=00
 
 echo CALIB_ITER=%CALIB_ITER%
 
@@ -70,6 +70,8 @@ mkdir OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\aoResults.csv            OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\wsLocResults_%ITER%.csv  OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\cdapResults.csv          OUTPUT_%CALIB_ITER%\main
+copy %MODEL_DIR%\main\personData_%ITER%.csv    OUTPUT_%CALIB_ITER%\main
+copy %MODEL_DIR%\main\householdData_%ITER%.csv OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\indivTourData_%ITER%.csv OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\jointTourData_%ITER%.csv OUTPUT_%CALIB_ITER%\main
 copy %MODEL_DIR%\main\indivTripData_%ITER%.csv OUTPUT_%CALIB_ITER%\main
@@ -79,6 +81,10 @@ mkdir OUTPUT_%CALIB_ITER%\calibration
 python "%CODE_DIR%\01_usual_work_school_location_TM.py"
 python "%CODE_DIR%\02_auto_ownership_TM.py"
 python "%CODE_DIR%\04_daily_activity_pattern_TM.py"
+python "%CODE_DIR%\09_nonwork_destination_choice_TM.py"
+python "%CODE_DIR%\11_tour_mode_choice_TM.py"
+python "%CODE_DIR%\12_stop_frequency_TM.py"
+python "%CODE_DIR%\15_trip_mode_choice_TM.py"
 @REM Rscript --vanilla "%CODE_DIR%\09_nonwork_destination_choice_TM.R"
 @REM Rscript --vanilla "%CODE_DIR%\11_tour_mode_choice_TM.R"
 @REM Rscript --vanilla "%CODE_DIR%\15_trip_mode_choice_TM.R"
