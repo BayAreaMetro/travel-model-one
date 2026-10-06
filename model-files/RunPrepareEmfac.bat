@@ -116,13 +116,19 @@ if %1==EIR (
 echo emfacVersion=%emfacVersion%
 
 :: run the emfac prep script with arguments related to how we'll run emfac
-python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions --airbasin_split_method EMFAC-airbasin-default
+:: altertively, if we want to use modeled air basin VMT split rather than EMFAC-default split to summarize VMT, use the following command instead:
+:: python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions --airbasin_split_method modeled-airbasin-split
 
 :: for EIR, also run SEASON=winter and EMFAC2021
 if %1==EIR (
-  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season winter --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
-  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac 2021 --run_mode emissions --sub_area MPO-MTC --season winter --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
-  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac 2021 --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season winter --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions --airbasin_split_method EMFAC-airbasin-default
+
+  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac 2021 --run_mode emissions --sub_area MPO-MTC --season winter --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions --airbasin_split_method EMFAC-airbasin-default
+  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac 2021 --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions --airbasin_split_method EMFAC-airbasin-default
+  :: alternatively, if we want to use modeled air basin VMT split rather than EMFAC-default split to summarize VMT, use the following command instead:
+  :: python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac 2021 --run_mode emissions --sub_area MPO-MTC --season winter --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions --airbasin_split_method modeled-airbasin-split
+  :: python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac 2021 --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions --airbasin_split_method modeled-airbasin-split
 )
 
 :end

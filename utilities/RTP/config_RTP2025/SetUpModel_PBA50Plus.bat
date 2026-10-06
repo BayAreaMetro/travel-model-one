@@ -119,6 +119,7 @@ if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
 :: networks
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_NETWORK%\hwy"                                        INPUT\hwy
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_NETWORK%\trn"                                        INPUT\trn
+copy /Y "%INPUT_NETWORK%\shapefiles\link_to_airbasin.csv"                                            INPUT\hwy\link_to_airbasin.csv
 
 :: popsyn and land use
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_POPLU%\popsyn"                                       INPUT\popsyn

@@ -19,10 +19,24 @@ from os import path
 # -------------------------------------------------------------------
 # loaded network assignment file
 loadednet_df = pd.read_csv(os.path.join(os.getcwd(), "hwy", "iter3", "avgload5period_vehclasses.csv"), index_col=False, sep=",")
+# print(loadednet_df.head())
+# loaded network link to air basin crosswalk file
+link_airbasin_crowwalk = pd.read_csv(os.path.join(os.getcwd(), "hwy", "link_to_airbasin.csv"), index_col=False, sep=",")
+# print(link_airbasin_crowwalk.head())
+
+# validate that the two files have the same number of unique links
+if loadednet_df.shape[0] != link_airbasin_crowwalk[['A', 'B']].drop_duplicates().shape[0]:
+   raise ValueError(
+      "Loaded network and air basin crosswalk have different numbers of unique (A,B) links: "
+      f"loadednet={loadednet_df.shape[0]}, crosswalk={link_airbasin_crowwalk[['A', 'B']].drop_duplicates().shape[0]}."
+   )
+
 
 # Todo: add truck or no truck
 
 output_csv = "emfac\\emfac_prep\\CreateSpeedBinsBetweenZones_sums.csv"
+debug_csv = "emfac\\emfac_prep\\betweenZone_airBasin_split_debug.csv"
+vmt_by_airbasin_csv = "emfac\\emfac_prep\\VMT_betweenZones_airBasin.csv"
 
 
 # -------------------------------------------------------------------
@@ -50,6 +64,12 @@ loadednet_df['countyName'] = np.select(GL_conditions, CountyName_choices , defau
 arbCounty_choices = ["38", "41", "43", "01", "07", "48", "28", "49", "21", "9999"]
 loadednet_df[' arbCounty'] = np.select(GL_conditions, arbCounty_choices , default='null')
 
+# join the crosswalk to the loaded network dataframe. Note that the crosswalk may have multiple rows for the same (A,B) link
+loadednet_df = pd.merge(
+   loadednet_df,
+   link_airbasin_crowwalk.rename(columns={'A': 'a', 'B': 'b'}),
+   on=['a', 'b'], how='right', validate='1:m')
+
 # create dataframe for each time period and loop through tem
 # store dataframes into a dictionary
 timeperiodList = ['EA', 'AM', 'MD', 'PM', 'EV']
@@ -73,17 +93,28 @@ for tp in timeperiodList:
         (loadednet_df['cspd'+tp] >= 55) & (loadednet_df['cspd'+tp] < 60),
         (loadednet_df['cspd'+tp] >= 60)]
     SpeedBin_choices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-    loadednet_df[' speedBin'] = np.select(Speed_conditions, SpeedBin_choices, default='null')
+    loadednet_df[' speedBin'] = np.select(Speed_conditions, SpeedBin_choices, default=np.nan)
 
     # reset speeds to 25 mph for dummy links (these are dummy/centroid connector-access links)
     loadednet_df[' speedBin'] = np.where(loadednet_df['ft']==6, 6, loadednet_df[' speedBin']).astype(int)
 
     # calculate vmt
-    loadednet_df['vmt_'+tp] = loadednet_df['distance'] *  loadednet_df['vol'+tp+'_tot']
+    loadednet_df['vmt_temp'+tp] = loadednet_df['distance'] *  loadednet_df['vol'+tp+'_tot']
+    # for links that are split across multiple air basins, vmt should be proportional to the share of link distance, represented by 'linktaz_share'
+    loadednet_df['vmt_'+tp] = loadednet_df['vmt_temp'+tp] * loadednet_df['linktaz_share']
+
+   #  print(loadednet_df.loc[loadednet_df[['a','b']].duplicated(keep=False)].sort_values(['a','b'])[[
+   #     'countyName', ' arbCounty', 'ctAirBasin','link_mi','linktaz_mi','merge_type','linktaz_share',' speedBin', 'vmt_'+tp, 'vmt_temp'+tp]].head())
+    # export for debugging
+    loadednet_df[['a', 'b','countyName', ' arbCounty', 'ctAirBasin', ' speedBin', 'merge_type', 'linktaz_share','vmt_'+tp, 'vmt_temp'+tp]].to_csv(
+       debug_csv, header=True, index=False)
 
     # keep the relevant columns
+    # Note that here, we only use countyName and arbCounty, not AirBasin, to maintain the same structure as WithinZone summary.
+      # The AirBasin split will be done later, and only used to adjust total VMT split by air basin for Solano/Sonoma counties,
+      # in the downstream step create_EMFAC_custom_activity_file.py. The AirBasin split is not used for the more granular
+      # VMT by speed bin and hour, which is the main output of this script.
     loadednet1_df =  loadednet_df[['countyName', ' arbCounty', ' speedBin', 'vmt_'+tp]]
-
     # save as new dataframe
     key_name = 'VMTBySpeedBin_'+ tp +'_df'
     key_name = loadednet1_df.groupby(['countyName', ' arbCounty', ' speedBin'], as_index=False).sum()
@@ -92,6 +123,14 @@ for tp in timeperiodList:
     if tp=='EA':
         VMTBySpeedBin_allTP_df = key_name
     else: VMTBySpeedBin_allTP_df = pd.merge(VMTBySpeedBin_allTP_df, key_name, left_on=['countyName', ' arbCounty', ' speedBin'], right_on=['countyName', ' arbCounty', ' speedBin'], how='outer')
+
+    # summarize by airbasin
+    loadednet2_df = loadednet_df[['ctAirBasin', ' speedBin', 'vmt_'+tp]]
+    key_name2 = loadednet2_df.groupby(['ctAirBasin', ' speedBin'], as_index=False).sum()
+    # merge the data frames
+    if tp=='EA':
+        VMTBySpeedBin_allTP_airBasin_df = key_name2
+    else: VMTBySpeedBin_allTP_airBasin_df = pd.merge(VMTBySpeedBin_allTP_airBasin_df, key_name2, on=['ctAirBasin', ' speedBin'], how='outer')
 
 # set within time period diurnal factor consistent with EMFAC
 # (these diurnal factors came from the old script CreateSpeedBinsBetweenZones.job)
@@ -184,3 +223,9 @@ VMTBySpeedBin_allTP_df.sort_values(by=['countyName', ' speedBin'], inplace=True)
 VMTBySpeedBin_allTP_df.fillna(0, inplace=True)
 
 VMTBySpeedBin_allTP_df.to_csv(output_csv, header=True, index=False)
+
+# vmt by airbasin
+for i in ['vmt_EA', 'vmt_AM', 'vmt_MD', 'vmt_PM', 'vmt_EV']:
+   VMTBySpeedBin_allTP_airBasin_df[i] = VMTBySpeedBin_allTP_airBasin_df[i].fillna(0)
+VMTBySpeedBin_allTP_airBasin_df['dailyVMT_airBasin'] = VMTBySpeedBin_allTP_airBasin_df[['vmt_EA', 'vmt_AM', 'vmt_MD', 'vmt_PM', 'vmt_EV']].sum(axis=1)
+VMTBySpeedBin_allTP_airBasin_df.to_csv(vmt_by_airbasin_csv, header=True, index=False)
