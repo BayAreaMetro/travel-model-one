@@ -18,7 +18,7 @@ CLI
 
   MODEL       default-configs/ctramp-cube-model.yaml    definition of working model. not project-specific.
      |
-  PROJECT     scenarios.yaml (each scenario self-contained), overrides  reads files, decides nothing
+  PROJECT     steps.yaml + scen_*.yaml (each scenario self-contained), overrides  reads files, decides nothing
      |
   RUN         which steps, which round, which directory, and doing it
      |
@@ -39,9 +39,9 @@ src/
   tm1/
     cli.py            238    tm1 run / tm1 status / tm1 scenarios
 
-    project/                 READING THE TWO YAMLs.  No I/O beyond reading files.
+    project/                 READING THE PROJECT'S YAML FILES.  No I/O beyond reading files.
       config.py       176    load a project's config (shared model + steps:)
-      scenarios.py    292    scenarios.yaml: explicit, ladder, matrix, steps:
+      scenarios.py    292    steps.yaml + scen_*.yaml: explicit, ladder, matrix, steps:
       overrides.py    215    how a scenario changes a value, and whether it resolves
 
     run/                     DOING ONE RUN                    <- RunModel.bat
@@ -126,7 +126,7 @@ Rejected, and why:
 
 | RunModel.bat | here |
 |---|---|
-| Step 1 — path variables | `default-configs/environments/mtc.yaml` (machine-specific, MTC's own -- others pass `--env <name>`) + each scenario in `scenarios.yaml` |
+| Step 1 — path variables | `default-configs/environments/mtc.yaml` (machine-specific, MTC's own -- others pass `--env <name>`) + each scenario in `scen_*.yaml` |
 | Steps 2–3 — directories, pre-process | `steps/staging.py`, `steps/setup.py` |
 | Steps 4, 4.5 — non-motorized LOS, transit files | config-declared `job:` steps |
 | Steps 5–9 — iteration N | `run/iterations.py` drives the plan |

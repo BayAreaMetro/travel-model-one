@@ -52,9 +52,10 @@ from tm1.status import status
 #: The directory holding projects, relative to the repo root.
 PROJECTS_DIR = "projects"
 
-#: The file that identifies a project directory.  Universal -- every project
-#: declares the runs it defines.
-CONFIG_NAME = "scenarios.yaml"
+
+def _is_project(path: Path) -> bool:
+    """Whether *path* declares at least one scenario -- universal across projects."""
+    return any(path.glob(scenarios_mod.SCENARIO_GLOB))
 
 
 def _find_repo_root() -> Path:
@@ -88,19 +89,19 @@ def _resolve_config_dir(project: str, repo_root: Path) -> Path:
     without needing a bespoke launcher script.
     """
     as_path = Path(project).expanduser()
-    if (as_path / CONFIG_NAME).is_file():
+    if _is_project(as_path):
         return as_path.resolve()
 
     named = repo_root / PROJECTS_DIR / project
-    if (named / CONFIG_NAME).is_file():
+    if _is_project(named):
         return named
 
     available = sorted(
         d.name for d in (repo_root / PROJECTS_DIR).glob("*")
-        if (d / CONFIG_NAME).is_file()
+        if _is_project(d)
     )
     msg = (
-        f"No {CONFIG_NAME} for {project!r} (looked in {as_path} and "
+        f"No scenario files for {project!r} (looked in {as_path} and "
         f"{named}).\nAvailable in this repo: {', '.join(available) or '(none)'}"
     )
     sys.exit(msg)
@@ -157,7 +158,7 @@ def cmd_run(args: argparse.Namespace) -> None:
 
 
 def cmd_scenarios(args: argparse.Namespace) -> None:
-    """Execute the 'scenarios' subcommand: expand scenarios.yaml and check every one."""
+    """Execute the 'scenarios' subcommand: expand a project's scenario files and check every one."""
     config_dir = _resolve_config_dir(_project_arg(args), _find_repo_root())
 
     # Config first: with a broken shared model there is nothing to check the
@@ -192,7 +193,7 @@ def _add_project_argument(parser: argparse.ArgumentParser) -> None:
         nargs="?",
         help=(
             f"Project name (folder under {PROJECTS_DIR}/, e.g. PBA50+_FBP) "
-            f"or a path to any directory containing a {CONFIG_NAME}"
+            f"or a path to any directory containing a {scenarios_mod.SCENARIO_GLOB}"
         ),
     )
 

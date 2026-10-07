@@ -36,7 +36,7 @@ full phase plan and current status of each piece.
 | Legacy                        | New                                     |
 |-------------------------------|-----------------------------------------|
 | `RunModel.bat`                | `tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1` |
-| Hand-edited properties files  | `scenarios.yaml` (its own values) |
+| Hand-edited properties files  | `scen_*.yaml` (its own values) |
 | Paths edited in-place per run | Templated (`{run_dir}`, `{m_drive}`)      |
 
 ### Scope
@@ -72,7 +72,7 @@ Requires Cube Voyager and a licence, as before. Steps that run R (`.R`/`.r`) nee
 ### Repository Layout
 
 ```
-projects/{name}/      # scenarios.yaml (each scenario self-contained) + any project-specific step code
+projects/{name}/      # steps.yaml + scen_*.yaml (each scenario self-contained) + any project-specific step code
 src/tm1/              # Python package: CLI, step orchestrator, model steps
 default-configs/      # Shared model configs — the CT-RAMP+Cube pipeline every project inherits
 model-files/, core/   # Legacy CT-RAMP/Cube assets, unchanged, still in production
@@ -89,7 +89,7 @@ one. Two machines are involved instead:
 | Your own VM (e.g. `lzorn-vm`) | your clone -- `E:\GitHub\travel-model-one` (local disk), or the shared mirror at `X:\travel-model-one-master` | yourself, via GitHub Desktop or VS Code, signed in as you |
 | A modeling machine (e.g. `model3-g`) | no clone of its own -- it reaches one of the above over a mapped drive, and keeps its own venv locally | whoever is logged into its shared account |
 
-**Changing code or config** -- a new project, an edited `scenarios.yaml` -- happens in
+**Changing code or config** -- a new project, an edited `scen_*.yaml` -- happens in
 your own clone, committed and pushed with GitHub Desktop or VS Code, never on a modeling
 machine. **Running a model** happens on a modeling machine: map a drive to reach the
 clone, `cd` into it, and follow Setup below -- but see its Windows note for where the
@@ -208,13 +208,14 @@ whatever stale matrices happened to be lying around.
 Steps 1-4 edit the repo -- do them in your own clone, then commit and push. Step 5 runs
 the model -- do it on a modeling machine, cwd'd into the mapped clone.
 
-1. Copy `projects/PBA50+_FBP/scenarios.yaml` to `projects/<name>/`
+1. Copy `projects/PBA50+_FBP/steps.yaml` and `scen_*.yaml` files to `projects/<name>/`
 2. Update each scenario's `copy_inputs` sources for your environment -- there is no
    project-level defaults layer, so every scenario needs its own full set
 3. Adjust the shared pipeline only if this project genuinely needs a different one --
    see [`default-configs/ctramp-cube-model.yaml`](default-configs/ctramp-cube-model.yaml)
-4. Declare the runs under `scenarios:`; `tm1 scenarios <name>` checks every address,
-   including that no `REQUIRED` placeholder is left unresolved
+4. Declare the runs, one scenario ID per entry, in a `scen_*.yaml` file; `tm1 scenarios
+   <name>` checks every address, including that no `REQUIRED` placeholder is left
+   unresolved
 5. Run with `tm1 run <name> --run-number 1`
 
 ### Run Logs

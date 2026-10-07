@@ -1,7 +1,7 @@
 # CT-RAMP on Cube — the pipeline every project in projects/ shares.
 #
 # This is not a project: nothing here names a data source, a forecast year or a
-# strategy.  Every scenario in a project's scenarios.yaml overrides the handful
+# strategy.  Every scenario in a project's scen_*.yaml files overrides the handful
 # of addresses marked REQUIRED below -- copy_inputs' `from:` values, model_year,
 # env.MODEL_YEAR/FUTURE -- through the same address grammar it uses for
 # everything else.  There is no project-level default: a scenario that leaves
@@ -92,7 +92,7 @@ steps:
       #    meaning in SetUpModel.bat: INPUT_NETWORK, INPUT_POPLU, NONRES_INPUT_DIR,
       #    LOGSUMS_INPUT_DIR, METRICS_INPUT_DIR, PREV_RUN_DIR, PARAMS.  No project has
       #    a sensible shared default for any of these -- every `from:` below is a
-      #    placeholder every scenario in scenarios.yaml must override.
+      #    placeholder every scenario in a scen_*.yaml file must override.
 
       input_hwy:                        # INPUT_NETWORK/hwy
         from: "REQUIRED: override copy_inputs.input_hwy.from"
@@ -188,7 +188,7 @@ steps:
         from: "utilities/geographies/taz-superdistrict-county.csv"
         to: "{run_dir}/CTRAMP/geographies/taz-superdistrict-county.csv"
 
-  # Empty here on purpose: a project fills this in via its own `scenarios.yaml`
+  # Empty here on purpose: a project fills this in via its own `steps.yaml`
   # `steps:` -- entries it alone needs (a Blueprint strategy override, say), landed
   # after copy_inputs above and before copy_input_to_working below, on top of or
   # beside whatever copy_inputs staged.  Same entry shape and mechanism as

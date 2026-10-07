@@ -18,9 +18,10 @@ from tm1.project.overrides import apply_scenario, resolve_address
 from tm1.project.scenarios import Scenario, expand
 
 #: Every project the repo ships, discovered rather than named, so adding, renaming or
-#: retiring one needs no edit here.  Keyed on scenarios.yaml -- the only file every
-#: project has.
-PROJECTS = sorted((Path(__file__).parents[1] / "projects").glob("*/scenarios.yaml"))
+#: retiring one needs no edit here.  Keyed on scen_*.yaml -- every project has at least one.
+PROJECTS = sorted({
+    p.parent for p in (Path(__file__).parents[1] / "projects").glob("*/scen_*.yaml")
+})
 
 #: A config with the *shape* a project has and none of its content: top-level keys, an
 #: `env:` block, a step with several entries, an `iterate:` with a step at iteration 0
@@ -371,17 +372,17 @@ def test_validate_passes_once_a_scenario_overrides_the_placeholder() -> None:
     assert overrides.validate(base, expansion) == []
 
 
-@pytest.mark.parametrize("config_path", PROJECTS, ids=lambda p: p.parent.name)
+@pytest.mark.parametrize("config_path", PROJECTS, ids=lambda p: p.name)
 def test_every_shipped_project_validates(config_path: Path) -> None:
-    """Whatever a project's scenarios.yaml declares must resolve against its config.
+    """Whatever a project's scen_*.yaml files declare must resolve against its config.
 
     The only test here that reads a real project, and it asserts nothing about what
     that project *says* -- just that its scenarios resolve.  So editing a config or
     a scenario cannot break it; writing an address that does not exist can, which
     is the whole point.
     """
-    cfg = config_module.load_config(config_path.parent)
-    expansion = scenarios.load(config_path.parent)
+    cfg = config_module.load_config(config_path)
+    expansion = scenarios.load(config_path)
 
     assert expansion.scenarios, "a project declares at least one scenario"
     assert overrides.validate(cfg, expansion) == []

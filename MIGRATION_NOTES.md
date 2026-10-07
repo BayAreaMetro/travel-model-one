@@ -125,7 +125,7 @@ travel-model-one/
 ```text
 travel-model-one/
 |-- default-configs/   base configs, specs, lookup tables, default assets (activity/ assignment/ population/)
-|-- projects/      scenarios.yaml per project (base_2023_activitysim, PBA50+_FBP, ...)
+|-- projects/      steps.yaml + scen_*.yaml per project (base_2023_activitysim, PBA50+_FBP, ...)
 |-- scripts/       run/prep/export entrypoints + migration_validation/{activitysim,assignment}
 `-- src/           shared Python: cubeio/, tm1/ (steps, assignment/{cube,aeq})
 ```
@@ -173,7 +173,7 @@ tm1 run PBA50+_FBP --scenario 2050_TM162_FBP_Plan --run-number 1 --slack verbose
 Flags: `--run-number`, `--steps`, `--iterations`, `--resume-at`, `--until`,
 `--slack {off,minimal,verbose}`.
 
-`scenarios.yaml` declares the runs a project defines -- explicit, ladder (cumulative)
+A project's `scen_*.yaml` files declare the runs it defines -- explicit, ladder (cumulative)
 or matrix (cross product) -- each a set of overrides addressed by where the value
 lives in the shared model. `tm1 scenarios <project>` expands them and checks every
 address; a scenario that does not resolve stops a run before it starts.

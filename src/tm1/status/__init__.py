@@ -43,7 +43,8 @@ def status(config_dir: Path, scenario: str | None = None) -> str:
     # Said out loud rather than left for someone to notice: the newest run for
     # this scenario was produced by a different config than the one on disk now.
     stale = "" if prepared.state == run_directory.RESUME else (
-        "\n  NOTE: the shared model or scenarios.yaml has changed since this run.\n"
+        "\n  NOTE: the shared model or the project's scenario files have changed "
+        "since this run.\n"
     )
     return stale + render(
         label,

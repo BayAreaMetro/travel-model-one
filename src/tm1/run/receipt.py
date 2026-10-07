@@ -23,8 +23,8 @@ RESOLVED = "config.resolved.yaml"
 
 #: The scenario applied but not yet templated -- a self-contained config for
 #: this one scenario, portable to a fresh run_dir.  Copy it into a project
-#: directory (with a one-entry scenarios.yaml) to re-run this exact scenario even
-#: after the shared model or scenarios.yaml have since moved on.
+#: directory (with a one-entry scen_*.yaml) to re-run this exact scenario even
+#: after the shared model or the project's own scenario files have since moved on.
 SCENARIO_CONFIG = "config.scenario.yaml"
 
 

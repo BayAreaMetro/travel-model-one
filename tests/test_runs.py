@@ -145,7 +145,7 @@ def _project(
     )
     project = tmp_path / "proj"
     project.mkdir()
-    (project / "scenarios.yaml").write_text("scenarios:\n  A-2023:\n", encoding="utf-8")
+    (project / "scen_a.yaml").write_text("A-2023:\n", encoding="utf-8")
     return project
 
 

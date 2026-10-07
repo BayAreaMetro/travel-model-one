@@ -12,7 +12,7 @@ The sections below are ordered for a reader who knows `RunModel.bat`.
 
 | RunModel.bat | now |
 |---|---|
-| Step 1 — set path variables | `default-configs/environments/mtc.yaml` (machine-specific, MTC's own) + each scenario in a project's `scenarios.yaml` (everything else) |
+| Step 1 — set path variables | `default-configs/environments/mtc.yaml` (machine-specific, MTC's own) + each scenario in a project's `scen_*.yaml` files (everything else) |
 | Step 2 — create the directory structure | the `make_directories` step |
 | Step 3 — pre-process | the `copy_inputs` and `copy_input_to_working` steps, then the pre-process steps |
 | Steps 4, 4.5 — non-motorized LOS, transit files | steps in the shared pipeline, in order |
@@ -47,7 +47,7 @@ No existing run is deleted or overwritten. Re-running after a land use update pr
 
 **3. A project's config is declarative.**
 It states what runs, not how. `default-configs/ctramp-cube-model.yaml` (the pipeline every
-project shares) and each scenario in a project's own `scenarios.yaml` are both intended
+project shares) and each scenario in a project's own `scen_*.yaml` files are both intended
 to be read from top to bottom.
 
 ---
@@ -76,8 +76,8 @@ To list the scenarios a project declares and check that the project is runnable:
 uv run tm1 scenarios PBA50+_FBP
 ```
 
-A project is a directory under `projects/` containing a `scenarios.yaml`. A path is also
-accepted, so a project may live outside the repository:
+A project is a directory under `projects/` containing at least one `scen_*.yaml`. A path
+is also accepted, so a project may live outside the repository:
 
 ```bash
 uv run tm1 run E:/my_projects/cordon_pricing --run-number 1
@@ -220,11 +220,12 @@ execution, and the run completes in roughly five times the expected duration.
 
 ## Starting a new project
 
-A project is a folder with one file:
+A project is a folder with:
 
 ```
 projects/my_project/
-  scenarios.yaml  every scenario, self-contained, plus any steps: additions (required)
+  steps.yaml      this project's own pipeline additions (optional)
+  scen_*.yaml     every scenario, self-contained, grouped however reads best (required)
 ```
 
 Copy the nearest existing project and edit it. `PBA50+_FBP` is the RunModel.bat
@@ -243,7 +244,7 @@ cwd'd into the mapped clone:
 tm1 scenarios my_project      # verify before committing to a full run
 ```
 
-Then work down each scenario in `scenarios.yaml` -- there is no project-level defaults
+Then work down each scenario in its `scen_*.yaml` file -- there is no project-level defaults
 layer, so every scenario overrides the shared pipeline in
 [`default-configs/ctramp-cube-model.yaml`](../default-configs/ctramp-cube-model.yaml)
 directly and in full. Most projects change only a few regions per scenario:
@@ -261,7 +262,7 @@ shared pipeline already declares every step, with placeholder `from:` values eve
 scenario overrides. Adding or removing steps from the *shared* pipeline generally
 indicates a different model family rather than a project or a scenario — see rule 4 below.
 A project's own additions are the one exception, declared via a top-level `steps:` in
-`scenarios.yaml` -- genuinely project-wide, unlike a scenario override, so stated once
+`steps.yaml` -- genuinely project-wide, unlike a scenario override, so stated once
 rather than per scenario. Three shapes:
 
 - **a name the shared pipeline already has, left empty for exactly this** (e.g.
@@ -281,7 +282,7 @@ rather than per scenario. Three shapes:
 > **Verify before running.** `tm1 scenarios my_project` completes in about a second and
 > checks the three conditions that would otherwise surface part-way through a run:
 >
-> - the shared model file parses and `scenarios.yaml` expands
+> - the shared model file parses and every `scen_*.yaml` expands
 > - every environment variable the project references is set (from
 >   `default-configs/environments/<name>.yaml`, or exported directly)
 > - every scenario's overrides resolve to a real value, and none leaves a `REQUIRED`
@@ -336,57 +337,61 @@ Four rules, and they are the whole mechanism:
 ### Three ways to declare them
 
 All three expand to the same flat list, so the rules above apply regardless of which is
-used. They may be combined in one file.
+used. Each lives in its own glob-matched file, named for what it holds, so none needs a
+wrapper key to say so -- every matching file in a project's directory is merged into one
+expansion before anything is checked.
 
-**`scenarios:` — written out, one entry per run.** For runs with little in common.
+**`scen_*.yaml` — written out, one entry per run.** For runs with little in common. A
+scenario ID goes directly at the top level.
 
 ```yaml
-scenarios:
-  PARITY-2023:
-    description: RunModel.bat parity, adopted networks and land use.
+# scen_2023.yaml
+PARITY-2023:
+  description: RunModel.bat parity, adopted networks and land use.
 
-  NOPK-2035:
-    description: 2035 land use, no parking cost growth.
-    env.MODEL_YEAR: 2035
-    copy_inputs.input_landuse.from: "{m_drive}/.../LandUse_n_Popsyn/2035_v12/landuse"
+NOPK-2035:
+  description: 2035 land use, no parking cost growth.
+  env.MODEL_YEAR: 2035
+  copy_inputs.input_landuse.from: "{m_drive}/.../LandUse_n_Popsyn/2035_v12/landuse"
 ```
 
-**`ladder:` — cumulative.** Rung *k* carries rungs 1..*k*, so the difference between
+**`ladder*.yaml` — cumulative.** Rung *k* carries rungs 1..*k*, so the difference between
 adjacent rungs isolates the single intervention that was added. This is the form used to
-attribute a contribution to each component of a package.
+attribute a contribution to each component of a package. A top-level list of ladder specs.
 
 ```yaml
-ladder:
-  - id: "L1-{n}-{rung}-2035"
-    description: 2035 blueprint, built up one strategy at a time.
-    env.MODEL_YEAR: 2035                   # applies to every rung
-    rungs:
-      - TRNF:
-          description: Transit frequency.
-          env.EN7: ENABLED
-      - CORD:
-          description: Cordon pricing.
-          set_tolls.job: "variants/SetTolls_cordon.job"
+# ladder_2035.yaml
+- id: "L1-{n}-{rung}-2035"
+  description: 2035 blueprint, built up one strategy at a time.
+  env.MODEL_YEAR: 2035                   # applies to every rung
+  rungs:
+    - TRNF:
+        description: Transit frequency.
+        env.EN7: ENABLED
+    - CORD:
+        description: Cordon pricing.
+        set_tolls.job: "variants/SetTolls_cordon.job"
 ```
 
 Produces `L1-01-TRNF-2035` and `L1-02-CORD-2035`; the second carries both overrides.
 
-**`matrix:` — the cross product of named axes.** For sweeps.
+**`matrix*.yaml` — the cross product of named axes.** For sweeps. A top-level list of
+matrix specs.
 
 ```yaml
-matrix:
-  - id: "A1-{tolls}-{landuse}"
-    axes:
-      tolls:
-        NOTL:                              # no overrides: the config as written
-        CORD:
-          set_tolls.job: "variants/SetTolls_cordon.job"
-      landuse:
-        ADPT:
-        JHBL:
-          env.MODEL_YEAR: 2035
-    exclude:
-      - {tolls: CORD, landuse: JHBL}       # combinations that are not meaningful
+# matrix_A1.yaml
+- id: "A1-{tolls}-{landuse}"
+  axes:
+    tolls:
+      NOTL:                              # no overrides: the config as written
+      CORD:
+        set_tolls.job: "variants/SetTolls_cordon.job"
+    landuse:
+      ADPT:
+      JHBL:
+        env.MODEL_YEAR: 2035
+  exclude:
+    - {tolls: CORD, landuse: JHBL}       # combinations that are not meaningful
 ```
 
 Produces `A1-NOTL-ADPT`, `A1-NOTL-JHBL` and `A1-CORD-ADPT`. Exclusions are reported rather

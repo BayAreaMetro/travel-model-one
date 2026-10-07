@@ -19,7 +19,9 @@ from tm1.steps.simulate_ctramp import _sample_rate_for
 LEGACY_RAMP = {1: 0.15, 2: 0.30, 3: 0.50}
 
 #: Every project the repo ships, discovered rather than named -- see test_scenarios.py.
-PROJECTS = sorted((Path(__file__).parents[1] / "projects").glob("*/scenarios.yaml"))
+PROJECTS = sorted({
+    p.parent for p in (Path(__file__).parents[1] / "projects").glob("*/scen_*.yaml")
+})
 
 
 def test_flat_rate_applies_to_every_round() -> None:
@@ -81,7 +83,7 @@ def test_a_ramp_key_that_is_not_a_round_number_is_an_error() -> None:
         _sample_rate_for(1, {"first": 0.15})
 
 
-@pytest.mark.parametrize("config_path", PROJECTS, ids=lambda p: p.parent.name)
+@pytest.mark.parametrize("config_path", PROJECTS, ids=lambda p: p.name)
 def test_every_shipped_project_states_a_rate_for_every_round(config_path: Path) -> None:
     """A project's ramp has to cover the rounds that project will actually run.
 
@@ -90,7 +92,7 @@ def test_every_shipped_project_states_a_rate_for_every_round(config_path: Path) 
     is that `count` and `sample_rate` agree: a ramp one round short used to fall
     through to 0.50 unannounced, which is the failure this file exists to prevent.
     """
-    cfg = load_config(config_path.parent)
+    cfg = load_config(config_path)
     loop = next(
         (s["iterate"] for s in cfg["steps"] if isinstance(s, dict) and "iterate" in s),
         None,

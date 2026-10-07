@@ -5,7 +5,8 @@ CT-RAMP+Cube pipeline in [`../default-configs/ctramp-cube-model.yaml`](../defaul
 
 ```
 projects/<project>/
-  scenarios.yaml  every scenario, self-contained (required) + steps: additions
+  steps.yaml      this project's own pipeline additions (optional)
+  scen_*.yaml     every scenario, self-contained, grouped however reads best (required)
   hooks.py        project-local pipeline steps, appended via top-level steps:
   variants/       version-controlled alternate params/ and jobs/ a scenario can point at
 ```
@@ -14,10 +15,10 @@ Every project runs the same pipeline shape -- the shared model in
 [`../default-configs/ctramp-cube-model.yaml`](../default-configs/ctramp-cube-model.yaml).
 A **scenario** varies values inside it — inputs, parameters, which scripts a step runs
 — but can never add, remove, or reorder steps. A project's own `steps:` (in
-`scenarios.yaml`) is the one way to extend the shared pipeline, and it applies to every
+`steps.yaml`) is the one way to extend the shared pipeline, and it applies to every
 scenario alike.
 
-There is no project-level defaults layer: each scenario in `scenarios.yaml` states its
+There is no project-level defaults layer: each scenario in a `scen_*.yaml` file states its
 own full set of overrides through the same address grammar, so it is a *diff* against
 the shared pipeline that is readable on its own, without also reading a separate block
 to know what it runs. Shared model configuration lives in

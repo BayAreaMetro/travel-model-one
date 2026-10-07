@@ -69,7 +69,7 @@ def test_nothing_is_reported_when_everything_is_set(
 
 
 @pytest.mark.parametrize("exc", [
-    FileNotFoundError("No scenarios.yaml in /p."),
+    FileNotFoundError("No scen_*.yaml in /p."),
     ValueError("'model_yaer': no such address. Did you mean model_year?"),
     TypeError("`steps` entries must each be one `name: {config}` mapping."),
     yaml.YAMLError("while parsing a block collection"),

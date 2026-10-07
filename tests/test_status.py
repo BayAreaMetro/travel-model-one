@@ -549,6 +549,6 @@ def test_status_says_so_when_nothing_has_run(
     )
     project = tmp_path / "proj"
     project.mkdir()
-    (project / "scenarios.yaml").write_text("scenarios:\n  BASE-2023:\n", encoding="utf-8")
+    (project / "scen_a.yaml").write_text("BASE-2023:\n", encoding="utf-8")
 
     assert "nothing run yet" in status(project)

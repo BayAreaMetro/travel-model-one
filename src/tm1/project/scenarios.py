@@ -1,14 +1,35 @@
 """The runs a project defines, and how each one differs from the shared model.
 
 The shared ``default-configs/ctramp-cube-model.yaml`` is the full pipeline with
-its placeholder values. A **scenario** is a named set of overrides on it, and
-``scenarios.yaml`` declares them three ways -- all expanding to the same flat
-list, so there is one code path and one set of rules::
+its placeholder values. A **scenario** is a named set of overrides on it. A
+project states them across files, all read from its directory, each named for
+what it holds so none needs a wrapper key to say so:
 
-    scenarios:  one entry per run, written out
-    ladder:     cumulative -- rung k applies rungs 1..k, for isolating one
-                intervention's contribution against its predecessor
-    matrix:     the cross product of named axes, minus `exclude:` combinations
+``steps.yaml``
+    optional; a project's own pre/post-processing hooks (``script:``/``module:``)
+    that the shared model has no name for, appended once after the shared
+    pipeline's own steps, for every scenario alike. Genuinely project-wide,
+    unlike an override: every scenario runs the same pipeline shape, so there is
+    nothing to state per scenario.
+``scen_*.yaml``
+    at least one; explicit scenarios, one entry per run, written out as
+    ``SCENARIO_ID: {overrides}`` directly at the top level -- no ``scenarios:``
+    wrapper. Each names a slice however a reader wants them grouped -- a model
+    year, a Plan/NoProject pair, whatever reads best split up.
+``ladder*.yaml``
+    optional; cumulative scenarios -- rung k applies rungs 1..k, for isolating
+    one intervention's contribution against its predecessor -- a top-level
+    list of ladder specs (``id:``, ``rungs:``, ...), no ``ladder:`` wrapper.
+``matrix*.yaml``
+    optional; the cross product of named axes, minus ``exclude:``
+    combinations -- a top-level list of matrix specs (``id:``, ``axes:``,
+    ...), no ``matrix:`` wrapper.
+
+Every file matching one of these globs is merged into one expansion before
+anything is checked, so an ID collision or an unresolved placeholder is caught
+across the whole project, not just the file that introduced it. All three
+scenario pathways expand to the same flat list, so there is one code path and
+one set of rules.
 
 There is no project-level defaults layer: each scenario states its own full set
 of overrides, including the ones every scenario in the project happens to share
@@ -18,12 +39,6 @@ reading a separate block to know what an apparently-empty scenario actually
 runs. The shared model every project inherits is :mod:`tm1.project.config`;
 :func:`tm1.project.overrides.validate` refuses a scenario that leaves one of the
 shared model's ``REQUIRED`` placeholders unresolved.
-
-``steps:`` sits beside the three pathways -- a project's own pre/post-processing
-hooks (``script:``/``module:``) that the shared model has no name for, appended
-once after the shared pipeline's own steps, for every scenario alike. Unlike an
-override, this is genuinely project-wide: every scenario runs the same pipeline
-shape, so there is nothing to state per scenario.
 
 This module *enumerates* scenarios. Applying one to a config -- and checking that
 its addresses resolve -- is :mod:`tm1.project.overrides`.
@@ -59,6 +74,41 @@ _ID_TAIL = re.compile(r"_[0-9]{3}$")
 
 #: ``{token}`` in an ``id:`` template.
 _TOKEN = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
+
+#: A project's own pipeline additions, alongside the scenario files below.
+_STEPS_FILE = "steps.yaml"
+
+#: Explicit scenarios: one file per group a reader wants open at once (a model
+#: year, a Plan/NoProject pair, ...) -- not one file per pathway. No
+#: `scenarios:` wrapper: the filename already says what it holds, so a
+#: scenario ID is written directly at the top level. All matches are merged
+#: into one expansion, so an ID collision is caught across the whole project.
+#: Public: it is also how :mod:`tm1.cli` recognises a directory as a project.
+SCENARIO_GLOB = "scen_*.yaml"
+
+#: Ladder scenarios: a top-level list of ladder specs (``id:``, ``rungs:``,
+#: ...), no `ladder:` wrapper -- same reasoning as :data:`SCENARIO_GLOB`.
+#: Optional: most projects need no ladder at all.
+LADDER_GLOB = "ladder*.yaml"
+
+#: Matrix scenarios: a top-level list of matrix specs (``id:``, ``axes:``,
+#: ...), no `matrix:` wrapper -- same reasoning as :data:`SCENARIO_GLOB`.
+#: Optional: most projects need no matrix at all.
+MATRIX_GLOB = "matrix*.yaml"
+
+#: Keys a scen_*.yaml file must not use as a scenario ID -- each belongs in a
+#: different file instead, named for what it holds.
+_FORBIDDEN_SCENARIO_KEYS = {
+    "scenarios": "name scenarios directly at the top level -- no `scenarios:` wrapper needed.",
+    "steps": "project steps belong in steps.yaml, not a scen_*.yaml file.",
+    "ladder": f"ladder scenarios belong in a {LADDER_GLOB} file, not a scen_*.yaml file.",
+    "matrix": f"matrix scenarios belong in a {MATRIX_GLOB} file, not a scen_*.yaml file.",
+}
+
+
+def _read_yaml(path: Path) -> object:
+    with path.open(encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def pairs(steps: object) -> list[tuple[str, object]]:
@@ -261,22 +311,22 @@ class Expansion:
 
 
 def expand(scenarios_cfg: object) -> Expansion:
-    """Every pathway in ``scenarios.yaml``, expanded to a flat list of scenarios."""
+    """Every pathway a project's scenario files declare, expanded to a flat list."""
     if scenarios_cfg is None:
         return Expansion()
     if not isinstance(scenarios_cfg, dict):
         msg = (
-            "scenarios.yaml must be a mapping with `scenarios:`, `ladder:`, "
-            "`matrix:` or `steps:`."
+            "A project's scenario config must be a mapping with `scenarios:`, "
+            "`ladder:`, `matrix:` or `steps:`."
         )
         raise TypeError(msg)
 
     unknown = sorted(set(scenarios_cfg) - {"steps", "scenarios", "ladder", "matrix"})
     if unknown:
         msg = (
-            f"scenarios.yaml declares {', '.join(unknown)}; recognised keys are "
-            f"`steps:` (this project's own pipeline additions) plus the three "
-            f"pathways: `scenarios:` (explicit), `ladder:` (cumulative) and "
+            f"A project's scenario config declares {', '.join(unknown)}; recognised "
+            f"keys are `steps:` (this project's own pipeline additions) plus the "
+            f"three pathways: `scenarios:` (explicit), `ladder:` (cumulative) and "
             f"`matrix:` (cross product)."
         )
         raise ValueError(msg)
@@ -301,16 +351,72 @@ def expand(scenarios_cfg: object) -> Expansion:
 
 
 def load(config_dir: Path) -> Expansion:
-    """Expand ``scenarios.yaml`` from *config_dir*, which every project must have."""
-    path = Path(config_dir) / "scenarios.yaml"
-    if not path.is_file():
+    """Expand a project's scenario files from *config_dir*.
+
+    ``steps.yaml`` (optional) holds this project's own pipeline additions, read
+    once. ``scen_*.yaml`` (at least one, required), ``ladder*.yaml`` (optional)
+    and ``matrix*.yaml`` (optional) each hold a slice of one pathway, grouped
+    however a reader wants them open at once -- not one pathway necessarily in
+    one file. Every matching file is merged into one config before
+    :func:`expand` sees any of it, so a scenario ID declared twice is caught
+    naming both files, not silently overwritten by whichever sorts last.
+    """
+    config_dir = Path(config_dir)
+
+    extra_steps: list = []
+    steps_path = config_dir / _STEPS_FILE
+    if steps_path.is_file():
+        extra_steps = _read_yaml(steps_path) or []
+        if not isinstance(extra_steps, list):
+            msg = f"{steps_path} must be a list of steps, e.g. `- vmt_vht_metrics: {{...}}`."
+            raise TypeError(msg)
+
+    scenario_paths = sorted(config_dir.glob(SCENARIO_GLOB))
+    if not scenario_paths:
         msg = (
-            f"No scenarios.yaml in {config_dir}. Every project declares the runs "
-            f"it defines, even when that is one scenario with no overrides."
+            f"No {SCENARIO_GLOB} in {config_dir}. Every project declares the runs "
+            f"it defines, even when that is one scenario with no overrides, in at "
+            f"least one file named like scen_2023.yaml."
         )
         raise FileNotFoundError(msg)
-    with path.open(encoding="utf-8") as f:
-        return expand(yaml.safe_load(f))
+
+    merged: dict[str, object] = {
+        "scenarios": {}, "ladder": [], "matrix": [], "steps": extra_steps,
+    }
+    owner: dict[str, Path] = {}
+    for path in scenario_paths:
+        doc = _read_yaml(path) or {}
+        if not isinstance(doc, dict):
+            msg = f"{path} must be a mapping: a scenario ID at the top level for each run it declares."
+            raise TypeError(msg)
+        for scenario_id, entry in doc.items():
+            if scenario_id in _FORBIDDEN_SCENARIO_KEYS:
+                msg = f"{path} declares `{scenario_id}:` -- {_FORBIDDEN_SCENARIO_KEYS[scenario_id]}"
+                raise ValueError(msg)
+            if scenario_id in owner:
+                msg = (
+                    f"Scenario {scenario_id!r} is declared in both "
+                    f"{owner[scenario_id].name} and {path.name}."
+                )
+                raise ValueError(msg)
+            owner[scenario_id] = path
+            merged["scenarios"][scenario_id] = entry
+
+    for path in sorted(config_dir.glob(LADDER_GLOB)):
+        specs = _read_yaml(path) or []
+        if not isinstance(specs, list):
+            msg = f"{path} must be a list of ladder specs, e.g. `- id: ..., rungs: [...]`."
+            raise TypeError(msg)
+        merged["ladder"] += specs
+
+    for path in sorted(config_dir.glob(MATRIX_GLOB)):
+        specs = _read_yaml(path) or []
+        if not isinstance(specs, list):
+            msg = f"{path} must be a list of matrix specs, e.g. `- id: ..., axes: {{...}}`."
+            raise TypeError(msg)
+        merged["matrix"] += specs
+
+    return expand(merged)
 
 
 def render(expansion: Expansion) -> str:

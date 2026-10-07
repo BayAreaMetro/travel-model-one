@@ -106,9 +106,9 @@ def _model_and_project(tmp_path: Path, model_steps: str, project_steps: str) -> 
     )
     project = tmp_path / "myproject"
     project.mkdir()
-    (project / "scenarios.yaml").write_text(
-        f"steps:\n{project_steps}scenarios:\n  A: {{}}\n", encoding="utf-8",
-    )
+    if project_steps:
+        (project / "steps.yaml").write_text(project_steps, encoding="utf-8")
+    (project / "scen_a.yaml").write_text("A: {}\n", encoding="utf-8")
     return project
 
 

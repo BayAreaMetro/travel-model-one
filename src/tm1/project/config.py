@@ -108,15 +108,16 @@ def load_config(config_dir: Path) -> dict:
 
     There is no per-project pipeline of its own, and no project-level defaults
     layer either: the shared ``default-configs/ctramp-cube-model.yaml`` is the
-    only pipeline, and every scenario in ``scenarios.yaml`` overrides the
-    model's ``REQUIRED`` placeholders itself, through the same address grammar
-    it uses for everything else -- so a scenario is complete on its own reading,
-    without also reading a separate block to know what it runs.
-    :func:`tm1.project.overrides.validate` refuses a scenario that leaves one of
-    those placeholders unresolved.
+    only pipeline, and every scenario a project declares (in its ``scen_*.yaml``
+    files) overrides the model's ``REQUIRED`` placeholders itself, through the
+    same address grammar it uses for everything else -- so a scenario is
+    complete on its own reading, without also reading a separate block to know
+    what it runs. :func:`tm1.project.overrides.validate` refuses a scenario
+    that leaves one of those placeholders unresolved.
 
-    ``steps:`` is the one addition applied here rather than by a scenario, and
-    genuinely project-wide, so every scenario gets it alike. Three shapes:
+    ``steps:`` (in ``steps.yaml``) is the one addition applied here rather than
+    by a scenario, and genuinely project-wide, so every scenario gets it alike.
+    Three shapes:
 
     - the name matches a step the shared pipeline already has (empty there on
       purpose, e.g. ``copy_project_inputs``) -> the project's entries are

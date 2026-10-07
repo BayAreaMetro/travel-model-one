@@ -260,7 +260,7 @@ def _check_scenarios(config_dir: Path) -> None:
     problems = validate_scenarios(load_config(config_dir), scenarios_mod.load(config_dir))
     if problems:
         joined = "\n  ".join(problems)
-        msg = f"scenarios.yaml does not resolve against the shared model:\n  {joined}"
+        msg = f"a scenario does not resolve against the shared model:\n  {joined}"
         raise ValueError(msg)
 
 
@@ -368,9 +368,9 @@ def _write_scenario_config(run_dir: Path, applied_cfg: dict) -> None:
     """Archive the scenario merged into the config, templates left open.
 
     Unlike :func:`_write_resolved`, this one is portable: it names no run_dir, so
-    copying it into a project directory (with a one-entry scenarios.yaml beside
-    it) re-runs this exact scenario into a fresh run_dir, even after the shared model
-    or scenarios.yaml have since moved on.
+    copying it into a project directory (with a one-entry scen_*.yaml beside it)
+    re-runs this exact scenario into a fresh run_dir, even after the shared model
+    or the project's own scenario files have since moved on.
     """
     path = Path(run_dir) / run_receipt.TM1_DIR / run_receipt.SCENARIO_CONFIG
     path.parent.mkdir(parents=True, exist_ok=True)

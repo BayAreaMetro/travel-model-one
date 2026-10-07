@@ -5,7 +5,7 @@
 # TM1_ENV=caltrans, rather than editing this one.
 #
 # Committed, since none of these differ machine to machine within an
-# environment -- unlike scenarios.yaml's `{key}` values, which are the model
+# environment -- unlike a scen_*.yaml's `{key}` values, which are the model
 # recipe and reviewed there. `tm1.project.config` loads this before resolving a
 # project's config, and a variable already set (by a shell export, or a test)
 # is left alone.
