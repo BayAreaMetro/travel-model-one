@@ -80,6 +80,7 @@ class DailyActivityPatternCalibration(CalibrationBase):
 
             ## Person Type with WFH
             cdap_ptype_wfh = cdap_results.groupby(["person_type", "activity_pattern", "wfh_choice"]).size().reset_index(name = "num_pers")
+            cdap_ptype_wfh["num_pers"] = cdap_ptype_wfh["num_pers"] / self.sampleshare
 
             cdap_ptype_wfh_spread = cdap_ptype_wfh.pivot(index = "person_type", columns = ["activity_pattern", "wfh_choice"], values = "num_pers")
             cdap_ptype_wfh_spread = cdap_ptype_wfh_spread.fillna(0).reset_index()
