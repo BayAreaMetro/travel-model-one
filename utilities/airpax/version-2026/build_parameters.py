@@ -551,7 +551,19 @@ def build_airport_non_transit_zone_access_mode_shares(
     """Build within-super-district zonal shares by non-transit access mode.
 
     Trip fields are summed across time periods and vehicle occupancies for each
-    access mode. Each zone is then divided by its district/access-mode total.
+    access mode.
+
+    For each airport, direction, district, and access mode:
+
+    1. If the district has positive trips for that access mode, zonal shares
+       are based on the access-mode-specific trip distribution.
+    2. If the district has zero trips for that access mode, zonal shares use
+       the distribution of all non-transit Gosling trips within that district.
+    3. If the district has zero non-transit trips across all access modes,
+       zonal shares are distributed equally across the district's TAZs.
+
+    The resulting zonal shares must sum to approximately 1.0 within every
+    airport/direction/district/access-mode group.
     """
     files = _gosling_file_map(gosling_dir)
     outputs: list[pd.DataFrame] = []
@@ -560,60 +572,277 @@ def build_airport_non_transit_zone_access_mode_shares(
         for direction in DIRECTIONS:
             dbf_name = f"{GOSLING_ZONE_SHARE_SOURCE_YEAR}_{direction}{airport}.dbf"
             df = _read_gosling_dbf(files, dbf_name)
+
             _require_columns(df, dbf_name, ["ORIG", "DEST"])
             trip_cols = _trip_columns(df, dbf_name)
+
             zone_col = "DEST" if direction == "from" else "ORIG"
 
-            zone = pd.to_numeric(df[zone_col], errors="raise").astype(int)
+            zone = pd.to_numeric(
+                df[zone_col],
+                errors="raise",
+            ).astype(int)
+
             by_mode = pd.DataFrame({"zone": zone})
+
+            # Sum all TOD/submode trip columns belonging to each access mode.
             for mode in ACCESS_MODES:
-                cols = [c for c in trip_cols if c.split("_")[1] == mode]
+                cols = [
+                    col
+                    for col in trip_cols
+                    if col.split("_")[1] == mode
+                ]
+
                 if not cols:
-                    raise ValueError(f"{dbf_name} has no trip columns for access mode {mode}")
+                    raise ValueError(
+                        f"{dbf_name} has no trip columns for access mode {mode}"
+                    )
+
                 by_mode[f"trips_{mode.lower()}"] = (
-                    df[cols].apply(pd.to_numeric, errors="coerce").fillna(0.0).sum(axis=1)
+                    df[cols]
+                    .apply(pd.to_numeric, errors="coerce")
+                    .fillna(0.0)
+                    .sum(axis=1)
                 )
 
             # Some source files may contain more than one record for a zone.
-            by_mode = by_mode.groupby("zone", as_index=False).sum().merge(
-                taz_lookup, on="zone", how="left", validate="one_to_one"
+            # Aggregate those records before joining the TAZ-to-district lookup.
+            by_mode = (
+                by_mode
+                .groupby("zone", as_index=False)
+                .sum()
+                .merge(
+                    taz_lookup,
+                    on="zone",
+                    how="left",
+                    validate="one_to_one",
+                )
             )
+
             if by_mode["district"].isna().any():
-                missing = by_mode.loc[by_mode["district"].isna(), "zone"].unique()[:10]
-                raise ValueError(f"{dbf_name} contains zones missing from the TAZ lookup: {missing.tolist()}")
+                missing = (
+                    by_mode.loc[
+                        by_mode["district"].isna(),
+                        "zone",
+                    ]
+                    .unique()[:10]
+                )
+
+                raise ValueError(
+                    f"{dbf_name} contains zones missing from the TAZ lookup: "
+                    f"{missing.tolist()}"
+                )
+
+            trip_cols_by_mode = [
+                f"trips_{mode.lower()}"
+                for mode in ACCESS_MODES
+            ]
+
+            # Total non-transit trips at each zone across all access modes.
+            # This is used as the first fallback distribution when a district
+            # has no observed trips for one particular access mode.
+            by_mode["trips_all_non_transit"] = (
+                by_mode[trip_cols_by_mode].sum(axis=1)
+            )
+
+            # District-wide all-mode trip total and number of TAZs are common
+            # to all access modes, so calculate them once.
+            by_mode["all_mode_district_total"] = (
+                by_mode
+                .groupby("district")["trips_all_non_transit"]
+                .transform("sum")
+            )
+
+            by_mode["district_zone_count"] = (
+                by_mode
+                .groupby("district")["zone"]
+                .transform("count")
+            )
 
             out = by_mode[["zone", "district"]].copy()
+
             for mode in ACCESS_MODES:
                 trips_col = f"trips_{mode.lower()}"
-                total = by_mode.groupby("district")[trips_col].transform("sum")
                 share_col = f"zdist_share_{mode.lower()}"
-                out[share_col] = np.where(total > 0, by_mode[trips_col] / total, 0.0)
+
+                # Total observed trips for this access mode within each district.
+                mode_total = (
+                    by_mode
+                    .groupby("district")[trips_col]
+                    .transform("sum")
+                )
+
+                all_mode_total = by_mode["all_mode_district_total"]
+                district_zone_count = by_mode["district_zone_count"]
+
+                # Normal case:
+                # use the access-mode-specific zonal distribution.
+                normal_share = np.divide(
+                    by_mode[trips_col].to_numpy(dtype=float),
+                    mode_total.to_numpy(dtype=float),
+                    out=np.zeros(len(by_mode), dtype=float),
+                    where=mode_total.to_numpy(dtype=float) > 0,
+                )
+
+                # First fallback:
+                # if this access mode has no trips in the district, use the
+                # zonal distribution of all non-transit trips in the district.
+                all_mode_share = np.divide(
+                    by_mode["trips_all_non_transit"].to_numpy(dtype=float),
+                    all_mode_total.to_numpy(dtype=float),
+                    out=np.zeros(len(by_mode), dtype=float),
+                    where=all_mode_total.to_numpy(dtype=float) > 0,
+                )
+
+                # Second fallback:
+                # if the district has no non-transit trips at all, distribute
+                # equally among the district's TAZs.
+                equal_share = (
+                    1.0
+                    / district_zone_count.to_numpy(dtype=float)
+                )
+
+                out[share_col] = np.where(
+                    mode_total.to_numpy(dtype=float) > 0,
+                    normal_share,
+                    np.where(
+                        all_mode_total.to_numpy(dtype=float) > 0,
+                        all_mode_share,
+                        equal_share,
+                    ),
+                )
+
                 out[share_col] = out[share_col].round(SHARE_DECIMALS)
+
+                # Report each district where the normal mode-specific
+                # distribution could not be calculated.
+                zero_mode_districts = sorted(
+                    by_mode.loc[
+                        mode_total <= 0,
+                        "district",
+                    ]
+                    .unique()
+                    .tolist()
+                )
+
+                for district in zero_mode_districts:
+                    district_rows = by_mode["district"] == district
+
+                    district_all_total = float(
+                        by_mode.loc[
+                            district_rows,
+                            "trips_all_non_transit",
+                        ].sum()
+                    )
+
+                    if district_all_total > 0:
+                        print(
+                            f"WARNING: {airport}/{direction}, district {district}, "
+                            f"access mode {mode} has zero source trips. "
+                            "Using the all-non-transit zonal distribution "
+                            "within the district."
+                        )
+                    else:
+                        print(
+                            f"WARNING: {airport}/{direction}, district {district} "
+                            "has zero non-transit source trips. "
+                            f"Using equal zonal shares for access mode {mode}."
+                        )
 
             out.insert(0, "direction", direction)
             out.insert(0, "airport", airport)
+
             outputs.append(out)
 
-    out = pd.concat(outputs, ignore_index=True)
-    out = out[[
-        "airport", "direction", "zone", "district",
-        *[f"zdist_share_{mode.lower()}" for mode in ACCESS_MODES],
-    ]].sort_values(["airport", "direction", "district", "zone"]).reset_index(drop=True)
+    out = pd.concat(
+        outputs,
+        ignore_index=True,
+    )
 
-    file_name = OUTPUT_PARAMETER_FILES["airport_non_transit_zone_access_mode_shares"]
-    _require_unique(out, file_name, ["airport", "direction", "zone"])
-    share_cols = [f"zdist_share_{mode.lower()}" for mode in ACCESS_MODES]
-    _validate_share_values(out, file_name, share_cols, False)
+    share_cols = [
+        f"zdist_share_{mode.lower()}"
+        for mode in ACCESS_MODES
+    ]
 
-    # Zero-trip district/access-mode groups sum to zero; all other groups should
-    # remain close to one after the stored zonal shares are summed.
-    sums = out.groupby(["airport", "direction", "district"])[share_cols].sum()
+    out = (
+        out[
+            [
+                "airport",
+                "direction",
+                "zone",
+                "district",
+                *share_cols,
+            ]
+        ]
+        .sort_values(
+            [
+                "airport",
+                "direction",
+                "district",
+                "zone",
+            ]
+        )
+        .reset_index(drop=True)
+    )
+
+    file_name = OUTPUT_PARAMETER_FILES[
+        "airport_non_transit_zone_access_mode_shares"
+    ]
+
+    _require_unique(
+        out,
+        file_name,
+        ["airport", "direction", "zone"],
+    )
+
+    _validate_share_values(
+        out,
+        file_name,
+        share_cols,
+        False,
+    )
+
+    # Every district/access-mode distribution must allocate 100% of the
+    # district share. Zero-sum groups are not permitted because they would
+    # reduce the number of person trips carried into the TAZ-level output.
+    sums = (
+        out
+        .groupby(
+            [
+                "airport",
+                "direction",
+                "district",
+            ]
+        )[share_cols]
+        .sum()
+    )
+
     for col in share_cols:
         values = sums[col].to_numpy(dtype=float)
-        ok = np.isclose(values, 0.0, atol=1e-12) | np.isclose(values, 1.0, atol=0.0041, rtol=0)
+
+        ok = np.isclose(
+            values,
+            1.0,
+            atol=0.0041,
+            rtol=0,
+        )
+
         if not ok.all():
-            bad = sums.loc[~ok, col].head(5).to_dict()
-            raise ValueError(f"{file_name}.{col} has invalid within-district totals: {bad}")
+            bad = (
+                sums.loc[
+                    ~ok,
+                    col,
+                ]
+                .head(10)
+                .to_dict()
+            )
+
+            raise ValueError(
+                f"{file_name}.{col} must sum to approximately 1.0 "
+                "within every airport/direction/district group; "
+                f"failing examples: {bad}"
+            )
+
     return out
 
 
@@ -982,7 +1211,7 @@ def build_all_parameters(
         print(f"  {len(generated['airport_transit_zone_shares']):,} transit zone records")
         print("  All validation checks passed")
     else:
-        print("All parameter input and generated tables passed validation; no files written.")
+        print("All parameter inputs and generated tables passed validation; no files written.")
 
     return {
         **p,
