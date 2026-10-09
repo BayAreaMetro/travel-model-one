@@ -26,8 +26,7 @@
 ; true in certain future year scenarios, but the assumption is made here as a simplification).
 ;
 ; Transit travel to the airports is not included in these vehicle trip tables.
-;
-;
+; 
 ; *optional variants:
 ; if CLOSURES=SFO
 ;               35% passengers go to OAK (TAZ 874)
@@ -62,7 +61,7 @@
 ;            (18)  Charter bus, shared ride 3+
 ;
 ;
-; Output: (A) For each forecast year (2007, 2015, 2020, 2023, 2025, 2030, 2035, 2040 and 2050), five time-of-day-specific
+; Output: (A) For each forecast year (2023, 2025, 2030, 2035, 2040 and 2050), five time-of-day-specific
 ;             tables, each containing origin/destination vehicle matrices for the following modes:
 ;           (1) drive alone (DA)
 ;           (2) shared ride 2 (SR2)
@@ -78,65 +77,73 @@
 ; version:  Travel Model One (v 0.3)
 ; authors:  dto (2011 12 14)
 ;
+; ----------------------------------------------------------------------------------------------------------------
+; APRIL 2026 UPDATE
+; The script now reads similar input DBF files as before but for the years of 2023 and 2050.
+; The forecast years written out by this script are 2023, 2025, 2030, 2035, 2040 and 2050.
+; The logic already in this script for optional variants related to airport closures is not changed.
+; 
+; Transit Travel:
+;				Transit person trips are now processed in parallel from separate DBF inputs and written to Cube transit matrices.
+; 				Within the script, this is done through edits in Step 1 and adding new Steps 4 and 5
+;				The optional variants related to airport closures are not implemented for transit person trips.
+
+
 
 ; one of 'NONE', 'SFO', 'SFO_OAK'
 token_closures = '%CLOSURES%'
 token_yyyymmdd = '%YYYYMMDD%'
 *mkdir closures_%CLOSURES%_%YYYYMMDD%
 *mkdir closures_%CLOSURES%_%YYYYMMDD%\intermediate
+*mkdir .\AirportScaled
+*mkdir .\AirportTransit
+*mkdir .\AirportTransit\intermediate
 
 ; ----------------------------------------------------------------------------------------------------------------
 ; STEP 1
 ; The script reads in DBF files crated from Mr. Gosling's Excel files for 2007 and 2035, and uses a simple linear
 ; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2023, 2025, 2030, 2040,
 ; 2045 and 2050.
+;
+; APRIL 2026 UPDATE
+; The script now reads similar DBF files as before for the years of 2023 and 2050.
 ; ----------------------------------------------------------------------------------------------------------------
-loop fYear = 1,9
+loop fYear = 1,7
 
    if (fYear = 1)
 
-      token_year  = '2015b'
-      token_scale = '(2015.0 - 2007.0)/(2035.0 - 2007.0)'
+      token_year  = '2023b'
+      token_scale = '(2023.0 - 2023.0)/(2050.0 - 2023.0)'
 
    elseif (fYear = 2)
 
-      token_year  = '2020b'
-      token_scale = '(2020.0 - 2007.0)/(2035.0 - 2007.0)'
+      token_year  = '2025b'
+      token_scale = '(2025.0 - 2023.0)/(2050.0 - 2023.0)'
 
    elseif (fYear = 3)
 
-      token_year  = '2023b'
-      token_scale = '(2023.0 - 2007.0)/(2035.0 - 2007.0)'
+      token_year  = '2030b'
+      token_scale = '(2030.0 - 2023.0)/(2050.0 - 2023.0)'
 
    elseif (fYear = 4)
 
-      token_year  = '2025b'
-      token_scale = '(2025.0 - 2007.0)/(2035 - 2007.0)'
+      token_year  = '2035b'
+      token_scale = '(2035.0 - 2023.0)/(2050.0 - 2023.0)'
 
    elseif (fYear = 5)
 
-      token_year  = '2030b'
-      token_scale = '(2030.0 - 2007.0)/(2035.0 - 2007.0)'
+      token_year  = '2040b'
+      token_scale = '(2040.0 - 2023.0)/(2050.0 - 2023.0)'
 
    elseif (fYear = 6)
 
-      token_year  = '2035b'
-      token_scale = '(2035.0 - 2007.0)/(2035.0 - 2007.0)'
+      token_year  = '2045b'
+      token_scale = '(2045.0 - 2023.0)/(2050.0 - 2023.0)'
 
    elseif (fYear = 7)
 
-      token_year  = '2040b'
-      token_scale = '(2040.0 - 2007.0)/(2035.0 - 2007.0)'
-
-   elseif (fYear = 8)
-
-      token_year  = '2045b'
-      token_scale = '(2045.0 - 2007.0)/(2035.0 - 2007.0)'
-
-   elseif (fYear = 9)
-
       token_year  = '2050b'
-      token_scale = '(2050.0 - 2007.0)/(2035.0 - 2007.0)'
+      token_scale = '(2035.0 - 2023.0)/(2050.0 - 2023.0)'
 
    endif
 
@@ -237,18 +244,18 @@ loop fYear = 1,9
 
          run pgm = matrix
 
-            filei RECI   = .\GoslingSummaries\2007_@token_toFrom@@token_airport@.dbf
-            filei DBI[2] = .\GoslingSummaries\2035b_@token_toFrom@@token_airport@.dbf
+            filei RECI   = .\AirportSummaries\2023_@token_toFrom@@token_airport@.dbf
+            filei DBI[2] = .\AirportSummaries\2050_@token_toFrom@@token_airport@.dbf
 
-            fileo RECO[1] = .\GoslingScaled\@token_year@_@token_toFrom@@token_airport@.dbf, fields=RECI.ALLFIELDS
+            fileo RECO[1] = .\AirportScaled\@token_year@_@token_toFrom@@token_airport@.dbf, fields=RECI.ALLFIELDS
 
             ; read 1 record from DBI[2]
             x = DBIReadNext(2,1)
 
             ; print list=x, DI.2.ORIG, DI.2.DEST, RI.ORIG, RI.DEST
 
-            IF (DI.2.ORIG != RI.ORIG) ABORT MSG = "MISMATCH ORIG records in 2007 vs 2035b Gosling DBF Input"
-            IF (DI.2.DEST != RI.DEST) ABORT MSG = "MISMATCH DEST records in 2007 vs 2035b Gosling DBF Input"
+            IF (DI.2.ORIG != RI.ORIG) ABORT MSG = "MISMATCH ORIG records in 2023 vs 2050 Gosling DBF Input"
+            IF (DI.2.DEST != RI.DEST) ABORT MSG = "MISMATCH DEST records in 2023 vs 2050 Gosling DBF Input"
 
             RO.ORIG = RI.ORIG
             RO.DEST = RI.DEST
@@ -355,6 +362,39 @@ loop fYear = 1,9
 
             WRITE RECO=1
 
+         run pgm = matrix
+
+            filei RECI   = .\AirportSummaries\TR_2023_@token_toFrom@@token_airport@.dbf
+            filei DBI[2] = .\AirportSummaries\TR_2050_@token_toFrom@@token_airport@.dbf
+
+            fileo RECO[1] = .\AirportScaled\TR_@token_year@_@token_toFrom@@token_airport@.dbf, fields=RECI.ALLFIELDS
+
+            ; read 1 record from DBI[2]
+            x = DBIReadNext(2,1)
+
+            IF (DI.2.ORIG != RI.ORIG) ABORT MSG = "MISMATCH ORIG records in 2023 vs 2050 Transit DBF Input"
+            IF (DI.2.DEST != RI.DEST) ABORT MSG = "MISMATCH DEST records in 2023 vs 2050 Transit DBF Input"
+
+            RO.ORIG = RI.ORIG
+            RO.DEST = RI.DEST
+
+            ; Early AM
+            RO.EA_TR = RI.EA_TR + @token_scale@*max((DI.2.EA_TR - RI.EA_TR),0)
+
+            ; AM
+            RO.AM_TR = RI.AM_TR + @token_scale@*max((DI.2.AM_TR - RI.AM_TR),0)
+
+            ; Midday
+            RO.MD_TR = RI.MD_TR + @token_scale@*max((DI.2.MD_TR - RI.MD_TR),0)
+
+            ; PM
+            RO.PM_TR = RI.PM_TR + @token_scale@*max((DI.2.PM_TR - RI.PM_TR),0)
+
+            ; EV
+            RO.EV_TR = RI.EV_TR + @token_scale@*max((DI.2.EV_TR - RI.EV_TR),0)
+
+            WRITE RECO=1
+
          endrun
 
       endloop ; toFrom
@@ -373,8 +413,8 @@ loop fYear = 1,9
          ; ----------------------------------------------------------------------------------------------------------------
          run pgm = matrix
 
-            filei ZDATI[1] = .\GoslingScaled\@token_year@_to@token_airport@.dbf,   Z=ORIG
-            filei ZDATI[2] = .\GoslingScaled\@token_year@_from@token_airport@.dbf, Z=DEST
+            filei ZDATI[1] = .\AirportScaled\@token_year@_to@token_airport@.dbf,   Z=ORIG
+            filei ZDATI[2] = .\AirportScaled\@token_year@_from@token_airport@.dbf, Z=DEST
 
             fileo mato[1] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_to@token_airport@_@token_tp@.tpp, mo = 1-18, name =
                @token_tp@_Escort_DA,@token_tp@_Escort_S2,@token_tp@_Escort_S3,
@@ -738,5 +778,88 @@ loop fYear = 1,9
 
       endrun
    endloop ; timeperiod
+
+   loop airport = 1,3
+
+      if (airport = 1)
+         token_airport = 'SFO'
+         airport_taz_1 = '239'
+      endif
+
+      if (airport = 2)
+         token_airport = 'OAK'
+         airport_taz_1 = '874'
+      endif
+
+      if (airport = 3)
+         token_airport = 'SJC'
+         airport_taz_1 = '434'
+      endif
+
+      loop timeperiod = 1,5
+         if (timeperiod = 1) token_tp = 'EA'
+         if (timeperiod = 2) token_tp = 'AM'
+         if (timeperiod = 3) token_tp = 'MD'
+         if (timeperiod = 4) token_tp = 'PM'
+         if (timeperiod = 5) token_tp = 'EV'
+
+         ; ----------------------------------------------------------------------------------------------------------------
+         ; STEP 4
+         ; Convert interpolated transit DBFs into airport-specific Cube matrices.  No closure adjustments are applied.
+         ; ----------------------------------------------------------------------------------------------------------------
+         run pgm = matrix
+
+            filei ZDATI[1] = .\AirportScaled\TR_@token_year@_to@token_airport@.dbf,   Z=ORIG
+            filei ZDATI[2] = .\AirportScaled\TR_@token_year@_from@token_airport@.dbf, Z=DEST
+
+            fileo mato[1] = .\AirportTransit\intermediate\TR_@token_year@_to@token_airport@_@token_tp@.tpp, mo = 1, name = @token_tp@_Transit
+            ; note this is the transpose
+            fileo mato[2] = .\AirportTransit\intermediate\TR_@token_year@_from@token_airport@_t_@token_tp@.tpp, mo = 101, name = @token_tp@_Transit
+
+            zones = 1475
+
+            MW[  1] = ZI.1.@token_tp@_TR INCLUDE=@airport_taz_1@
+            MW[101] = ZI.2.@token_tp@_TR INCLUDE=@airport_taz_1@
+
+         endrun
+
+      endloop ; timeperiod
+
+   endloop ; airport
+
+   loop timeperiod = 1,5
+      if (timeperiod = 1) token_tp = 'EA'
+      if (timeperiod = 2) token_tp = 'AM'
+      if (timeperiod = 3) token_tp = 'MD'
+      if (timeperiod = 4) token_tp = 'PM'
+      if (timeperiod = 5) token_tp = 'EV'
+
+      ; ----------------------------------------------------------------------------------------------------------------
+      ; STEP 5
+      ; Finally, a transit-assignment ready matrix file is created for each time-of-day interval.
+      ; ----------------------------------------------------------------------------------------------------------------
+      run pgm = matrix
+
+         filei mati[1] = .\AirportTransit\intermediate\TR_@token_year@_toSFO_@token_tp@.tpp
+         filei mati[2] = .\AirportTransit\intermediate\TR_@token_year@_fromSFO_t_@token_tp@.tpp
+
+         filei mati[3] = .\AirportTransit\intermediate\TR_@token_year@_toOAK_@token_tp@.tpp
+         filei mati[4] = .\AirportTransit\intermediate\TR_@token_year@_fromOAK_t_@token_tp@.tpp
+
+         filei mati[5] = .\AirportTransit\intermediate\TR_@token_year@_toSJC_@token_tp@.tpp
+         filei mati[6] = .\AirportTransit\intermediate\TR_@token_year@_fromSJC_t_@token_tp@.tpp
+
+         fileo mato[1] = .\AirportTransit\@token_year@_trips@token_tp@AirPaxTransit.tpp, mo = 1, name = TRANSIT
+
+         mw[1] = mi.1.@token_tp@_Transit   +
+                 mi.2.@token_tp@_Transit.T +
+                 mi.3.@token_tp@_Transit   +
+                 mi.4.@token_tp@_Transit.T +
+                 mi.5.@token_tp@_Transit   +
+                 mi.6.@token_tp@_Transit.T
+
+      endrun
+   endloop ; timeperiod
+
 
 endloop ; fYear
