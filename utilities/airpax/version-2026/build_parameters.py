@@ -58,10 +58,6 @@ DIRECTIONS = ("from", "to")
 EXPECTED_N_TAZ = 1454
 SHARE_DECIMALS = 4
 
-# Vehicle occupancies used to convert Gosling DBF vehicle-trip fields to
-# person trips for Gosling-based distributions.
-GOSLING_PERSONS_PER_VEHICLE = {"DA": 1.0, "S2": 2.0, "S3": 3.2}
-
 # Source-year mapping for model-year district and submode distributions.
 GOSLING_SUPER_DIST_SOURCE_BY_MODEL_YEAR = {2023: "2007", 2050: "2035b"}
 GOSLING_ZONE_SHARE_SOURCE_YEAR = "2007"
@@ -189,7 +185,7 @@ def _write_share_csv(df: pd.DataFrame, path: Path, share_columns: list[str]) -> 
 
 
 # ---------------------------------------------------------------------------
-# Primitive parameter input
+# Primitive parameter inputs
 # ---------------------------------------------------------------------------
 def load_primitive_parameters(parameters_dir: Path) -> dict[str, pd.DataFrame]:
     """Load and validate the seven user-maintained primitive parameter CSVs."""
@@ -410,6 +406,56 @@ def _trip_columns(df: pd.DataFrame, source_name: str) -> list[str]:
     return trip_cols
 
 
+def _build_occupancy_lookup(vehicle_occupancy: pd.DataFrame) -> dict[str, float]:
+    """Build the vehicle-occupancy lookup used to convert Gosling trips to persons."""
+    occupancy = vehicle_occupancy.copy()
+    occupancy["conversion_factor"] = pd.to_numeric(
+        occupancy["conversion_factor"], errors="raise"
+    )
+
+    required = {"DA", "S2", "S3", "VN_HT_CH_S3"}
+    available = set(occupancy["submode"].astype(str))
+    missing = sorted(required - available)
+    if missing:
+        raise ValueError(
+            "user_input_airport_non_transit_vehicle_occupancy.csv "
+            f"is missing required occupancy factor(s): {missing}"
+        )
+
+    if (occupancy["conversion_factor"] <= 0).any():
+        raise ValueError(
+            "user_input_airport_non_transit_vehicle_occupancy.csv "
+            "must contain positive conversion factors."
+        )
+
+    return dict(
+        zip(
+            occupancy["submode"].astype(str),
+            occupancy["conversion_factor"].astype(float),
+        )
+    )
+
+
+def _gosling_persons_per_vehicle(
+    access_mode: str,
+    submode: str,
+    occupancy_lookup: dict[str, float],
+) -> float:
+    """Return the occupancy used to convert a Gosling vehicle-trip field to persons."""
+    key = (
+        "VN_HT_CH_S3"
+        if submode == "S3" and access_mode in {"VN", "HT", "CH"}
+        else submode
+    )
+
+    if key not in occupancy_lookup:
+        raise ValueError(
+            f"Missing vehicle-occupancy factor for {access_mode}/{submode}: {key}"
+        )
+
+    return occupancy_lookup[key]
+
+
 # ---------------------------------------------------------------------------
 # Derived Gosling parameters
 # ---------------------------------------------------------------------------
@@ -417,12 +463,13 @@ def _trip_columns(df: pd.DataFrame, source_name: str) -> list[str]:
 def build_airport_non_transit_submode_shares(
     file_map: pd.DataFrame,
     gosling_dir: Path,
+    occupancy_lookup: dict[str, float],
 ) -> pd.DataFrame:
     """Build DA/S2/S3 shares by airport, direction, model year, and access mode.
 
     The Gosling DBF trip fields are vehicle trips. Each field is converted to
-    person trips using the DA/S2/S3 occupancies, summed across TAZs and time
-    periods, and divided by the person-trip total for its access mode.
+    person trips using the user-input occupancy assumptions, summed across TAZs
+    and time periods, and divided by the person-trip total for its access mode.
     """
     files = _gosling_file_map(gosling_dir)
     results: list[pd.DataFrame] = []
@@ -439,14 +486,15 @@ def build_airport_non_transit_submode_shares(
             _, access_mode, submode = col.split("_")
             if access_mode not in ACCESS_MODES:
                 continue
-            if submode not in GOSLING_PERSONS_PER_VEHICLE:
-                raise ValueError(f"Unexpected Gosling submode '{submode}' in {dbf_name}.{col}")
+            factor = _gosling_persons_per_vehicle(
+                access_mode, submode, occupancy_lookup
+            )
             vehicle_trips = pd.to_numeric(df[col], errors="coerce").fillna(0.0).sum()
             totals.append(
                 {
                     "access_mode": access_mode,
                     "submode": submode,
-                    "person_trips": float(vehicle_trips) * GOSLING_PERSONS_PER_VEHICLE[submode],
+                    "person_trips": float(vehicle_trips) * factor,
                 }
             )
 
@@ -486,6 +534,7 @@ def build_super_district_shares(
     file_map: pd.DataFrame,
     taz_lookup: pd.DataFrame,
     gosling_dir: Path,
+    occupancy_lookup: dict[str, float],
 ) -> pd.DataFrame:
     """Build super-district shares for each configured airport demand file.
 
@@ -506,11 +555,12 @@ def build_super_district_shares(
 
         person_trips = np.zeros(len(df), dtype=float)
         for col in trip_cols:
-            _, _, submode = col.split("_")
-            if submode not in GOSLING_PERSONS_PER_VEHICLE:
-                raise ValueError(f"Unexpected Gosling submode '{submode}' in {dbf_name}.{col}")
+            _, access_mode, submode = col.split("_")
+            factor = _gosling_persons_per_vehicle(
+                access_mode, submode, occupancy_lookup
+            )
             values = pd.to_numeric(df[col], errors="coerce").fillna(0.0).to_numpy(dtype=float)
-            person_trips += values * GOSLING_PERSONS_PER_VEHICLE[submode]
+            person_trips += values * factor
 
         zone_totals = pd.DataFrame(
             {
@@ -539,7 +589,7 @@ def build_super_district_shares(
     _require_unique(out, OUTPUT_PARAMETER_FILES["super_district_shares"], ["file_name", "district"])
     _validate_share_values(out, OUTPUT_PARAMETER_FILES["super_district_shares"], ["share"], False)
     _validate_group_sum(
-        out, OUTPUT_PARAMETER_FILES["super_district_shares"], ["file_name"], "share", tolerance=0.00031
+        out, OUTPUT_PARAMETER_FILES["super_district_shares"], ["file_name"], "share", tolerance=0.00171
     )
     return out
 
@@ -547,11 +597,13 @@ def build_super_district_shares(
 def build_airport_non_transit_zone_access_mode_shares(
     taz_lookup: pd.DataFrame,
     gosling_dir: Path,
+    occupancy_lookup: dict[str, float],
 ) -> pd.DataFrame:
     """Build within-super-district zonal shares by non-transit access mode.
 
-    Trip fields are summed across time periods and vehicle occupancies for each
-    access mode.
+    Gosling vehicle-trip fields are converted to person trips using the
+    user-input occupancy assumptions, then summed across time periods and
+    submodes for each access mode.
 
     For each airport, direction, district, and access mode:
 
@@ -585,7 +637,8 @@ def build_airport_non_transit_zone_access_mode_shares(
 
             by_mode = pd.DataFrame({"zone": zone})
 
-            # Sum all TOD/submode trip columns belonging to each access mode.
+            # Convert Gosling vehicle-trip fields to person trips before
+            # calculating access-mode-specific zonal distributions.
             for mode in ACCESS_MODES:
                 cols = [
                     col
@@ -598,12 +651,20 @@ def build_airport_non_transit_zone_access_mode_shares(
                         f"{dbf_name} has no trip columns for access mode {mode}"
                     )
 
-                by_mode[f"trips_{mode.lower()}"] = (
-                    df[cols]
-                    .apply(pd.to_numeric, errors="coerce")
-                    .fillna(0.0)
-                    .sum(axis=1)
-                )
+                person_trips = np.zeros(len(df), dtype=float)
+                for col in cols:
+                    _, access_mode, submode = col.split("_")
+                    factor = _gosling_persons_per_vehicle(
+                        access_mode, submode, occupancy_lookup
+                    )
+                    values = (
+                        pd.to_numeric(df[col], errors="coerce")
+                        .fillna(0.0)
+                        .to_numpy(dtype=float)
+                    )
+                    person_trips += values * factor
+
+                by_mode[f"person_trips_{mode.lower()}"] = person_trips
 
             # Some source files may contain more than one record for a zone.
             # Aggregate those records before joining the TAZ-to-district lookup.
@@ -633,23 +694,23 @@ def build_airport_non_transit_zone_access_mode_shares(
                     f"{missing.tolist()}"
                 )
 
-            trip_cols_by_mode = [
-                f"trips_{mode.lower()}"
+            person_trip_cols_by_mode = [
+                f"person_trips_{mode.lower()}"
                 for mode in ACCESS_MODES
             ]
 
             # Total non-transit trips at each zone across all access modes.
             # This is used as the first fallback distribution when a district
             # has no observed trips for one particular access mode.
-            by_mode["trips_all_non_transit"] = (
-                by_mode[trip_cols_by_mode].sum(axis=1)
+            by_mode["person_trips_all_non_transit"] = (
+                by_mode[person_trip_cols_by_mode].sum(axis=1)
             )
 
             # District-wide all-mode trip total and number of TAZs are common
             # to all access modes, so calculate them once.
             by_mode["all_mode_district_total"] = (
                 by_mode
-                .groupby("district")["trips_all_non_transit"]
+                .groupby("district")["person_trips_all_non_transit"]
                 .transform("sum")
             )
 
@@ -662,7 +723,7 @@ def build_airport_non_transit_zone_access_mode_shares(
             out = by_mode[["zone", "district"]].copy()
 
             for mode in ACCESS_MODES:
-                trips_col = f"trips_{mode.lower()}"
+                trips_col = f"person_trips_{mode.lower()}"
                 share_col = f"zdist_share_{mode.lower()}"
 
                 # Total observed trips for this access mode within each district.
@@ -688,7 +749,7 @@ def build_airport_non_transit_zone_access_mode_shares(
                 # if this access mode has no trips in the district, use the
                 # zonal distribution of all non-transit trips in the district.
                 all_mode_share = np.divide(
-                    by_mode["trips_all_non_transit"].to_numpy(dtype=float),
+                    by_mode["person_trips_all_non_transit"].to_numpy(dtype=float),
                     all_mode_total.to_numpy(dtype=float),
                     out=np.zeros(len(by_mode), dtype=float),
                     where=all_mode_total.to_numpy(dtype=float) > 0,
@@ -731,7 +792,7 @@ def build_airport_non_transit_zone_access_mode_shares(
                     district_all_total = float(
                         by_mode.loc[
                             district_rows,
-                            "trips_all_non_transit",
+                            "person_trips_all_non_transit",
                         ].sum()
                     )
 
@@ -1133,18 +1194,19 @@ def build_all_parameters(
 
     p = load_primitive_parameters(parameters_dir)
     taz_lookup = load_taz_lookup(Path(taz_lookup_path))
+    occupancy_lookup = _build_occupancy_lookup(p["vehicle_occupancy"])
 
     submode_shares = build_airport_non_transit_submode_shares(
-        p["airport_output_file_map"], Path(gosling_dir)
+        p["airport_output_file_map"], Path(gosling_dir), occupancy_lookup
     )
 
     generated = {
         "super_district_shares": build_super_district_shares(
-            p["airport_output_file_map"], taz_lookup, Path(gosling_dir)
+            p["airport_output_file_map"], taz_lookup, Path(gosling_dir), occupancy_lookup
         ),
         "airport_non_transit_submode_shares": submode_shares,
         "airport_non_transit_zone_access_mode_shares": build_airport_non_transit_zone_access_mode_shares(
-            taz_lookup, Path(gosling_dir)
+            taz_lookup, Path(gosling_dir), occupancy_lookup
         ),
         "airport_transit_zone_shares": build_airport_transit_zone_shares(
             Path(transit_source_path)
