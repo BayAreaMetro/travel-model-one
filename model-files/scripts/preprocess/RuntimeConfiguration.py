@@ -619,7 +619,8 @@ def config_distribution(replacements):
 
     elif hostname.lower() in ['model2-a','model2-b','model2-c','model2-d',
                       'pormdlppw01','pormdlppw02',
-                      'model3-a','model3-b','model3-c','model3-d','model3-e'
+                      'model3-a','model3-b','model3-c','model3-d','model3-e', 
+                      'model3-f', 'model3-g', 'model3-h'
                       ] or hostname.startswith("WIN-"):
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
