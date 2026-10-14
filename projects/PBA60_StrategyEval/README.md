@@ -1,16 +1,22 @@
-# Plan Bay Area 2050+ Final Blueprint
+# Plan Bay Area 2060 Strategy Evaluation runs, based on Plan Bay Area 2050+ Final Blueprint
 
 | File | Holds |
 |---|---|
 | [`steps.yaml`](steps.yaml) | this project's own pipeline additions |
-| [`scen_2023.yaml`](scen_2023.yaml) | 2023 baseline |
-| [`scen_2035_NoProject.yaml`](scen_2035_NoProject.yaml) | 2035 no-project |
-| [`scen_2035_Plan.yaml`](scen_2035_Plan.yaml) | 2035 Final Blueprint |
-| [`scen_2050_NoProject.yaml`](scen_2050_NoProject.yaml) | 2050 no-project |
-| [`scen_2050_Plan.yaml`](scen_2050_Plan.yaml) | 2050 Final Blueprint |
+| [`scen_2050_Plan_minusT2.yaml`](scen_2050_Plan_minusT2.yaml) | 2050 Final Blueprint minus Strategy T2 |
+| [`scen_2050_Plan_minusT3.yaml`](scen_2050_Plan_minusT3.yaml) | 2050 Final Blueprint minus Strategy T3 |
+| [`scen_2050_Plan_minusT4.yaml`](scen_2050_Plan_minusT4.yaml) | 2050 Final Blueprint minus Strategy T4 |
+| [`scen_2050_Plan_minusT5.yaml`](scen_2050_Plan_minusT5.yaml) | 2050 Final Blueprint minus Strategy T5 |
+| [`scen_2050_Plan_minusT6.yaml`](scen_2050_Plan_minusT6.yaml) | 2050 Final Blueprint minus Strategy T6 |
+| [`scen_2050_Plan_minusT7.yaml`](scen_2050_Plan_minusT7.yaml) | 2050 Final Blueprint minus Strategy T7 |
+| [`scen_2050_Plan_minusT8.yaml`](scen_2050_Plan_minusT8.yaml) | 2050 Final Blueprint minus Strategy T8 |
+| [`scen_2050_Plan_minusT9.yaml`](scen_2050_Plan_minusT9.yaml) | 2050 Final Blueprint minus Strategy T9 |
+| [`scen_2050_Plan_minusT10.yaml`](scen_2050_Plan_minusT10.yaml) | 2050 Final Blueprint minus Strategy T10 |
+| [`scen_2050_Plan_minusT11.yaml`](scen_2050_Plan_minusT11.yaml) | 2050 Final Blueprint minus Strategy T11 |
+| [`scen_2050_Plan_minusT12.yaml`](scen_2050_Plan_minusT12.yaml) | 2050 Final Blueprint minus Strategy T12 |
 | [`ladder.yaml`](ladder.yaml), [`matrix.yaml`](matrix.yaml) | placeholders -- this project uses neither pathway yet |
 
-`tm1 scenarios PBA50+_FBP` merges every `scen_*.yaml` in this directory before checking
+`tm1 scenarios PBA60_StrategyEval` merges every `scen_*.yaml` in this directory before checking
 any of them, so an ID collision between two files is caught just the same as one inside
 a single file.
 
