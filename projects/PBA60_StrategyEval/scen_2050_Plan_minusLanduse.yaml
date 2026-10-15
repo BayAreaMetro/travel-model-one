@@ -16,8 +16,8 @@
   # Land use version: NP land use but with parking and cordon pricing
   copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/LandUse/2050_NP_wParkingStrategy_wCordons"
   copy_inputs.input_landuse.variant:
-    tazData.csv: tazData_parkingStrategy_v01_wSFCordon_wTICordon.csv
-    tazData.dbf: tazData_parkingStrategy_v01_wSFCordon_wTICordon.dbf
+    tazData.csv: tazData_NP_wParkingStrategy_wSFCordon_wTICordon.csv
+    tazData.dbf: tazData_NP_wParkingStrategy_wSFCordon_wTICordon.dbf
   copy_inputs.input_nonres.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
   copy_inputs.input_logsums.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
   copy_inputs.input_metrics.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
