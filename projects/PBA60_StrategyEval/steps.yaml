@@ -56,7 +56,7 @@
 - publish_inputs:
     input_dir:
       from: "{run_dir}/INPUT"
-      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/INPUT"
+      to: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/{run}/INPUT"
       error_if_exists: true
 
 # T2 fare integration: specific to this project, so not part of the shared
