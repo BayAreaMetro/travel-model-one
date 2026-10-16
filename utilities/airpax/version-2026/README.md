@@ -8,12 +8,6 @@ This workflow creates airport ground-access demand matrices for OAK, SFO, and SJ
 .
 ├── build_parameters.py
 ├── make_air_passenger_demand.py
-├── input/
-│   ├── TPS_TAZ_airport_TOD.xlsx
-│   └── gosling_summaries/
-│       ├── 2007_fromOAK.dbf
-│       ├── ...
-│       └── 2035b_toSJC.dbf
 ├── parameters/
 │   ├── README.md
 │   └── *.csv

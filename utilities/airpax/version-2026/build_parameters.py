@@ -45,11 +45,14 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 # Default project layout
 # ---------------------------------------------------------------------------
+BOX_AIRPORTS_DIR = Path("E:\\Box\\Modeling and Surveys\\Development\\Travel Model 1.7\\TrucksAirports\\Airports")
 HERE = Path(__file__).resolve().parent
 DEFAULT_PARAMETERS_DIR = HERE / "parameters"
 DEFAULT_TAZ_LOOKUP = HERE.parent.parent / "geographies" / "taz-superdistrict-county.csv"
-DEFAULT_GOSLING_DIR = HERE / "input" / "gosling_summaries"
-DEFAULT_TRANSIT_SOURCE = HERE / "input" / "TPS_TAZ_airport_TOD.xlsx"
+DEFAULT_GOSLING_DIR = BOX_AIRPORTS_DIR / "GoslingSummaries_2007_2035b_dbfs"
+# See Collate airport transit data for TM1.7 from the TPS
+#     https://app.asana.com/1/11860278793487/project/13098083395690/task/1212780679760302
+DEFAULT_TRANSIT_SOURCE = BOX_AIRPORTS_DIR / "TPS_TAZ_airport_TOD.xlsx"
 
 TOD_ORDER = ("EA", "AM", "MD", "PM", "EV")
 ACCESS_MODES = ("ES", "PK", "RN", "TX", "LI", "VN", "HT", "CH")
