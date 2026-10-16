@@ -105,7 +105,7 @@ def run_transit_assignment(
     run_cube_job(
         _scripts(run_dir) / "assign" / "TransitAssign.job", ta_dir,
         env_extra=env, cluster_nodes=cluster_nodes, commpath=run_dir / "commpath",
-        timeout=7200,
+        timeout=14400,
     )
 
 
@@ -132,7 +132,7 @@ def run_transit_skims(
     run_cube_job(
         _scripts(run_dir) / "skims" / "TransitSkims.job", ta_dir,
         env_extra=env, cluster_nodes=cluster_nodes, commpath=run_dir / "commpath",
-        timeout=7200,
+        timeout=14400,
     )
 
 

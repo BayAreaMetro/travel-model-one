@@ -338,7 +338,7 @@ def run_cube_job(
     cwd: str | Path,
     *,
     env_extra: dict[str, object] | None = None,
-    timeout: float = 7200,
+    timeout: float = 14400,
     cluster_nodes: int | None = None,
     commpath: str | Path | None = None,
 ) -> int:
