@@ -37,7 +37,7 @@ def compute_transit_trips():
 
     # read taz -> county mapping for home_taz
     taz_county_df = pd.read_csv(
-        pathlib.Path(__file__).parent.parent.parent / "geographies" / "taz-superdistrict-county.csv",
+        pathlib.Path(__file__).parent.parent.parent.parent / "geographies" / "taz-superdistrict-county.csv",
         usecols=['ZONE','COUNTY_NAME']
     )
     taz_county_df.rename(columns={'ZONE':'home_taz', 'COUNTY_NAME':'county_name'}, inplace=True)
