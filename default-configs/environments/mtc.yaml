@@ -28,6 +28,7 @@ TM1_GAWK_DIR: C:/Program Files/Git/usr/bin
 # 4.3.1 every other machine was assumed to share -- if another machine turns
 # out to differ too, key this by hostname the same way TM1_RUNS_ROOT is below.
 TM1_R_HOME: C:/Program Files/R/R-4.2.1
+R_LIB: C:/Users/MTCPB/AppData/Local/R/win-library/4.2
 
 # Either this, or SLACK_WEBHOOK_URL as a real environment variable -- never
 # committed, since it is a live credential.  With neither, runs log their
@@ -36,6 +37,8 @@ TM1_R_HOME: C:/Program Files/R/R-4.2.1
 TM1_SLACK_WEBHOOK_FILE: //models.ad.mtc.ca.gov/data/models/Software/Slack/TravelModel_SlackWebhook.txt
 
 TM1_RUNS_ROOT:
+  model3-b: E:/Model3B-Share/runs
+  model3-c: E:/Model3C-Share/runs
   model3-e: E:/Model3E-Share/runs
   model3-f: E:/Model3F-Share/runs
   model3-g: E:/Model3G-Share/runs
