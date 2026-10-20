@@ -741,54 +741,68 @@ def _run_via_schtasks(
 def start_infrastructure(
     runtime_dir: Path, run_dir: Path, host_ip: str,
 ) -> list[subprocess.Popen]:
-    """Start JPPF driver, JPPF node, HH manager, and Matrix manager."""
+    """Start JPPF driver, JPPF node, HH manager, and Matrix manager.
+
+    stdout/stderr are redirected to logs/infra_*.console.log rather than
+    DEVNULL -- log4j only captures what each class logs through it, so a JVM
+    startup failure (OOM, missing native DLL, port conflict) that prints
+    straight to stderr before log4j initializes would otherwise vanish with
+    no visible window to catch it.
+    """
     cp = _classpath(runtime_dir)
     lib = _lib_path(runtime_dir)
     java_env = _env(cp, lib)
-    popen_kw: dict = {
-        "cwd": str(run_dir),
-        "stdout": subprocess.DEVNULL,
-        "stderr": subprocess.DEVNULL,
-        "env": java_env,
-    }
+    logs_dir = run_dir / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+
+    def _spawn(args: list[str], console_log_name: str) -> subprocess.Popen:
+        # No visible window either way: DEVNULL just also discarded the output.
+        # Pass creationflags=subprocess.CREATE_NEW_CONSOLE here if a visible
+        # per-process window is ever wanted again.
+        with (logs_dir / console_log_name).open("wb") as console_log:
+            proc = subprocess.Popen(  # noqa: S603
+                args, cwd=str(run_dir), env=java_env,
+                stdout=console_log, stderr=subprocess.STDOUT,
+            )
+        # Popen duplicated the handle for the child; our copy can close now.
+        return proc
 
     procs = [
-        # JPPF Driver
-        subprocess.Popen(
+        _spawn(
             ["java", "-server", "-Xmx16m",
              "-Dlog4j.configuration=log4j-driver.properties",
              "-Djppf.config=jppf-driver.properties",
              "org.jppf.server.DriverLauncher"],
-            **popen_kw,
+            "infra_driver.console.log",
         ),
         # JPPF Node (NodeLauncher forks a child JVM using other.jvm.options
         # from jppf-node0.properties; the child inherits our env/PATH which
         # includes Cube DLL dirs for JNA native library loading)
-        subprocess.Popen(
+        _spawn(
             ["java", "-server", "-Xmx16m",
              "-Dlog4j.configuration=log4j-node0.xml",
              "-Djppf.config=jppf-node0.properties",
              "org.jppf.node.NodeLauncher"],
-            **popen_kw,
+            "infra_node0.console.log",
         ),
         # Household Data Manager
-        subprocess.Popen(
+        _spawn(
             ["java", "-Xms20000m", "-Xmx20000m",
              "-Dlog4j.configuration=log4j_hh.xml",
              "com.pb.mtc.ctramp.MtcHouseholdDataManager",
              "-hostname", host_ip],
-            **popen_kw,
+            "infra_hhmgr.console.log",
         ),
         # Matrix Data Server (must run as a separate process — the DLL is NOT
         # thread-safe; this serialises all matrix I/O via RMI).
         # Matches legacy: JavaOnly_runMain.cmd
-        subprocess.Popen(
+        _spawn(
             ["java", "-Xms14000m", "-Xmx14000m",
              "-Dlog4j.configuration=log4j_mtx.xml",
              f"-Djava.library.path={lib}",
              "com.pb.models.ctramp.MatrixDataServer",
              "-hostname", host_ip],
-            **popen_kw,
+            "infra_mtxmgr.console.log",
         ),
     ]
     log.info("Started Java infrastructure (5 processes); waiting 15s")
@@ -1110,8 +1124,13 @@ def run(config_dir: Path, cfg: dict, **kwargs: object) -> None:  # noqa: ARG001
             _recover_license()
     else:
         # Local session: direct subprocess execution.  The JPPF cluster and
-        # matrix server are started and torn down per iteration, matching
-        # RunIteration.bat, which calls javaOnly_runMain/runNode0 inside each one.
+        # matrix server are started and torn down every call to this step, i.e.
+        # every global iteration (3x for a 3-iteration run).  This is NOT what
+        # RunIteration.bat did: there, javaOnly_runMain/runNode0 only ran inside
+        # `if %ITER%==1`, so the quartet started once and stayed up across
+        # iterations 2+, torn down only at RunModel.bat's end.  Restarting here
+        # every round is correct but costs the 15s start_infrastructure() sleep
+        # plus HH/Matrix manager reload time 3x instead of once.
         procs = start_infrastructure(runtime_dir, run_dir, host_ip)
         try:
             run_model(
