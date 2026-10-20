@@ -25,6 +25,9 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
+#: Maximum runtime in seconds, shared with the declarative ``job:`` step adapter.
+DEFAULT_JOB_TIMEOUT = 14400
+
 # The three Cube files anything here needs.  Named individually rather than as
 # install directories to be searched: a directory has to be hunted through for the
 # file you actually wanted, and the hunt is the part that goes wrong when Bentley
@@ -338,7 +341,7 @@ def run_cube_job(
     cwd: str | Path,
     *,
     env_extra: dict[str, object] | None = None,
-    timeout: float = 14400,
+    timeout: float = DEFAULT_JOB_TIMEOUT,
     cluster_nodes: int | None = None,
     commpath: str | Path | None = None,
 ) -> int:
@@ -355,7 +358,8 @@ def run_cube_job(
         Extra environment variables to set before running (e.g. iteration
         parameters ``ITER``/``WGT`` for assignment/feedback jobs).
     timeout
-        Seconds to wait for completion (schtasks path).
+        Seconds to wait for completion (local and schtasks paths). Defaults to
+        14400 (four hours).
     cluster_nodes
         If set, start a local Cube Cluster of this many nodes around the job
         (required by jobs using ``DistributeMultistep``/``Wait4Files`` — i.e. the

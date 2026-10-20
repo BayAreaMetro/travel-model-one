@@ -254,6 +254,30 @@ def test_job_step_passes_path_cwd_and_env(
     assert kwargs["env_extra"]["TRNCONFIG"] == "FAST"
 
 
+@pytest.mark.parametrize(
+    ("timeout_config", "expected"),
+    [({}, 14400.0), ({"timeout": 1800}, 1800.0), ({"timeout": "3600"}, 3600.0)],
+)
+def test_job_timeout_uses_cube_default_unless_overridden(
+    proj: Path, monkeypatch: pytest.MonkeyPatch,
+    timeout_config: dict, expected: float,
+) -> None:
+    """The step adapter must not shorten Cube's four-hour default."""
+    calls: list[dict] = []
+
+    def record(job: str | Path, cwd: str | Path, **kw: object) -> int:  # noqa: ARG001
+        calls.append(kw)
+        return 0
+
+    monkeypatch.setattr(external, "run_cube_job", record)
+    rel = _write_script(proj, "HwyAssign.job", "; a Cube job\n")
+    step = {"job": rel, "cluster_nodes": CLUSTER_NODES, **timeout_config}
+
+    external.make_step("hwy_assign", step)(proj, _cfg(proj, "hwy_assign", step))
+
+    assert calls[0]["timeout"] == expected
+
+
 def test_job_without_cluster_nodes_starts_no_cluster(
     proj: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

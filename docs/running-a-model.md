@@ -187,6 +187,17 @@ that are not simply "every iteration" or "iterations 1..count":
 | `skip_if_exists:` | its work is done when this file is on disk |
 | `enabled: false` | skip this step entirely |
 
+For `job:` steps, `timeout:` defaults to 14400 seconds (four hours), shared with
+the Cube runner. For `command:` steps, it defaults to 7200 seconds (two hours).
+An explicit `timeout:` on the step overrides its default; for example:
+
+```yaml
+hwy_assign:
+  job: "CTRAMP/scripts/assign/HwyAssign.job"
+  cluster_nodes: 48
+  timeout: 14400
+```
+
 ### The `skip_if_exists` rule
 
 > A step may only name a file that is **its** product and nobody else's.

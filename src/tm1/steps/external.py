@@ -108,7 +108,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from cube.job import run_cube_job
+from cube.job import DEFAULT_JOB_TIMEOUT, run_cube_job
 from tm1.assignment.cube.highway import PERIODS
 
 log = logging.getLogger(__name__)
@@ -125,7 +125,7 @@ VERIFY_KEY = "verify"
 #: case -- one artifact per period -- stays a single line.
 _PERIOD_REF = "{PERIOD}"
 
-#: Seconds before a spawned program is presumed hung.  Generous:
+#: Seconds before a non-Cube command is presumed hung.  Generous:
 #: SkimsDatabase-scale work parses large networks and runs slower still.
 DEFAULT_TIMEOUT = 7200
 
@@ -398,7 +398,7 @@ def _run_job(
         env_extra=dict(env),
         cluster_nodes=int(cluster_nodes) if cluster_nodes else None,
         commpath=run_dir / _substitute(commpath, values) if commpath else None,
-        timeout=float(step_cfg.get("timeout", DEFAULT_TIMEOUT)),
+        timeout=float(step_cfg.get("timeout", DEFAULT_JOB_TIMEOUT)),
     )
 
 
