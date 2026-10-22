@@ -72,7 +72,7 @@ names(input.pop.households)[names(input.pop.households)=="HHID"] <- "hh_id"
 
 households <- inner_join(input.pop.households, input.ct.households, "hh_id")
 # wrap as a d data frame tbl so it's nicer for printing
-households <- tbl_df(households)
+households <- tibble::as_tibble(households)
 # clean up
 remove(input.pop.households, input.ct.households)
 
@@ -134,7 +134,7 @@ persons              <- left_join(persons, select(households, hh_id, incQ, incQ_
                                                   taz, autoSuff, autoSuff_label, hasAV, walk_subzone, walk_subzone_label), by=c("hh_id"))
 
 # wrap as a d data frame tbl so it's nicer for printing
-persons              <- tbl_df(persons)
+persons              <- tibble::as_tibble(persons)
 # clean up
 remove(input.ct.persons)
 
@@ -178,4 +178,3 @@ acc_market_summary[is.na(acc_market_summary)] <- 0
 write.table(acc_market_summary, file.path(TARGET_DIR,"core_summaries","AccessibilityMarkets.csv"), sep=",", row.names=FALSE)
 model_summary <- acc_market_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"core_summaries","AccessibilityMarkets.rdata"))
-

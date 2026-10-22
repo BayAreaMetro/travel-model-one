@@ -1,0 +1,59 @@
+# PBA50+_FBP: 2035 Final Blueprint run. See README.md for the address
+# grammar and the three ways a scenario file may declare scenarios.
+
+2035_TM162_FBP_Plan:
+  description: >
+    Plan Bay Area 2050+ Final Blueprint run. Equivalent to 2035_TM161_FBP_Plan_16
+  model_year:     2035
+  env.MODEL_YEAR: 2035
+  env.FUTURE: PBA50
+  env.EN7: ENABLED
+
+  copy_inputs.input_hwy.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2035_Blueprint/hwy"
+  copy_inputs.input_trn.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2035_Blueprint/trn"
+  copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_FBP_v08/2035/popsyn"
+  copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_FBP_v08/2035/landuse"
+  # Parking strategy (En9): SetUpModel_PBA50Plus.bat applies this for MODEL_YEAR >= 2035.
+  copy_inputs.input_landuse.variant:
+    tazData.csv: parking_strategy/tazData_parkingStrategy_v01_wSFCordon_wTICordon.csv
+    tazData.dbf: parking_strategy/tazData_parkingStrategy_v01_wSFCordon_wTICordon.dbf
+  copy_inputs.input_nonres.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+  copy_inputs.input_logsums.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
+  copy_inputs.input_metrics.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
+
+  copy_inputs.input_airpax_ea.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2035b_tripsAirPaxEA.tpp"
+  copy_inputs.input_airpax_am.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2035b_tripsAirPaxAM.tpp"
+  copy_inputs.input_airpax_md.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2035b_tripsAirPaxMD.tpp"
+  copy_inputs.input_airpax_pm.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2035b_tripsAirPaxPM.tpp"
+  copy_inputs.input_airpax_ev.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2035b_tripsAirPaxEV.tpp"
+
+  # PREV_RUN_DIR (Blueprint/2035_TM161_FBP_Plan_15) is gone -- pulling from Plan_16's
+  # own INPUT/warmstart instead, the same workaround the 2050 scenarios use for their
+  # own archived predecessors.
+  copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/Blueprint/2035_TM161_FBP_Plan_16/INPUT/warmstart/main"
+  copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2035_TM161_FBP_Plan_16/INPUT/warmstart/nonres"
+
+  copy_inputs.input_params.from: "utilities/RTP/config_RTP2025/params_2035_Blueprint.properties"
+
+  # The versioned name this project's INPUT/popsyn ships under.
+  filter_unconnected_households.skip_if_exists: "popsyn/hhFile.FBP.2035.PBA50Plus_Final_Blueprint_v65.csv"
+
+  # RunPrepareEmfac.bat's MODEL_YEAR lookup table, evaluated for 2035.
+  emfac_sb375_version: "2014"
+  emfac_eir_version:   "2017"
+
+  # Blueprint strategy overrides (this project's own copy_project_inputs, see
+  # steps.yaml), all off by default; MODEL_YEAR 2035 qualifies for all
+  # three, same as 2050 (bus-on-shoulder >= 2030; Vision Zero and transit fares >= 2035).
+  copy_project_inputs.bp_bus_on_shoulder_job.enabled:            true  # >= 2030
+  copy_project_inputs.bp_bus_on_shoulder_links_us101.enabled:    true
+  copy_project_inputs.bp_bus_on_shoulder_links_vine.enabled:     true
+  copy_project_inputs.bp_bus_on_shoulder_links_merged.enabled:   true
+  copy_project_inputs.bp_vision_zero_block.enabled:              true  # >= 2035
+  copy_project_inputs.bp_regional_transit_fares_job.enabled:     true  # >= 2035
+  iterate.apply_regional_transit_fares.enabled:                  true
+
+  # RunModel.bat's runOffModel=="Yes" gate: 2035 and 2050 only.
+  offmodel_prep.enabled:                                         true
+  run_offmodel_calculators.enabled:                               true
+  copy_project_inputs.bp_offmodel_calculators.enabled:            true
