@@ -81,6 +81,11 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     Writes metrics_affordable1_HplusT_costs.csv with columns:
         modelrun_id
         modelrun_alias
+        modelrun_alias_baus                 BAUS modelrun alias (source for housing_cost_share_of_hh_income).
+                                            For sequential / strategy isolation runs, there are multiple travel model runs mapped to the same BAUS scenario,
+                                            e.g. "2050 Plan" and "2050 Plan minus Strategy T2" both map to the "2050 Plan" BAUS scenario - both in terms of land use inputs
+                                            and the affordability metrics which pull output from both models. In this case, on the TM side, "Alias" is "2050 Plan minus T2"
+                                            and "Alias_BAUS" is "2050 Plan", with the latter used to align inputs and shared metrics between the two models.
         BAUS_modelrun_id                    BAUS modelrun_id (source for housing_cost_share_of_hh_income)
         incQ                                one of ['1','2','3','4','all','1&2']
         total_auto_cost                     daily auto operating cost, from scenario_metrics.csv
@@ -119,6 +124,8 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
 
     # Read Housing costs input
     HOUSING_COSTS_FILE = BOX_METRICS_OUTPUT_DIR / 'metrics_affordable1_housing_cost_share_of_income.csv'
+    if my_args.StrategyEval:
+        HOUSING_COSTS_FILE = 'M:\\urban_modeling\\baus\\PBA60\\Strategy_evaluation\\metrics\\metrics_affordable1_housing_cost_share_of_income.csv'
     LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
     housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
     LOGGER.debug(f"  housing_costs_df (len={len(housing_costs_df),}):\n{housing_costs_df}")
@@ -143,6 +150,17 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
         '2050 Draft Blueprint':'2050 DBP',
         '2050 EIR Alt 1'      :'2050 EIR Alt1',
         '2050 EIR Alt 2'      :'2050 EIR Alt2',
+        # '2050 FBP minus H1'   :'2050 Plan',
+        # '2050 FBP minus H2'   :'2050 Plan',
+        # '2050 FBP minus H3EC4EN4':'2050 Plan',
+        # '2050 FBP minus H4'   :'2050 Plan',
+        # '2050 FBP minus H5'   :'2050 Plan',
+        # '2050 FBP minus H6'   :'2050 Plan',
+        # '2050 FBP minus H8'   :'2050 Plan',
+        # '2050 FBP minus EC1'  :'2050 Plan',
+        # '2050 FBP minus EC2'  :'2050 Plan',
+        # '2050 FBP minus EC5'  :'2050 Plan',
+        # '2050 FBP minus EC6'  :'2050 Plan',
     }, inplace=True)
     # remove 2015 No Project, 2023 DBP, and 2023 FBP
     housing_costs_df = housing_costs_df.loc[ 
@@ -170,6 +188,8 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         elif model_runs_dict[tm_runid]['run_set'] in ["NoTransit"]:
             model_run_dir = TM_RUN_LOCATION_NOTRANSIT / tm_runid
+        elif model_runs_dict[tm_runid]['run_set'] in ["RTP2030StrategyEval"]:
+            model_run_dir = TM_RUN_LOCATION / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         model_run_category = model_runs_dict[tm_runid]['category']
@@ -215,7 +235,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
             scenario_includes_UBI = model_run_category in ['Plus','Alt1','Alt2']
         elif args_rtp == "RTP2025":
             # Plan run includes UBI and EIR Alternatives
-            scenario_includes_UBI = (model_runs_dict[tm_runid]['Alias'].find(' Plan') >= 0) or ((model_runs_dict[tm_runid]['Alias'].find(' EIR') >= 0))
+            scenario_includes_UBI = (model_runs_dict[tm_runid]['Alias_BAUS'].find(' Plan') >= 0) or ((model_runs_dict[tm_runid]['Alias_BAUS'].find(' EIR') >= 0))
         LOGGER.info(f"    => scenario_includes_UBI: {scenario_includes_UBI}")
 
         if scenario_includes_UBI:
@@ -295,19 +315,19 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
         # reset index and pull alias from ModelRuns.xlsx info
         tm_scen_metrics_df.reset_index(drop=False, inplace=True)
         tm_scen_metrics_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+        tm_scen_metrics_df['modelrun_alias_baus'] = model_runs_dict[tm_runid]['Alias_BAUS']
+        if model_runs_dict[tm_runid]['Alias_BAUS'] not in housing_costs_df.modelrun_alias.unique().tolist():
+            LOGGER.debug(f"modelrun_alias_baus {model_runs_dict[tm_runid]['Alias_BAUS']} not in housing_costs_df alias list {housing_costs_df.modelrun_alias.unique().tolist()}")
+            continue
         LOGGER.debug(f"  tm_scen_metrics_df:\n{tm_scen_metrics_df}")
         LOGGER.debug(f"  housing_costs_df:\n{housing_costs_df}")
-
-        if model_runs_dict[tm_runid]['Alias'] not in housing_costs_df.modelrun_alias.unique().tolist():
-            LOGGER.debug(f"modelrun_alias {model_runs_dict[tm_runid]['Alias']} not in housing_costs_df alias list {housing_costs_df.modelrun_alias.unique().tolist()}")
-            continue
 
         # join to housing costs
         tm_scen_metrics_df = pd.merge(
             left    = tm_scen_metrics_df,
-            right   = housing_costs_df,
+            right   = housing_costs_df.rename(columns={'modelrun_alias': 'modelrun_alias_baus'}),
             how     = 'left',
-            on      = ['modelrun_alias', 'incQ'],
+            on      = ['modelrun_alias_baus', 'incQ'],
             validate='one_to_one'
         )
         LOGGER.debug("  tm_scen_metrics_df:\n{}".format(tm_scen_metrics_df))
@@ -328,7 +348,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     # only q1 and all incomes
     cost_detail_df = affordable_hplust_costs_df.loc[ affordable_hplust_costs_df.incQ.isin(['1','all'])].copy()
     # only cost and incomes
-    cost_detail_df = cost_detail_df[['modelrun_alias','modelrun_id','BAUS_modelrun_id','incQ',
+    cost_detail_df = cost_detail_df[['modelrun_alias','modelrun_alias_baus','modelrun_id','BAUS_modelrun_id','incQ',
                          'total_hh_inc_with_UBI',
                          'total_transit_fares_annual',
                          'total_auto_op_cost_annual','total_auto_ownership_cost_annual','total_parking_cost_annual',
@@ -343,7 +363,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
                          'total_auto_op_cost_annual','total_auto_ownership_cost_annual','total_parking_cost_annual'], inplace=True)
     cost_detail_df = pd.melt(
         cost_detail_df, 
-        id_vars=['modelrun_alias','modelrun_id','BAUS_modelrun_id','incQ'],
+        id_vars=['modelrun_alias','modelrun_alias_baus','modelrun_id','BAUS_modelrun_id','incQ'],
         var_name='cost_type',
         value_name='share_of_hh_income'
     )
@@ -370,6 +390,7 @@ def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_co
     Writes metrics_affordable1_trip_costs.csv with columns:
         modelrun_id
         modelrun_alias
+        modelrun_alias_baus
       (same as metrics_affordable1_HplusT_costs.csv)
         incQ                                one of ['1','2','3','4','all','1&2']
         total_households                    total number of households, from scenario_metrics.csv
@@ -398,6 +419,8 @@ def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_co
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         elif model_runs_dict[tm_runid]['run_set'] in ["NoTransit"]:
             model_run_dir = TM_RUN_LOCATION_NOTRANSIT / tm_runid
+        elif model_runs_dict[tm_runid]['run_set'] in ["RTP2030StrategyEval"]:
+            model_run_dir = TM_RUN_LOCATION / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         model_run_category = model_runs_dict[tm_runid]['category']
@@ -405,10 +428,11 @@ def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_co
 
         # start with columns from calculate_Affordable1_HplusT_costs() filtered to this run
         trip_costs_df = affordable_hplust_costs_df.loc[ 
-            affordable_hplust_costs_df.modelrun_alias == model_runs_dict[tm_runid]['Alias']]
+            affordable_hplust_costs_df.modelrun_id == tm_runid]
         # LOGGER.debug('  trip_costs_df from affordable_hplust_costs_df:\n{}'.format(trip_costs_df))
+        trip_costs_df.to_csv(f'debug_trip_costs_df_1_{tm_runid}.csv', index=False)
         trip_costs_df = trip_costs_df[
-            ['modelrun_id','modelrun_alias','incQ','total_households',
+            ['modelrun_id','modelrun_alias','modelrun_alias_baus','incQ','total_households',
              # trips detail since we want avg per trip
              'total_auto_trips','total_transit_trips',
              # keep daily cost detail
@@ -1224,6 +1248,7 @@ if __name__ == '__main__':
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025', 'STIP2026', 'noTransit'], help='RTP to process')
     parser.add_argument('--sequence', type=str, help='If passed, analayzing a run sequence')
+    parser.add_argument('--StrategyEval', action='store_true', help='If passed, analayzing RTP2030 Strategy Evaluation runs using RTP2025 methodology')
     parser.add_argument('--test', action='store_true', help='If passed, writes output to cwd instead of METRICS_OUTPUT_DIR')
     parser.add_argument('--only', required=False, choices=['affordable','connected','diverse','growth','healthy','vibrant'], 
                         help='To only run one metric set')
@@ -1256,6 +1281,15 @@ if __name__ == '__main__':
             SEQ_DIR                          = pathlib.Path(f"M:\\Application\\Model One\\RTP2025\\Blueprint\\across_runs_{my_args.sequence}_sequential")
             MODELRUNS_XLSX                   = SEQ_DIR / 'ModelRuns_RTP2025_sequential.xlsx'
             METRICS_BOX_DIR                  = SEQ_DIR / "metrics"
+            # use the same inputs
+            METRICS_SOURCE_DIR               = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Final_Blueprint" / "metrics_input_files"
+            INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
+            BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
+            METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
+        if my_args.StrategyEval:
+            TM_RUN_LOCATION                  = pathlib.Path(f"M:\\Application\\Model One\\RTP2030\\StrategyEvaluation")
+            MODELRUNS_XLSX                   = TM_RUN_LOCATION / 'ModelRuns_PBA60_StrategyEvaluation.xlsx'
+            METRICS_BOX_DIR                  = TM_RUN_LOCATION / "across_runs"
             # use the same inputs
             METRICS_SOURCE_DIR               = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Final_Blueprint" / "metrics_input_files"
             INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
@@ -1313,15 +1347,18 @@ if __name__ == '__main__':
 
     #### Read ModelRuns.xlsx ######################################################################################################
     model_runs_df = pd.read_excel(MODELRUNS_XLSX)
+    print(MODELRUNS_XLSX)
     # we only care about these columns
-    MODELRUNS_COLUMNS = ['directory','year','run_set','category','status','Alias']
+    MODELRUNS_COLUMNS = ['directory','year','run_set','category','status','Alias','Alias_BAUS']
     if my_args.rtp == 'RTP2025': MODELRUNS_COLUMNS = MODELRUNS_COLUMNS + ['description']
     if my_args.rtp == 'STIP2026': MODELRUNS_COLUMNS = MODELRUNS_COLUMNS + ['tmversion']
     model_runs_df = model_runs_df[MODELRUNS_COLUMNS]
     if not my_args.sequence:
         # select current runs with Alias
         model_runs_df = model_runs_df.loc[ model_runs_df.status == 'current' ]
-        model_runs_df = model_runs_df.loc[ pd.notna(model_runs_df.Alias) ]
+        model_runs_df = model_runs_df.loc[ pd.notna(model_runs_df.Alias) & pd.notna(model_runs_df.Alias_BAUS) ]
+    model_runs_df['Alias'] = model_runs_df['Alias'].astype(str)
+    model_runs_df['Alias_BAUS'] = model_runs_df['Alias_BAUS'].astype(str)
 
     if my_args.rtp == 'RTP2021':
         # for RTP2021, select base year (pre 2025) and horizon year (2050)
