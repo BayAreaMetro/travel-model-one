@@ -29,21 +29,21 @@ COPY_FILES = {
         "scenario_metrics",
         "auto_times",
         "auto_timesbyTimePeriod",
-        # "parking_costs_tour",
-        # "parking_costs_tour_destTaz",
-        # "parking_costs_tour_ptype_destTaz",
-        # "parking_costs_trip_destTaz",
-        # "parking_costs_trip_distBins",
+        "parking_costs_tour",
+        "parking_costs_tour_destTaz",
+        "parking_costs_tour_ptype_destTaz",
+        "parking_costs_trip_destTaz",
+        "parking_costs_trip_distBins",
         "vmt_vht_metrics_by_taz",
-        # "trips_cordon_mode_summary",
-        # "truck_trips_by_timeperiod",
-        # "transit_crowding_complete",
-        # "NPA_metrics_Goal_1A_to_1F",
-        # "NPA_metrics_Goal_1G_1H",
-        # "NPA_metrics_Goal_2",
-        # "NPA_metrics_Goal_3A_to_3D",
-        # "NPA_metrics_Goal_3E_3F",
-        "STIP_congested_VMT_by_TOD"
+    #     # "trips_cordon_mode_summary",
+    #     # "truck_trips_by_timeperiod",
+    #     # "transit_crowding_complete",
+    #     # "NPA_metrics_Goal_1A_to_1F",
+    #     # "NPA_metrics_Goal_1G_1H",
+    #     # "NPA_metrics_Goal_2",
+    #     # "NPA_metrics_Goal_3A_to_3D",
+    #     # "NPA_metrics_Goal_3E_3F",
+    #     "STIP_congested_VMT_by_TOD"
     ],
     "OUTPUT\\core_summaries":[
         "ActiveTransport",
@@ -69,14 +69,14 @@ COPY_FILES = {
     "OUTPUT\\shapefile":[
         "network_links",
         # "network_links_withXY",
-        # "network_trn_links",
-        # "network_trn_links_long", # via shapefile_move_timeperiod_to_rows.py
-        # "network_trn_route_links",
-        # "network_trn_lines"
+        "network_trn_links",
+        "network_trn_links_long", # via shapefile_move_timeperiod_to_rows.py
+        "network_trn_route_links",
+        "network_trn_lines"
     ],
-    "OUTPUT\\emfac":[
-        "emfac_summary",
-    ],
+    # "OUTPUT\\emfac":[
+    #     "emfac_summary",
+    # ],
     "OUTPUT\\offmodel":[
         "off_model_summary",
         "off_model_tot"
@@ -84,9 +84,9 @@ COPY_FILES = {
     "INPUT\\landuse":[
         "tazData",
     ],
-    # "OUTPUT\\logsums":
-    #     ["subzone_logsums_for_BAUS",
-    # ]
+    "OUTPUT\\logsums":
+        ["subzone_logsums_for_BAUS",
+    ]
 }
 
 # mapping based on 'run_set' column to location of model runs on M/L
@@ -106,6 +106,7 @@ RUN_SET_MODEL_PATHS = {
     'STIP2024'      :'M:\\Application\\Model One\\STIP2024',
     'STIP2026'      :'M:\\Application\\Model One\\STIP2026',
     'python_runner' :'M:\\Application\\Model One\\RTP2025\\python_runner_tests',
+    'RTP2030StrategyEval': 'M:\\Application\\Model One\\RTP2030\\StrategyEvaluation',
 }
 
 if __name__ == '__main__':
@@ -183,7 +184,7 @@ if __name__ == '__main__':
             offmodel_script = dirname / "../RTP/Emissions/Off Model Calculators/extract_offmodel_results.py"
             offmodel_script = offmodel_script.resolve()
             print(f"{offmodel_script=}")
-            subprocess.run(["python", offmodel_script])
+            subprocess.run(["python", offmodel_script, my_args.ModelRuns_xlsx])
 
         for copy_file in COPY_FILES[copy_dir]:
 

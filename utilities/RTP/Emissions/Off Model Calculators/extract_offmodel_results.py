@@ -4,12 +4,15 @@ Pull results from off-model calculator Excel workbooks and save summary files to
 Prerequisite: off model calculator workbooks for a given run has been generated via run_offmodel_calculators.py
 (https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/RTP/Emissions/Off%20Model%20Calculators/run_offmodel_calculators.py).
 
-Example call: 
-`python extract_offmodel_results.py
+Example call:
+`python extract_offmodel_results.py ModelRuns.xlsx`
 
 """
 
-import argparse, datetime, logging, os, sys, pathlib
+import argparse
+import datetime
+import logging
+import pathlib
 import pandas as pd
 import xlwings as xl
 
@@ -19,10 +22,11 @@ LOG_FILE = "extract_offmodel_results_{}.log"
 LOGGER = logging.getLogger(__name__)
 
 #####################################
-# inputs and outputs
-TM_RUN_LOCATION_BP   = r'M:\Application\Model One\RTP2025\Blueprint'
-TM_RUN_LOCATION_IP   = r'M:\Application\Model One\RTP2025\IncrementalProgress'
-MODELRUNS_XLSX       = r'X:\travel-model-one-master\utilities\RTP\config_RTP2025\ModelRuns_RTP2025.xlsx'
+RUN_LOCATIONS = {
+    'RTP2025_IP':           pathlib.Path(r'M:\Application\Model One\RTP2025\IncrementalProgress'),
+    'RTP2025':              pathlib.Path(r'M:\Application\Model One\RTP2025\Blueprint'),
+    'RTP2030StrategyEval':  pathlib.Path(r'M:\Application\Model One\RTP2030\StrategyEvaluation'),
+}
 
 # calculator names
 BIKE_SHARE = 'Bikeshare'
@@ -40,7 +44,7 @@ def refresh_excelworkbook(wb_file):
     The auto-generated excel workbooks need to be refreshed to update the formulas.
     """
     excel_app = xl.App(visible=False)
-    excel_workbook = excel_app.books.open(wb_file)
+    excel_workbook = excel_app.books.open(str(wb_file))
     excel_workbook.save()
     excel_workbook.close()
     excel_app.quit()
@@ -52,23 +56,21 @@ def get_runs_with_off_model(modelruns_xlsx):
     """
     LOGGER.info('Reading modelruns xlsx file: {}'.format(modelruns_xlsx))
     modelruns_df = pd.read_excel(modelruns_xlsx)
-    modelruns_df = modelruns_df[['directory','year','run_offmodel']]
+    modelruns_df = modelruns_df[['directory','year','run_offmodel','run_set']]
+    modelruns_df = modelruns_df.loc[modelruns_df['run_offmodel'].notnull()]
     LOGGER.info('modelruns off_model run tally:\n{}'.format(modelruns_df['run_offmodel'].value_counts()))
-    modelruns_with_off_model_IP = modelruns_df.loc[modelruns_df['run_offmodel']=='IP']
-    modelruns_with_off_model_FBP = modelruns_df.loc[modelruns_df['run_offmodel']=='FBP']
-    return modelruns_with_off_model_IP, modelruns_with_off_model_FBP
+    return modelruns_df
 
 def extract_off_model_calculator_result(run_directory, run_id, calculator_name):
     """
     Extract the result from one off-model calculator workbook.
     """
-    off_model_output_dir = os.path.join(
-        run_directory, 'OUTPUT', 'offmodel', 'offmodel_output')
+    off_model_output_dir = pathlib.Path(run_directory) / 'OUTPUT' / 'offmodel' / 'offmodel_output'
     
     # for calculator_name in calculator_names:
-    off_model_wb = os.path.join(off_model_output_dir, 'PBA50+_OffModel_{}__{}.xlsx'.format(calculator_name, run_id))
+    off_model_wb = off_model_output_dir / f'PBA50+_OffModel_{calculator_name}__{run_id}.xlsx'
 
-    if not os.path.exists(off_model_wb):
+    if not off_model_wb.exists():
         LOGGER.info(f'Workbook {off_model_wb} does not exist')
         return None
     else:
@@ -122,6 +124,10 @@ def summarize_off_model_calculator_results(run_directory, run_id, calculator_nam
     return off_model_summary, off_model_tot
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=USAGE)
+    parser.add_argument("modelruns_xlsx", help="Path to ModelRuns.xlsx")
+    args = parser.parse_args()
+
     LOGGER.setLevel('INFO')
 
     # console handler
@@ -136,42 +142,38 @@ if __name__ == '__main__':
     LOGGER.addHandler(fh)
 
     # get all runs with off-model calculation
-    runs_with_off_models_IP, runs_with_off_models_FBP = get_runs_with_off_model(MODELRUNS_XLSX)
-    LOGGER.info(f'IPA runs with off-model calculations:\n{runs_with_off_models_IP}')
-    LOGGER.info(f'Final Blueprint runs with off-model calculations:\n{runs_with_off_models_FBP}')
+    runs_with_off_models = get_runs_with_off_model(args.modelruns_xlsx)
+    LOGGER.info(f'Runs with off-model calculations:\n{runs_with_off_models}')
+    calculator_names = [
+        BIKE_SHARE, CAR_SHARE, TARGETED_TRANS_ALT, VAN_POOL,
+        CHARGER, VEH_BUYBACK, EBIKE,
+    ]
 
-    # extract FBP off-model results
-    for run in runs_with_off_models_FBP['directory']:
-        run_directory = os.path.join(TM_RUN_LOCATION_BP, run)
-        off_model_output_dir = os.path.join(run_directory, 'OUTPUT', 'offmodel', 'offmodel_output')
-        if not os.path.exists(os.path.join(off_model_output_dir, 'off_model_summary_withVMT.csv')):
-            off_model_summary, off_model_tot = summarize_off_model_calculator_results(
-                run_directory, 
-                run,
-                [BIKE_SHARE, CAR_SHARE, TARGETED_TRANS_ALT, VAN_POOL, CHARGER, VEH_BUYBACK, EBIKE]
-                )
-            if len(off_model_summary) > 0:
-                off_model_summary.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_summary_withVMT.csv'), index=False)
-                off_model_tot.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_tot_withVMT.csv'))
-        elif not os.path.exists(off_model_output_dir):
-            LOGGER.info(f'Off-model output directory does not exist for run {run}')
-        else:
-            LOGGER.info(f'Off-model summary already exists for run {run}')
+    for model_run in runs_with_off_models.itertuples(index=False):
+        run = model_run.directory
+        run_location = RUN_LOCATIONS.get(model_run.run_set)
+        if run_location is None:
+            LOGGER.warning(
+                f'run_set value {model_run.run_set} has no off-model run location; skipping run {run}'
+            )
+            continue
+        run_directory = run_location / run
 
-    # extract IP off-model results
-    for run in runs_with_off_models_IP['directory']:
-        run_directory = os.path.join(TM_RUN_LOCATION_IP, run)
-        off_model_output_dir = os.path.join(run_directory, 'OUTPUT', 'offmodel', 'offmodel_output')
-        if not os.path.exists(os.path.join(off_model_output_dir, 'off_model_summary_withVMT.csv')):
-            off_model_summary, off_model_tot = summarize_off_model_calculator_results(
-                run_directory, 
-                run,
-                [BIKE_SHARE, CAR_SHARE, TARGETED_TRANS_ALT, VAN_POOL, CHARGER, VEH_BUYBACK, EBIKE]
-                )
-            if len(off_model_summary) > 0:
-                off_model_summary.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_summary_withVMT.csv'), index=False)
-                off_model_tot.to_csv(os.path.join(run_directory, 'OUTPUT', 'offmodel', 'off_model_tot_withVMT.csv'))
-        elif not os.path.exists(off_model_output_dir):
-            LOGGER.info(f'Off-model output directory does not exist for run {run}')
+        off_model_output_dir = run_directory / 'OUTPUT' / 'offmodel' / 'offmodel_output'
+        summary_file = off_model_output_dir / 'off_model_summary_withVMT.csv'
+        totals_file = run_directory / 'OUTPUT' / 'offmodel' / 'off_model_tot_withVMT.csv'
+        if not off_model_output_dir.exists():
+            LOGGER.info(f'Off-model output directory {off_model_output_dir} does not exist for run {run}')
+        elif summary_file.exists() and totals_file.exists():
+            LOGGER.info(f'Off-model summary and totals already exist for run {run}')
         else:
-            LOGGER.info(f'Off-model summary already exists for run {run}')
+            off_model_summary, off_model_tot = summarize_off_model_calculator_results(
+                run_directory,
+                run,
+                calculator_names,
+            )
+            if len(off_model_summary) > 0:
+                if not summary_file.exists():
+                    off_model_summary.to_csv(summary_file, index=False)
+                if not totals_file.exists():
+                    off_model_tot.to_csv(totals_file)
