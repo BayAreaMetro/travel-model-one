@@ -1,0 +1,43 @@
+counter = 0
+
+; time period loop
+loop period = 1,5
+
+   ; define a two-letter token for each time period
+   if (period = 1)   
+      token_period = 'EA'
+      
+   elseif (period = 2)   
+      token_period = 'AM'
+      
+   elseif (period = 3)   
+      token_period = 'MD'
+      
+   elseif (period = 4)   
+      token_period = 'PM'
+      
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif
+   
+	 counter = counter + 1
+	 DistributeMultistep processid = "CTRAMP", processnum = counter
+	
+	
+	RUN PGM=NETWORK
+	
+	
+	
+		FILEI neti[1] = hwy\iter3\load@token_period@.net
+	
+		FILEO linko   = hwy\iter3\load@token_period@.dbf, FORMAT=DBF
+	
+	ENDRUN
+	
+   enddistributemultistep
+
+endloop
+
+
+

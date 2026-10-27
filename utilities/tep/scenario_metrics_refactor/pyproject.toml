@@ -1,0 +1,9 @@
+[project]
+name = "scenario-metrics"
+version = "0.1.0"
+
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "simpledbf>=0.2.6"
+]

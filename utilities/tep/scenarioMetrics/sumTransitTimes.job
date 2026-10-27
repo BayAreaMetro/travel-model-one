@@ -1,0 +1,408 @@
+;
+; This script Uses Transit trips * Transit skims (IVT and OVT) and outputs:
+; metrics\transit_times_by_acc_mode_egr.csv with columns:
+;  * Age                   (all, 20-74, 20-64)
+;  * Access                (wlk, drv)
+;  * Mode                  (com, hvy, exp, lrf, loc)
+;  * Egress                (wlk, drv)
+;  * Transit Trips         (# of transit trips taken by relevant ppl)
+;  * In-vehicle hours      (# of in-vehicle hours taken by relevant ppl)
+;  * Out-of-vehicle hours  (# of out-of-vehicle hours taken by relevant ppl)
+;  * Init wait hours       (# of hours spent in the initial wait by relevant ppl)
+;  * Xfer wait hours       (# of hours spent in the transfer wait by relevant ppl)
+;  * Walk acc & egr hours  (# of hours spent in walk access and egress by relevant ppl)
+;  * Aux walk hours        (# of hours spent in auxiliary walk by relevant ppl)
+;  * Drive acc & egr hours (# of hours spent in drive access and egress by relevant ppl)
+;  * AM path count         (# of O-D paths that exist out of full matrix in AM)
+;  * MD path count         (# of O-D paths that exist out of full matrix in MD)
+;
+; Also outputs
+; metrics\transit_times_by_mode_income.csv with columns:
+;  * Income                (inc1, inc2, inc3, inc4)
+;  * Mode                  (com, hvy, exp, lrf, loc)
+;  * Daily Trips           (# of daily transit trips by relevant ppl)
+;  * Avg Time              (average travel time per transit trip by relevant ppl, in minutes)
+;  * Avg Cost              (average fare cost per transit trip by relevant ppl, in $2000 dollars)
+;
+
+counter = 0
+
+; Loop thru transit modes
+  loop path = 1,5
+    ; commuter rail or long-haul premium
+      if (path = 1)
+        token_path = 'com'
+        token_ivt  = 'ivtCOM'
+    ; heavy rail or medium-haul premium
+      elseif (path = 2)
+        token_path = 'hvy'
+        token_ivt  = 'ivtHVY'
+    ; express bus or medium-haul basic
+      elseif (path = 3)
+        token_path = 'exp'
+        token_ivt  = 'ivtEXP'
+    ; light rail (or ferry) or short-haul premium
+      elseif (path = 4)
+        token_path = 'lrf'
+        token_ivt  = 'ivtLRF'
+    ; local bus or short-haul basic
+      elseif (path = 5)
+        token_path = 'loc'
+        token_ivt  = 'ivtLOC'
+      endif
+
+
+
+; Loop thru access + egress modes
+ loop accegg = 1,3
+      if (accegg = 1)
+         token_access = 'wlk'
+         token_egress = 'wlk'
+
+      elseif (accegg = 2)
+         token_access = 'drv'
+         token_egress = 'wlk'
+
+      elseif (accegg = 3)
+         token_access = 'wlk'
+         token_egress = 'drv'
+
+      endif
+
+ counter = counter + 1
+ DistributeMultistep processid = "CTRAMP", processnum = counter
+ 
+        token_suffix = '_no_zpv'
+        token_age    = 'all'
+
+    RUN PGM = MATRIX
+      ; Read person trips
+      ; 1. da, 2. datoll, 3. sr2, 4. sr2toll, 5. sr3, 6. sr3toll, 7. walk, 8. bike,
+      ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
+      ; 14. drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
+      ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
+      FILEI MATI[1] = "main\tripsEA@token_suffix@.tpp"
+      FILEI MATI[2] = "main\tripsAM@token_suffix@.tpp"
+      FILEI MATI[3] = "main\tripsMD@token_suffix@.tpp"
+      FILEI MATI[4] = "main\tripsPM@token_suffix@.tpp"
+      FILEI MATI[5] = "main\tripsEV@token_suffix@.tpp"
+
+      ; Read transit skims
+      ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
+      FILEI MATI[6] = "skims\trnskmEA_@token_access@_@token_path@_@token_egress@.tpp"
+      FILEI MATI[7] = "skims\trnskmAM_@token_access@_@token_path@_@token_egress@.tpp"
+      FILEI MATI[8] = "skims\trnskmMD_@token_access@_@token_path@_@token_egress@.tpp"
+      FILEI MATI[9] = "skims\trnskmPM_@token_access@_@token_path@_@token_egress@.tpp"
+      FILEI MATI[10]= "skims\trnskmEV_@token_access@_@token_path@_@token_egress@.tpp"
+
+      FILEO PRINTO[1] = "metrics\transit_times_by_acc_mode_egr_taz_@token_path@_@accegg@.csv", append=T
+
+      ; EA Transit Trips
+      MW[1] = mi.1.@token_access@_@token_path@_@token_egress@            ; Trips
+      MW[2] = MW[1] *  mi.6.ivt                                          ; IVTTrips
+      MW[3] = MW[1] * (mi.6.wait+mi.6.wacc+mi.6.waux+mi.6.wegr+mi.6.dtime) ; OVTTrips
+      MW[101] = MW[1] * mi.6.iwait       					 ; iwaitTrips
+      MW[102] = MW[1] * mi.6.xwait       					 ; xwaitTrips
+      MW[103] = MW[1] * (mi.6.wacc +mi.6.wegr) 		 ; accegrTrips
+      MW[104] = MW[1] * mi.6.waux       					 ; wauxTrips
+      MW[105] = MW[1] * mi.6.dtime       					 ; dtimeTrips
+
+      ; AM Transit Trips
+      MW[4] = mi.2.@token_access@_@token_path@_@token_egress@            ; Trips
+      MW[5] = MW[4] *  mi.7.ivt                                          ; IVTTrips
+      MW[6] = MW[4] * (mi.7.wait+mi.7.wacc+mi.7.waux+mi.7.wegr+mi.7.dtime) ; OVTTrips
+      MW[201] = MW[4] * mi.7.iwait          			 ; iwaitTrips
+      MW[202] = MW[4] * mi.7.xwait       					 ; xwaitTrips
+      MW[203] = MW[4] * (mi.7.wacc+mi.7.wegr) 		 ; accegrTrips
+      MW[204] = MW[4] * mi.7.waux        					 ; wauxTrips
+      MW[205] = MW[4] * mi.7.dtime       					 ; dtimeTrips
+
+      ; MD Transit Trips
+      MW[7] = mi.3.@token_access@_@token_path@_@token_egress@            ; Trips
+      MW[8] = MW[7] *  mi.8.ivt                                          ; IVTTrips
+      MW[9] = MW[7] * (mi.8.wait+mi.8.wacc+mi.8.waux+mi.8.wegr+mi.8.dtime) ; OVTTrips
+      MW[301] = MW[7] * mi.8.iwait       					 ; iwaitTrips
+      MW[302] = MW[7] * mi.8.xwait       					 ; xwaitTrips
+      MW[303] = MW[7] * (mi.8.wacc+mi.8.wegr) 		 ; accegrTrips
+      MW[304] = MW[7] * mi.8.waux        					 ; wauxTrips
+      MW[305] = MW[7] * mi.8.dtime       					 ; dtimeTrips
+
+      ; PM Transit Trips
+      MW[10] = mi.4.@token_access@_@token_path@_@token_egress@           ; Trips
+      MW[11] = MW[10] *  mi.9.ivt                                        ; IVTTrips
+      MW[12] = MW[10] * (mi.9.wait+mi.9.wacc+mi.9.waux+mi.9.wegr+mi.9.dtime) ; OVTTrips
+      MW[401] = MW[10] * mi.9.iwait      					 ; iwaitTrips
+      MW[402] = MW[10] * mi.9.xwait      					 ; xwaitTrips
+      MW[403] = MW[10] * (mi.9.wacc+mi.9.wegr) 		 ; accegrTrips
+      MW[404] = MW[10] * mi.9.waux       					 ; wauxTrips
+      MW[405] = MW[10] * mi.9.dtime      					 ; dtimeTrips
+
+      ; EV Transit Trips
+      MW[13] = mi.5.@token_access@_@token_path@_@token_egress@           ; Trips
+      MW[14] = MW[13] *  mi.10.ivt                                       ; IVTTrips
+      MW[15] = MW[13] * (mi.10.wait+mi.10.wacc+mi.10.waux+mi.10.wegr+mi.10.dtime) ; OVTTrips
+      MW[501] = MW[13] * mi.10.iwait       					 ; iwaitTrips
+      MW[502] = MW[13] * mi.10.xwait       					 ; xwaitTrips
+      MW[503] = MW[13] * (mi.10.wacc+mi.10.wegr)		 ; accegrTrips
+      MW[504] = MW[13] * mi.10.waux       					 ; wauxTrips
+      MW[505] = MW[13] * mi.10.dtime       					 ; dtimeTrips
+	  
+	  
+
+        ; Initialize daily TAZ-level accumulators
+        ITrips  = 0
+        IIVT    = 0
+        IOVT    = 0
+        Iiwait  = 0
+        Ixwait  = 0
+        Iaccegr = 0
+        Iwaux   = 0
+        Idtime  = 0
+
+        ; Initialize EA TAZ-level accumulators
+        ITrips_EA  = 0
+        IIVT_EA    = 0
+        IOVT_EA    = 0
+        Iiwait_EA  = 0
+        Ixwait_EA  = 0
+        Iaccegr_EA = 0
+        Iwaux_EA   = 0
+        Idtime_EA  = 0
+
+        ; Initialize AM TAZ-level accumulators
+        ITrips_AM  = 0
+        IIVT_AM    = 0
+        IOVT_AM    = 0
+        Iiwait_AM  = 0
+        Ixwait_AM  = 0
+        Iaccegr_AM = 0
+        Iwaux_AM   = 0
+        Idtime_AM  = 0
+
+        ; Initialize MD TAZ-level accumulators
+        ITrips_MD  = 0
+        IIVT_MD    = 0
+        IOVT_MD    = 0
+        Iiwait_MD  = 0
+        Ixwait_MD  = 0
+        Iaccegr_MD = 0
+        Iwaux_MD   = 0
+        Idtime_MD  = 0
+
+        ; Initialize PM TAZ-level accumulators
+        ITrips_PM  = 0
+        IIVT_PM    = 0
+        IOVT_PM    = 0
+        Iiwait_PM  = 0
+        Ixwait_PM  = 0
+        Iaccegr_PM = 0
+        Iwaux_PM   = 0
+        Idtime_PM  = 0
+
+        ; Initialize EV TAZ-level accumulators
+        ITrips_EV  = 0
+        IIVT_EV    = 0
+        IOVT_EV    = 0
+        Iiwait_EV  = 0
+        Ixwait_EV  = 0
+        Iaccegr_EV = 0
+        Iwaux_EV   = 0
+        Idtime_EV  = 0
+
+      JLOOP
+
+			; Daily TAZ-level totals
+          ITrips  = ITrips  + MW[1]   + MW[4]   + MW[7]   + MW[10]  + MW[13]
+          IIVT    = IIVT    + MW[2]   + MW[5]   + MW[8]   + MW[11]  + MW[14]
+          IOVT    = IOVT    + MW[3]   + MW[6]   + MW[9]   + MW[12]  + MW[15]
+          Iiwait  = Iiwait  + MW[101] + MW[201] + MW[301] + MW[401] + MW[501]
+          Ixwait  = Ixwait  + MW[102] + MW[202] + MW[302] + MW[402] + MW[502]
+          Iaccegr = Iaccegr + MW[103] + MW[203] + MW[303] + MW[403] + MW[503]
+          Iwaux   = Iwaux   + MW[104] + MW[204] + MW[304] + MW[404] + MW[504]
+          Idtime  = Idtime  + MW[105] + MW[205] + MW[305] + MW[405] + MW[505]
+
+          ; EA TAZ-level totals
+          ITrips_EA  = ITrips_EA  + MW[1]
+          IIVT_EA    = IIVT_EA    + MW[2]
+          IOVT_EA    = IOVT_EA    + MW[3]
+          Iiwait_EA  = Iiwait_EA  + MW[101]
+          Ixwait_EA  = Ixwait_EA  + MW[102]
+          Iaccegr_EA = Iaccegr_EA + MW[103]
+          Iwaux_EA   = Iwaux_EA   + MW[104]
+          Idtime_EA  = Idtime_EA  + MW[105]
+
+          ; AM TAZ-level totals
+          ITrips_AM  = ITrips_AM  + MW[4]
+          IIVT_AM    = IIVT_AM    + MW[5]
+          IOVT_AM    = IOVT_AM    + MW[6]
+          Iiwait_AM  = Iiwait_AM  + MW[201]
+          Ixwait_AM  = Ixwait_AM  + MW[202]
+          Iaccegr_AM = Iaccegr_AM + MW[203]
+          Iwaux_AM   = Iwaux_AM   + MW[204]
+          Idtime_AM  = Idtime_AM  + MW[205]
+
+          ; MD TAZ-level totals
+          ITrips_MD  = ITrips_MD  + MW[7]
+          IIVT_MD    = IIVT_MD    + MW[8]
+          IOVT_MD    = IOVT_MD    + MW[9]
+          Iiwait_MD  = Iiwait_MD  + MW[301]
+          Ixwait_MD  = Ixwait_MD  + MW[302]
+          Iaccegr_MD = Iaccegr_MD + MW[303]
+          Iwaux_MD   = Iwaux_MD   + MW[304]
+          Idtime_MD  = Idtime_MD  + MW[305]
+
+          ; PM TAZ-level totals
+          ITrips_PM  = ITrips_PM  + MW[10]
+          IIVT_PM    = IIVT_PM    + MW[11]
+          IOVT_PM    = IOVT_PM    + MW[12]
+          Iiwait_PM  = Iiwait_PM  + MW[401]
+          Ixwait_PM  = Ixwait_PM  + MW[402]
+          Iaccegr_PM = Iaccegr_PM + MW[403]
+          Iwaux_PM   = Iwaux_PM   + MW[404]
+          Idtime_PM  = Idtime_PM  + MW[405]
+
+          ; EV TAZ-level totals
+          ITrips_EV  = ITrips_EV  + MW[13]
+          IIVT_EV    = IIVT_EV    + MW[14]
+          IOVT_EV    = IOVT_EV    + MW[15]
+          Iiwait_EV  = Iiwait_EV  + MW[501]
+          Ixwait_EV  = Ixwait_EV  + MW[502]
+          Iaccegr_EV = Iaccegr_EV + MW[503]
+          Iwaux_EV   = Iwaux_EV   + MW[504]
+          Idtime_EV  = Idtime_EV  + MW[505]
+
+      ENDJLOOP
+
+
+      ; Convert daily TAZ-level person-minutes to person-hours.
+        ; The skim values are assumed to be stored in hundredths of a minute.
+        IIVT_hours    = IIVT    / 6000
+        IOVT_hours    = IOVT    / 6000
+        Iiwait_hours  = Iiwait  / 6000
+        Ixwait_hours  = Ixwait  / 6000
+        Iaccegr_hours = Iaccegr / 6000
+        Iwaux_hours   = Iwaux   / 6000
+        Idtime_hours  = Idtime  / 6000
+
+        ; EA hours
+        IIVT_EA_hours    = IIVT_EA    / 6000
+        IOVT_EA_hours    = IOVT_EA    / 6000
+        Iiwait_EA_hours  = Iiwait_EA  / 6000
+        Ixwait_EA_hours  = Ixwait_EA  / 6000
+        Iaccegr_EA_hours = Iaccegr_EA / 6000
+        Iwaux_EA_hours   = Iwaux_EA   / 6000
+        Idtime_EA_hours  = Idtime_EA  / 6000
+
+        ; AM hours
+        IIVT_AM_hours    = IIVT_AM    / 6000
+        IOVT_AM_hours    = IOVT_AM    / 6000
+        Iiwait_AM_hours  = Iiwait_AM  / 6000
+        Ixwait_AM_hours  = Ixwait_AM  / 6000
+        Iaccegr_AM_hours = Iaccegr_AM / 6000
+        Iwaux_AM_hours   = Iwaux_AM   / 6000
+        Idtime_AM_hours  = Idtime_AM  / 6000
+
+        ; MD hours
+        IIVT_MD_hours    = IIVT_MD    / 6000
+        IOVT_MD_hours    = IOVT_MD    / 6000
+        Iiwait_MD_hours  = Iiwait_MD  / 6000
+        Ixwait_MD_hours  = Ixwait_MD  / 6000
+        Iaccegr_MD_hours = Iaccegr_MD / 6000
+        Iwaux_MD_hours   = Iwaux_MD   / 6000
+        Idtime_MD_hours  = Idtime_MD  / 6000
+
+        ; PM hours
+        IIVT_PM_hours    = IIVT_PM    / 6000
+        IOVT_PM_hours    = IOVT_PM    / 6000
+        Iiwait_PM_hours  = Iiwait_PM  / 6000
+        Ixwait_PM_hours  = Ixwait_PM  / 6000
+        Iaccegr_PM_hours = Iaccegr_PM / 6000
+        Iwaux_PM_hours   = Iwaux_PM   / 6000
+        Idtime_PM_hours  = Idtime_PM  / 6000
+
+        ; EV hours
+        IIVT_EV_hours    = IIVT_EV    / 6000
+        IOVT_EV_hours    = IOVT_EV    / 6000
+        Iiwait_EV_hours  = Iiwait_EV  / 6000
+        Ixwait_EV_hours  = Ixwait_EV  / 6000
+        Iaccegr_EV_hours = Iaccegr_EV / 6000
+        Iwaux_EV_hours   = Iwaux_EV   / 6000
+        Idtime_EV_hours  = Idtime_EV  / 6000
+	  
+	  
+	  if(I = 1 & @path@ = 1 & @accegg@ = 1)
+        PRINT PRINTO=1 CSV=T LIST=
+            "TAZ","Access","Mode","Egress",
+            "Daily Transit Trips","EA Transit Trips","AM Transit Trips","MD Transit Trips","PM Transit Trips","EV Transit Trips",
+            "Daily In-vehicle hours","EA In-vehicle hours","AM In-vehicle hours","MD In-vehicle hours","PM In-vehicle hours","EV In-vehicle hours",
+            "Daily Out-of-vehicle hours","EA Out-of-vehicle hours","AM Out-of-vehicle hours","MD Out-of-vehicle hours","PM Out-of-vehicle hours","EV Out-of-vehicle hours",
+            "Daily Init wait hours","EA Init wait hours","AM Init wait hours","MD Init wait hours","PM Init wait hours","EV Init wait hours",
+            "Daily Xfer wait hours","EA Xfer wait hours","AM Xfer wait hours","MD Xfer wait hours","PM Xfer wait hours","EV Xfer wait hours",
+            "Daily Walk acc & egr hours","EA Walk acc & egr hours","AM Walk acc & egr hours","MD Walk acc & egr hours","PM Walk acc & egr hours","EV Walk acc & egr hours",
+            "Daily Aux walk hours","EA Aux walk hours","AM Aux walk hours","MD Aux walk hours","PM Aux walk hours","EV Aux walk hours",
+            "Daily Drive acc & egr hours","EA Drive acc & egr hours","AM Drive acc & egr hours","MD Drive acc & egr hours","PM Drive acc & egr hours","EV Drive acc & egr hours"
+      endif
+
+    if(I <= 6626)
+    PRINT PRINTO=1 CSV=T LIST=
+            I,'@token_access@','@token_path@','@token_egress@',
+            ITrips,ITrips_EA,ITrips_AM,ITrips_MD,ITrips_PM,ITrips_EV,
+            IIVT_hours,IIVT_EA_hours,IIVT_AM_hours,IIVT_MD_hours,IIVT_PM_hours,IIVT_EV_hours,
+            IOVT_hours,IOVT_EA_hours,IOVT_AM_hours,IOVT_MD_hours,IOVT_PM_hours,IOVT_EV_hours,
+            Iiwait_hours,Iiwait_EA_hours,Iiwait_AM_hours,Iiwait_MD_hours,Iiwait_PM_hours,Iiwait_EV_hours,
+            Ixwait_hours,Ixwait_EA_hours,Ixwait_AM_hours,Ixwait_MD_hours,Ixwait_PM_hours,Ixwait_EV_hours,
+            Iaccegr_hours,Iaccegr_EA_hours,Iaccegr_AM_hours,Iaccegr_MD_hours,Iaccegr_PM_hours,Iaccegr_EV_hours,
+            Iwaux_hours,Iwaux_EA_hours,Iwaux_AM_hours,Iwaux_MD_hours,Iwaux_PM_hours,Iwaux_EV_hours,
+            Idtime_hours,Idtime_EA_hours,Idtime_AM_hours,Idtime_MD_hours,Idtime_PM_hours,Idtime_EV_hours
+	endif
+	  
+
+     ; Name = '@token_access@_@token_path@_@token_egress@'
+     ;if(I = 1 & @path@ = 1 & @accegg@ = 1)
+     ;	PRINT PRINTO=1 CSV=T LIST= "Access","Mode","Egress",
+     ;    "Transit Trips","In-vehicle hours","Out-of-vehicle hours","Init wait hours",
+     ;    "Xfer wait hours","Walk acc & egr hours",
+     ;    "Aux walk hours","Drive acc & egr hours",
+     ;    "AM path count","MD path count"
+     ;endif
+     ;if(I=6626)
+     ;  IVT_triphours = IVT    / 6000
+     ;	OVT_triphours = OVT    / 6000
+     ;	iwait_hours   = iwait  / 6000
+     ;	xwait_hours   = xwait  / 6000
+     ;	accegr_hours  = accegr / 6000
+     ;	waux_hours    = waux   / 6000
+     ;	dtime_hours   = dtime  / 6000
+     ;  PRINT PRINTO=1 CSV=T LIST= '@token_access@','@token_path@','@token_egress@',
+     ;    Trips,IVT_triphours,OVT_triphours,iwait_hours,
+     ;    xwait_hours,accegr_hours,
+     ;    waux_hours,dtime_hours,
+     ;    _pathcount_am, _pathcount_md
+     ;endif
+    ENDRUN
+EndDistributeMultistep
+endloop
+endloop
+
+
+Wait4Files files=CTRAMP1.script.end, 
+   	              CTRAMP2.script.end, 
+   	              CTRAMP3.script.end, 
+   	              CTRAMP4.script.end, 
+   	              CTRAMP5.script.end, 
+   	              CTRAMP6.script.end, 
+   	              CTRAMP7.script.end, 
+   	              CTRAMP8.script.end, 
+   	              CTRAMP9.script.end, 
+   	              CTRAMP10.script.end, 
+   	              CTRAMP11.script.end, 
+   	              CTRAMP12.script.end, 
+   	              CTRAMP13.script.end, 
+   	              CTRAMP14.script.end, 
+   	              CTRAMP15.script.end,
+           printfiles = save, deldistribfiles = t, CheckReturnCode = t
+
+; combine the path files into one
+;* copy metrics\transit_times_by_acc_mode_egr_com_1.csv+metrics\transit_times_by_acc_mode_egr_hvy_1.csv+metrics\transit_times_by_acc_mode_egr_exp_1.csv+metrics\transit_times_by_acc_mode_egr_lrf_1.csv+metrics\transit_times_by_acc_mode_egr_loc_1.csv+metrics\transit_times_by_acc_mode_egr_com_2.csv+metrics\transit_times_by_acc_mode_egr_hvy_2.csv+metrics\transit_times_by_acc_mode_egr_exp_2.csv+metrics\transit_times_by_acc_mode_egr_lrf_2.csv+metrics\transit_times_by_acc_mode_egr_loc_2.csv+metrics\transit_times_by_acc_mode_egr_com_3.csv+metrics\transit_times_by_acc_mode_egr_hvy_3.csv+metrics\transit_times_by_acc_mode_egr_exp_3.csv+metrics\transit_times_by_acc_mode_egr_lrf_3.csv+metrics\transit_times_by_acc_mode_egr_loc_3.csv metrics\transit_times_by_acc_mode_egr.csv
+* copy metrics\transit_times_by_acc_mode_egr_taz_com_1.csv+metrics\transit_times_by_acc_mode_egr_taz_hvy_1.csv+metrics\transit_times_by_acc_mode_egr_taz_exp_1.csv+metrics\transit_times_by_acc_mode_egr_taz_lrf_1.csv+metrics\transit_times_by_acc_mode_egr_taz_loc_1.csv+metrics\transit_times_by_acc_mode_egr_taz_com_2.csv+metrics\transit_times_by_acc_mode_egr_taz_hvy_2.csv+metrics\transit_times_by_acc_mode_egr_taz_exp_2.csv+metrics\transit_times_by_acc_mode_egr_taz_lrf_2.csv+metrics\transit_times_by_acc_mode_egr_taz_loc_2.csv+metrics\transit_times_by_acc_mode_egr_taz_com_3.csv+metrics\transit_times_by_acc_mode_egr_taz_hvy_3.csv+metrics\transit_times_by_acc_mode_egr_taz_exp_3.csv+metrics\transit_times_by_acc_mode_egr_taz_lrf_3.csv+metrics\transit_times_by_acc_mode_egr_taz_loc_3.csv metrics\transit_times_by_acc_mode_egr_taz.csv
+

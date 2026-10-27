@@ -1,0 +1,110 @@
+counter = 0
+
+; time period loop
+loop period = 1,5
+
+   ; define a two-letter token for each time period
+   if (period = 1)   
+      token_period = 'EA'
+      
+   elseif (period = 2)   
+      token_period = 'AM'
+      
+   elseif (period = 3)   
+      token_period = 'MD'
+      
+   elseif (period = 4)   
+      token_period = 'PM'
+      
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif
+	
+  ; line haul loop
+  loop path = 1, 5
+  
+	 ; commuter rail or long-haul premium
+	 if (path = 1)         
+
+		token_path = 'com'
+
+	 ; heavy rail or medium-haul premium
+	 elseif (path = 2)
+
+		token_path = 'hvy'
+
+	 ; express bus or medium-haul basic
+	 elseif (path = 3)
+		token_path = 'exp'
+
+
+	 ; light rail (or ferry) or short-haul premium
+	 elseif (path = 4)
+
+		token_path = 'lrf'
+
+	 ; local bus or short-haul basic
+	 elseif (path = 5)
+		token_path = 'loc'
+
+	 
+	 endif
+
+	 ; increment the counter used to identify the process number 
+	 counter = counter + 1
+	 
+	 ; distribute the tasks
+	 DistributeMultistep processid = "CTRAMP", processnum = @counter@
+
+	   ; access/egress loop (walk/walk, auto/walk, walk/auto)
+	   loop accegg = 1,3
+	   
+		  if (accegg = 1)         
+			 token_access = 'wlk'
+			 token_egress = 'wlk'      
+		  elseif (accegg = 2)        
+			 token_access = 'drv'
+			 token_egress = 'wlk'    
+		  elseif (accegg = 3)       
+			 token_access = 'wlk'
+			 token_egress = 'drv'       
+		  endif
+         
+		;The linkvol dbf files don't print out the node numbers, the linkvolo csv file don't print out sequence and frequency values. Adding these from the dbf file.
+		;Since we are doing this step in parallel, it greatly reduces the runtime of the routeLikMSA_update.py script.
+		RUN PGM=MATRIX
+
+
+			FILEI DBI[1]= trn\TransitAssignment.iter3\trnlink@token_period@_@token_access@_@token_path@_@token_egress@.dbf,
+			  AUTOARRAY = ALLFIELDS
+
+			FILEO PRINTO[1] = trn\TransitAssignment.iter3\trnlink@token_period@_@token_access@_@token_path@_@token_egress@_converted.csv
+
+			LIST = "SEQ", PRINTO=1, CSV=T
+			ZONES=1
+			LOOP LINE=1,DBI.1.NUMRECORDS
+
+				dbf=DBIReadRecord(1,LINE)
+
+				SEQ=DI.1.SEQ
+
+				LIST=SEQ, PRINTO=1, CSV=T
+					
+			ENDLOOP
+
+
+		ENDRUN	
+
+		
+		
+		endloop ; access/egress mode loop       
+        enddistributemultistep
+         
+   endloop ; line haul loop
+   
+
+endloop
+
+
+
