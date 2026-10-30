@@ -135,6 +135,11 @@ class TripModeChoiceCalibration(CalibrationBase):
 
     def _load_trips(self) -> pd.DataFrame:
         """Load and harmonize individual and joint trip tables."""
+
+        all_trip_file = self.submodel_config.get("all_trip_file")
+        if all_trip_file:
+            return pd.read_csv(all_trip_file)
+
         cols = ["hh_id", "inbound", "tour_purpose", "tour_mode", "trip_mode",
                 "depart_hour", "orig_taz", "dest_taz",
                 ]
@@ -608,7 +613,7 @@ class TripModeChoiceCalibration(CalibrationBase):
                     1, col, self.OBSERVED_TARGETS_SHEET)
                 self._write_purpose_blocks(df, row, col, f"{flt} - {result_type}")
                 col += len([c for c in df.columns if c not in ("simple_purpose", "trip_mode")]) + 1
-            col += 2
+            col += 25
 
     def generate_outputs(self, results: dict):
         sep = "=" * 80

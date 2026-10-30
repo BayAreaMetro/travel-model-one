@@ -143,6 +143,13 @@ class TourModeChoiceCalibration(CalibrationBase):
 
     def _load_tours(self) -> pd.DataFrame:
         """Load and harmonize individual and joint tour tables."""
+
+        all_tour_file = self.submodel_config.get("all_tour_file")
+        if all_tour_file:
+            all_tour = pd.read_csv(all_tour_file)
+            all_tour["indiv_joint"] = np.where(all_tour["joint_tour_id"].isnull(), "indiv", "joint")
+            return all_tour
+
         indiv_cols = [
             "hh_id",
             "person_id",
@@ -155,6 +162,7 @@ class TourModeChoiceCalibration(CalibrationBase):
             "orig_taz",
             "dest_taz",
         ]
+
         joint_cols = [
             "hh_id",
             "tour_participants",
@@ -168,21 +176,26 @@ class TourModeChoiceCalibration(CalibrationBase):
             "dest_taz",
         ]
 
+        if self.bats_data:
+            indiv_cols.append("tour_weight")
+            joint_cols.append("joint_tour_weight")
+
         indiv = pd.read_csv(self.submodel_config["indiv_tour_file"], usecols=indiv_cols)
         indiv["num_participants"] = 1
         indiv["indiv_joint"] = "indiv"
 
         joint = pd.read_csv(self.submodel_config["joint_tour_file"], usecols=joint_cols)
-        joint["tour_participants"] = joint["tour_participants"].fillna("").astype(str)
-        joint["num_participants"] = joint["tour_participants"].str.split().str.len().clip(lower=1)
+        joint.rename(columns = {"joint_tour_weight": "tour_weight"})
+        joint["person_num"] = joint["tour_participants"].str.split(" ")
+        joint["num_participants"] = joint["person_num"].str.len()
         joint["indiv_joint"] = "joint"
         joint = joint.drop(columns=["tour_participants"])
+        joint = joint.explode("person_num")
 
         tours = pd.concat([indiv.drop(columns=["person_id"]), joint], ignore_index=True)
         tours["tour_mode"] = pd.to_numeric(tours["tour_mode"], errors="coerce")
 
-        if self.bats_data and "tour_weight" not in tours.columns:
-            tours["tour_weight"] = 1.0
+
 
         return tours
 
@@ -217,7 +230,7 @@ class TourModeChoiceCalibration(CalibrationBase):
         """Attach and derive the auto sufficiency classification."""
         tours = tours.copy()
 
-        hh_file = self.config.get('data_sources', 'household_file', f"{self.target_dir}/OUTPUT_{self.calib_iter}/main/householdData_1.csv")
+        hh_file = self.config.get('data_sources', 'household_file', f"{self.target_dir}/OUTPUT_{self.calib_iter}/main/householdData_3.csv")
         
         if Path(hh_file).exists():
             hh = pd.read_csv(hh_file, usecols=['hh_id', 'autos', 'workers'])
@@ -750,7 +763,7 @@ class TourModeChoiceCalibration(CalibrationBase):
                 section_bottom = max(section_bottom, self._write_purpose_blocks(df, row, col, f"{flt} - {result_type}"))
                             
                 col += len([c for c in df.columns if c not in ("simple_purpose", "indiv_joint", "tour_mode")]) + 1
-            col = col + 2
+            col = col + 8
 
 
     def generate_outputs(self, results: dict):

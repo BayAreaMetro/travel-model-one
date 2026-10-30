@@ -1,10 +1,10 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=\\MODEL3-H\Model3H-Share\Projects\2023_TM170_IPA_01_Cube6
+set MODEL_DIR=\\MODEL3-H\Model3H-Share\Projects\2023_TM170_IPA_01_calib_01
 set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.7\2023_TM170_IPA_01_Cube6
-set CODE_DIR=E:\Github\travel-model-one\utilities\calibration
+set CODE_DIR=E:\Github\travel-model-one-tm1.7_calibration\utilities\calibration
 rem start at 00 when INPUT or skims are updated
-set CALIB_ITER=00
+set CALIB_ITER=01
 
 echo CALIB_ITER=%CALIB_ITER%
 

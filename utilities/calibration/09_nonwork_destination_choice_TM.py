@@ -2,7 +2,6 @@
 import argparse
 import os
 import sys
-from pathlib import Path
 import numpy as np
 import pandas as pd
 
@@ -20,7 +19,7 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
     """Calibration processor for non-work destination choice."""
 
     # Declarative placement of summary tables into workbook cells (modeled vs observed).
-    # The unfiltered ("all") tables go to the workbook; filtered subsets are CSV-only.
+    # Modeled county subsets are CSV-only; observed subsets occupy adjacent blocks.
     MODELED_SHEET_TARGETS = [
         SheetTarget("tour_tlfd_all", "modeldata", 3, 1,
                     "09_nonwork_destination_TM_TLFD.csv", (2, 1)),
@@ -128,7 +127,7 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
         }
 
     def _load_tours(self) -> pd.DataFrame:
-        """Load individual and joint tours into a single harmonized table. 
+        """Load individual and joint tours into a single harmonized table or load AllTours file.
         
         Tour output includes the following columns:
             - hh_id
@@ -144,9 +143,13 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
             - indiv_joint
             - tour_weight
         """
-        indiv_tours = pd.read_csv(
-            self.submodel_config["indiv_tour_file"],
-            usecols=[
+        all_tour_file = self.submodel_config.get("all_tour_file")
+        if all_tour_file:
+            all_tour = pd.read_csv(all_tour_file)
+            all_tour["indiv_joint"] = np.where(all_tour["joint_tour_id"].isnull(), "indiv", "joint")
+            return all_tour
+
+        indiv_cols = [
                 "hh_id",
                 "tour_id",
                 "tour_category",
@@ -156,7 +159,28 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
                 "end_hour",
                 "orig_taz",
                 "dest_taz",
-            ],
+        ]
+
+        joint_cols = [
+        "hh_id",
+        "tour_id",
+        "tour_category",
+        "tour_purpose",
+        "tour_mode",
+        "start_hour",
+        "end_hour",
+        "orig_taz",
+        "dest_taz",
+        'tour_participants',
+        ]
+
+        if self.bats_data:
+            indiv_cols.append("tour_weight")
+            joint_cols.append("joint_tour_weight")
+            
+        indiv_tours = pd.read_csv(
+            self.submodel_config["indiv_tour_file"],
+            usecols=indiv_cols
         )
 
         indiv_tours['num_participants'] = 1
@@ -164,28 +188,15 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
 
         joint_tours = pd.read_csv(
             self.submodel_config["joint_tour_file"],
-            usecols=[
-                "hh_id",
-                "tour_id",
-                "tour_category",
-                "tour_purpose",
-                "tour_mode",
-                "start_hour",
-                "end_hour",
-                "orig_taz",
-                "dest_taz",
-                'tour_participants',
-            ],
+            usecols=joint_cols,
         )
-
-        if self.bats_data:
-            indiv_tours.append("tour_weight")
-            joint_tours.append("joint_tour_weight")
         joint_tours.rename(columns = {"joint_tour_weight": "tour_weight"})
-        joint_tours['num_participants'] = joint_tours['tour_participants'].str.split(" ").str.len()
-        joint_tours['indiv_joint'] = 'joint'
-        joint_tours.drop(columns = "tour_participants", inplace = True)
-
+        joint_tours["person_num"] = joint_tours["tour_participants"].str.split(" ")
+        joint_tours["num_participants"] = joint_tours["person_num"].str.len()
+        joint_tours["indiv_joint"] = "joint"
+        joint_tours = joint_tours.drop(columns=["tour_participants"])
+        joint_tours = joint_tours.explode("person_num")
+        
         return pd.concat([indiv_tours, joint_tours], ignore_index=True)
 
     def process_data(self) -> dict:
@@ -253,15 +264,38 @@ class NonWorkDestinationChoiceCalibration(CalibrationBase):
         self.logger.info("\u2713 Non-work outputs validated (all county filters)")
 
     def generate_outputs(self, results: dict):
+        """Export all CSVs and place observed county subsets beside the all-county tables."""
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
 
         targets = list(self.OBSERVED_SHEET_TARGETS if self.bats_data else self.MODELED_SHEET_TARGETS)
         prefix = "BATS2023" if self.bats_data else "09_nonwork_destination_TM"
 
-        # Filtered subsets (everything except "_all") are CSV-only.
+        county_offsets = {}
+        block_width = 20
         for key in results:
             if key.endswith("_all"):
+                continue
+            if self.bats_data:
+                for template in self.OBSERVED_SHEET_TARGETS:
+                    result_prefix = template.result_key.removesuffix("all")
+                    if not key.startswith(result_prefix):
+                        continue
+                    label = key.removeprefix(result_prefix)
+                    if label not in county_offsets:
+                        county_offsets[label] = (len(county_offsets) + 1) * block_width
+                    offset = county_offsets[label]
+                    source_cell = (
+                        (template.source_cell[0], template.source_cell[1] + offset)
+                        if template.source_cell else None
+                    )
+                    targets.append(SheetTarget(
+                        key, template.sheet, template.start_row, template.start_col + offset,
+                        f"{prefix}_{key}.csv", source_cell,
+                    ))
+                    break
+                else:
+                    targets.append(SheetTarget(key, "", 0, 0, f"{prefix}_{key}.csv", None))
                 continue
             targets.append(SheetTarget(key, "", 0, 0, f"{prefix}_{key}.csv", None))
 

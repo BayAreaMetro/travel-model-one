@@ -19,7 +19,7 @@ class StopFrequencyCalibration(CalibrationBase):
     # 'targets' sheet (all results are still written to CSV). Blocks are split by
     # simple_purpose (stacked vertically), and each county filter occupies the
     # next set of columns to the right in the same format.
-    OBSERVED_TARGETS_SHEET = "targets"
+    OBSERVED_TARGETS_SHEET = "BATS 2023"
     OBSERVED_TARGETS_HEADER_ROW = 3
     OBSERVED_TARGETS_START_COL = 2
     OBSERVED_TARGETS_RESULT_TYPES = ["unweighted", "weighted"]
@@ -61,6 +61,13 @@ class StopFrequencyCalibration(CalibrationBase):
 #%%
     def _load_tours(self) -> pd.DataFrame:
         """Load and harmonize individual and joint tour tables."""
+
+        all_tour_file = self.submodel_config.get("all_tour_file")
+        if all_tour_file:
+            all_tour = pd.read_csv(all_tour_file)
+            all_tour["indiv_joint"] = np.where(all_tour["joint_tour_id"].isnull(), "indiv", "joint")
+            return all_tour
+
         indiv_cols = [
             "hh_id",
             "person_id",
@@ -90,21 +97,25 @@ class StopFrequencyCalibration(CalibrationBase):
             "num_ib_stops"
         ]
 
+        if self.bats_data:
+            indiv_cols.append("tour_weight")
+            joint_cols.append("joint_tour_weight")
+
         indiv = pd.read_csv(self.submodel_config["indiv_tour_file"], usecols=indiv_cols)
         indiv["num_participants"] = 1
         indiv["indiv_joint"] = "indiv"
 
         joint = pd.read_csv(self.submodel_config["joint_tour_file"], usecols=joint_cols)
-        joint["tour_participants"] = joint["tour_participants"].fillna("").astype(str)
-        joint["num_participants"] = joint["tour_participants"].str.split().str.len().clip(lower=1)
+        joint.rename(columns = {"joint_tour_weight": "tour_weight"})
+        joint["person_num"] = joint["tour_participants"].str.split(" ")
+        joint["num_participants"] = joint["person_num"].str.len()
         joint["indiv_joint"] = "joint"
         joint = joint.drop(columns=["tour_participants"])
+        joint = joint.explode("person_num")
 
         tours = pd.concat([indiv.drop(columns=["person_id"]), joint], ignore_index=True)
         tours["tour_mode"] = pd.to_numeric(tours["tour_mode"], errors="coerce")
 
-        if self.bats_data and "tour_weight" not in tours.columns:
-            tours["tour_weight"] = 1.0
 
         return tours
     
@@ -143,12 +154,15 @@ class StopFrequencyCalibration(CalibrationBase):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\n PROCESS INPUT DATA\n{sep}")
         self.logger.info("Loading input data files:")
-        self.logger.info(f"Individual Tour: {self.submodel_config["indiv_tour_file"]}")
-        self.logger.info(f"Joint Tour: {self.submodel_config["joint_tour_file"]}")
+        self.logger.info(f"All Tour: {self.submodel_config["all_tour_file"]}")
 
         tours = self._load_tours()
         tours["simple_purpose"] = self._map_simple_purpose(
-            tours["tour_purpose"], tours["indiv_joint"], collapse_joint=True)
+            tours["tour_purpose"], tours["indiv_joint"], collapse_joint=True)\
+
+        if self.bats_data:
+            ## Cap the maximize number of stops to 4
+            tours[["num_ib_stops", "num_ob_stops"]] = tours[["num_ib_stops", "num_ob_stops"]].clip(upper=4)
 
     
         tours["outbound_inbound"] = tours["num_ob_stops"].astype(str) + " out, " + tours["num_ib_stops"].astype(str) + " in"
@@ -174,12 +188,26 @@ class StopFrequencyCalibration(CalibrationBase):
     def generate_outputs(self, results):
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nGENERATE OUTPUTS\n{sep}")
+        sheet_name = (
+        self.OBSERVED_TARGETS_SHEET if self.bats_data else "modeldata"
+        )
+        csv_name = (
+            "12_stop_freq_summary_BATS.csv"
+            if self.bats_data
+            else "12_stop_freq_summary_TM.csv"
+        )
+
         sheet_target = SheetTarget(
-        "stop_freq_summary", "modeldata", 3, 2, 
-        "12_stop_freq_summary_TM.csv", (1,2)
+            "stop_freq_summary",
+            sheet_name,
+            3,
+            2,
+            csv_name,
+            (1, 2),
         )
 
         self.write_results_to_workbook(results, [sheet_target])
+
 
 
 

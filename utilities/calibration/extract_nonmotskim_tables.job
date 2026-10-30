@@ -10,6 +10,6 @@ run PGM=MATRIX
 endrun
 
 ; add header
-*echo orig, dest, one_a, one_b, DISTWALK, DISTBIKE, DIST > "nonmotskm.csv"
+*echo orig,dest,one_a,one_b,DISTWALK,DISTBIKE,DIST> "nonmotskm.csv"
 *type "nonmotskm_noheader.csv" >> "nonmotskm.csv"
 *del "nonmotskm_noheader.csv"

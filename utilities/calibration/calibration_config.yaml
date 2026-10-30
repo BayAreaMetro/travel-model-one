@@ -2,9 +2,9 @@ general:
   # Root of the model run being calibrated. Used to:
   #   - locate input files via {target_dir} substitution in submodel configs
   #   - set the output directory: {target_dir}/Output_{calib_iter}/calibration/
-  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_00_Cube6"
-  calib_iter: "18"
-  iter: "1"
+  target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_01_Cube6"
+  calib_iter: "00"
+  iter: "3"
   # Root directory for calibration Excel workbooks (model run mode).
   # Each submodel's workbook is saved under:
   #   {workbook_base_path}/{submodel} {name}/{workbook_template}.xlsx
@@ -15,6 +15,7 @@ data_sources:
   taz_data: "{target_dir}/INPUT/landuse/tazData.csv"
   dist_skim: "{target_dir}/OUTPUT_00/skims/nonmotskm.csv"
   taz_sd_file: "X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv"
+  household_file: "{target_dir}/OUTPUT_{calib_iter}/main/householdData_{iter}.csv"
 
 calibration_01:
   name: Usual Work and School Location
@@ -34,7 +35,7 @@ calibration_02:
 calibration_04:
   name: Coordinated Daily Activity Pattern
   workbook_template: 04_CoordinatedDailyActivityPattern_2023
-  input_file: "{target_dir}/OUTPUT_{calib_iter}/main/cdapResults.csv"
+  input_file: "{target_dir}/OUTPUT_{calib_iter}/main/personData_{iter}.csv"
   uec_src_file: "{target_dir}/OUTPUT_{calib_iter}/UEC/CoordinatedDailyActivityPattern.xls"
   bats_data: false
 
@@ -57,8 +58,7 @@ calibration_11:
 calibration_12:
   name: Stop Frequency
   workbook_template: 12_StopFrequency_2023
-  indiv_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/indivTourData_{iter}.csv"
-  joint_tour_file: "{target_dir}/OUTPUT_{calib_iter}/main/jointTourData_{iter}.csv"
+  all_tour_file: "{target_dir}/AllTourData_BATS2023.csv"
   uec_src_file: "{target_dir}/OUTPUT_{calib_iter}/UEC/StopFrequency.xls"
 
 calibration_15:
