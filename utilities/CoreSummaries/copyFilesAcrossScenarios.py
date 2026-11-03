@@ -78,8 +78,8 @@ COPY_FILES = {
     #     "emfac_summary",
     # ],
     "OUTPUT\\offmodel":[
-        "off_model_summary",
-        "off_model_tot"
+        "off_model_summary_withVMT",
+        "off_model_tot_withVMT"
     ],
     "INPUT\\landuse":[
         "tazData",

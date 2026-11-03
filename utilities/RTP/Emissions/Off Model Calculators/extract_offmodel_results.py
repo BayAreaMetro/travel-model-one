@@ -160,7 +160,7 @@ if __name__ == '__main__':
         run_directory = run_location / run
 
         off_model_output_dir = run_directory / 'OUTPUT' / 'offmodel' / 'offmodel_output'
-        summary_file = off_model_output_dir / 'off_model_summary_withVMT.csv'
+        summary_file = run_directory / 'OUTPUT' / 'offmodel' / 'off_model_summary_withVMT.csv'
         totals_file = run_directory / 'OUTPUT' / 'offmodel' / 'off_model_tot_withVMT.csv'
         if not off_model_output_dir.exists():
             LOGGER.info(f'Off-model output directory {off_model_output_dir} does not exist for run {run}')
