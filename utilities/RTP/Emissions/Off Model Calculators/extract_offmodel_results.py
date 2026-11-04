@@ -164,8 +164,6 @@ if __name__ == '__main__':
         totals_file = run_directory / 'OUTPUT' / 'offmodel' / 'off_model_tot_withVMT.csv'
         if not off_model_output_dir.exists():
             LOGGER.info(f'Off-model output directory {off_model_output_dir} does not exist for run {run}')
-        elif summary_file.exists() and totals_file.exists():
-            LOGGER.info(f'Off-model summary and totals already exist for run {run}')
         else:
             off_model_summary, off_model_tot = summarize_off_model_calculator_results(
                 run_directory,
@@ -173,7 +171,5 @@ if __name__ == '__main__':
                 calculator_names,
             )
             if len(off_model_summary) > 0:
-                if not summary_file.exists():
-                    off_model_summary.to_csv(summary_file, index=False)
-                if not totals_file.exists():
-                    off_model_tot.to_csv(totals_file)
+                off_model_summary.to_csv(summary_file, index=False)
+                off_model_tot.to_csv(totals_file, index=False)
