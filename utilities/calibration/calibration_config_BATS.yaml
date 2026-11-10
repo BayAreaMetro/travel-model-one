@@ -39,6 +39,13 @@ calibration_04:
   input_file: "{target_dir}/personData_BATS2023.csv"
   bats_data: true
 
+calibration_07:
+  name: Individual Non-Mandatory Tour Frequency
+  workbook_template: 07_IndividualNonMandatoryTourFreq_2023
+  all_tour_file: "{target_dir}/AllTourData_BATS2023.csv"
+  person_data: "{target_dir}/PersonData_BATS2023.csv"
+  bats_data: true
+
 calibration_09:
   name: Non-Work Destination Choice
   workbook_template: 09_NonWorkDestinationChoice_2023

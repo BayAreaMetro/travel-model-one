@@ -64,7 +64,7 @@ class SheetTarget:
     Attributes:
         result_key: Key of the DataFrame within the results dict.
         sheet: Destination worksheet name (e.g. ``"modeldata"`` or ``"targets"``).
-        start_row: 1-based row for the header row; data is written below it.
+        start_row: 1-based row for the first header row; data follows all header levels.
         start_col: 1-based column for the leftmost data column.
         csv_name: Optional CSV filename (written under ``output_dir``); ``None`` skips CSV.
         source_cell: Optional ``(row, col)`` for a "Source:" annotation; ``None`` skips it.
@@ -545,15 +545,16 @@ class CalibrationBase(ABC):
                                 source_row: int = None, source_col: int = None, source_text: str = ""):
         """Write a DataFrame into an open Excel workbook sheet.
 
-        Writes the column headers to *start_row* and the data values
-        immediately below.  Optionally writes a source-file annotation to a
+        Writes column headers starting at *start_row*, one row per column
+        level, and the data values immediately below all header rows.
+        Optionally writes a source-file annotation to a
         separate cell (useful for traceability in the workbook).
 
         Row and column indices follow xlwings convention (1-based).
 
         Args:
             df: DataFrame to write.  The index is not written.
-            start_row: 1-based row for the header row.
+            start_row: 1-based row for the first header row.
             start_col: 1-based column for the leftmost data column.
             sheet_name: Name of the target sheet.  Defaults to
                 ``"modeldata"``.
@@ -577,10 +578,14 @@ class CalibrationBase(ABC):
             sheet = self.calib_workbook.sheets[sheet_name]
             
             # Write headers
-            sheet.range((start_row, start_col)).value = df.columns.tolist()
+            headers = [
+                df.columns.get_level_values(level).tolist()
+                for level in range(df.columns.nlevels)
+            ]
+            sheet.range((start_row, start_col)).value = headers
             
             # Write data without index
-            sheet.range((start_row + 1, start_col)).value = df.values
+            sheet.range((start_row + len(headers), start_col)).value = df.values
 
             if source_row and source_col and source_text:
                 sheet.range((source_row, source_col)).value = source_text

@@ -158,7 +158,7 @@ class StopFrequencyCalibration(CalibrationBase):
 
         tours = self._load_tours()
         tours["simple_purpose"] = self._map_simple_purpose(
-            tours["tour_purpose"], tours["indiv_joint"], collapse_joint=True)\
+            tours["tour_purpose"], tours["indiv_joint"], collapse_joint=True)
 
         if self.bats_data:
             ## Cap the maximize number of stops to 4
