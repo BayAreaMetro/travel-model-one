@@ -1,30 +1,140 @@
-# No matrix scenarios in this project yet -- PBA50+_FBP only needs scen_*.yaml's
-# explicit `scenarios:` so far. A real matrix lives in a file matching
-# matrix*.yaml (e.g. matrix_A1.yaml): a top-level list of specs, no `matrix:`
-# wrapper -- the filename already says what it holds, same as scen_*.yaml.
-# `tm1 scenarios PBA50+_FBP` merges every matrix*.yaml file in this directory
-# into one expansion before checking any of it.
+# NOT LOADED -- everything below is commented out. It is an alternative way to
+# write this project's 14 strategy-evaluation runs, kept for reference only.
 #
-# The cross product of named axes, for a sweep. Give every axis point a
-# description -- a scenario's prose is assembled from them, and in a sweep of
-# thirty the ID is otherwise all you have to go on.
+# This project declares those runs one per file (scen_2050_Plan_minus*.yaml),
+# each a full, self-contained copy of the 2050 Plan. The matrix below states the
+# Plan once, as settings shared by every point, and gives each strategy only
+# what it changes from that Plan. Expanded, it produces the same 14 scenario IDs
+# with identical settings and descriptions (checked 2026-11-10 by applying both
+# to the shared model plus steps.yaml and comparing the results).
 #
-# - id: "A1-{tolls}-{landuse}"
+# Do not uncomment it while the scen_*.yaml files are here: every matrix*.yaml
+# in this directory is loaded, the IDs would collide, and the collision stops
+# `tm1 scenarios` and `tm1 run` for every scenario in the project. To switch,
+# delete the 14 scen_2050_Plan_minus*.yaml files and uncomment this in the
+# same change. (The project still needs at least one scen_*.yaml to be
+# recognised as a project.)
+#
+# Values replace rather than merge, and a point can replace a value but never
+# delete one -- see minusT5, which states the shared model's default `{}` for
+# the parking variant that its scen_*.yaml simply leaves out.
+#
+# - id: "2050_TM162_FBP_Plan_{strategy}"
+#   description: Plan Bay Area 2050+ Final Blueprint
+#
+#   # ---- the base: PBA50+_FBP's 2050_TM162_FBP_Plan, applied to every point ----
+#   model_year:     2050
+#   env.MODEL_YEAR: 2050
+#   env.FUTURE: PBA50
+#   env.EN7: ENABLED
+#
+#   copy_inputs.input_hwy.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Blueprint/hwy"
+#   copy_inputs.input_trn.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2050_Blueprint/trn"
+#   copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_FBP_v08/2050/popsyn"
+#   copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_FBP_v08/2050/landuse"
+#   # Parking strategy (En9): SetUpModel_PBA50Plus.bat applies this for MODEL_YEAR >= 2035.
+#   copy_inputs.input_landuse.variant:
+#     tazData.csv: parking_strategy/tazData_parkingStrategy_v01_wSFCordon_wTICordon.csv
+#     tazData.dbf: parking_strategy/tazData_parkingStrategy_v01_wSFCordon_wTICordon.dbf
+#   copy_inputs.input_nonres.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+#   copy_inputs.input_logsums.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
+#   copy_inputs.input_metrics.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
+#
+#   copy_inputs.input_airpax_ea.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEA.tpp"
+#   copy_inputs.input_airpax_am.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxAM.tpp"
+#   copy_inputs.input_airpax_md.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxMD.tpp"
+#   copy_inputs.input_airpax_pm.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxPM.tpp"
+#   copy_inputs.input_airpax_ev.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2050b_tripsAirPaxEV.tpp"
+#
+#   copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/warmstart/main"
+#   copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/warmstart/nonres"
+#
+#   copy_inputs.input_params.from: "{m_drive}/Application/Model One/RTP2025/Blueprint/2050_TM161_FBP_Plan_16/INPUT/params.properties"
+#
+#   filter_unconnected_households.skip_if_exists: "popsyn/hhFile.FBP.2050.PBA50Plus_Final_Blueprint_v65.csv"
+#
+#   emfac_sb375_version: "2014"
+#   emfac_eir_version:   "2017"
+#
+#   copy_project_inputs.bp_bus_on_shoulder_job.enabled:            true
+#   copy_project_inputs.bp_bus_on_shoulder_links_us101.enabled:    true
+#   copy_project_inputs.bp_bus_on_shoulder_links_vine.enabled:     true
+#   copy_project_inputs.bp_bus_on_shoulder_links_merged.enabled:   true
+#   copy_project_inputs.bp_vision_zero_block.enabled:              true
+#   copy_project_inputs.bp_regional_transit_fares_job.enabled:     true
+#   iterate.apply_regional_transit_fares.enabled:                  true
+#
+#   offmodel_prep.enabled:                                         true
+#   run_offmodel_calculators.enabled:                              true
+#   copy_project_inputs.bp_offmodel_calculators.enabled:           true
+#
+#   # ---- one axis: each point states only what it changes from the base ----
 #   axes:
-#     tolls:
-#       NOTL:
-#         description: No new tolls.
-#       CORD:
-#         description: Cordon pricing.
-#         set_tolls.job: "variants/SetTolls_cordon.job"
-#     landuse:
-#       ADPT:
-#         description: Adopted land use.
-#       JHBL:
-#         description: Jobs-housing balance.
-#         env.MODEL_YEAR: 2035
-#   exclude:
-#     - {tolls: CORD, landuse: JHBL}     # combinations that make no sense
-#
-# gives  A1-NOTL-ADPT, A1-NOTL-JHBL, A1-CORD-ADPT
-# (an exclude rule may name a subset of the axes, so it survives a new axis)
+#     strategy:
+#       minusT2:
+#         description: minus Strategy T2 run.
+#         copy_project_inputs.bp_regional_transit_fares_job.enabled: false
+#         iterate.apply_regional_transit_fares.enabled:              false
+#       minusT3:
+#         description: minus Strategy T3 (seamless transit transfer) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutSeamlessTransit/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutSeamlessTransit/trn"
+#       minusT4:
+#         description: minus Strategy T4 run.
+#         copy_inputs.input_params.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/params/params_2050FBPminusT4.properties"
+#       minusT5:
+#         description: minus Strategy T5 (pricing strategy) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutRoadwayPricing/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutRoadwayPricing/trn"
+#         # A point can only replace a value, never delete one -- so "no parking
+#         # variant" is the shared model's own default, stated explicitly.
+#         copy_inputs.input_landuse.variant: {}
+#       minusT6:
+#         description: minus Strategy T6 (freeway interchange modernization) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutFreewayModern/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutFreewayModern/trn"
+#       minusT7:
+#         description: minus Strategy T7 (freeway expansion) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutFreewayExpansion/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutFreewayExpansion/trn"
+#       minusT8:
+#         description: minus Strategy T8 (local/regional priority projects) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutLocalRegionalPriority/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutLocalRegionalPriority/trn"
+#       minusT9:
+#         description: minus Strategy T9 (complete street) run.
+#         copy_inputs.input_params.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/params/params_2050FBPminusT9.properties"
+#       minusT10:
+#         description: minus Strategy T10 (Vision Zero roadway safety) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutRoadwaySafety/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutRoadwaySafety/trn"
+#         copy_project_inputs.bp_vision_zero_block.enabled: false
+#       minusT11:
+#         description: minus Strategy T11 (transit enhancement) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutTransitEnhance/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutTransitEnhance/trn"
+#         copy_project_inputs.bp_bus_on_shoulder_job.enabled:          false
+#         copy_project_inputs.bp_bus_on_shoulder_links_us101.enabled:  false
+#         copy_project_inputs.bp_bus_on_shoulder_links_vine.enabled:   false
+#         copy_project_inputs.bp_bus_on_shoulder_links_merged.enabled: false
+#       minusT12:
+#         description: minus Strategy T12 (transit expansion) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutTransitExpansion/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutTransitExpansion/trn"
+#       minusEN1:
+#         description: minus Strategy EN1 (SLR mitigation) run.
+#         copy_inputs.input_hwy.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutSLR/hwy"
+#         copy_inputs.input_trn.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/Networks/net_2050_BPwithoutSLR/trn"
+#       minusH3EC4EN4:
+#         description: minus Strategies H3, EC4, EN4 run.
+#         copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/LandUse/2050_plan_minus_H3EC4EN4_wParking_wCordons/popsyn"
+#         copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/LandUse/2050_plan_minus_H3EC4EN4_wParking_wCordons/landuse"
+#       minusLanduse:
+#         description: minus land use strategies run.
+#         copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/BAUS_NoProject_v10/2050/popsyn"
+#         copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2030/StrategyEvaluation/INPUTS/LandUse/2050_NP_wParkingStrategy_wCordons"
+#         copy_inputs.input_landuse.variant:
+#           tazData.csv: tazData_NP_wParkingStrategy_wSFCordon_wTICordon.csv
+#           tazData.dbf: tazData_NP_wParkingStrategy_wSFCordon_wTICordon.dbf
+
+[]
