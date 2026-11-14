@@ -1,0 +1,163 @@
+# PBA50+_FBP's own pipeline additions, on top of the shared CT-RAMP+Cube
+# pipeline in default-configs/ctramp-cube-model.yaml. Genuinely project-wide,
+# unlike a scenario override: every scenario in this project's scen_*.yaml
+# files runs the same pipeline shape, so there is nothing to restate per
+# scenario. See docs/running-a-model.md for the three shapes a step here can
+# take (fills a shared placeholder, `after:` another step, or appended new).
+
+# Fills in the shared model's `copy_project_inputs: {}` placeholder, landed
+# between copy_inputs and copy_input_to_working -- see the comment there.
+# SetUpModel_PBA50Plus.bat Step 4's Blueprint strategy overrides: off by
+# default; a scenario turns on the ones its MODEL_YEAR qualifies for via
+# `enabled: true`. Sources are all repo-relative.
+- copy_project_inputs:
+    bp_bus_on_shoulder_job:           # BusOnShoulder_by_TP, MODEL_YEAR >= 2030:
+      from: "utilities/RTP/strategy_overrides/BusOnShoulder_by_TP/CreateFiveHighwayNetworks_BusOnShoulder.job"
+      to: "{run_dir}/CTRAMP/scripts/preprocess/CreateFiveHighwayNetworks.job"
+      overwrite: true                 # lands on top of copy_inputs' ctramp_scripts
+      enabled: false
+    bp_bus_on_shoulder_links_us101:    # FBP_MR_018_US101_BOS network project
+      from: "utilities/RTP/strategy_overrides/BusOnShoulder_by_TP/mod_links_BRT_FBP_MR_018_US101_BOS.csv"
+      to: "{run_dir}/INPUT/hwy/mod_links_BRT_FBP_MR_018_US101_BOS.csv"
+      enabled: false
+    bp_bus_on_shoulder_links_vine:     # FBP_NP_040_VINE_Exp_Bus_Enhancements network project
+      from: "utilities/RTP/strategy_overrides/BusOnShoulder_by_TP/mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv"
+      to: "{run_dir}/INPUT/hwy/mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv"
+      enabled: false
+    bp_bus_on_shoulder_links_merged:   # `copy A+B C`: concatenated, not CSV-merged
+      concat:
+        - "{run_dir}/INPUT/hwy/mod_links_BRT_FBP_MR_018_US101_BOS.csv"
+        - "{run_dir}/INPUT/hwy/mod_links_FBP_NP_040_VINE_Exp_Bus_Enhancements.csv"
+      to: "{run_dir}/INPUT/hwy/mod_links_BRT.csv"
+      enabled: false
+
+    bp_vision_zero_block:             # Vision Zero, freeways MODEL_YEAR >= 2035
+      from: "utilities/RTP/strategy_overrides/Vision_Zero/SpeedCapacity_1hour_2035to2050.block"
+      to: "{run_dir}/CTRAMP/scripts/block/SpeedCapacity_1hour.block"
+      overwrite: true                 # lands on top of copy_inputs' ctramp_scripts
+      enabled: false
+
+    bp_regional_transit_fares_job:     # T2 fare integration, MODEL_YEAR >= 2035;
+      from: "utilities/RTP/strategy_overrides/Regional_Transit_Fare_Policy/apply_regional_transit_fares_to_skims.job"
+      to: "{run_dir}/CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
+      enabled: false                  # run by the apply_regional_transit_fares step
+
+    bp_offmodel_calculators:           # master calculator workbooks run_offmodel_calculators.py copies from
+      from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/offmodel_calculators/FBP_v3_update2005"
+      to: "{run_dir}/CTRAMP/scripts/offmodel/calculators"
+      enabled: false                  # on with offmodel_prep/run_offmodel_calculators below
+
+# Fills in the shared model's `publish_inputs: {}` placeholder: INPUT/'s own
+# copy out to the archive, split out of publish_outputs below so it lands as
+# soon as INPUT/ is finished writing rather than waiting for the whole run.
+# error_if_exists: a --run-number is only ever published once; finding the
+# archive already there means this number is reused, not that this run's
+# INPUT/ has changed.
+- publish_inputs:
+    input_dir:
+      from: "{run_dir}/INPUT"
+      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/INPUT"
+      error_if_exists: true
+
+# T2 fare integration: specific to this project, so not part of the shared
+# pipeline -- inserted right after transit_skims, where trnAssign.bat runs it,
+# via `after:` rather than a shared placeholder.  Off by default; a scenario
+# turns it on (alongside bp_regional_transit_fares_job above, which stages the
+# job file this step runs) for the MODEL_YEAR it qualifies for.
+- apply_regional_transit_fares:
+    after: transit_skims
+    job: "CTRAMP/scripts/skims/apply_regional_transit_fares_to_skims.job"
+    cwd: "trn/TransitAssignment.iter{iteration}"
+    commpath: "commpath"
+    cluster_nodes: 15
+    enabled: false
+
+# Genuinely new: the shared model has no step named this, so it is inserted
+# right after net2csv_avgload5period -- the shared pipeline's last summary step
+# -- rather than merged into a placeholder.  Pinned with `after:` rather than a
+# plain append so it still lands before cleanup_logs/publish_outputs, whatever
+# else the shared pipeline appends there later.
+- vmt_vht_metrics:
+    after: net2csv_avgload5period
+    script: "hooks.py:vmt_vht_metrics"
+
+# Fills in the shared model's `publish_outputs: {}` placeholder: RunModel.bat's
+# ExtractKeyFiles.bat + Robocopy to %M_DIR%\OUTPUT, matched file for file against
+# an actual published run (M:\...\2050_TM161_FBP_Plan_16\OUTPUT) rather than
+# archiving the whole run -- CTRAMP/ is not part of it: ExtractKeyFiles.bat never
+# copies CTRAMP into OUTPUT, only the separate, no-longer-used CopyFilesToM.bat
+# did that. OUTPUT/ is its own subdirectory of the published run, a sibling of
+# publish_inputs' own INPUT/ above and config_record's config.resolved.yaml
+# below -- matching M:\...\<run>\{INPUT,OUTPUT,SetUpModel_<run>.txt} exactly,
+# config.resolved.yaml being this harness's equivalent of that last one: every
+# value the run actually used, rather than a copy of the .bat that set them.
+# Final iteration (3) only, matching ExtractKeyFiles.bat's own scope.
+- publish_outputs:
+    run_dir:
+      from: "{run_dir}"
+      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT"
+      include:
+        - "trn/trnline*.csv"
+        - "trn/trnlink*.dbf"
+        - "trn/trnlink.csv"
+        - "trn/trnline.csv"
+        - "trn/quickboards.xls"
+        - "main/trips??.tpp"
+        - "main/ShadowPricing_7.csv"
+        - "nonres/ixDaily2015.tpp"
+        - "nonres/ixDailyx4.tpp"
+        - "nonres/tripsIX*.tpp"
+        - "nonres/tripsTrk*.tpp"
+        - "emfac/*"
+        - "core_summaries/*"
+        - "updated_output/*"
+        - "metrics/*"
+        - "offmodel/*"
+        # Named individually, not "logsums/*": logsums/ also holds the dummy
+        # INPUT files copy_input_to_working merged in (e.g.
+        # accessibilities_dummy_indivTours.csv), which are never published --
+        # confirmed against the M reference, which has none of them either.
+        - "logsums/householdData_3.csv"
+        - "logsums/personData_3.csv"
+        - "logsums/indivTripData_3.csv"
+        - "logsums/indivTourData_3.csv"
+        - "logsums/mandatoryAccessibilities.csv"
+        - "logsums/nonMandatoryAccessibilities.csv"
+        - "logsums/shopDCLogsum.csv"
+        - "logsums/tour_shopDCLogsum.csv"
+        - "logsums/workDCLogsum.csv"
+        - "logsums/person_workDCLogsum.csv"
+        - "logsums/subzone_logsums_for_BAUS.csv"
+        - "logsums/taz_logsums_for_BAUS.csv"
+        - "shapefile/*"
+    # hwy/iter3, trn/TransitAssignment.iter3 and logs/ all land flat under
+    # OUTPUT itself -- ExtractKeyFiles.bat drops the round number and the logs/
+    # directory the same way (`copy hwy\iter%ITER%\avgload5period.net
+    # extractor\avgload5period.net`, `copy logs\feedback.rpt extractor\feedback.rpt`).
+    hwy_iter3:
+      from: "{run_dir}/hwy/iter3"
+      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT"
+      include: ["avgload5period*"]
+    trn_iter3_lines:
+      from: "{run_dir}/trn/TransitAssignment.iter3"
+      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT/trn"
+      include: ["trnline*.csv"]
+    logs:
+      from: "{run_dir}/logs"
+      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT"
+      include: ["HwySkims.debug", "feedback.rpt", "SpeedErrors*.log"]
+    # ExtractKeyFiles.bat's own two `copy` lines for this one source file, under
+    # two different destination names.
+    mtc_tour_based_properties:
+      from: "{run_dir}/CTRAMP/runtime/mtcTourBased.properties"
+      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT/mtcTourBased.properties"
+    logsums_properties:
+      from: "{run_dir}/CTRAMP/runtime/mtcTourBased.properties"
+      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/OUTPUT/logsums.properties"
+    config_record:
+      from: "{run_dir}/.tm1/config.resolved.yaml"
+      to: "{m_drive}/Application/Model One/RTP2025/python_runner_tests/{run}/config.resolved.yaml"
+
+# The other two scenario pathways -- ladder (cumulative) and matrix (cross product) --
+# are not used by this project yet; see the placeholder ladder.yaml and matrix.yaml
+# for what one looks like.
