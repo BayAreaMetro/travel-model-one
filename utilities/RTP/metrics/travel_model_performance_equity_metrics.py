@@ -1109,6 +1109,8 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
             model_run_dir = TM_RUN_LOCATION_STIP / tm_runid
         elif model_runs_dict[tm_runid]['run_set'] in ["NoTransit"]:
             model_run_dir = TM_RUN_LOCATION_NOTRANSIT / tm_runid
+        elif model_runs_dict[tm_runid]['run_set'] in ["RTP2030StrategyEval"]:
+            model_run_dir = TM_RUN_LOCATION / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         
