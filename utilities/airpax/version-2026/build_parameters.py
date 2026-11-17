@@ -52,7 +52,7 @@ DEFAULT_TAZ_LOOKUP = HERE.parent.parent / "geographies" / "taz-superdistrict-cou
 DEFAULT_GOSLING_DIR = BOX_AIRPORTS_DIR / "GoslingSummaries_2007_2035b_dbfs"
 # See Collate airport transit data for TM1.7 from the TPS
 #     https://app.asana.com/1/11860278793487/project/13098083395690/task/1212780679760302
-DEFAULT_TRANSIT_SOURCE = BOX_AIRPORTS_DIR / "TPS_TAZ_airport_TOD.xlsx"
+DEFAULT_TRANSIT_SOURCE = BOX_AIRPORTS_DIR / "Transit" / "TPS_TAZ_airport_TOD.xlsx"
 
 TOD_ORDER = ("EA", "AM", "MD", "PM", "EV")
 ACCESS_MODES = ("ES", "PK", "RN", "TX", "LI", "VN", "HT", "CH")
