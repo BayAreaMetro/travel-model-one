@@ -1,0 +1,32 @@
+# No ladder scenarios in this project yet -- PBA50+_FBP only needs scen_*.yaml's
+# explicit `scenarios:` so far. A real ladder lives in a file matching
+# ladder*.yaml (e.g. ladder_BP.yaml): a top-level list of specs, no `ladder:`
+# wrapper -- the filename already says what it holds, same as scen_*.yaml.
+# `tm1 scenarios PBA50+_FBP` merges every ladder*.yaml file in this directory
+# into one expansion before checking any of it.
+#
+# Cumulative un-ablation: start from the year's land use and networks with no
+# strategies, then switch them on one at a time until the last rung *is* the
+# full Blueprint. The difference between adjacent rungs is that one strategy's
+# contribution, which is the question these runs exist to answer.
+#
+# - id: "BP-{n}-{rung}-2035"
+#   description: 2035 Blueprint, un-ablated one strategy at a time.
+#   env.MODEL_YEAR: 2035
+#   rungs:
+#     - NONE:
+#         description: 2035 land use and adopted networks, no strategies.
+#     - TELE:
+#         description: + telecommute.
+#         env.EN7: ENABLED
+#     - TRNF:
+#         description: + transit frequency.
+#         copy_inputs.input_trn.from: "{m_drive}/.../net_2035_Blueprint/trn"
+#     - CORD:
+#         description: + cordon pricing.
+#         set_tolls.job: "variants/SetTolls_cordon.job"
+#
+# gives  BP-01-NONE-2035  BP-02-TELE-2035  BP-03-TRNF-2035  BP-04-CORD-2035
+# BP-04 carries all four, so it is the full Blueprint; BP-01 is the do-nothing
+# floor. Inserting a rung renumbers everything after it -- correctly, since it
+# changes what every later rung means.
