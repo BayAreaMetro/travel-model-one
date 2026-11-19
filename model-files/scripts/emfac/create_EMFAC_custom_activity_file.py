@@ -151,6 +151,7 @@ if __name__ == '__main__':
     parser.add_argument("--VMT_data_type",                 required=True, choices=['totalDailyVMT','VMTbyVehFuelType'])
     parser.add_argument("--custom_hourly_speed_fractions", action='store_true', help="For 'Custom Hourly Speed Fractions' checkbox")
     parser.add_argument("--file_suffix", default="", help="Optional suffix for output folders/files; to QA/compare against manually created versions")
+    parser.add_argument("--airbasin_split_method",         required=True, choices=['EMFAC-airbasin-default','modeled-airbasin-split'], help="Choose method to split VMT by Air Basin for Solano and Sonoma")
 
     args = parser.parse_args()
 
@@ -173,11 +174,11 @@ if __name__ == '__main__':
     input_custom_activity_template_fullpath = pathlib.Path(__file__).parent / "Custom_Activity_Templates" / input_custom_activity_template
 
     # ================= Output custom activity file is based on Harold's convention =================
-    output_custom_activity_file = f"E{args.emfac_version}_{MODEL_RUN_ID}_{args.season}{args.file_suffix}.xlsx"
+    output_custom_activity_file = f"E{args.emfac_version}_{MODEL_RUN_ID}_{args.season}{args.file_suffix}_{args.airbasin_split_method}.xlsx"
     # and it's local
     output_custom_activity_dir = CWD_OUTPUT / "emfac" / args.analysis_type / f"E{args.emfac_version}{args.file_suffix}"
     # create it since log file will go there
-    output_custom_activity_dir.mkdir(parents=True, exist_ok=True)
+    # output_custom_activity_dir.mkdir(parents=True, exist_ok=True)
     output_custom_activity_file_fullpath = output_custom_activity_dir / output_custom_activity_file
     log_file_full_path = output_custom_activity_dir / output_custom_activity_file.replace(".xlsx",".log")
 
@@ -378,7 +379,7 @@ if __name__ == '__main__':
         # The rows are subarea (11) x hour (24) x Veh_Tech (51-55)
         # The columns are the 18 speed bins, plus index columns (Sub-Area, GAI, Sub-Area, Cal_Year, Veh_Tech, Hour)
 
-        # merge DataFrames
+        # merge DataFrames - resulting DataFrame has both the default and modeled VMT fractions (by speed bin, for each hour)
         TM_HourlyFraction_df = pd.merge(
             left     = DefaultHourlyFraction_df, 
             right    = VMT_df[['GAI','hour'] + 
@@ -455,10 +456,11 @@ if __name__ == '__main__':
     ModelledVMTbyGAI_df = VMT_df[['countyName','GAI','AirBasin','HourlyTotalVMT']].groupby(
         ['countyName','GAI','AirBasin'], as_index=False).sum()
     logging.debug("ModelledVMTbyGAI_df:\n{}".format(ModelledVMTbyGAI_df))
-    # Note: the Solano/Sonoma VMT by GAI isn't accurate - it's duplicated
-    # So need to apportion it based on the DefaultVMT split
+    # Note: the modeled Solano/Sonoma VMT by GAI isn't accurate - it's duplicated; need to apportion it based on the VMT split between air basins
+        # method 1: apportion it based on the DefaultVMT split
+        # method 2: apportion it based on the modeled VMT split (based on link to air basin crosswalk)
 
-    # merge modelled VMT and default VMT by GAI; modeled is called 'HourlyTotalVMT'
+    # for method 1: merge modelled VMT and default VMT by GAI; modeled is called 'HourlyTotalVMT'
     VMTbyGAI_df = pd.merge(
         left    = DefaultVMTbyGAI_df, 
         right   = ModelledVMTbyGAI_df, 
@@ -476,10 +478,50 @@ if __name__ == '__main__':
         how     = 'left'
     )
     logging.debug("VMTbyGAI_df:\n{}".format(VMTbyGAI_df))
-    # columns are now: Sub-Area, GAI, DefaultVMT_GAI, countyName, AirBasin, HourlyTotalVMT (modeled), DefaultVMT_county
-    # apportion based on share DefaultVMT for GAI / DefaultVMT for County
-    VMTbyGAI_df['HourlyTotalVMT'] = VMTbyGAI_df.HourlyTotalVMT * (VMTbyGAI_df.DefaultVMT_GAI/VMTbyGAI_df.DefaultVMT_county)
-    logging.debug("VMTbyGAI_df after apportioning county by GAI:\n{}".format(VMTbyGAI_df))
+
+    # for method 2: also merge in the modeled Sub-Area VMT summary from the vmt_by_airbasin_df
+    vmt_by_airbasin_df = pd.read_csv(EMFAC_PREP / "VMT_betwweenZones_airBasin.csv")
+    logging.debug("vmt_by_airbasin_df.head():\n{}".format(vmt_by_airbasin_df.head()))
+    # make the air basin column match the one in COUNTY_GAI_AIRBASIN_DF
+    vmt_by_airbasin_df[['county_temp', 'AirBasin_temp']] = vmt_by_airbasin_df['ctAirBasin'].str.split('_', expand=True)
+    vmt_by_airbasin_df['Sub-Area_modeled'] = \
+        vmt_by_airbasin_df['county_temp'] + ' (' + vmt_by_airbasin_df['AirBasin_temp'] + ')'
+    vmt_by_airbasin_summary_df = vmt_by_airbasin_df.groupby(['county_temp', 'Sub-Area_modeled'], as_index=False)[['dailyVMT_airBasin']].sum()
+
+    VMTbyGAI_df = pd.merge(
+        left    = VMTbyGAI_df,
+        right   = vmt_by_airbasin_summary_df,
+        left_on = ['Sub-Area'],
+        right_on= ['Sub-Area_modeled'],
+        how     = 'left'
+    )
+    VMTbyCounty_fromAirBasin_df = VMTbyGAI_df.groupby(['county_temp'], as_index=False)[['dailyVMT_airBasin']].sum()
+    VMTbyCounty_fromAirBasin_df.rename(columns={'dailyVMT_airBasin':'VMT_county_airBasin'}, inplace=True)
+    VMTbyGAI_df = pd.merge(
+        left    = VMTbyGAI_df,
+        right   = VMTbyCounty_fromAirBasin_df,
+        left_on = ['county_temp'],
+        right_on= ['county_temp'],
+        how     = 'left'
+    )
+    logging.debug("VMTbyGAI_df with EMFAC Default and Modelled:\n{}".format(VMTbyGAI_df))
+    # VMTbyGAI_df.to_csv(EMFAC_PREP / "VMTbyGAI_df_debug.csv", header=True, index=False)
+
+    # columns are now: 
+     # from EMFAC default:                          Sub-Area, GAI, DefaultVMT_GAI, DefaultVMT_county
+     # from modeled BetweenZones and WithinZone:    countyName, AirBasin, HourlyTotalVMT (modeled)
+     # from modeled vmt by airBasin summary:        Sub-Area_modeled, dailyVMT_airBasin, VMT_county_airBasin
+    
+    if args.airbasin_split_method == 'EMFAC-airbasin-default':
+        logging.info("Using EMFAC default method to split VMT by Air Basin for Solano and Sonoma")
+        # method 1: apportion based on share DefaultVMT for GAI / DefaultVMT for County
+        VMTbyGAI_df['HourlyTotalVMT'] = VMTbyGAI_df.HourlyTotalVMT * (VMTbyGAI_df.DefaultVMT_GAI/VMTbyGAI_df.DefaultVMT_county)
+        logging.debug("VMTbyGAI_df after apportioning county by GAI:\n{}".format(VMTbyGAI_df))
+
+    # method 2: apportion based on share of modeled VMT for Sub-Area / modeled VMT for County
+    elif args.airbasin_split_method == 'modeled-airbasin-split':
+        logging.info("Using modeled method to split VMT by Air Basin for Solano and Sonoma")
+        VMTbyGAI_df['HourlyTotalVMT'] = VMTbyGAI_df.HourlyTotalVMT * (VMTbyGAI_df.dailyVMT_airBasin/VMTbyGAI_df.VMT_county_airBasin)
 
     # This section is for args.VMT_data_type=='VMTbyVehFuelType'
     # But for args.VMT_data_type=='totalDailyVMT', it doesn't actually do anything (percentVMT will be 1.0)
@@ -488,7 +530,7 @@ if __name__ == '__main__':
     # Merge current VMT totals back into the original default VMT dataframe
     DefaultVMT_detail_df = pd.merge(
         left    = DefaultVMT_df,
-        right   = VMTbyGAI_df.drop(columns=['DefaultVMT_county']), 
+        right   = VMTbyGAI_df.drop(columns=['DefaultVMT_county','VMT_county_airBasin']), 
         on      = ['Sub-Area','GAI'],
         how     = 'left'
     )

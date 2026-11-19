@@ -81,6 +81,11 @@ If --transit_crowding is specified, then the complete transit crowding file is r
    4) network_trn_stops.shp - this has per stop information, including LINE_NAME, STATION, N, SEQ, IS_STOP.
       If --loadvol_dr is specified, then boardings (BRD) and exits (XIT) as given per time period.
 
+ If --LINK_TAGGING_SHAPE, --LINK_TAGGING_ID_FIELD, --LINK_TAGGING_OUTPUT are specified, then a link to shape crosswalk will be created by running
+   utilities/geographies/create_geography_overlays/correspond_link_to_TAZ.py (called by the tag_links_with_geography function)
+   A link to air basin crosswalk is created by default; the crosswalk will be required in RunPrepareEmfac.bat if the user choose to use modeled air basin VMT split
+    rather than EMFAC-default split to summarize VMT. See \model-files\scripts\emfac\create_EMFAC_custom_activity_file.py for details.
+    
 """
 
 import argparse, collections, copy, csv, logging, os, pathlib, re, subprocess, sys, traceback
@@ -104,6 +109,8 @@ TRN_STOPS_SHPFILE = "network_trn_stops{}.shp"
 TRN_ROUTE_LINKS_SHPFILE = "network_trn_route_links.shp"
 
 COUNTY_SHPFILE = pathlib.Path("X:/travel-model-one-master/utilities/geographies/region_county.shp")
+LINK_TAGGING_SHAPEFILE = pathlib.Path("M:/Data/GIS layers/ca_air_basins/bay_area_county_air_basin.shp")
+LINK_TAGGING_CSV = pathlib.Path("link_to_airbasin.csv")
 
 # TODO: Use an effective duration for EA and EV?
 TIMEPERIOD_DURATIONS = collections.OrderedDict([
@@ -224,6 +231,53 @@ def runCubeScript(workingdir, script_filename, script_env):
     if retcode == 2:
         raise Exception(f"Failed to run Cube script {script_filename}")
     logger.info(f"  Received {retcode} from 'runtpp {script_filename}'")
+
+
+def tag_links_with_geography(
+    workingdir: pathlib.Path,
+    link_shapefile: pathlib.Path,
+    output_csv: pathlib.Path,
+    geography_shapefile: pathlib.Path,
+    shp_id: str,
+):
+    """Tag roadway links to a geography shapefile and write link-level correspondence CSV."""
+    logger = logging.getLogger()
+    tag_script = pathlib.Path(__file__).resolve().parents[1] / "geographies" / "create_geography_overlays" / "correspond_link_to_TAZ.py"
+
+    if not tag_script.exists():
+        raise FileNotFoundError(f"Link tagging script not found: {tag_script}")
+    if not geography_shapefile.exists():
+        raise FileNotFoundError(f"Link tagging shapefile not found: {geography_shapefile}")
+
+    cmd = [
+        sys.executable,
+        str(tag_script),
+        str(link_shapefile),
+        str(output_csv),
+        "--shapefile",
+        str(geography_shapefile),
+        "--shp_id",
+        shp_id,
+    ]
+    logger.info("Running link tagging step")
+    logger.info(f"  command: {' '.join(cmd)}")
+
+    proc = subprocess.Popen(
+        cmd,
+        cwd=workingdir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    for line in proc.stdout:
+        logger.info(f"  tagging stdout: {line.rstrip()}")
+    for line in proc.stderr:
+        logger.info(f"  tagging stderr: {line.rstrip()}")
+
+    retcode = proc.wait()
+    if retcode != 0:
+        raise RuntimeError(f"Link tagging step failed with return code {retcode}")
+    logger.info(f"Wrote link tagging CSV to {output_csv}")
 
 
 def get_name_set(line_name, mode_type):
@@ -963,6 +1017,9 @@ if __name__ == '__main__':
     parser.add_argument("--by_operator", action="store_true", help="Split transit lines by operator")
     parser.add_argument("--loadvol_dir", help="Directory with loaded volume files for joining")
     parser.add_argument("--transit_crowding", help="Transit crowding link file for joining. If this argument is specified, then specifying a loadvol_dir is also required.")
+    parser.add_argument("--link_tagging_csv", default=str(LINK_TAGGING_CSV), help="Output link tagging CSV filename")
+    parser.add_argument("--link_tagging_shapefile", default=str(LINK_TAGGING_SHAPEFILE), help="Geography shapefile used for link tagging")
+    parser.add_argument("--link_tagging_id_field", default="ctAirBasin", help="ID field in link tagging shapefile")
     args = parser.parse_args()
     # print(args)
 
@@ -970,6 +1027,9 @@ if __name__ == '__main__':
     LINE_FILE             = pathlib.Path(args.linefile) if args.linefile else None
     LOADVOL_DIR           = pathlib.Path(args.loadvol_dir) if args.loadvol_dir else None
     TRANSIT_CROWDING_FILE = pathlib.Path(args.transit_crowding) if args.transit_crowding else None
+    LINK_TAGGING_SHAPE    = pathlib.Path(args.link_tagging_shapefile) if args.link_tagging_shapefile else None
+    LINK_TAGGING_ID_FIELD = args.link_tagging_id_field if args.link_tagging_id_field else None
+    LINK_TAGGING_OUTPUT   = pathlib.Path(args.link_tagging_csv) if args.link_tagging_csv else None
 
     if TRANSIT_CROWDING_FILE and not LOADVOL_DIR:
         print(USAGE)
@@ -987,6 +1047,9 @@ if __name__ == '__main__':
             LOADVOL_DIR = LOADVOL_DIR.absolute()
         if TRANSIT_CROWDING_FILE:
             TRANSIT_CROWDING_FILE = TRANSIT_CROWDING_FILE.absolute()
+        if LINK_TAGGING_SHAPE:
+            LINK_TAGGING_SHAPE = LINK_TAGGING_SHAPE.absolute()
+            LINK_TAGGING_OUTPUT = LINK_TAGGING_OUTPUT.absolute()
 
         os.chdir( WORKING_DIR )
     else:
@@ -1014,4 +1077,12 @@ if __name__ == '__main__':
         TRANSIT_CROWDING_FILE,
         WORKING_DIR,
         args.by_operator,
+    )
+
+    tag_links_with_geography(
+        workingdir=WORKING_DIR,
+        link_shapefile=pathlib.Path(LINK_SHPFILE),
+        output_csv=LINK_TAGGING_OUTPUT,
+        geography_shapefile=LINK_TAGGING_SHAPE,
+        shp_id=LINK_TAGGING_ID_FIELD,
     )
