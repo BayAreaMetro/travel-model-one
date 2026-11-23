@@ -3,6 +3,10 @@ general:
   #   - locate input files via {target_dir} substitution in submodel configs
   #   - set the output directory: {target_dir}/Output_{calib_iter}/calibration/
   target_dir: "M:/Development/Travel Model One/Calibration/Version 1.7/2023_TM170_IPA_01_Cube6"
+  # CSV summaries are always written. Set false to skip Excel workbook output.
+  write_workbook: true
+  # Source templates are read from this directory and are never overwritten.
+  workbook_template_dir: "workbook_templates"
   calib_iter: "01"
   iter: "1"
   # Root directory for calibration Excel workbooks (model run mode).
@@ -38,6 +42,11 @@ calibration_04:
   input_file: "{target_dir}/OUTPUT_{calib_iter}/main/personData_{iter}.csv"
   uec_src_file: "{target_dir}/OUTPUT_{calib_iter}/UEC/CoordinatedDailyActivityPattern.xls"
   bats_data: false
+
+calibration_06:
+  name: Joint Tour Frequency
+  workbook_template: 06_JointTourFreq_2023
+  household_data: "{target_dir}/OUTPUT_{calib_iter}/main/householdData_{iter}.csv"
 
 calibration_07:
   name: Individual Non-Mandatory Tour Frequency
