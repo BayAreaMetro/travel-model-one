@@ -4,6 +4,23 @@ The CSV files in this directory provide the configuration, assumptions, and sour
 
 File prefixes identify how each parameter is maintained: `user_input_` files are specified or maintained by the user, while `derived_` files are generated from the source datasets by `build_parameters.py`.
 
+## Access mode codes
+
+Several files below use these two-letter non-transit access-mode codes (`ACCESS_MODES` in `build_parameters.py`/`make_air_passenger_demand.py`), e.g. as `access_mode` values or `zdist_share_<mode>` column suffixes:
+
+| Code | Access mode |
+|---|---|
+| `ES` | Escort / curb drop-off |
+| `PK` | Parking |
+| `RN` | Rental car |
+| `TX` | Taxi |
+| `LI` | Limo |
+| `VN` | Van / shared shuttle |
+| `HT` | Hotel shuttle |
+| `CH` | Charter / other |
+
+Transit trips use a separate `TR` code and are not broken out by these access modes. Submode codes `DA`/`S2`/`S3` (drive-alone, shared-ride 2, shared-ride 3+) further split each non-transit access mode's vehicle occupancy.
+
 ## File manifest - Inputs
 
 These files are have the prefix `user_input_airport_`.

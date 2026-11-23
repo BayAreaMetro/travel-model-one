@@ -55,7 +55,18 @@ DEFAULT_GOSLING_DIR = BOX_AIRPORTS_DIR / "GoslingSummaries_2007_2035b_dbfs"
 DEFAULT_TRANSIT_SOURCE = BOX_AIRPORTS_DIR / "Transit" / "TPS_TAZ_airport_TOD.xlsx"
 
 TOD_ORDER = ("EA", "AM", "MD", "PM", "EV")
-ACCESS_MODES = ("ES", "PK", "RN", "TX", "LI", "VN", "HT", "CH")
+# Maps each non-transit access-mode code to a human-readable name, e.g. for
+# logging. Iterating this dict yields the codes in the order below.
+ACCESS_MODES = {
+    "ES": "escort/curb drop-off",
+    "PK": "parking",
+    "RN": "rental car",
+    "TX": "taxi",
+    "LI": "limo",
+    "VN": "van/shared shuttle",
+    "HT": "hotel shuttle",
+    "CH": "charter/other",
+}
 AIRPORTS = ("OAK", "SFO", "SJC")
 DIRECTIONS = ("from", "to")
 EXPECTED_N_TAZ = 1454
@@ -799,10 +810,11 @@ def build_airport_non_transit_zone_access_mode_shares(
                         ].sum()
                     )
 
+                    mode_label = f"{mode} ({ACCESS_MODES[mode]})"
                     if district_all_total > 0:
                         print(
                             f"WARNING: {airport}/{direction}, district {district}, "
-                            f"access mode {mode} has zero source trips. "
+                            f"access mode {mode_label} has zero source trips. "
                             "Using the all-non-transit zonal distribution "
                             "within the district."
                         )
@@ -810,7 +822,7 @@ def build_airport_non_transit_zone_access_mode_shares(
                         print(
                             f"WARNING: {airport}/{direction}, district {district} "
                             "has zero non-transit source trips. "
-                            f"Using equal zonal shares for access mode {mode}."
+                            f"Using equal zonal shares for access mode {mode_label}."
                         )
 
             out.insert(0, "direction", direction)

@@ -67,7 +67,18 @@ PARAMETER_FILES = {
 }
 
 EXPECTED_N_TAZ = 1454
-ACCESS_MODES = ("ES", "PK", "RN", "TX", "LI", "VN", "HT", "CH")
+# Maps each non-transit access-mode code to a human-readable name, e.g. for
+# logging. Iterating this dict yields the codes in the order below.
+ACCESS_MODES = {
+    "ES": "escort/curb drop-off",
+    "PK": "parking",
+    "RN": "rental car",
+    "TX": "taxi",
+    "LI": "limo",
+    "VN": "van/shared shuttle",
+    "HT": "hotel shuttle",
+    "CH": "charter/other",
+}
 TOD_ORDER = ("EA", "AM", "MD", "PM", "EV")
 
 
