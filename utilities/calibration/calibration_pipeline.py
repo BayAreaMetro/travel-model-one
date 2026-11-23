@@ -28,6 +28,8 @@ SUBMODELS: list[tuple[str, str, str]] = [
     ("01", "01_usual_work_school_location_TM.py", "WorkSchoolLocationCalibration"),
     ("02", "02_auto_ownership_TM.py", "AutoOwnershipCalibration"),
     ("04", "04_daily_activity_pattern_TM.py", "DailyActivityPatternCalibration"),
+    ("06", "06_joint_tour_frequency_TM.py", "JointTourFreqCalibration"),
+    ("07", "07_nonmand_tour_frequency_TM.py", "NonMandTourFreqCalibration"),
     ("09", "09_nonwork_destination_choice_TM.py", "NonWorkDestinationChoiceCalibration"),
     ("11", "11_tour_mode_choice_TM.py", "TourModeChoiceCalibration"),
     ("12", "12_stop_frequency_TM.py", "StopFrequencyCalibration"),

@@ -6,12 +6,12 @@
 * [calibration_framework.py](calibration_framework.py): Base class (`CalibrationBase`) and shared utilities for all Python calibration scripts. Handles configuration loading, logging, Excel workbook setup, and DataFrame writing.
 * [calibration_data_models.py](calibration_data_models.py): Pydantic data models and labeled enums (counties, person types, activity patterns, etc.) shared across calibration scripts.
 * [calibration_config.yaml](calibration_config.yaml): Configuration for model-run calibration. Specifies paths to model outputs, calibration iteration, workbook templates, and submodel-specific settings. Environment variables `TARGET_DIR`, `CALIB_ITER`, `ITER`, `MODEL_DIR`, and `WORKBOOK_BASE_PATH` override the corresponding `general` settings in this file.
-* [calibration_config_BATS.yaml](calibration_config_BATS.yaml): Alternate configuration for comparing model outputs against BATS survey data. Points submodels at BATS pipeline outputs instead of model run outputs.
+* [calibration_config_BATS.yaml](calibration_config_BATS.yaml): Alternate configuration for comparing model outputs against BATS survey data. Points submodels at BATS pipeline outputs instead of model run outputs, and controls whether and where BATS workbooks are written.
 * [environment.yml](environment.yml): Conda environment definition (`tm1.7_calibration`). Install with `conda env create -f environment.yml`.
 
 ### Submodel Scripts (Python)
 
-Submodels 01, 02, and 04 have been rewritten in Python and use the shared framework above. Each script accepts an optional `--config` argument (defaults to `calibration_config.yaml` in the same directory). If a submodel's section is absent from the config file the script exits cleanly with a message — so any script can be safely run against any config without needing a stub entry for every submodel. In model mode, each script writes CSVs to `OUTPUT_{CALIB_ITER}/calibration/` and populates the corresponding Excel workbook template.
+Submodels 01, 02, and 04 have been rewritten in Python and use the shared framework above. Each script accepts an optional `--config` argument (defaults to `calibration_config.yaml` in the same directory). If a submodel's section is absent from the config file the script exits cleanly with a message — so any script can be safely run against any config without needing a stub entry for every submodel. In model mode, each script writes CSVs to `OUTPUT_{CALIB_ITER}/calibration/` and populates the corresponding Excel workbook template unless `general.write_workbook` is false. CSV outputs are still generated when workbook writing is disabled.
 
 * [01_usual_work_school_location_TM.py](01_usual_work_school_location_TM.py): Usual work and school location. Supports a `bats_data` mode that reads from BATS pipeline outputs (`MandatoryLocationData.csv`, `PersonData.csv`) instead of model outputs.
 * [02_auto_ownership_TM.py](02_auto_ownership_TM.py): Automobile ownership.
@@ -59,11 +59,11 @@ conda activate tm1.7_calibration
 
 #### Update Non-BATS Calibration Target
 
-Update blank Excel calibration workbook templates in [workbook_templates/] with calibration targets from ACS, LODES, OBS, etc.
+Update blank Excel calibration workbook templates in [workbook_templates/] (or the configured `general.workbook_template_dir`) with calibration targets from ACS, LODES, OBS, etc. Generated model workbooks continue to use `general.workbook_base_path`.
 
 #### Create Calibration Target from BATS
 
-To create BATS survey summaries for calibration targets, use [calibration_config_BATS.yaml](calibration_config_BATS.yaml) instead of the default config. This is configured per-submodel via the `bats_data: true` flag, which redirects input paths to BATS pipeline output files. Submodels without a `calibration_XX` section in the BATS config (e.g. submodel 02, which uses ACS data) exit cleanly without doing anything.
+To create BATS survey summaries for calibration targets, use [calibration_config_BATS.yaml](calibration_config_BATS.yaml) instead of the default config. This is configured per-submodel via the `bats_data: true` flag, which redirects input paths to BATS pipeline output files. CSV summaries are always written under `<target_dir>/BATS_Summaries/`. Set `general.write_workbook: false` to skip Excel output; otherwise populated workbooks are saved under `general.bats_workbook_output_dir`. The source templates are read from `general.workbook_template_dir` (default: this directory's `workbook_templates/`) and are not overwritten. To update the templates used in later runs, replace or edit the source template files in that configured directory. Submodels without a `calibration_XX` section in the BATS config (e.g. submodel 02, which uses ACS data) exit cleanly without doing anything.
 
 To run all BATS-configured submodels:
 ```

@@ -45,7 +45,6 @@ from pathlib import Path
 try:
     import xlwings as xw
     USE_XLWINGS = True
-    xw.App().visible = False
 except ImportError:
     from openpyxl import load_workbook
     from openpyxl.utils.dataframe import dataframe_to_rows
@@ -378,6 +377,12 @@ class CalibrationBase(ABC):
         # Check if using BATS data
         self.bats_data = self.submodel_config.get("bats_data", False)
 
+        self.write_workbook = self.config.get("general", "write_workbook", True)
+        if not isinstance(self.write_workbook, bool):
+            raise TypeError("general.write_workbook must be a boolean")
+        self.calib_workbook = None
+        self.modeldata_sheet = None
+
         # Set up paths
         self.target_dir = self.config.get('general', 'target_dir')
         if self.bats_data:
@@ -481,8 +486,12 @@ class CalibrationBase(ABC):
         ``workbook_iter``
             Iteration-stamped path (``<name>_<calib_iter>.xlsx``).
         ``workbook_blank``
-            Source blank template, resolved relative to this module's
-            ``workbook_templates/`` subdirectory.
+            Source blank template, resolved from ``general.workbook_template_dir``
+            or this module's ``workbook_templates/`` subdirectory.
+
+        When workbook writing is disabled, no template is opened. In BATS mode,
+        the populated workbook is saved under ``general.bats_workbook_output_dir``
+        (defaulting to ``<output_dir>/workbooks``), never over the source template.
 
         The blank template is opened via xlwings (or skipped gracefully if
         xlwings is unavailable or the file cannot be found).  Sets
@@ -491,6 +500,10 @@ class CalibrationBase(ABC):
         """
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nWORKBOOK SETUP\n{sep}")
+        if not self.write_workbook:
+            self.logger.info("Workbook writing is disabled; keeping CSV outputs enabled.")
+            return
+
         workbook_template = self.submodel_config.get('workbook_template')
         
         # Skip if no template specified
@@ -504,11 +517,24 @@ class CalibrationBase(ABC):
         workbook_base = self.config.get('general', 'workbook_base_path', 
                                        'M:/Development/Travel Model One/Calibration/Version 1.7')
         
-        self.workbook_path = f"{workbook_base}/{self.submodel} {submodel_name}/{workbook_template}.xlsx"
+        template_dir = self.config.get('general', 'workbook_template_dir')
+        if template_dir:
+            template_dir = Path(template_dir)
+            if not template_dir.is_absolute():
+                template_dir = Path(__file__).parent / template_dir
+        else:
+            template_dir = Path(__file__).parent / "workbook_templates"
+        self.workbook_blank = str(template_dir / f"{workbook_template}_blank.xlsx")
+
+        if self.bats_data:
+            bats_workbook_output_dir = self.config.get(
+                'general', 'bats_workbook_output_dir', f"{self.output_dir}/workbooks"
+            )
+            self.workbook_path = str(Path(bats_workbook_output_dir) / f"{workbook_template}.xlsx")
+        else:
+            self.workbook_path = f"{workbook_base}/{self.submodel} {submodel_name}/{workbook_template}.xlsx"
         self.workbook_temp = self.workbook_path.replace('.xlsx', '_temp.xlsx')
         self.workbook_iter = self.workbook_path.replace('.xlsx', f'_{self.calib_iter}.xlsx')
-        # load workbook_blank from the repo (local copy) instead of from "workbook_base" path
-        self.workbook_blank = str(Path(__file__).parent / "workbook_templates" / f"{workbook_template}_blank.xlsx")
         
         workbook_dir = Path(self.workbook_path).parent
         self.logger.info(f"Workbook Output Directory: {workbook_dir}")
@@ -620,7 +646,7 @@ class CalibrationBase(ABC):
                 source_text = f"Source: {csv_path}"
 
             source_row, source_col = target.source_cell or (None, None)
-            if target.sheet:
+            if target.sheet and self.write_workbook:
                 self.write_dataframe_to_sheet(
                     df,
                     start_row=target.start_row,
@@ -781,9 +807,8 @@ class CalibrationBase(ABC):
     def save_workbook(self):
         """Save the open calibration workbook.
 
-        **BATS mode**: overwrites the blank template (:attr:`workbook_blank`)
-        so that survey targets are baked into the source file used by future
-        model runs.  No iteration snapshot is written.
+        **BATS mode**: saves the populated workbook to :attr:`workbook_path`,
+        leaving the source template untouched. No iteration snapshot is written.
 
         **Model mode**: saves to both :attr:`workbook_temp` (stable
         "current" filename) and :attr:`workbook_iter` (iteration-stamped
@@ -796,12 +821,17 @@ class CalibrationBase(ABC):
         """
         sep = "=" * 80
         self.logger.info(f"\n{sep}\nSAVING WORKBOOK\n{sep}")
+        if not self.write_workbook:
+            self.logger.info("Workbook writing is disabled; skipping workbook save.")
+            return
+
         if self.calib_workbook:
             try:
                 if self.bats_data:
-                    self.logger.info(f"Saving BATS targets to blank template: {self.workbook_blank}")
-                    self.calib_workbook.save(self.workbook_blank)
-                    self.logger.info(f"Wrote {self.workbook_blank}")
+                    Path(self.workbook_path).parent.mkdir(parents=True, exist_ok=True)
+                    self.logger.info(f"Saving BATS targets to: {self.workbook_path}")
+                    self.calib_workbook.save(self.workbook_path)
+                    self.logger.info(f"Wrote {self.workbook_path}")
                 else:
                     self.logger.info("Saving calibration workbook to:")
                     self.logger.info(f"  Temp Workbook:      {self.workbook_temp}")
