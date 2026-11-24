@@ -100,6 +100,7 @@ if %1==SB375 (
   :: rem for SACOG's federal air quality plan
   if %MODEL_YEAR% EQU 2026 (set emfacVersion=2014)
   if %MODEL_YEAR% EQU 2035 (set emfacVersion=2014)
+  if %MODEL_YEAR% EQU 2045 (set emfacVersion=2014)
   if %MODEL_YEAR% EQU 2050 (set emfacVersion=2014)
 )
 
