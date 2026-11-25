@@ -34,7 +34,7 @@ if __name__ == '__main__':
     pandas.set_option('display.max_columns', 200)
     pandas.set_option('display.width',       200)
 
-    parcel_data_file     = os.path.join(URBANSIM_RUN_DIR, args.parcel_data_file)
+    parcel_data_file     = args.parcel_data_file
     print(" {:20}: {}".format("parcel_data_file", parcel_data_file))
     print(" {:20}: {}".format("parcel_gdb",       args.parcel_gdb))
     print(" {:20}: {}".format("parcel_layer",     args.parcel_layer))

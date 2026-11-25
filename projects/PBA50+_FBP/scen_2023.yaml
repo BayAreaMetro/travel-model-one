@@ -1,0 +1,41 @@
+# PBA50+_FBP: 2023 baseline. See README.md for the address grammar and the
+# three ways a scenario file may declare scenarios.
+
+2023_TM162_IPA:
+  description: >
+    Plan Bay Area 2050+ 2023 base run. Equivalent to 2023_TM161_IPA_35
+
+  model_year: 2023
+  env.MODEL_YEAR: 2023
+  env.FUTURE: PBA50
+
+  copy_inputs.input_hwy.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/hwy"
+  copy_inputs.input_trn.from:     "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v35/net_2023_Baseline/trn"
+  copy_inputs.input_popsyn.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/popsyn"
+  copy_inputs.input_landuse.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2023_v12/landuse"
+  copy_inputs.input_nonres.from:  "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06"
+  copy_inputs.input_logsums.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/logsums_dummies/logsums_dummies_v01"
+  copy_inputs.input_metrics.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_02"
+
+  # The air passenger tables are per model year: SetUpModel.bat picks the year's
+  # file and drops the prefix.  A different year is five `from:` values, which is
+  # what makes this a config line rather than an `if MODEL_YEAR ==` branch.
+  copy_inputs.input_airpax_ea.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxEA.tpp"
+  copy_inputs.input_airpax_am.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxAM.tpp"
+  copy_inputs.input_airpax_md.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxMD.tpp"
+  copy_inputs.input_airpax_pm.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxPM.tpp"
+  copy_inputs.input_airpax_ev.from: "{m_drive}/Application/Model One/RTP2025/INPUT_DEVELOPMENT/nonres/nonres_06/airpax/2023b_tripsAirPaxEV.tpp"
+
+  # The demand iteration 0 assigns, from the previous run's published output.
+  copy_inputs.input_warmstart_main.from:   "{m_drive}/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35/OUTPUT/main"
+  copy_inputs.input_warmstart_nonres.from: "{m_drive}/Application/Model One/RTP2025/IncrementalProgress/2023_TM161_IPA_35/OUTPUT/nonres"
+
+  copy_inputs.input_params.from: "utilities/RTP/config_RTP2025/params_2023.properties"
+
+  # The versioned name this project's INPUT/popsyn ships under.
+  filter_unconnected_households.skip_if_exists: "popsyn/hhFile.2023_v12.csv"
+
+  # RunPrepareEmfac.bat's MODEL_YEAR lookup table, evaluated for 2023.
+  emfac_sb375_version: "2014"
+  emfac_eir_version:   "2017"
+

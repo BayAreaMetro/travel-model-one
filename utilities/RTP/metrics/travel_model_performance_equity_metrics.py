@@ -150,17 +150,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
         '2050 Draft Blueprint':'2050 DBP',
         '2050 EIR Alt 1'      :'2050 EIR Alt1',
         '2050 EIR Alt 2'      :'2050 EIR Alt2',
-        # '2050 FBP minus H1'   :'2050 Plan',
-        # '2050 FBP minus H2'   :'2050 Plan',
-        # '2050 FBP minus H3EC4EN4':'2050 Plan',
-        # '2050 FBP minus H4'   :'2050 Plan',
-        # '2050 FBP minus H5'   :'2050 Plan',
-        # '2050 FBP minus H6'   :'2050 Plan',
-        # '2050 FBP minus H8'   :'2050 Plan',
-        # '2050 FBP minus EC1'  :'2050 Plan',
-        # '2050 FBP minus EC2'  :'2050 Plan',
-        # '2050 FBP minus EC5'  :'2050 Plan',
-        # '2050 FBP minus EC6'  :'2050 Plan',
+        '2050 FBP minus H3EC4EN4':'2050 Plan minus H3EC4EN4',
     }, inplace=True)
     # remove 2015 No Project, 2023 DBP, and 2023 FBP
     housing_costs_df = housing_costs_df.loc[ 
@@ -1119,6 +1109,8 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
             model_run_dir = TM_RUN_LOCATION_STIP / tm_runid
         elif model_runs_dict[tm_runid]['run_set'] in ["NoTransit"]:
             model_run_dir = TM_RUN_LOCATION_NOTRANSIT / tm_runid
+        elif model_runs_dict[tm_runid]['run_set'] in ["RTP2030StrategyEval"]:
+            model_run_dir = TM_RUN_LOCATION / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         

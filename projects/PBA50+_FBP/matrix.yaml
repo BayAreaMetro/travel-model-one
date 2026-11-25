@@ -1,0 +1,30 @@
+# No matrix scenarios in this project yet -- PBA50+_FBP only needs scen_*.yaml's
+# explicit `scenarios:` so far. A real matrix lives in a file matching
+# matrix*.yaml (e.g. matrix_A1.yaml): a top-level list of specs, no `matrix:`
+# wrapper -- the filename already says what it holds, same as scen_*.yaml.
+# `tm1 scenarios PBA50+_FBP` merges every matrix*.yaml file in this directory
+# into one expansion before checking any of it.
+#
+# The cross product of named axes, for a sweep. Give every axis point a
+# description -- a scenario's prose is assembled from them, and in a sweep of
+# thirty the ID is otherwise all you have to go on.
+#
+# - id: "A1-{tolls}-{landuse}"
+#   axes:
+#     tolls:
+#       NOTL:
+#         description: No new tolls.
+#       CORD:
+#         description: Cordon pricing.
+#         set_tolls.job: "variants/SetTolls_cordon.job"
+#     landuse:
+#       ADPT:
+#         description: Adopted land use.
+#       JHBL:
+#         description: Jobs-housing balance.
+#         env.MODEL_YEAR: 2035
+#   exclude:
+#     - {tolls: CORD, landuse: JHBL}     # combinations that make no sense
+#
+# gives  A1-NOTL-ADPT, A1-NOTL-JHBL, A1-CORD-ADPT
+# (an exclude rule may name a subset of the axes, so it survives a new axis)
