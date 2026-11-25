@@ -754,6 +754,7 @@ steps:
   - run_offmodel_calculators:
       command: "CTRAMP/scripts/offmodel/run_offmodel_calculators.py"
       enabled: false
+      continue_on_error: true
 
   # ── Cleanup · once, at the end (RunModel.bat step 18) ──────────────────────────────────
   - cleanup_logs:          # sweeps TPPL*.PRN / _cube_*.log out of run_dir into logs/
